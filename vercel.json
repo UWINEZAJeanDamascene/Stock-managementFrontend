@@ -1,0 +1,9 @@
+{
+  "buildCommand": "node node_modules/vite/bin/vite.js build",
+  "outputDirectory": "dist",
+  "installCommand": "npm install --legacy-peer-deps",
+  "framework": "vite",
+  "env": {
+    "VITE_API_URL": "https://stock-tenancy-system.onrender.com/api"
+  }
+}
