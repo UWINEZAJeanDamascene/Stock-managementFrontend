@@ -76,11 +76,22 @@ export default function TrialBalancePage() {
       });
       
       if (response.success) {
-        // Calculate balance for each entry (debit - credit)
-        const entriesWithBalance = (response.data || []).map((entry) => ({
-          ...entry,
-          balance: entry.debit - entry.credit
-        }));
+        // Calculate balance for each entry based on account type
+        // Asset and Expense accounts: Debits increase balance (debit - credit)
+        // Liability, Equity and Revenue accounts: Credits increase balance (credit - debit)
+        const entriesWithBalance = (response.data || []).map((entry) => {
+          let balance: number;
+          if (entry.accountType === 'asset' || entry.accountType === 'expense') {
+            balance = entry.debit - entry.credit;
+          } else {
+            // Liability, Equity, Revenue - credits increase balance
+            balance = entry.credit - entry.debit;
+          }
+          return {
+            ...entry,
+            balance
+          };
+        });
         setData(entriesWithBalance as TrialBalanceEntry[]);
         setTotals(response.totals);
         setPeriod(response.period);
@@ -281,10 +292,8 @@ export default function TrialBalancePage() {
                         <TableCell className="text-right font-mono">
                           {entry.credit > 0 ? formatCurrency(entry.credit) : '-'}
                         </TableCell>
-                        <TableCell className={`text-right font-mono font-medium ${
-                          entry.balance >= 0 ? 'text-black dark:text-white' : 'text-red-600 dark:text-red-400'
-                        }`}>
-                          {formatCurrency(entry.balance)}
+                        <TableCell className="text-right font-mono font-medium">
+                          {formatCurrency(Math.abs(entry.balance))}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -297,7 +306,7 @@ export default function TrialBalancePage() {
                   <TableCell className="text-right font-mono">{formatCurrency(totals.totalDebit)}</TableCell>
                   <TableCell className="text-right font-mono">{formatCurrency(totals.totalCredit)}</TableCell>
                   <TableCell className="text-right font-mono">
-                    {formatCurrency(totals.totalDebit - totals.totalCredit)}
+                    {formatCurrency(Math.abs(totals.totalDebit - totals.totalCredit))}
                   </TableCell>
                 </TableRow>
               </TableBody>

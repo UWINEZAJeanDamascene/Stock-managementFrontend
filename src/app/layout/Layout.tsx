@@ -26,12 +26,14 @@ export function Layout({ children }: LayoutProps) {
         <Sidebar collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)} />
       </div>
 
-      {/* Mobile Sidebar - sheet/drawer */}
-      <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-        <SheetContent side="left" className="p-0 w-64 bg-slate-900 border-r border-slate-800">
-          <Sidebar onNavigate={() => setSidebarOpen(false)} />
-        </SheetContent>
-      </Sheet>
+      {/* Mobile Sidebar - sheet/drawer (render only on mobile to avoid duplicate sidebars) */}
+      {isMobile && (
+        <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+          <SheetContent side="left" className="p-0 w-64 bg-slate-900 border-r border-slate-800">
+            <Sidebar onNavigate={() => setSidebarOpen(false)} />
+          </SheetContent>
+        </Sheet>
+      )}
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto">

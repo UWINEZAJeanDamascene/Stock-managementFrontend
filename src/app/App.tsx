@@ -51,6 +51,7 @@ import TestimonialsPage from './pages/TestimonialsPage';
 import TrialBalancePage from './pages/TrialBalancePage';
 import GeneralLedgerPage from './pages/GeneralLedgerPage';
 import JournalEntriesPage from './pages/JournalEntriesPage';
+import BankHubPage from './pages/BankHubPage';
 import DepartmentsPage from './pages/DepartmentsPage';
 import BulkDataPage from './pages/BulkDataPage';
 import AuditTrailPage from './pages/AuditTrailPage';
@@ -495,6 +496,16 @@ function AppRoutes() {
           <ProtectedRoute>
             <Layout>
               <JournalEntriesPage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/bank-hub"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <BankHubPage />
             </Layout>
           </ProtectedRoute>
         }

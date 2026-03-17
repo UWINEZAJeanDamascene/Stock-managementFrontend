@@ -51,6 +51,7 @@ import {
   FileCheck,
   Scale,
   BookOpen,
+  Wallet,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -122,6 +123,7 @@ const financeNav: NavSection = {
     { nameKey: 'nav.accountsReceivable', href: '/accounts-receivable', icon: CreditCard, permission: 'invoices:read' as const },
     { nameKey: 'nav.expenses', href: '/expenses', icon: Receipt, permission: 'invoices:create' as const },
     { nameKey: 'nav.pettyCash', href: '/petty-cash', icon: Calculator, permission: 'invoices:create' as const },
+    { nameKey: 'nav.bankHub', href: '/bank-hub', icon: Wallet, permission: 'invoices:create' as const },
     { nameKey: 'nav.assets', href: '/assets', icon: Building, permission: 'reports:read' as const },
     { nameKey: 'nav.liabilities', href: '/liabilities', icon: Banknote, permission: 'reports:read' as const },
     { nameKey: 'nav.budgets', href: '/budgets', icon: Calculator, permission: 'reports:read' as const },

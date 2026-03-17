@@ -138,7 +138,13 @@ export default function GeneralLedgerPage() {
       
       let runningBalance = account.openingBalance;
       account.entries.forEach((tx: GeneralLedgerEntry) => {
-        runningBalance += tx.debit - tx.credit;
+        // For Asset and Expense accounts: debits increase balance
+        // For Liability, Equity and Revenue accounts: credits increase balance
+        if (account.accountType === 'asset' || account.accountType === 'expense') {
+          runningBalance += tx.debit - tx.credit;
+        } else {
+          runningBalance += tx.credit - tx.debit;
+        }
         rows.push([
           format(new Date(tx.date), 'yyyy-MM-dd'),
           tx.entryNumber,
@@ -323,8 +329,8 @@ export default function GeneralLedgerPage() {
                       </div>
                       <div className="text-right">
                         <div className="text-sm text-muted-foreground">{t('Closing Balance')}</div>
-                        <div className={`font-bold ${account.closingBalance >= 0 ? '' : 'text-red-600'}`}>
-                          {formatCurrency(account.closingBalance)}
+                        <div className="font-bold">
+                          {formatCurrency(Math.abs(account.closingBalance))}
                         </div>
                       </div>
                     </div>
@@ -360,9 +366,23 @@ export default function GeneralLedgerPage() {
                         
                         {/* Transaction Rows */}
                         {account.entries.map((tx, idx) => {
-                          const prevBalance = account.openingBalance + 
-                            account.entries.slice(0, idx).reduce((s, t) => s + t.debit - t.credit, 0);
-                          const currentBalance = prevBalance + tx.debit - tx.credit;
+                          // Calculate previous balance using correct formula based on account type
+                          let prevBalance: number;
+                          if (account.accountType === 'asset' || account.accountType === 'expense') {
+                            prevBalance = account.openingBalance + 
+                              account.entries.slice(0, idx).reduce((s, t) => s + t.debit - t.credit, 0);
+                          } else {
+                            prevBalance = account.openingBalance + 
+                              account.entries.slice(0, idx).reduce((s, t) => s + t.credit - t.debit, 0);
+                          }
+                          
+                          // Calculate current balance
+                          let currentBalance: number;
+                          if (account.accountType === 'asset' || account.accountType === 'expense') {
+                            currentBalance = prevBalance + tx.debit - tx.credit;
+                          } else {
+                            currentBalance = prevBalance + tx.credit - tx.debit;
+                          }
                           
                           return (
                             <TableRow key={idx}>
@@ -376,10 +396,8 @@ export default function GeneralLedgerPage() {
                               <TableCell className="text-right font-mono">
                                 {tx.credit > 0 ? formatCurrency(tx.credit) : '-'}
                               </TableCell>
-                              <TableCell className={`text-right font-mono font-medium ${
-                                currentBalance >= 0 ? '' : 'text-red-600'
-                              }`}>
-                                {formatCurrency(currentBalance)}
+                              <TableCell className="text-right font-mono font-medium">
+                                {formatCurrency(Math.abs(currentBalance))}
                               </TableCell>
                             </TableRow>
                           );

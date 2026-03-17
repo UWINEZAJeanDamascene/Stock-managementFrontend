@@ -1880,6 +1880,8 @@ export const pettyCashApi = {
     custodian?: string;
     location?: string;
     notes?: string;
+    sourceType?: 'bank' | 'cash';
+    bankAccountId?: string;
   }) => request<{ success: boolean; data: PettyCashFloat }>('/petty-cash/floats', { method: 'POST', body: data }),
   updateFloat: (id: string, data: Partial<{
     name: string;
@@ -1945,7 +1947,7 @@ export const pettyCashApi = {
   }) => request<{ success: boolean; data: PettyCashReplenishment }>('/petty-cash/replenishments', { method: 'POST', body: data }),
   approveReplenishment: (id: string, data?: { notes?: string }) =>
     request<{ success: boolean; data: PettyCashReplenishment }>(`/petty-cash/replenishments/${id}/approve`, { method: 'PUT', body: data }),
-  completeReplenishment: (id: string, data: { actualAmount?: number; notes?: string }) =>
+  completeReplenishment: (id: string, data: { actualAmount?: number; notes?: string; sourceType?: 'bank' | 'cash'; bankAccountId?: string }) =>
     request<{ success: boolean; data: PettyCashReplenishment }>(`/petty-cash/replenishments/${id}/complete`, { method: 'PUT', body: data }),
   rejectReplenishment: (id: string, data: { reason?: string }) =>
     request<{ success: boolean; data: PettyCashReplenishment }>(`/petty-cash/replenishments/${id}/reject`, { method: 'PUT', body: data }),
@@ -2642,4 +2644,258 @@ export const journalEntriesApi = {
       errors: Array<{ assetCode: string; error: string }>;
       journalEntries: Array<{ assetCode: string; assetName: string; amount: number; entryNumber: string }>;
     } }>('/journal-entries/run-depreciation', { method: 'POST', body: { period } }),
+};
+
+// ============================================================
+// BANK HUB API - Centralized Transaction Management
+// ============================================================
+
+// Transaction types for inflows (money coming in)
+export type BankHubInflowType = 
+  | 'sale_payment'           // Payment received from sales/invoices
+  | 'invoice_payment'         // Customer invoice payment
+  | 'credit_note_refund'     // Refund from credit note
+  | 'loan_received'          // Loan amount received
+  | 'capital_injection'      // Owner capital introduced
+  | 'interest_income'        // Interest earned
+  | 'other_income'           // Miscellaneous income
+  | 'tax_refund'             // Tax refund from government
+  | 'client_advance'         // Advance payment from client
+  | 'bank_transfer_in';      // Transfer from another bank account
+
+// Transaction types for outflows (money going out)
+export type BankHubOutflowType = 
+  | 'purchase_payment'        // Payment to suppliers
+  | 'expense_payment'         // Business expense
+  | 'salary_payment'          // Employee salaries
+  | 'tax_payment'            // Tax payments (VAT, PAYE, etc.)
+  | 'loan_repayment'         // Loan repayment
+  | 'petty_cash_funding'     // Funding petty cash float
+  | 'bank_transfer_out'      // Transfer to another bank account
+  | 'asset_purchase'         // Fixed asset acquisition
+  | 'dividend_payment'       // Dividend distribution
+  | 'other_expense';         // Miscellaneous expense
+
+// All transaction types
+export type BankHubTransactionType = BankHubInflowType | BankHubOutflowType;
+
+// Payment methods
+export type BankHubPaymentMethod = 
+  | 'cash' 
+  | 'bank_transfer' 
+  | 'cheque' 
+  | 'mobile_money' 
+  | 'card' 
+  | 'other';
+
+// Transaction status
+export type BankHubStatus = 'completed' | 'pending' | 'reversed' | 'failed';
+
+// Bank Hub Transaction interface
+export interface BankHubTransaction {
+  _id: string;
+  company: string;
+  transactionNumber: string;
+  type: BankHubTransactionType;
+  flow: 'inflow' | 'outflow';
+  amount: number;
+  currency: string;
+  exchangeRate?: number;
+  amountInBaseCurrency?: number;
+  
+  // Account details
+  bankAccount?: {
+    _id: string;
+    name: string;
+    accountType: string;
+  };
+  bankAccountId?: string;
+  
+  // Reference to source document
+  referenceType?: 'invoice' | 'purchase' | 'expense' | 'payroll' | 'petty_cash' | 'journal_entry' | 'loan' | 'tax' | 'manual';
+  referenceId?: string;
+  referenceNumber?: string;
+  
+  // Payment details
+  paymentMethod: BankHubPaymentMethod;
+  chequeNumber?: string;
+  
+  // Counterparty
+  counterpartyType?: 'client' | 'supplier' | 'employee' | 'tax_authority' | 'bank' | 'other';
+  counterpartyId?: string;
+  counterpartyName?: string;
+  
+  // Description
+  description: string;
+  notes?: string;
+  
+  // Status
+  status: BankHubStatus;
+  
+  // Related records
+  journalEntryId?: string;
+  journalEntryNumber?: string;
+  
+  // Metadata
+  transactionDate: string;
+  createdBy: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Dashboard summary
+export interface BankHubDashboardSummary {
+  totalInflow: number;
+  totalOutflow: number;
+  netCashFlow: number;
+  closingBalance: number;
+  openingBalance: number;
+  byPaymentMethod: Record<BankHubPaymentMethod, number>;
+  byType: Record<BankHubTransactionType, number>;
+  recentTransactions: BankHubTransaction[];
+  monthlyTrend: Array<{
+    month: string;
+    inflow: number;
+    outflow: number;
+  }>;
+}
+
+// Cash flow report
+export interface BankHubCashFlowReport {
+  period: {
+    startDate: string;
+    endDate: string;
+  };
+  summary: {
+    totalInflow: number;
+    totalOutflow: number;
+    netCashFlow: number;
+    transactionCount: number;
+  };
+  byType: Array<{
+    type: BankHubTransactionType;
+    flow: 'inflow' | 'outflow';
+    total: number;
+    count: number;
+  }>;
+  byPaymentMethod: Array<{
+    paymentMethod: BankHubPaymentMethod;
+    total: number;
+    count: number;
+  }>;
+  dailyBreakdown: Array<{
+    date: string;
+    inflow: number;
+    outflow: number;
+  }>;
+}
+
+// Bank Hub API
+export const bankHubApi = {
+  // Dashboard
+  getDashboardSummary: (params?: { startDate?: string; endDate?: string }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; data: BankHubDashboardSummary }>(`/bank-hub/dashboard${query ? `?${query}` : ''}`);
+  },
+
+  // Transactions
+  getTransactions: (params?: {
+    type?: BankHubTransactionType;
+    flow?: 'inflow' | 'outflow';
+    paymentMethod?: BankHubPaymentMethod;
+    status?: BankHubStatus;
+    startDate?: string;
+    endDate?: string;
+    bankAccountId?: string;
+    search?: string;
+    page?: number;
+    limit?: number;
+  }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; count: number; total: number; pages: number; data: BankHubTransaction[] }>(`/bank-hub/transactions${query ? `?${query}` : ''}`);
+  },
+
+  getTransactionById: (id: string) => 
+    request<{ success: boolean; data: BankHubTransaction }>(`/bank-hub/transactions/${id}`),
+
+  createTransaction: (data: {
+    type: BankHubTransactionType;
+    amount: number;
+    bankAccountId?: string;
+    paymentMethod: BankHubPaymentMethod;
+    referenceType?: BankHubTransaction['referenceType'];
+    referenceId?: string;
+    referenceNumber?: string;
+    counterpartyType?: BankHubTransaction['counterpartyType'];
+    counterpartyId?: string;
+    counterpartyName?: string;
+    description?: string;
+    notes?: string;
+    transactionDate?: string;
+    chequeNumber?: string;
+  }) => request<{ success: boolean; data: BankHubTransaction }>('/bank-hub/transactions', { method: 'POST', body: data }),
+
+  // Reversal
+  reverseTransaction: (id: string, data: { reason: string }) => 
+    request<{ success: boolean; data: { reversedTransaction: BankHubTransaction; reversalTransaction: BankHubTransaction } }>(`/bank-hub/transactions/${id}/reverse`, { method: 'POST', body: data }),
+
+  // Reports
+  getCashFlowReport: (params?: {
+    startDate?: string;
+    endDate?: string;
+    groupBy?: 'day' | 'week' | 'month';
+    type?: BankHubTransactionType;
+  }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; data: BankHubCashFlowReport }>(`/bank-hub/reports/cash-flow${query ? `?${query}` : ''}`);
+  },
+
+  getTypeSummary: (params?: { startDate?: string; endDate?: string }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; data: {
+      inflows: Array<{ type: BankHubInflowType; total: number; count: number }>;
+      outflows: Array<{ type: BankHubOutflowType; total: number; count: number }>;
+    } }>(`/bank-hub/reports/type-summary${query ? `?${query}` : ''}`);
+  },
+
+  getBankAccountSummary: (params?: { startDate?: string; endDate?: string }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; data: {
+      accounts: Array<{
+        bankAccount: { _id: string; name: string; accountType: string };
+        openingBalance: number;
+        closingBalance: number;
+        totalInflow: number;
+        totalOutflow: number;
+        transactionCount: number;
+      }>;
+      totals: {
+        totalOpeningBalance: number;
+        totalClosingBalance: number;
+        totalInflow: number;
+        totalOutflow: number;
+      };
+    } }>(`/bank-hub/reports/bank-account-summary${query ? `?${query}` : ''}`);
+  },
+
+  // Export
+  exportTransactions: (params?: {
+    startDate?: string;
+    endDate?: string;
+    type?: BankHubTransactionType;
+    format?: 'csv' | 'excel' | 'pdf';
+  }) => {
+    const token = localStorage.getItem('token');
+    const query = buildQuery(params as Record<string, any>);
+    return fetch(`${API_BASE_URL}/bank-hub/export${query ? `?${query}` : ''}`, {
+      headers: { 'Authorization': token ? `Bearer ${token}` : '' },
+    }).then(res => {
+      if (!res.ok) throw new Error('Failed to export transactions');
+      return res.blob();
+    });
+  },
 };

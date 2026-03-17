@@ -33,6 +33,7 @@ const en = {
     taxes: 'Taxes',
     expenses: 'Expenses',
     pettyCash: 'Petty Cash',
+    bankHub: 'Bank Hub',
     bankAccounts: 'Bank Accounts',
     purchaseReturns: 'Purchase Returns',
     userManagement: 'User Management',
@@ -989,6 +990,15 @@ const en = {
     location: 'Location',
     notes: 'Notes',
     custodian: 'Custodian',
+    // Source
+    sourceType: 'Source Type',
+    fromBank: 'From Bank',
+    fromCash: 'From Cash',
+    selectBank: 'Select Bank',
+    selectBankPlaceholder: 'Select a bank account',
+    // Replenishment
+    actualAmount: 'Actual Amount',
+    completeReplenishment: 'Complete Replenishment',
     // Dashboard
     todayExpenses: "Today's Expenses",
     pendingExpenses: 'Pending Expenses',

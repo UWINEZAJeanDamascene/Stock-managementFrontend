@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { journalEntriesApi, JournalEntry, ChartOfAccounts, JournalEntryLine } from '@/lib/api';
+import { journalEntriesApi, JournalEntry, ChartOfAccounts, JournalEntryLine, bankAccountsApi } from '@/lib/api';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
@@ -20,13 +20,18 @@ export default function JournalEntriesPage() {
   const [showCapitalDialog, setShowCapitalDialog] = useState(false);
   const [saving, setSaving] = useState(false);
   
+  // Bank accounts for capital entry
+  const [bankAccounts, setBankAccounts] = useState<any[]>([]);
+  const [loadingBankAccounts, setLoadingBankAccounts] = useState(false);
+  
   // Capital form state
   const [capitalData, setCapitalData] = useState({
     capitalType: 'owner',
     amount: 0,
     description: '',
     reference: '',
-    paymentMethod: 'bank_transfer'
+    paymentMethod: 'bank_transfer',
+    selectedBankAccount: '' // ID of the selected bank/MOMO account
   });
   const [capitalSaving, setCapitalSaving] = useState(false);
   
@@ -49,6 +54,8 @@ export default function JournalEntriesPage() {
 
   useEffect(() => {
     fetchData();
+    // Also fetch bank accounts for capital entry
+    fetchBankAccounts();
   }, []);
 
   const fetchData = async () => {
@@ -170,6 +177,78 @@ export default function JournalEntriesPage() {
     return account?.type || '';
   };
 
+  // Fetch bank accounts for capital entry
+  const fetchBankAccounts = async () => {
+    setLoadingBankAccounts(true);
+    try {
+      console.log('Fetching bank accounts...');
+      const response = await bankAccountsApi.getAll();
+      console.log('Bank accounts response:', response);
+      setBankAccounts(response.data || []);
+      console.log('Bank accounts set:', response.data?.length || 0);
+    } catch (error) {
+      console.error('Error fetching bank accounts:', error);
+      toast.error('Failed to load bank accounts');
+    } finally {
+      setLoadingBankAccounts(false);
+    }
+  };
+
+  // Filter bank accounts by payment method
+  const filteredBankAccounts = useMemo(() => {
+    if (!bankAccounts || bankAccounts.length === 0) {
+      return [];
+    }
+    
+    if (capitalData.paymentMethod === 'bank_transfer' || capitalData.paymentMethod === 'cheque') {
+      // Show only bank accounts (not MOMO, not cash in hand)
+      return bankAccounts.filter((acc: any) => 
+        acc.accountType && 
+        acc.accountType !== 'mtn_momo' && 
+        acc.accountType !== 'airtel_money' && 
+        acc.accountType !== 'cash_in_hand'
+      );
+    } else if (capitalData.paymentMethod === 'mobile_money') {
+      // Show only MOMO accounts
+      return bankAccounts.filter((acc: any) => 
+        acc.accountType && 
+        (acc.accountType === 'mtn_momo' || acc.accountType === 'airtel_money')
+      );
+    }
+    return [];
+  }, [bankAccounts, capitalData.paymentMethod]);
+
+  // Get the selected bank account details
+  const selectedBankAccountDetails = useMemo(() => {
+    return bankAccounts.find((acc: any) => acc._id === capitalData.selectedBankAccount);
+  }, [bankAccounts, capitalData.selectedBankAccount]);
+
+  // Get GL account code based on payment method and selected account
+  const getGLAccountCode = () => {
+    if (capitalData.paymentMethod === 'cash') {
+      return '1000'; // Cash in Hand
+    }
+    if (selectedBankAccountDetails) {
+      return selectedBankAccountDetails.accountCode || getDefaultGLCode(capitalData.paymentMethod);
+    }
+    return getDefaultGLCode(capitalData.paymentMethod);
+  };
+
+  // Get default GL code based on payment method
+  const getDefaultGLCode = (method: string) => {
+    switch (method) {
+      case 'bank_transfer':
+      case 'cheque':
+        return '1100'; // Cash at Bank (default)
+      case 'mobile_money':
+        return '1200'; // MTN MoMo (default)
+      case 'cash':
+        return '1000'; // Cash in Hand
+      default:
+        return '1100';
+    }
+  };
+
   const handleCapitalSubmit = async () => {
     if (capitalData.amount <= 0) {
       toast.error('Please enter a valid amount');
@@ -178,6 +257,12 @@ export default function JournalEntriesPage() {
 
     if (!capitalData.description) {
       toast.error('Please enter a description');
+      return;
+    }
+
+    // Validate bank account selection for bank transfer, cheque, or mobile money
+    if ((capitalData.paymentMethod === 'bank_transfer' || capitalData.paymentMethod === 'cheque' || capitalData.paymentMethod === 'mobile_money') && !capitalData.selectedBankAccount) {
+      toast.error('Please select a ' + (capitalData.paymentMethod === 'mobile_money' ? 'MOMO' : 'bank') + ' account');
       return;
     }
 
@@ -197,7 +282,9 @@ export default function JournalEntriesPage() {
           amount: capitalData.amount,
           description: capitalData.description,
           reference: capitalData.reference,
-          paymentMethod: capitalData.paymentMethod
+          paymentMethod: capitalData.paymentMethod,
+          bankAccountId: capitalData.selectedBankAccount || null,
+          glAccountCode: getGLAccountCode()
         })
       });
 
@@ -207,7 +294,7 @@ export default function JournalEntriesPage() {
 
       toast.success(t('Capital recorded successfully', 'Capital recorded successfully'));
       setShowCapitalDialog(false);
-      setCapitalData({ capitalType: 'owner', amount: 0, description: '', reference: '', paymentMethod: 'bank_transfer' });
+      setCapitalData({ capitalType: 'owner', amount: 0, description: '', reference: '', paymentMethod: 'bank_transfer', selectedBankAccount: '' });
       fetchData();
     } catch (error) {
       console.error('Error recording capital:', error);
@@ -499,7 +586,7 @@ export default function JournalEntriesPage() {
       </Dialog>
 
       {/* Capital Entry Dialog */}
-      <Dialog open={showCapitalDialog} onOpenChange={setShowCapitalDialog}>
+      <Dialog open={showCapitalDialog} onOpenChange={(open) => { setShowCapitalDialog(open); if (open) fetchBankAccounts(); }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -551,7 +638,7 @@ export default function JournalEntriesPage() {
               <Label>{t('Payment Method', 'Payment Method')}</Label>
               <Select
                 value={capitalData.paymentMethod}
-                onValueChange={(value) => setCapitalData({ ...capitalData, paymentMethod: value })}
+                onValueChange={(value) => setCapitalData({ ...capitalData, paymentMethod: value, selectedBankAccount: '' })}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -559,12 +646,12 @@ export default function JournalEntriesPage() {
                 <SelectContent>
                   <SelectItem value="bank_transfer">
                     <div className="flex items-center gap-2">
-                      {t('Cash at Bank', 'Cash at Bank')}
+                      {t('Bank Transfer', 'Bank Transfer')}
                     </div>
                   </SelectItem>
-                  <SelectItem value="cash">
+                  <SelectItem value="cheque">
                     <div className="flex items-center gap-2">
-                      {t('Cash in Hand', 'Cash in Hand')}
+                      {t('Cheque', 'Cheque')}
                     </div>
                   </SelectItem>
                   <SelectItem value="mobile_money">
@@ -572,9 +659,62 @@ export default function JournalEntriesPage() {
                       {t('Mobile Money', 'Mobile Money')}
                     </div>
                   </SelectItem>
+                  <SelectItem value="cash">
+                    <div className="flex items-center gap-2">
+                      {t('Cash in Hand', 'Cash in Hand')}
+                    </div>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Bank/MOMO Account Selection - Show based on payment method */}
+            {(capitalData.paymentMethod === 'bank_transfer' || capitalData.paymentMethod === 'cheque' || capitalData.paymentMethod === 'mobile_money') && (
+              <div>
+                <Label>
+                  {capitalData.paymentMethod === 'mobile_money' ? t('Select MOMO Account', 'Select MOMO Account') : t('Select Bank Account', 'Select Bank Account')} *
+                </Label>
+                {loadingBankAccounts ? (
+                  <div className="flex items-center gap-2 p-2 text-muted-foreground">
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                    {t('Loading accounts...', 'Loading accounts...')}
+                  </div>
+                ) : bankAccounts.length === 0 ? (
+                  <div className="p-2 text-red-600 text-sm bg-red-50 rounded">
+                    No bank accounts found. Please create a bank account first in Bank Accounts page.
+                  </div>
+                ) : filteredBankAccounts.length === 0 ? (
+                  <div className="p-2 text-amber-600 text-sm bg-amber-50 rounded">
+                    {capitalData.paymentMethod === 'mobile_money' 
+                      ? t('No MOMO accounts found. Please create one in Bank Accounts page.', 'No MOMO accounts found. Please create one in Bank Accounts page.')
+                      : t('No bank accounts found. Please create one in Bank Accounts page.', 'No bank accounts found. Please create one in Bank Accounts page.')
+                    }
+                    <div className="text-xs text-gray-500 mt-1">Debug: {bankAccounts.length} total accounts, 0 match filter</div>
+                  </div>
+                ) : (
+                  <Select
+                    value={capitalData.selectedBankAccount}
+                    onValueChange={(value) => setCapitalData({ ...capitalData, selectedBankAccount: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('Select account', 'Select account')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {filteredBankAccounts.map((account: any) => (
+                        <SelectItem key={account._id} value={account._id}>
+                          <div className="flex flex-col">
+                            <span>{account.name}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {account.bankName || account.accountType} {account.accountNumber && `- ${account.accountNumber}`}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            )}
 
             <div>
               <Label>{t('Description', 'Description')}</Label>
@@ -601,9 +741,10 @@ export default function JournalEntriesPage() {
                   <div className="flex justify-between">
                     <span>{t('Debit', 'Debit')}:</span>
                     <span>
-                      {capitalData.paymentMethod === 'bank_transfer' ? '1100 - Cash at Bank' : 
+                      {capitalData.paymentMethod === 'cash' ? '1000 - Cash in Hand' : 
+                       selectedBankAccountDetails ? `${selectedBankAccountDetails.accountCode || getGLAccountCode()} - ${selectedBankAccountDetails.name}` :
                        capitalData.paymentMethod === 'mobile_money' ? '1200 - MTN MoMo' : 
-                       '1000 - Cash in Hand'}
+                       '1100 - Cash at Bank'}
                     </span>
                   </div>
                   <div className="flex justify-between">
@@ -620,13 +761,13 @@ export default function JournalEntriesPage() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setShowCapitalDialog(false); setCapitalData({ capitalType: 'owner', amount: 0, description: '', reference: '', paymentMethod: 'bank_transfer' }); }}>
+            <Button variant="outline" onClick={() => { setShowCapitalDialog(false); setCapitalData({ capitalType: 'owner', amount: 0, description: '', reference: '', paymentMethod: 'bank_transfer', selectedBankAccount: '' }); }}>
               <X className="h-4 w-4 mr-2" />
               {t('Cancel', 'Cancel')}
             </Button>
             <Button 
               onClick={handleCapitalSubmit} 
-              disabled={capitalSaving || capitalData.amount <= 0 || !capitalData.description}
+              disabled={capitalSaving || capitalData.amount <= 0 || !capitalData.description || ((capitalData.paymentMethod === 'bank_transfer' || capitalData.paymentMethod === 'cheque' || capitalData.paymentMethod === 'mobile_money') && !capitalData.selectedBankAccount)}
             >
               <Save className="h-4 w-4 mr-2" />
               {capitalSaving ? t('Saving...', 'Saving...') : t('Record Capital', 'Record Capital')}

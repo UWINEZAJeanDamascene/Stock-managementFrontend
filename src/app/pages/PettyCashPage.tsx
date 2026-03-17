@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
   Wallet, 
@@ -18,7 +18,8 @@ import {
   Filter,
   Trash2,
   Edit,
-  Eye
+  Eye,
+  Building2
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card';
@@ -52,7 +53,7 @@ import {
 } from '@/app/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs';
 import { useCurrency } from '@/contexts/CurrencyContext';
-import { pettyCashApi, type PettyCashFloat, type PettyCashExpense, type PettyCashReplenishment, type PettyCashSummary, type PettyCashReport } from '@/lib/api';
+import { pettyCashApi, bankAccountsApi, type PettyCashFloat, type PettyCashExpense, type PettyCashReplenishment, type PettyCashSummary, type PettyCashReport } from '@/lib/api';
 import { Layout } from '../layout/Layout';
 
 // Expense categories
@@ -94,6 +95,15 @@ export default function PettyCashPage() {
   const [report, setReport] = useState<PettyCashReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [bankAccounts, setBankAccounts] = useState<any[]>([]);
+  const [loadingBankAccounts, setLoadingBankAccounts] = useState(false);
+  const [completeReplDialogOpen, setCompleteReplDialogOpen] = useState(false);
+  const [selectedReplenishment, setSelectedReplenishment] = useState<any>(null);
+  const [completeForm, setCompleteForm] = useState({
+    actualAmount: 0,
+    sourceType: 'bank' as 'bank' | 'cash',
+    bankAccountId: ''
+  });
   
   // Dialog states
   const [floatDialogOpen, setFloatDialogOpen] = useState(false);
@@ -107,7 +117,9 @@ export default function PettyCashPage() {
     openingBalance: 0,
     minimumBalance: 10000,
     location: '',
-    notes: ''
+    notes: '',
+    sourceType: 'bank' as 'bank' | 'cash',
+    bankAccountId: ''
   });
   
   const [expenseForm, setExpenseForm] = useState({
@@ -211,15 +223,34 @@ export default function PettyCashPage() {
         openingBalance: floatForm.openingBalance,
         minimumBalance: floatForm.minimumBalance,
         location: floatForm.location,
-        notes: floatForm.notes
+        notes: floatForm.notes,
+        sourceType: floatForm.sourceType,
+        bankAccountId: floatForm.sourceType === 'bank' ? floatForm.bankAccountId : undefined
       });
       setFloatDialogOpen(false);
-      setFloatForm({ name: '', openingBalance: 0, minimumBalance: 10000, location: '', notes: '' });
-      loadSummary();
-      loadFloats();
+      setFloatForm({ name: '', openingBalance: 0, minimumBalance: 10000, location: '', notes: '', sourceType: 'bank', bankAccountId: '' });
     } catch (err) {
       setError(t('errors.saveFailed'));
     }
+  };
+
+  const fetchBankAccounts = async () => {
+    setLoadingBankAccounts(true);
+    try {
+      const response = await bankAccountsApi.getAll();
+      if (response.success) {
+        setBankAccounts(response.data || []);
+      }
+    } catch (err) {
+      console.error('Error fetching bank accounts:', err);
+    } finally {
+      setLoadingBankAccounts(false);
+    }
+  };
+
+  const openFloatDialog = () => {
+    fetchBankAccounts();
+    setFloatDialogOpen(true);
   };
 
   const handleCreateExpense = async () => {
@@ -270,8 +301,22 @@ export default function PettyCashPage() {
   };
 
   const handleCompleteReplenishment = async (id: string, actualAmount: number) => {
+    fetchBankAccounts();
+    setSelectedReplenishment({ id, actualAmount });
+    setCompleteForm({ actualAmount, sourceType: 'bank', bankAccountId: '' });
+    setCompleteReplDialogOpen(true);
+  };
+
+  const confirmCompleteReplenishment = async () => {
+    if (!selectedReplenishment) return;
     try {
-      await pettyCashApi.completeReplenishment(id, { actualAmount });
+      await pettyCashApi.completeReplenishment(selectedReplenishment.id, {
+        actualAmount: completeForm.actualAmount,
+        sourceType: completeForm.sourceType,
+        bankAccountId: completeForm.sourceType === 'bank' ? completeForm.bankAccountId : undefined
+      });
+      setCompleteReplDialogOpen(false);
+      setSelectedReplenishment(null);
       loadReplenishments();
       loadSummary();
     } catch (err) {
@@ -475,7 +520,7 @@ export default function PettyCashPage() {
         {/* Floats Tab */}
         <TabsContent value="floats">
           <div className="flex justify-between mb-4">
-            <Dialog open={floatDialogOpen} onOpenChange={setFloatDialogOpen}>
+            <Dialog open={floatDialogOpen} onOpenChange={(open) => { if (open) fetchBankAccounts(); setFloatDialogOpen(open); }}>
               <DialogTrigger asChild>
                 <Button>
                   <Plus className="h-4 w-4 mr-2" />
@@ -518,6 +563,41 @@ export default function PettyCashPage() {
                       onChange={(e) => setFloatForm({...floatForm, location: e.target.value})}
                     />
                   </div>
+                  <div>
+                    <Label>{t('pettyCash.sourceType')}</Label>
+                    <Select 
+                      value={floatForm.sourceType} 
+                      onValueChange={(value: 'bank' | 'cash') => setFloatForm({...floatForm, sourceType: value, bankAccountId: ''})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="bank">{t('pettyCash.fromBank')}</SelectItem>
+                        <SelectItem value="cash">{t('pettyCash.fromCash')}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {floatForm.sourceType === 'bank' && (
+                    <div>
+                      <Label>{t('pettyCash.selectBank')}</Label>
+                      <Select 
+                        value={floatForm.bankAccountId} 
+                        onValueChange={(value) => setFloatForm({...floatForm, bankAccountId: value})}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={t('pettyCash.selectBankPlaceholder')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {bankAccounts.map((account) => (
+                            <SelectItem key={account._id} value={account._id}>
+                              {account.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                   <div>
                     <Label>{t('pettyCash.notes')}</Label>
                     <Textarea 
@@ -750,6 +830,68 @@ export default function PettyCashPage() {
               </DialogContent>
             </Dialog>
           </div>
+
+          {/* Complete Replenishment Dialog */}
+          <Dialog open={completeReplDialogOpen} onOpenChange={(open) => { if (open) fetchBankAccounts(); setCompleteReplDialogOpen(open); }}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{t('pettyCash.completeReplenishment')}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label>{t('pettyCash.actualAmount')}</Label>
+                  <Input 
+                    type="number"
+                    value={completeForm.actualAmount} 
+                    onChange={(e) => setCompleteForm({...completeForm, actualAmount: parseFloat(e.target.value) || 0})}
+                  />
+                </div>
+                <div>
+                  <Label>{t('pettyCash.sourceType')}</Label>
+                  <Select 
+                    value={completeForm.sourceType} 
+                    onValueChange={(value: 'bank' | 'cash') => setCompleteForm({...completeForm, sourceType: value, bankAccountId: ''})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="bank">{t('pettyCash.fromBank')}</SelectItem>
+                      <SelectItem value="cash">{t('pettyCash.fromCash')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {completeForm.sourceType === 'bank' && (
+                  <div>
+                    <Label>{t('pettyCash.selectBank')}</Label>
+                    <Select 
+                      value={completeForm.bankAccountId} 
+                      onValueChange={(value) => setCompleteForm({...completeForm, bankAccountId: value})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={t('pettyCash.selectBankPlaceholder')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {bankAccounts.map((account) => (
+                          <SelectItem key={account._id} value={account._id}>
+                            {account.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setCompleteReplDialogOpen(false)}>
+                  {t('common.cancel')}
+                </Button>
+                <Button onClick={confirmCompleteReplenishment}>
+                  {t('common.confirm')}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
           <Card>
             <Table>

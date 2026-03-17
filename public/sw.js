@@ -141,7 +141,8 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') {
     if (url.pathname.startsWith('/api/') && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(request.method)) {
       event.respondWith(
-        fetch(request.clone()).catch(async () => {
+        fetch(request.clone(), { credentials: 'include', mode: 'cors' }).catch(async (err) => {
+          console.error('[SW] Network error while forwarding mutating request:', err);
           // Queue the request for background sync
           try {
             const body = await request.clone().text();
@@ -328,7 +329,10 @@ async function processOfflineQueue() {
       const response = await fetch(item.url, {
         method: item.method,
         headers: item.headers,
-        body: item.body || undefined
+        body: item.body || undefined,
+        // Ensure credentials (cookies) are included when syncing queued requests
+        credentials: 'include',
+        mode: 'cors'
       });
 
       if (response.ok) {
