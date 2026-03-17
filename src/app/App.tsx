@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { CurrencyProvider } from '@/contexts/CurrencyContext';
-import LoginPage from './pages/LoginPage';
+import LoginPage from './pages/LoginPage'; 
 import RegisterPage from './pages/RegisterPage';
 import HomePage from './pages/landing/HomePage';
 import DashboardPage from './pages/DashboardPage';
