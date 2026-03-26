@@ -1,557 +1,438 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router';
+import { BrowserRouter, Routes, Route } from 'react-router';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { CurrencyProvider } from '@/contexts/CurrencyContext';
-import LoginPage from './pages/LoginPage'; 
-import RegisterPage from './pages/RegisterPage';
 import HomePage from './pages/landing/HomePage';
+import LoginPage from './pages/auth/LoginPage';
+import RegisterPage from './pages/auth/RegisterPage';
+import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
+import ResetPasswordPage from './pages/auth/ResetPasswordPage';
+import CompanySelectorPage from './pages/auth/CompanySelectorPage';
 import DashboardPage from './pages/DashboardPage';
-import ProductsPage from './pages/ProductsPage';
-import PosPage from './pages/PosPage';
-import CategoriesPage from './pages/CategoriesPage';
-import ClientsPage from './pages/ClientsPage';
-import ClientDetailPage from './pages/ClientDetailPage';
-import SuppliersPage from './pages/SuppliersPage';
-import SupplierDetailPage from './pages/SupplierDetailPage';
-import StockPage from './pages/StockPage';
-import WarehousesPage from './pages/WarehousesPage';
-import TransfersPage from './pages/TransfersPage';
-import AuditsPage from './pages/AuditsPage';
-import ReorderPointsPage from './pages/ReorderPointsPage';
-import BatchesPage from './pages/BatchesPage';
-import SerialNumbersPage from './pages/SerialNumbersPage';
-import InvoicesPage from './pages/InvoicesPage';
-import PurchasesPage from './pages/PurchasesPage';
-import AccountsPayablePage from './pages/AccountsPayablePage';
-import AccountsReceivablePage from './pages/AccountsReceivablePage';
-import QuotationsPage from './pages/QuotationsPage';
-import DeliveryNotesPage from './pages/DeliveryNotesPage';
 import UsersPage from './pages/UsersPage';
-import AccessControlPage from './pages/AccessControlPage';
-import PlatformAdminPage from './pages/PlatformAdminPage';
-import RolesPage from './pages/RolesPage';
 import SecurityPage from './pages/SecurityPage';
-import RecurringInvoicesPage from './pages/RecurringInvoicesPage';
-import SubscriptionsPage from './pages/SubscriptionsPage';
-import CreditNotesPage from './pages/CreditNotesPage';
-import ReportsPage from './pages/ReportsPage';
-import NotificationSettingsPage from './pages/NotificationSettingsPage';
 import NotificationsPage from './pages/NotificationsPage';
+import NotificationSettingsPage from './pages/NotificationSettingsPage';
 import BackupPage from './pages/BackupPage';
-import FixedAssetsPage from './pages/FixedAssetsPage';
-import LoansPage from './pages/LoansPage';
-import BudgetsPage from './pages/BudgetsPage';
-import PayrollPage from './pages/PayrollPage';
-import TaxPage from './pages/TaxPage';
-import ExpensesPage from './pages/ExpensesPage';
-import PettyCashPage from './pages/PettyCashPage';
-import BankAccountsPage from './pages/BankAccountsPage';
-import PurchaseReturnsPage from './pages/PurchaseReturnsPage';
 import TestimonialsPage from './pages/TestimonialsPage';
-import TrialBalancePage from './pages/TrialBalancePage';
-import GeneralLedgerPage from './pages/GeneralLedgerPage';
-import JournalEntriesPage from './pages/JournalEntriesPage';
-import BankHubPage from './pages/BankHubPage';
 import DepartmentsPage from './pages/DepartmentsPage';
 import BulkDataPage from './pages/BulkDataPage';
 import AuditTrailPage from './pages/AuditTrailPage';
-import { ErrorBoundary } from './components/ErrorBoundary';
+import PlatformAdminPage from './pages/PlatformAdminPage';
+import ProductsListPage from './pages/ProductsListPage';
+import ProductFormPage from './pages/ProductFormPage';
+import ProductDetailPage from './pages/ProductDetailPage';
+import CategoriesPage from './pages/CategoriesPage';
+import WarehousesPage from './pages/WarehousesPage';
+import StockLevelsPage from './pages/StockLevelsPage';
+import StockMovementsPage from './pages/StockMovementsPage';
+import TransfersListPage from './pages/TransfersListPage';
+import TransferCreatePage from './pages/TransferCreatePage';
+import AuditsListPage from './pages/AuditsListPage';
+import AuditDetailPage from './pages/AuditDetailPage';
+import AuditCreatePage from './pages/AuditCreatePage';
+import BatchesPage from './pages/BatchesPage';
+import PurchaseOrdersListPage from './pages/purchases/PurchaseOrdersListPage';
+import PurchaseOrderFormPage from './pages/purchases/PurchaseOrderFormPage';
+import PurchaseOrderDetailPage from './pages/purchases/PurchaseOrderDetailPage';
+import GRNListPage from './pages/grn/GRNListPage';
+import GRNCreatePage from './pages/grn/GRNCreatePage';
+import GRNDetailPage from './pages/grn/GRNDetailPage';
+import PurchaseReturnsListPage from './pages/purchase-returns/PurchaseReturnsListPage';
+import PurchaseReturnCreatePage from './pages/purchase-returns/PurchaseReturnCreatePage';
+import ClientsListPage from './pages/clients/ClientsListPage';
+import ClientFormPage from './pages/clients/ClientFormPage';
+import ClientDetailPage from './pages/clients/ClientDetailPage';
+import QuotationsListPage from './pages/quotations/QuotationsListPage';
+import QuotationFormPage from './pages/quotations/QuotationFormPage';
+import InvoicesListPage from './pages/invoices/InvoicesListPage';
+import InvoiceFormPage from './pages/invoices/InvoiceFormPage';
+import InvoiceDetailPage from './pages/invoices/InvoiceDetailPage';
+import DeliveryNotesListPage from './pages/delivery-notes/DeliveryNotesListPage';
+import DeliveryNoteCreatePage from './pages/delivery-notes/DeliveryNoteCreatePage';
+import CreditNotesListPage from './pages/credit-notes/CreditNotesListPage';
+import CreditNoteCreatePage from './pages/credit-notes/CreditNoteCreatePage';
+import RecurringInvoicesListPage from './pages/recurring-invoices/RecurringInvoicesListPage';
+import ARReceiptsListPage from './pages/ar/ARReceiptsListPage';
+import ARReceiptCreatePage from './pages/ar/ARReceiptCreatePage';
+import APPaymentsListPage from './pages/ap/APPaymentsListPage';
+import APPaymentCreatePage from './pages/ap/APPaymentCreatePage';
+import BankAccountsListPage from './pages/bank/BankAccountsListPage';
+import BankAccountDetailPage from './pages/bank/BankAccountDetailPage';
+import PettyCashListPage from './pages/petty-cash/PettyCashListPage';
+import PettyCashTransactionsPage from './pages/petty-cash/PettyCashTransactionsPage';
+import AssetsListPage from './pages/assets/AssetsListPage';
+import AssetCreatePage from './pages/assets/AssetCreatePage';
+import AssetDetailPage from './pages/assets/AssetDetailPage';
+import LiabilitiesListPage from './pages/liabilities/LiabilitiesListPage';
+import LiabilityDetailPage from './pages/liabilities/LiabilityDetailPage';
+import LiabilityFormPage from './pages/liabilities/LiabilityFormPage';
+import ExpensesListPage from './pages/expenses/ExpensesListPage';
+import ExpenseDetailPage from './pages/expenses/ExpenseDetailPage';
+import ExpenseFormPage from './pages/expenses/ExpenseFormPage';
+import ARAgingPage from './pages/ar/ARAgingPage';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import ChatBot from './components/ChatBot';
 import OfflineSyncBanner from './components/OfflineSyncBanner';
-import { Layout } from './layout/Layout';
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
+// Wrapper component with logging to debug Products page issue
+function ProductsListPageWrapper() {
   const { isAuthenticated, loading } = useAuth();
+  console.log('[ProductsListPageWrapper] Rendering, isAuthenticated:', isAuthenticated, 'loading:', loading);
   
+  // Debug: show what's happening
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent"></div>
-          <p className="text-slate-600 dark:text-slate-400">Loading...</p>
-        </div>
-      </div>
-    );
+    return <div style={{padding: 20, textAlign: 'center', background: '#fff'}}>
+      <div>🔄 Checking authentication...</div>
+    </div>;
   }
   
-  return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
+  if (!isAuthenticated) {
+    console.log('[ProductsListPageWrapper] User not authenticated - showing message');
+    return <div style={{padding: 20, textAlign: 'center', background: '#fff'}}>
+      <div>🔐 Please log in to view products</div>
+      <div style={{fontSize: 12, color: '#666', marginTop: 10}}>
+        (isAuthenticated={String(isAuthenticated)}, loading={String(loading)})
+      </div>
+    </div>;
+  }
+  
+  console.log('[ProductsListPageWrapper] User authenticated, rendering ProductsListPage');
+  try {
+    return <ProductsListPage />;
+  } catch (err) {
+    console.error('[ProductsListPageWrapper] RENDER ERROR:', err);
+    return <div style={{padding: 20, color: 'red', background: '#fff'}}>ERROR in ProductsListPage: {String(err)}</div>;
+  }
+}
+
+// Wrapper component with logging to debug ProductDetailPage issue
+function ProductDetailPageWrapper() {
+  const { isAuthenticated, loading } = useAuth();
+  console.log('[ProductDetailPageWrapper] Rendering, isAuthenticated:', isAuthenticated, 'loading:', loading);
+  
+  // Debug: show what's happening
+  if (loading) {
+    return <div style={{padding: 20, textAlign: 'center', background: '#fff'}}>
+      <div>🔄 Checking authentication...</div>
+    </div>;
+  }
+  
+  if (!isAuthenticated) {
+    console.log('[ProductDetailPageWrapper] User not authenticated - showing message');
+    return <div style={{padding: 20, textAlign: 'center', background: '#fff'}}>
+      <div>🔐 Please log in to view product details</div>
+      <div style={{fontSize: 12, color: '#666', marginTop: 10}}>
+        (isAuthenticated={String(isAuthenticated)}, loading={String(loading)})
+      </div>
+    </div>;
+  }
+  
+  console.log('[ProductDetailPageWrapper] User authenticated, rendering ProductDetailPage');
+  try {
+    return <ProductDetailPage />;
+  } catch (err) {
+    console.error('[ProductDetailPageWrapper] RENDER ERROR:', err);
+    return <div style={{padding: 20, color: 'red', background: '#fff'}}>ERROR in ProductDetailPage: {String(err)}</div>;
+  }
+}
+
+// Wrapper component with logging to debug GRNListPage issue
+function GRNListPageWrapper() {
+  const { isAuthenticated, loading } = useAuth();
+  console.log('[GRNListPageWrapper] Rendering, isAuthenticated:', isAuthenticated, 'loading:', loading);
+  
+  // Debug: show what's happening
+  if (loading) {
+    return <div style={{padding: 20, textAlign: 'center', background: '#fff'}}>
+      <div>🔄 Checking authentication...</div>
+    </div>;
+  }
+  
+  if (!isAuthenticated) {
+    console.log('[GRNListPageWrapper] User not authenticated - showing message');
+    return <div style={{padding: 20, textAlign: 'center', background: '#fff'}}>
+      <div>🔐 Please log in to view GRN</div>
+      <div style={{fontSize: 12, color: '#666', marginTop: 10}}>
+        (isAuthenticated={String(isAuthenticated)}, loading={String(loading)})
+      </div>
+    </div>;
+  }
+  
+  console.log('[GRNListPageWrapper] User authenticated, rendering GRNListPage');
+  try {
+    return <GRNListPage />;
+  } catch (err) {
+    console.error('[GRNListPageWrapper] RENDER ERROR:', err);
+    return <div style={{padding: 20, color: 'red', background: '#fff'}}>ERROR in GRNListPage: {String(err)}</div>;
+  }
 }
 
 function AppRoutes() {
-  const { isAuthenticated, user, loading } = useAuth();
-  
-  // Show loading while checking auth
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple-600 border-t-transparent"></div>
-          <p className="text-slate-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-  
-  const isPlatformAdmin = user?.role === 'platform_admin';
-  
-  // Redirect platform admins to platform admin page
-  if (isAuthenticated && isPlatformAdmin) {
-    return (
-      <Routes>
-        <Route path="/login" element={<Navigate to="/platform" />} />
-        <Route
-          path="/platform"
-          element={
-            <ProtectedRoute>
-              <PlatformAdminPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route path="*" element={<Navigate to="/platform" />} />
-      </Routes>
-    );
-  }
-  
   return (
     <>
-      {isAuthenticated && !isPlatformAdmin && <ChatBot />}
-      {isAuthenticated && <OfflineSyncBanner />}
+      <OfflineSyncBanner />
       <Routes>
-        <Route 
-          path="/" 
-          element={isAuthenticated ? <Navigate to="/dashboard" /> : <HomePage />} 
-        />
-      {/* Public landing route accessible even when authenticated */}
-      <Route path="/home" element={<HomePage />} />
-      <Route 
-        path="/login" 
-        element={isAuthenticated ? <Navigate to="/dashboard" /> : <LoginPage />} 
-      />
-      <Route 
-        path="/register" 
-        element={isAuthenticated ? <Navigate to="/dashboard" /> : <RegisterPage />} 
-      />
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <DashboardPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/products"
-        element={
-          <ProtectedRoute>
-            <ProductsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/pos"
-        element={
-          <ProtectedRoute>
-            <PosPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/categories"
-        element={
-          <ProtectedRoute>
-            <CategoriesPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/clients/:id"
-        element={
-          <ProtectedRoute>
-            <ClientDetailPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/clients"
-        element={
-          <ProtectedRoute>
-            <ClientsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/suppliers/:id"
-        element={
-          <ProtectedRoute>
-            <SupplierDetailPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/suppliers"
-        element={
-          <ProtectedRoute>
-            <SuppliersPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/stock"
-        element={
-          <ProtectedRoute>
-            <StockPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/warehouses"
-        element={
-          <ProtectedRoute>
-            <WarehousesPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/transfers"
-        element={
-          <ProtectedRoute>
-            <TransfersPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/audits"
-        element={
-          <ProtectedRoute>
-            <AuditsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/reorder-points"
-        element={
-          <ProtectedRoute>
-            <ReorderPointsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/batches"
-        element={
-          <ProtectedRoute>
-            <BatchesPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/serial-numbers"
-        element={
-          <ProtectedRoute>
-            <SerialNumbersPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/invoices"
-        element={
-          <ProtectedRoute>
-            <InvoicesPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/recurring-invoices"
-        element={
-          <ProtectedRoute>
-            <RecurringInvoicesPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/credit-notes"
-        element={
-          <ProtectedRoute>
-            <CreditNotesPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/subscriptions"
-        element={
-          <ProtectedRoute>
-            <SubscriptionsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/purchases"
-        element={
-          <ProtectedRoute>
-            <PurchasesPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/accounts-payable"
-        element={
-          <ProtectedRoute>
-            <AccountsPayablePage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/accounts-receivable"
-        element={
-          <ProtectedRoute>
-            <AccountsReceivablePage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/reports"
-        element={
-          <ProtectedRoute>
-            <ReportsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/quotations"
-        element={
-          <ProtectedRoute>
-            <QuotationsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/delivery-notes"
-        element={
-          <ProtectedRoute>
-            <DeliveryNotesPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/users"
-        element={
-          <ProtectedRoute>
-            <UsersPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/access-control"
-        element={
-          <ProtectedRoute>
-            <AccessControlPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/roles"
-        element={
-          <ProtectedRoute>
-            <RolesPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/security"
-        element={
-          <ProtectedRoute>
-            <SecurityPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/notifications"
-        element={
-          <ProtectedRoute>
-            <NotificationSettingsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/notifications/list"
-        element={
-          <ProtectedRoute>
-            <NotificationsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/backups"
-        element={
-          <ProtectedRoute>
-            <BackupPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/assets"
-        element={
-          <ProtectedRoute>
-            <FixedAssetsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/liabilities"
-        element={
-          <ProtectedRoute>
-            <LoansPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/budgets"
-        element={
-          <ProtectedRoute>
-            <BudgetsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/payroll"
-        element={
-          <ProtectedRoute>
-            <PayrollPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/taxes"
-        element={
-          <ProtectedRoute>
-            <TaxPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/expenses"
-        element={
-          <ProtectedRoute>
-            <ExpensesPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/petty-cash"
-        element={
-          <ProtectedRoute>
-            <PettyCashPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/bank-accounts"
-        element={
-          <ProtectedRoute>
-            <BankAccountsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/purchase-returns"
-        element={
-          <ProtectedRoute>
-            <ErrorBoundary>
-              <PurchaseReturnsPage />
-            </ErrorBoundary>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/testimonials"
-        element={
-          <ProtectedRoute>
-            <TestimonialsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/trial-balance"
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <TrialBalancePage />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/general-ledger"
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <GeneralLedgerPage />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/journal-entries"
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <JournalEntriesPage />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/bank-hub"
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <BankHubPage />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/departments"
-        element={
-          <ProtectedRoute>
-            <DepartmentsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/bulk-data"
-        element={
-          <ProtectedRoute>
-            <BulkDataPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/audit-trail"
-        element={
-          <ProtectedRoute>
-            <AuditTrailPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route path="*" element={<Navigate to="/dashboard" />} />
-    </Routes>
+        {/* Public routes - landing page and auth */}
+        <Route path="/" element={<HomePage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/company" element={<CompanySelectorPage />} />
+        
+        {/* System routes - pages already have Layout component */}
+        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/users" element={<UsersPage />} />
+        <Route path="/security" element={<SecurityPage />} />
+        <Route path="/notifications" element={<NotificationSettingsPage />} />
+        <Route path="/notifications/list" element={<NotificationsPage />} />
+        <Route path="/backups" element={<BackupPage />} />
+        <Route path="/testimonials" element={<TestimonialsPage />} />
+        <Route path="/departments" element={<DepartmentsPage />} />
+        <Route path="/categories" element={<CategoriesPage />} />
+        <Route path="/warehouses" element={<WarehousesPage />} />
+        <Route path="/stock-levels" element={<StockLevelsPage />} />
+        <Route path="/stock-movements" element={<StockMovementsPage />} />
+        <Route path="/stock-transfers" element={<TransfersListPage />} />
+        <Route path="/stock-transfers/new" element={<TransferCreatePage />} />
+        <Route path="/stock-audits" element={<AuditsListPage />} />
+        <Route path="/stock-audits/new" element={<AuditCreatePage />} />
+        <Route path="/stock-audits/:id" element={<AuditDetailPage />} />
+        <Route path="/batches" element={<BatchesPage />} />
+        <Route path="/purchase-orders" element={<PurchaseOrdersListPage />} />
+        <Route path="/purchase-orders/new" element={<PurchaseOrderFormPage />} />
+        <Route path="/purchase-orders/:id/edit" element={<PurchaseOrderFormPage />} />
+        <Route path="/purchase-orders/:id" element={<PurchaseOrderDetailPage />} />
+        <Route path="/grn" element={
+          <ErrorBoundary>
+            <GRNListPageWrapper />
+          </ErrorBoundary>
+        } />
+        <Route path="/grn/new" element={<GRNCreatePage />} />
+        <Route path="/grn/:id" element={<GRNDetailPage />} />
+        <Route path="/purchase-returns" element={<PurchaseReturnsListPage />} />
+        <Route path="/purchase-returns/new" element={<PurchaseReturnCreatePage />} />
+        <Route path="/clients" element={<ClientsListPage />} />
+        <Route path="/clients/new" element={<ClientFormPage />} />
+        <Route path="/clients/:id/edit" element={<ClientFormPage />} />
+        <Route path="/clients/:id" element={<ClientDetailPage />} />
+        <Route path="/quotations" element={<QuotationsListPage />} />
+        <Route path="/quotations/new" element={<QuotationFormPage />} />
+        <Route path="/quotations/:id/edit" element={<QuotationFormPage />} />
+        <Route path="/quotations/:id" element={<QuotationFormPage />} />
+        <Route path="/invoices" element={<InvoicesListPage />} />
+        <Route path="/invoices/new" element={<InvoiceFormPage />} />
+        <Route path="/invoices/:id/edit" element={<InvoiceFormPage />} />
+        <Route path="/invoices/:id" element={<InvoiceDetailPage />} />
+        <Route path="/delivery-notes" element={<DeliveryNotesListPage />} />
+        <Route path="/delivery-notes/new" element={<DeliveryNoteCreatePage />} />
+        <Route path="/delivery-notes/:id/edit" element={<DeliveryNoteCreatePage />} />
+        <Route path="/delivery-notes/:id" element={<DeliveryNotesListPage />} />
+        <Route path="/credit-notes" element={<CreditNotesListPage />} />
+        <Route path="/credit-notes/new" element={<CreditNoteCreatePage />} />
+        <Route path="/credit-notes/:id/edit" element={<CreditNoteCreatePage />} />
+        <Route path="/credit-notes/:id" element={<CreditNotesListPage />} />
+        <Route path="/recurring-invoices" element={<RecurringInvoicesListPage />} />
+        <Route path="/recurring-invoices/new" element={<RecurringInvoicesListPage />} />
+        <Route path="/recurring-invoices/:id/edit" element={<RecurringInvoicesListPage />} />
+        <Route path="/recurring-invoices/:id" element={<RecurringInvoicesListPage />} />
+        {/* AR Receipts */}
+        <Route path="/ar-receipts" element={
+          <ErrorBoundary>
+            <ARReceiptsListPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/ar-receipts/new" element={
+          <ErrorBoundary>
+            <ARReceiptCreatePage />
+          </ErrorBoundary>
+        } />
+        <Route path="/ar-receipts/:id/edit" element={
+          <ErrorBoundary>
+            <ARReceiptCreatePage />
+          </ErrorBoundary>
+        } />
+        <Route path="/ar-receipts/:id" element={
+          <ErrorBoundary>
+            <ARReceiptCreatePage />
+          </ErrorBoundary>
+        } />
+        {/* AR Aging */}
+        <Route path="/ar-aging" element={
+          <ErrorBoundary>
+            <ARAgingPage />
+          </ErrorBoundary>
+        } />
+        {/* AP Payments */}
+        <Route path="/ap-payments" element={
+          <ErrorBoundary>
+            <APPaymentsListPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/ap-payments/new" element={
+          <ErrorBoundary>
+            <APPaymentCreatePage />
+          </ErrorBoundary>
+        } />
+        <Route path="/ap-payments/:id/edit" element={
+          <ErrorBoundary>
+            <APPaymentCreatePage />
+          </ErrorBoundary>
+        } />
+        <Route path="/ap-payments/:id" element={
+          <ErrorBoundary>
+            <APPaymentCreatePage />
+          </ErrorBoundary>
+        } />
+        {/* Bank Accounts */}
+        <Route path="/bank-accounts" element={
+          <ErrorBoundary>
+            <BankAccountsListPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/bank-accounts/new" element={
+          <ErrorBoundary>
+            <BankAccountsListPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/bank-accounts/:id" element={
+          <ErrorBoundary>
+            <BankAccountDetailPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/bank-accounts/:id/edit" element={
+          <ErrorBoundary>
+            <BankAccountsListPage />
+          </ErrorBoundary>
+        } />
+        {/* Petty Cash */}
+        <Route path="/petty-cash" element={
+          <ErrorBoundary>
+            <PettyCashListPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/petty-cash/:id/transactions" element={
+          <ErrorBoundary>
+            <PettyCashTransactionsPage />
+          </ErrorBoundary>
+        } />
+        {/* Fixed Assets */}
+        <Route path="/assets" element={
+          <ErrorBoundary>
+            <AssetsListPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/assets/new" element={
+          <ErrorBoundary>
+            <AssetCreatePage />
+          </ErrorBoundary>
+        } />
+        <Route path="/assets/:id" element={
+          <ErrorBoundary>
+            <AssetDetailPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/assets/:id/edit" element={
+          <ErrorBoundary>
+            <AssetCreatePage />
+          </ErrorBoundary>
+        } />
+        {/* Liabilities */}
+        <Route path="/liabilities" element={
+          <ErrorBoundary>
+            <LiabilitiesListPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/liabilities/new" element={
+          <ErrorBoundary>
+            <LiabilityFormPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/liabilities/:id" element={
+          <ErrorBoundary>
+            <LiabilityDetailPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/liabilities/:id/edit" element={
+          <ErrorBoundary>
+            <LiabilityFormPage />
+          </ErrorBoundary>
+        } />
+        {/* Expenses */}
+        <Route path="/expenses" element={
+          <ErrorBoundary>
+            <ExpensesListPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/expenses/new" element={
+          <ErrorBoundary>
+            <ExpenseFormPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/expenses/:id" element={
+          <ErrorBoundary>
+            <ExpenseDetailPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/expenses/:id/edit" element={
+          <ErrorBoundary>
+            <ExpenseFormPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/bulk-data" element={<BulkDataPage />} />
+        <Route path="/audit-trail" element={<AuditTrailPage />} />
+        <Route path="/platform-admin" element={<PlatformAdminPage />} />
+        
+        {/* Products routes - debug: direct access without auth check */}
+        <Route path="/products-debug" element={
+          <ErrorBoundary>
+            <ProductsListPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/products" element={
+          <ErrorBoundary>
+            <ProductsListPageWrapper />
+          </ErrorBoundary>
+        } />
+        <Route path="/products/new" element={<ProductFormPage />} />
+        <Route path="/products/:id/edit" element={<ProductFormPage />} />
+        <Route path="/products/:id" element={
+          <ErrorBoundary>
+            <ProductDetailPageWrapper />
+          </ErrorBoundary>
+        } />
+        
+        {/* 404 fallback */}
+        <Route path="*" element={
+          <>
+            {console.log('[App] Wildcard route matched - 404 fallback showing HomePage')}
+            <HomePage />
+          </>
+        } />
+      </Routes>
     </>
   );
 }
 
+console.log('[App] App component rendering');
+
 export default function App() {
+  console.log('[App] App function called');
+  
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <ThemeProvider>
-          <LanguageProvider>
+      <ThemeProvider>
+        <LanguageProvider>
+          <AuthProvider>
             <CurrencyProvider>
+              <ChatBot />
               <AppRoutes />
             </CurrencyProvider>
-          </LanguageProvider>
-        </ThemeProvider>
-      </AuthProvider>
+          </AuthProvider>
+        </LanguageProvider>
+      </ThemeProvider>
     </BrowserRouter>
   );
 }

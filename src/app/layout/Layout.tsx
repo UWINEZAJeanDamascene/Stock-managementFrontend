@@ -2,7 +2,7 @@ import { ReactNode, useState } from 'react';
 import { Sidebar } from './Sidebar';
 import { Sheet, SheetContent } from '@/app/components/ui/sheet';
 import { useIsMobile } from '@/app/components/ui/use-mobile';
-import { Menu, X, Sun, Moon, Home } from 'lucide-react';
+import { Menu, Sun, Moon, Home } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useNavigate } from 'react-router';
@@ -20,7 +20,7 @@ export function Layout({ children }: LayoutProps) {
   const navigate = useNavigate();
 
   return (
-    <div className="flex h-screen bg-slate-50 dark:bg-slate-900">
+    <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-slate-900">
       {/* Desktop Sidebar - always visible on lg screens */}
       <div className={`hidden lg:block transition-all duration-300 ${sidebarCollapsed ? 'w-16' : 'w-64'}`}>
         <Sidebar collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)} />
@@ -36,7 +36,7 @@ export function Layout({ children }: LayoutProps) {
       )}
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 flex flex-col overflow-hidden">
         {/* Mobile Header - show on screens smaller than lg */}
         <div className="lg:hidden sticky top-0 z-50 flex items-center gap-3 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 py-3 shadow-md">
           <Button
@@ -82,7 +82,7 @@ export function Layout({ children }: LayoutProps) {
         </div>
 
         {/* Page Content */}
-        <div className="p-4 md:p-6 bg-slate-50 dark:bg-slate-900 min-h-screen">
+        <div className="flex-1 overflow-auto p-4 md:p-6 bg-slate-50 dark:bg-slate-900">
           {/* Desktop Header Utilities */}
           {!isMobile && (
             <div className="flex justify-end items-center gap-2 mb-4">

@@ -7,14 +7,18 @@ export interface BankAccount {
   accountType: 'bk_bank' | 'equity_bank' | 'im_bank' | 'cogebanque' | 'ecobank' | 'mtn_momo' | 'airtel_money' | 'cash_in_hand';
   accountNumber?: string;
   bankName?: string;
+  branchName?: string;
   openingBalance: number;
-  currentBalance: number;
-  targetBalance?: number;
-  currency: string;
-  isPrimary: boolean;
+  cachedBalance?: number;  // Computed balance from journal entries
+  currentBalance?: number;  // Alias for compatibility
+  currencyCode: string;
+  isDefault?: boolean;
+  isPrimary?: boolean;
   isActive: boolean;
-  color: string;
-  createdAt: string;
+  color?: string;
+  notes?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface BankTransaction {
@@ -61,6 +65,7 @@ interface RequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
   body?: unknown;
   headers?: Record<string, string>;
+  params?: Record<string, any>;
 }
 
 class ApiError extends Error {
@@ -82,7 +87,11 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+  // Build query string from params
+  const queryString = buildQuery(options.params);
+  const url = queryString ? `${endpoint}?${queryString}` : endpoint;
+
+  const response = await fetch(`${API_BASE_URL}${url}`, {
     method: options.method || 'GET',
     headers,
     body: options.body ? JSON.stringify(options.body) : undefined,
@@ -106,10 +115,25 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
   return data;
 }
 
-// Auth API
+// Auth API - matching backend response
+// Backend returns: { success, token, access_token, refresh_token, userId, memberships }
+export interface Membership {
+  companyId: string;
+  role: string;
+}
+
+export interface AuthLoginResponse {
+  success: boolean;
+  token: string;
+  access_token: string;
+  refresh_token: string;
+  userId: string;
+  memberships: Membership[];
+}
+
 export const authApi = {
   login: (email: string, password: string) =>
-    request<{ success: boolean; token: string; data: unknown; company?: unknown; requirePasswordChange?: boolean }>('/auth/login', {
+    request<AuthLoginResponse>('/auth/login', {
       method: 'POST',
       body: { email, password },
     }),
@@ -140,6 +164,9 @@ export const companyApi = {
     }),
   
   getMe: () => request<{ success: boolean; data: unknown }>('/companies/me'),
+  
+  // Get company by ID - needed for company selector when user has multiple memberships
+  getById: (id: string) => request<{ success: boolean; data: unknown }>(`/companies/${id}`),
   
   update: (data: {
     name?: string;
@@ -293,12 +320,30 @@ export const productsApi = {
 };
 
 // Categories API
+type CategoryResponse = { success: boolean; data: unknown; message?: string };
+type CategoryDeleteResponse = { success: boolean; message: string };
+
 export const categoriesApi = {
-  getAll: () => request<{ success: boolean; data: unknown }>('/categories'),
-  getById: (id: string) => request<{ success: boolean; data: unknown }>(`/categories/${id}`),
-  create: (category: unknown) => request<{ success: boolean; data: unknown }>('/categories', { method: 'POST', body: category }),
-  update: (id: string, category: unknown) => request<{ success: boolean; data: unknown }>(`/categories/${id}`, { method: 'PUT', body: category }),
-  delete: (id: string) => request<{ success: boolean; message: string }>(`/categories/${id}`, { method: 'DELETE' }),
+  getAll: () => request<CategoryResponse>('/categories'),
+  getById: (id: string) => request<CategoryResponse>(`/categories/${id}`),
+  create: (category: unknown) => request<CategoryResponse>('/categories', { method: 'POST', body: category }),
+  update: (id: string, category: unknown) => request<CategoryResponse>(`/categories/${id}`, { method: 'PUT', body: category }),
+  delete: (id: string) => request<CategoryDeleteResponse>(`/categories/${id}`, { method: 'DELETE' }),
+};
+
+// Warehouses API
+type WarehouseResponse = { success: boolean; data: unknown; message?: string; count?: number; total?: number; pages?: number; currentPage?: number };
+type WarehouseDeleteResponse = { success: boolean; message: string };
+
+export const warehousesApi = {
+  getAll: (params?: { search?: string; page?: number; limit?: number; isActive?: boolean }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<WarehouseResponse>(`/stock/warehouses${query ? `?${query}` : ''}`);
+  },
+  getById: (id: string) => request<WarehouseResponse>(`/stock/warehouses/${id}`),
+  create: (warehouse: unknown) => request<WarehouseResponse>('/stock/warehouses', { method: 'POST', body: warehouse }),
+  update: (id: string, warehouse: unknown) => request<WarehouseResponse>(`/stock/warehouses/${id}`, { method: 'PUT', body: warehouse }),
+  delete: (id: string) => request<WarehouseDeleteResponse>(`/stock/warehouses/${id}`, { method: 'DELETE' }),
 };
 
 // Suppliers API
@@ -350,10 +395,47 @@ export const clientsApi = {
       return res.blob();
     });
   },
+  getInvoices: (id: string, params?: { page?: number; limit?: number; status?: string }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; data: unknown; summary?: unknown }>(`/clients/${id}/invoices${query ? `?${query}` : ''}`);
+  },
+  getReceipts: (id: string, params?: { page?: number; limit?: number; startDate?: string; endDate?: string }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; data: unknown; summary?: unknown }>(`/clients/${id}/receipts${query ? `?${query}` : ''}`);
+  },
+  getCreditNotes: (id: string, params?: { page?: number; limit?: number }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; data: unknown; summary?: unknown }>(`/clients/${id}/credit-notes${query ? `?${query}` : ''}`);
+  },
+  getStatementPDF: (id: string, params?: { startDate?: string; endDate?: string }) => {
+    const token = localStorage.getItem('token');
+    const query = buildQuery(params as Record<string, any>);
+    return fetch(`${API_BASE_URL}/clients/${id}/statement${query ? `?${query}` : ''}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    }).then(res => {
+      if (!res.ok) throw new Error('Failed to generate statement');
+      return res.blob();
+    });
+  },
 };
 
 // Stock API
 export const stockApi = {
+  getLevels: (params?: {
+    warehouse?: string;
+    product?: string;
+    lowStock?: boolean;
+    search?: string;
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    order?: 'asc' | 'desc';
+  }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; data: unknown; warehouses?: unknown[]; pagination?: unknown }>(`/stock/levels${query ? `?${query}` : ''}`);
+  },
   getMovements: (params?: { 
     productId?: string; 
     type?: 'in' | 'out' | 'adjustment';
@@ -384,6 +466,36 @@ export const stockApi = {
   getSummary: () => request<{ success: boolean; data: unknown }>('/stock/summary'),
   deleteMovement: (id: string) => request<{ success: boolean; message: string }>(`/stock/movements/${id}`, { method: 'DELETE' }),
   updateMovement: (id: string, data: unknown) => request<{ success: boolean; data: unknown }>(`/stock/movements/${id}`, { method: 'PUT', body: data }),
+  
+  // Stock Transfers API
+  getTransfers: (params?: {
+    status?: string;
+    fromWarehouse?: string;
+    toWarehouse?: string;
+    startDate?: string;
+    endDate?: string;
+    page?: number;
+    limit?: number;
+    search?: string;
+  }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; data: unknown; pagination?: unknown }>(`/stock/advanced/transfers${query ? `?${query}` : ''}`);
+  },
+  getTransfer: (id: string) => request<{ success: boolean; data: unknown }>(`/stock/advanced/transfers/${id}`),
+  createTransfer: (data: {
+    fromWarehouse: string;
+    toWarehouse: string;
+    transferDate: string;
+    notes?: string;
+    items: Array<{
+      product: string;
+      quantity: number;
+      unitCost: number;
+    }>;
+  }) => request<{ success: boolean; data: unknown }>('/stock/advanced/transfers', { method: 'POST', body: data }),
+  approveTransfer: (id: string) => request<{ success: boolean; data: unknown }>(`/stock/advanced/transfers/${id}/approve`, { method: 'POST' }),
+  completeTransfer: (id: string) => request<{ success: boolean; data: unknown }>(`/stock/advanced/transfers/${id}/complete`, { method: 'POST' }),
+  cancelTransfer: (id: string) => request<{ success: boolean; data: unknown }>(`/stock/advanced/transfers/${id}/cancel`, { method: 'POST' }),
 };
 
 // Invoices API
@@ -466,7 +578,32 @@ export const creditNotesApi = {
     request<{ success: boolean; data: unknown }>(`/credit-notes/${id}/apply`, { method: 'POST', body: { invoiceId } }),
   refund: (id: string, data: { amount: number; paymentMethod: string; reference?: string }) => 
     request<{ success: boolean; data: unknown }>(`/credit-notes/${id}/refund`, { method: 'POST', body: data }),
-  delete: (id: string) => request<{ success: boolean; message: string }>(`/credit-notes/${id}`, { method: 'DELETE' })
+  delete: (id: string) => request<{ success: boolean; message: string }>(`/credit-notes/${id}`, { method: 'DELETE' }),
+  update: (id: string, data: unknown) => request<{ success: boolean; data: unknown }>(`/credit-notes/${id}`, { method: 'PUT', body: data }),
+  confirm: (id: string) => request<{ success: boolean; data: unknown }>(`/credit-notes/${id}/confirm`, { method: 'POST' })
+};
+
+// Recurring Invoices API
+export const recurringInvoicesApi = {
+  getAll: (params?: { 
+    status?: string;
+    clientId?: string;
+    frequency?: string;
+    page?: number;
+    limit?: number;
+  }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; data: unknown }>(`/recurring-templates${query ? `?${query}` : ''}`);
+  },
+  getById: (id: string) => request<{ success: boolean; data: unknown }>(`/recurring-templates/${id}`),
+  create: (data: unknown) => request<{ success: boolean; data: unknown }>('/recurring-templates', { method: 'POST', body: data }),
+  update: (id: string, data: unknown) => request<{ success: boolean; data: unknown }>(`/recurring-templates/${id}`, { method: 'PUT', body: data }),
+  delete: (id: string) => request<{ success: boolean; message: string }>(`/recurring-templates/${id}`, { method: 'DELETE' }),
+  pause: (id: string) => request<{ success: boolean; data: unknown }>(`/recurring-templates/${id}/pause`, { method: 'POST' }),
+  resume: (id: string) => request<{ success: boolean; data: unknown }>(`/recurring-templates/${id}/resume`, { method: 'POST' }),
+  cancel: (id: string) => request<{ success: boolean; data: unknown }>(`/recurring-templates/${id}/cancel`, { method: 'POST' }),
+  trigger: (id: string) => request<{ success: boolean; data: unknown }>(`/recurring-templates/${id}/trigger`, { method: 'POST' }),
+  getRuns: (templateId: string) => request<{ success: boolean; data: unknown }>(`/recurring-templates/${templateId}/runs`)
 };
 
 // Quotations API
@@ -486,7 +623,6 @@ export const quotationsApi = {
   getById: (id: string) => request<{ success: boolean; data: unknown }>(`/quotations/${id}`),
   create: (quotation: unknown) => request<{ success: boolean; data: unknown }>('/quotations', { method: 'POST', body: quotation }),
   update: (id: string, quotation: unknown) => request<{ success: boolean; data: unknown }>(`/quotations/${id}`, { method: 'PUT', body: quotation }),
-  delete: (id: string) => request<{ success: boolean; message: string }>(`/quotations/${id}`, { method: 'DELETE' }),
   approve: (id: string) => request<{ success: boolean; data: unknown }>(`/quotations/${id}/approve`, { method: 'PUT' }),
   convertToInvoice: (id: string, data: { dueDate?: string }) => request<{ success: boolean; data: unknown }>(`/quotations/${id}/convert-to-invoice`, { method: 'POST', body: data }),
   getClientQuotations: (clientId: string) => request<{ success: boolean; data: unknown }>(`/quotations/client/${clientId}`),
@@ -502,6 +638,10 @@ export const quotationsApi = {
       return res.blob();
     });
   },
+  delete: (id: string) => request<{ success: boolean; message: string }>(`/quotations/${id}`, { method: 'DELETE' }),
+  send: (id: string) => request<{ success: boolean; data: unknown }>(`/quotations/${id}/send`, { method: 'POST' }),
+  accept: (id: string) => request<{ success: boolean; data: unknown }>(`/quotations/${id}/accept`, { method: 'POST' }),
+  reject: (id: string) => request<{ success: boolean; data: unknown }>(`/quotations/${id}/reject`, { method: 'POST' }),
 };
 
 // Delivery Notes API
@@ -604,6 +744,75 @@ export const purchasesApi = {
     });
   },
   getSupplierPurchases: (supplierId: string) => request<{ success: boolean; data: unknown }>(`/purchases/supplier/${supplierId}`),
+};
+
+// Purchase Orders API (Advanced Stock)
+export const purchaseOrdersApi = {
+  getAll: (params?: {
+    supplier_id?: string;
+    status?: string;
+    date_from?: string;
+    date_to?: string;
+    page?: number;
+    limit?: number;
+  }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; data: unknown; pagination?: unknown }>(`/stock/advanced/purchase-orders${query ? `?${query}` : ''}`);
+  },
+  getById: (id: string) => request<{ success: boolean; data: unknown; grns?: unknown[] }>(`/stock/advanced/purchase-orders/${id}`),
+  create: (po: unknown) => request<{ success: boolean; data: unknown }>('/stock/advanced/purchase-orders', { method: 'POST', body: po }),
+  update: (id: string, po: unknown) => request<{ success: boolean; data: unknown }>(`/stock/advanced/purchase-orders/${id}`, { method: 'PUT', body: po }),
+  approve: (id: string) => request<{ success: boolean; data: unknown }>(`/stock/advanced/purchase-orders/${id}/approve`, { method: 'POST' }),
+  cancel: (id: string) => request<{ success: boolean; data: unknown }>(`/stock/advanced/purchase-orders/${id}/cancel`, { method: 'POST' }),
+};
+
+// GRN API
+export const grnApi = {
+  getAll: (params?: { supplier_id?: string; status?: string; date_from?: string; date_to?: string; page?: number; limit?: number }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; data: unknown; pagination?: unknown }>(`/stock/advanced/grn${query ? `?${query}` : ''}`);
+  },
+  getById: (id: string) => request<{ success: boolean; data: unknown }>(`/stock/advanced/grn/${id}`),
+  create: (data: {
+    purchaseOrderId: string;
+    warehouse: string;
+    referenceNo: string;
+    supplierInvoiceNo?: string;
+    lines: Array<{
+      product: string;
+      qtyReceived: number;
+      unitCost: number;
+      purchaseOrderLine?: string;
+      batchNo?: string;
+      serialNumbers?: string[];
+    }>;
+  }) => request<{ success: boolean; data: unknown }>('/stock/advanced/grn', { method: 'POST', body: data }),
+  confirm: (id: string) => request<{ success: boolean; data: unknown }>(`/stock/advanced/grn/${id}/confirm`, { method: 'POST' }),
+};
+
+// Purchase Returns API
+export const purchaseReturnsApi = {
+  getAll: (params?: { supplier_id?: string; status?: string; date_from?: string; date_to?: string; page?: number; limit?: number }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; data: unknown; pagination?: unknown }>(`/stock/advanced/purchase-returns${query ? `?${query}` : ''}`);
+  },
+  getById: (id: string) => request<{ success: boolean; data: unknown }>(`/stock/advanced/purchase-returns/${id}`),
+  create: (data: {
+    referenceNo: string;
+    grn: string;
+    supplier: string;
+    warehouse: string;
+    reason: string;
+    supplierCreditNoteNo?: string;
+    lines: Array<{
+      grnLine: string;
+      product: string;
+      qtyReturned: number;
+      unitCost: number;
+    }>;
+  }) => request<{ success: boolean; data: unknown }>('/stock/advanced/purchase-returns', { method: 'POST', body: data }),
+  update: (id: string, data: unknown) => request<{ success: boolean; data: unknown }>(`/stock/advanced/purchase-returns/${id}`, { method: 'PUT', body: data }),
+  confirm: (id: string) => request<{ success: boolean; data: unknown }>(`/stock/advanced/purchase-returns/${id}/confirm`, { method: 'PUT' }),
 };
 
 // Reports API
@@ -814,6 +1023,7 @@ export const chatApi = {
 };
 
 export { ApiError };
+export { request as api };
 export default request;
 
 // Exchange Rates API
@@ -943,20 +1153,149 @@ export const stockTransferApi = {
   cancel: (id: string, reason?: string) => request<{ success: boolean; data: unknown }>(`/stock/advanced/transfers/${id}/cancel`, { method: 'POST', body: { reason } }),
 };
 
-// Advanced Stock API - Stock Audits
+// Stock Audits API - matches backend /api/stock-audits endpoints
 export const stockAuditApi = {
-  getAll: (params?: { page?: number; limit?: number; status?: string; type?: string; warehouseId?: string }) => {
+  // Get all stock audits with filters
+  getAll: (params?: { 
+    page?: number; 
+    limit?: number; 
+    status?: string; 
+    warehouse?: string;
+    date_from?: string;
+    date_to?: string;
+  }) => {
     const query = buildQuery(params as Record<string, any>);
-    return request<{ success: boolean; data: unknown }>(`/stock/advanced/audits${query ? `?${query}` : ''}`);
+    return request<{ success: boolean; count: number; total: number; pages: number; currentPage: number; data: StockAudit[] }>(`/stock-audits${query ? `?${query}` : ''}`);
   },
-  getById: (id: string) => request<{ success: boolean; data: unknown }>(`/stock/advanced/audits/${id}`),
-  create: (data: unknown) => request<{ success: boolean; data: unknown }>('/stock/advanced/audits', { method: 'POST', body: data }),
-  updateItem: (auditId: string, itemId: string, data: { countedQuantity: number; notes?: string }) =>
-    request<{ success: boolean; data: unknown }>(`/stock/advanced/audits/${auditId}/items/${itemId}`, { method: 'PUT', body: data }),
-  complete: (id: string, data?: { adjustStock?: boolean; approvedNotes?: string }) =>
-    request<{ success: boolean; data: unknown }>(`/stock/advanced/audits/${id}/complete`, { method: 'POST', body: data }),
-  cancel: (id: string, reason?: string) => request<{ success: boolean; data: unknown }>(`/stock/advanced/audits/${id}/cancel`, { method: 'POST', body: { reason } }),
-  getVariance: (id: string) => request<{ success: boolean; data: unknown }>(`/stock/advanced/audits/${id}/variance`),
+  // Get single stock audit by ID
+  getById: (id: string) => request<{ success: boolean; data: StockAudit }>(`/stock-audits/${id}`),
+  // Create new stock audit
+  create: (data: {
+    warehouse: string;
+    auditDate?: string;
+    type?: string;
+    category?: string;
+    notes?: string;
+    products?: string[];
+  }) => request<{ success: boolean; message: string; data: StockAudit }>('/stock-audits', { method: 'POST', body: data }),
+  // Update stock audit
+  update: (id: string, data: { notes?: string; type?: string }) => 
+    request<{ success: boolean; message: string; data: StockAudit }>(`/stock-audits/${id}`, { method: 'PUT', body: data }),
+  // Delete stock audit (only draft)
+  delete: (id: string) => request<{ success: boolean; message: string }>(`/stock-audits/${id}`, { method: 'DELETE' }),
+  // Bulk update audit lines (counted quantities)
+  bulkUpdateLines: (id: string, lines: { productId: string; qtyCounted: number }[]) => 
+    request<{ success: boolean; message: string; data: StockAudit }>(`/stock-audits/${id}/lines`, { method: 'PUT', body: { lines } }),
+  // Update single audit line
+  updateLine: (id: string, lineId: string, data: { qtyCounted?: number; notes?: string }) => 
+    request<{ success: boolean; message: string; data: StockAuditLine }>(`/stock-audits/${id}/lines/${lineId}`, { method: 'PUT', body: data }),
+  // Post stock audit
+  post: (id: string) => request<{ success: boolean; message: string; data: StockAudit }>(`/stock-audits/${id}/post`, { method: 'POST' }),
+  // Cancel stock audit
+  cancel: (id: string, reason?: string) => request<{ success: boolean; message: string; data: StockAudit }>(`/stock-audits/${id}/cancel`, { method: 'POST', body: { reason } }),
+};
+
+// Stock Audit Types
+export interface StockAuditLine {
+  _id: string;
+  product: {
+    _id: string;
+    name: string;
+    sku: string;
+  };
+  qtySystem: string;
+  qtyCounted: string | null;
+  qtyVariance: string;
+  unitCost: string;
+  varianceValue: string;
+  journalEntry?: string;
+  notes?: string;
+}
+
+export interface StockAudit {
+  _id: string;
+  company: string;
+  referenceNo: string;
+  warehouse: {
+    _id: string;
+    name: string;
+    code: string;
+  };
+  auditDate: string;
+  status: 'draft' | 'counting' | 'posted' | 'cancelled';
+  type: 'full' | 'partial' | 'cycle_count' | 'spot_check';
+  category?: string;
+  notes?: string;
+  items: StockAuditLine[];
+  totalItems: number;
+  itemsCounted: number;
+  itemsWithVariance: number;
+  totalVarianceValue: string;
+  postedBy?: {
+    _id: string;
+    name: string;
+  };
+  postedAt?: string;
+  createdBy: {
+    _id: string;
+    name: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+};
+
+// Stock Batches API - /api/stock-batches endpoints
+export interface StockBatch {
+  _id: string;
+  company: string;
+  batchNo: string;
+  product: {
+    _id: string;
+    name: string;
+    sku: string;
+    trackingType?: string;
+  };
+  warehouse: {
+    _id: string;
+    name: string;
+    code: string;
+  };
+  grn?: {
+    _id: string;
+    referenceNo: string;
+  };
+  qtyReceived: string;
+  qtyOnHand: string;
+  unitCost: string;
+  manufactureDate?: string;
+  expiryDate?: string;
+  isQuarantined: boolean;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const stockBatchApi = {
+  // Get all stock batches with filters
+  getAll: (params?: {
+    page?: number;
+    limit?: number;
+    product?: string;
+    warehouse?: string;
+    search?: string;
+  }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; data: StockBatch[]; pagination: { page: number; limit: number; total: number; pages: number } }>(`/stock-batches${query ? `?${query}` : ''}`);
+  },
+  // Get single stock batch by ID
+  getById: (id: string) => request<{ success: boolean; data: StockBatch }>(`/stock-batches/${id}`),
+  // Get expiring batches
+  getExpiring: (params?: { page?: number; limit?: number; days?: number }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; data: StockBatch[] }>(`/stock-batches/expiring${query ? `?${query}` : ''}`);
+  },
+  // Toggle quarantine status
+  toggleQuarantine: (id: string) => request<{ success: boolean; data: StockBatch }>(`/stock-batches/${id}/quarantine`, { method: 'PUT' }),
 };
 
 // Advanced Stock API - Reorder Points
@@ -1003,21 +1342,149 @@ export const fixedAssetsApi = {
     request<{ success: boolean; data: unknown }>('/fixed-assets/run-depreciation', { method: 'POST', body: data }),
   getDepreciationHistory: (id: string) => 
     request<{ success: boolean; data: unknown }>(`/fixed-assets/${id}/depreciation-history`),
+  getDepreciationSchedule: (id: string) => 
+    request<{ success: boolean; data: unknown }>(`/fixed-assets/${id}/depreciation-schedule`),
+  calculateDepreciation: (id: string, periodDate?: string) => {
+    const query = periodDate ? `?periodDate=${periodDate}` : '';
+    return request<{ success: boolean; data: unknown }>(`/fixed-assets/${id}/calculate-depreciation${query}`);
+  },
+  postDepreciation: (id: string, periodDate?: string) => {
+    const body = periodDate ? { periodDate } : {};
+    return request<{ success: boolean; data: unknown }>(`/fixed-assets/${id}/depreciate`, { method: 'POST', body });
+  },
+  dispose: (id: string, data: { disposalDate: string; disposalProceeds?: number; disposalMethod?: string; notes?: string }) => 
+    request<{ success: boolean; data: unknown }>(`/fixed-assets/${id}/dispose`, { method: 'POST', body: data }),
+  getDepreciationReport: () => 
+    request<{ success: boolean; data: unknown }>('/fixed-assets/report/depreciation'),
+  getDepreciationEntries: (id: string) => 
+    request<{ success: boolean; data: unknown }>(`/fixed-assets/${id}/depreciation-entries`),
+  reverseDepreciation: (id: string, entryId: string, reason?: string) => 
+    request<{ success: boolean; data: unknown }>(`/fixed-assets/${id}/depreciation/${entryId}/reverse`, { method: 'POST', body: { reason } }),
 };
 
-// Loans API
+export const assetCategoriesApi = {
+  getAll: (params?: { isActive?: boolean }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; data: AssetCategory[] }>(`/asset-categories${query ? `?${query}` : ''}`);
+  },
+  getById: (id: string) => request<{ success: boolean; data: AssetCategory }>(`/asset-categories/${id}`),
+  create: (data: Partial<AssetCategory>) => request<{ success: boolean; data: AssetCategory }>('/asset-categories', { method: 'POST', body: data }),
+  update: (id: string, data: Partial<AssetCategory>) => request<{ success: boolean; data: AssetCategory }>(`/asset-categories/${id}`, { method: 'PUT', body: data }),
+  delete: (id: string) => request<{ success: boolean }>(`/asset-categories/${id}`, { method: 'DELETE' }),
+};
+
+// Loans/Liabilities API
+export interface Liability {
+  _id: string;
+  loanNumber: string;
+  name: string;
+  loanType?: string;
+  type?: string;
+  lenderName?: string;
+  lenderContact?: string;
+  originalAmount: number;
+  principalAmount?: number;
+  outstandingBalance: number;
+  amountPaid?: number;
+  interestRate: number;
+  interestMethod?: string;
+  durationMonths?: number;
+  startDate: string;
+  endDate?: string;
+  status: string;
+  liabilityAccountId?: string;
+  interestExpenseAccountId?: string;
+  purpose?: string;
+  collateral?: string;
+  notes?: string;
+  paymentTerms?: string;
+  monthlyPayment?: number;
+  createdBy?: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+  transactions?: LiabilityTransaction[];
+  payments?: Array<{
+    amount: number;
+    paymentDate: string;
+    paymentMethod?: string;
+    reference?: string;
+    notes?: string;
+  }>;
+}
+
+export interface LiabilityTransaction {
+  _id: string;
+  transactionDate: string;
+  type: 'drawdown' | 'repayment' | 'interest_charge' | 'interest';
+  amount: number;
+  principalPortion?: number;
+  interestPortion?: number;
+  reference?: string;
+  notes?: string;
+  bankAccountId?: string;
+  journalEntryId?: string;
+}
+
+export interface PaymentScheduleResponse {
+  loanNumber: string;
+  name: string;
+  status: string;
+  originalAmount: number;
+  outstandingBalance: number;
+  amountPaid: number;
+  inputs: {
+    originalAmount: number;
+    interestRate: number;
+    durationMonths: number;
+    interestMethod: string;
+    startDate: string;
+  };
+  schedule: {
+    monthlyPayment: number;
+    totalPayment: number;
+    totalInterest: number;
+    schedule: Array<{
+      paymentNumber: number;
+      paymentDate: string;
+      principalPortion: number;
+      interestPortion: number;
+      totalPayment: number;
+      remainingBalance: number;
+    }>;
+  };
+}
+
 export const loansApi = {
   getAll: (params?: { status?: string; loanType?: string }) => {
     const query = buildQuery(params as Record<string, any>);
-    return request<{ success: boolean; count: number; data: unknown; summary: unknown }>(`/loans${query ? `?${query}` : ''}`);
+    return request<{ success: boolean; count: number; data: Liability[]; summary: unknown }>(`/loans${query ? `?${query}` : ''}`);
   },
-  getById: (id: string) => request<{ success: boolean; data: unknown }>(`/loans/${id}`),
-  create: (data: unknown) => request<{ success: boolean; data: unknown }>('/loans', { method: 'POST', body: data }),
-  update: (id: string, data: unknown) => request<{ success: boolean; data: unknown }>(`/loans/${id}`, { method: 'PUT', body: data }),
+  getById: (id: string) => request<{ success: boolean; data: Liability }>(`/loans/${id}`),
+  create: (data: unknown) => request<{ success: boolean; data: Liability }>('/loans', { method: 'POST', body: data }),
+  update: (id: string, data: unknown) => request<{ success: boolean; data: Liability }>(`/loans/${id}`, { method: 'PUT', body: data }),
   delete: (id: string) => request<{ success: boolean; message: string }>(`/loans/${id}`, { method: 'DELETE' }),
+  cancel: (id: string, reason?: string) => request<{ success: boolean; data: Liability; message: string }>(`/loans/${id}/cancel`, { method: 'POST', body: { reason } }),
   recordPayment: (id: string, data: { amount: number; paymentMethod: string; reference?: string; notes?: string }) =>
-    request<{ success: boolean; data: unknown }>(`/loans/${id}/payment`, { method: 'POST', body: data }),
+    request<{ success: boolean; data: Liability }>(`/loans/${id}/payment`, { method: 'POST', body: data }),
   getSummary: () => request<{ success: boolean; data: unknown }>('/loans/summary'),
+  // Drawdown - record money received from liability
+  recordDrawdown: (id: string, data: { amount: number; bankAccountId: string; transactionDate?: string; notes?: string }) =>
+    request<{ success: boolean; data: Liability; journalEntry: unknown }>(`/loans/${id}/drawdown`, { method: 'POST', body: data }),
+  // Repayment - record payment to liability
+  recordRepayment: (id: string, data: { principalPortion: number; interestPortion?: number; bankAccountId: string; transactionDate?: string; notes?: string }) =>
+    request<{ success: boolean; data: Liability; journalEntry: unknown }>(`/loans/${id}/repayment`, { method: 'POST', body: data }),
+  // Interest - record interest charge/accrual
+  recordInterest: (id: string, data: { amount: number; chargeDate?: string; notes?: string }) =>
+    request<{ success: boolean; data: Liability; journalEntry: unknown }>(`/loans/${id}/interest`, { method: 'POST', body: data }),
+  // Get transaction history
+  getTransactions: (id: string) => request<{ success: boolean; data: LiabilityTransaction[] }>(`/loans/${id}/transactions`),
+  // Payment schedule calculation
+  calculatePaymentSchedule: (data: { originalAmount: number; interestRate: number; durationMonths: number; interestMethod?: string; startDate?: string; loanType?: string }) =>
+    request<{ success: boolean; data: unknown }>('/loans/calculate', { method: 'POST', body: data }),
+  // Get payment schedule for existing loan
+  getPaymentSchedule: (id: string) => request<{ success: boolean; data: unknown }>(`/loans/${id}/schedule`),
 };
 
 // Budget API
@@ -1274,18 +1741,38 @@ export interface Expense {
   type: 'salaries_wages' | 'rent' | 'utilities' | 'transport_delivery' | 'marketing_advertising' | 'other_expense' | 'interest_income' | 'other_income' | 'other_expense_income';
   category: string;
   expenseNumber?: string;
+  reference?: string;
   description?: string;
   amount: number;
+  taxAmount?: number;
+  totalAmount?: number;
   expenseDate: string;
   period: string;
-  status: 'draft' | 'recorded' | 'approved' | 'cancelled';
-  paymentMethod: 'cash' | 'bank_transfer' | 'cheque' | 'mobile_money' | 'credit';
+  status: 'draft' | 'recorded' | 'approved' | 'cancelled' | 'posted' | 'reversed';
+  paymentMethod: 'cash' | 'bank' | 'bank_transfer' | 'cheque' | 'mobile_money' | 'credit_card' | 'petty_cash' | 'payable';
   paid: boolean;
   paidDate?: string;
   isRecurring: boolean;
   recurringFrequency?: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
   createdBy: { _id: string; name: string; email: string };
   approvedBy?: { _id: string; name: string; email: string };
+  // New fields from backend
+  account?: {
+    _id: string;
+    code: string;
+    name: string;
+  } | null;
+  method?: string;
+  bankAccount?: {
+    _id: string;
+    code: string;
+    name: string;
+  } | null;
+  pettyCashFund?: {
+    _id: string;
+    name: string;
+  } | null;
+  receiptRef?: string;
   notes?: string;
   createdAt: string;
   updatedAt: string;
@@ -1296,6 +1783,8 @@ export const expensesApi = {
     type?: string;
     startDate?: string;
     endDate?: string;
+    expenseAccountId?: string;
+    paymentMethod?: string;
     page?: number;
     limit?: number;
   }) => {
@@ -1326,6 +1815,11 @@ export const expensesApi = {
     notes: string;
   }>) => request<{ success: boolean; data: Expense }>(`/expenses/${id}`, { method: 'PUT', body: data }),
   delete: (id: string) => request<{ success: boolean; message: string }>(`/expenses/${id}`, { method: 'DELETE' }),
+  reverse: (id: string, reason?: string) => 
+    request<{ success: boolean; message: string; data: Expense; reversalJournalEntry?: any }>(`/expenses/${id}/reverse`, { 
+      method: 'POST', 
+      body: { reason } 
+    }),
   getSummary: (params?: { startDate?: string; endDate?: string }) => {
     const query = buildQuery(params as Record<string, any>);
     return request<{ success: boolean; data: {
@@ -1349,32 +1843,6 @@ export const expensesApi = {
     paymentMethod?: Expense['paymentMethod'];
     notes?: string;
   }>) => request<{ success: boolean; count: number; data: Expense[] }>('/expenses/bulk', { method: 'POST', body: { expenses } }),
-};
-
-// Purchase Returns API
-export const purchaseReturnsApi = {
-  getAll: (params?: {
-    supplierId?: string;
-    status?: string;
-    startDate?: string;
-    endDate?: string;
-    page?: number;
-    limit?: number;
-  }) => {
-    const query = buildQuery(params as Record<string, any>);
-    return request<{ success: boolean; count: number; total: number; pages: number; data: unknown[] }>(`/purchase-returns${query ? `?${query}` : ''}`);
-  },
-  getById: (id: string) => request<{ success: boolean; data: unknown }>(`/purchase-returns/${id}`),
-  create: (data: unknown) => request<{ success: boolean; data: unknown }>('/purchase-returns', { method: 'POST', body: data }),
-  update: (id: string, data: unknown) => request<{ success: boolean; data: unknown }>(`/purchase-returns/${id}`, { method: 'PUT', body: data }),
-  delete: (id: string) => request<{ success: boolean; message: string }>(`/purchase-returns/${id}`, { method: 'DELETE' }),
-  approve: (id: string) => request<{ success: boolean; data: unknown }>(`/purchase-returns/${id}/approve`, { method: 'PUT' }),
-  recordRefund: (id: string, data: { refundAmount?: number; refundMethod?: string }) => 
-    request<{ success: boolean; data: unknown }>(`/purchase-returns/${id}/refund`, { method: 'PUT', body: data }),
-  getSummary: (params?: { startDate?: string; endDate?: string }) => {
-    const query = buildQuery(params as Record<string, any>);
-    return request<{ success: boolean; data: { totalReturns: number; count: number } }>(`/purchase-returns/summary${query ? `?${query}` : ''}`);
-  },
 };
 
 // Notifications API
@@ -1867,7 +2335,44 @@ export interface PettyCashReport {
 }
 
 export const pettyCashApi = {
-  // Float management
+  // New Fund endpoints per Module 4 spec
+  getFunds: (params?: { isActive?: boolean }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; count: number; data: PettyCashFloat[] }>(`/petty-cash/funds${query ? `?${query}` : ''}`);
+  },
+  createFund: (data: {
+    name: string;
+    ledgerAccountId?: string;
+    custodianId?: string;
+    floatAmount: number;
+    openingBalance?: number;
+    notes?: string;
+  }) => request<{ success: boolean; data: PettyCashFloat }>('/petty-cash/funds', { method: 'POST', body: data }),
+  topUp: (id: string, data: {
+    amount: number;
+    bank_account_id: string;
+    description?: string;
+    transactionDate?: string;
+  }) => request<{ success: boolean; data: PettyCashTransaction }>(`/petty-cash/funds/${id}/top-up`, { method: 'POST', body: data }),
+  recordExpense: (id: string, data: {
+    amount: number;
+    expenseAccountId: string;
+    description?: string;
+    receiptRef?: string;
+    transactionDate?: string;
+  }) => request<{ success: boolean; data: PettyCashTransaction }>(`/petty-cash/funds/${id}/expense`, { method: 'POST', body: data }),
+  getFundTransactions: (id: string, params?: {
+    startDate?: string;
+    endDate?: string;
+    type?: string;
+    page?: number;
+    limit?: number;
+  }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; count: number; total: number; pages: number; data: { fund: PettyCashFloat; transactions: PettyCashTransaction[] } }>(`/petty-cash/funds/${id}/transactions${query ? `?${query}` : ''}`);
+  },
+
+  // Float management (legacy)
   getFloats: (params?: { isActive?: boolean }) => {
     const query = buildQuery(params as Record<string, any>);
     return request<{ success: boolean; count: number; data: PettyCashFloat[] }>(`/petty-cash/floats${query ? `?${query}` : ''}`);
@@ -2472,6 +2977,78 @@ export const bankAccountsApi = {
   },
 };
 
+// Fixed Assets API
+export interface FixedAsset {
+  _id: string;
+  referenceNo: string;
+  name: string;
+  description?: string;
+  categoryId?: string;
+  assetAccountCode: string;
+  assetAccountId?: { _id: string; code: string; name: string };
+  accumDepreciationAccountCode: string;
+  accumDepreciationAccountId?: { _id: string; code: string; name: string };
+  depreciationExpenseAccountCode: string;
+  depreciationExpenseAccountId?: { _id: string; code: string; name: string };
+  purchaseDate: string;
+  purchaseCost: number;
+  salvageValue: number;
+  usefulLifeMonths: number;
+  usefulLifeYears?: number;
+  depreciationMethod: 'straight_line' | 'declining_balance';
+  decliningRate?: number;
+  status: 'active' | 'fully_depreciated' | 'disposed';
+  accumulatedDepreciation: number;
+  netBookValue: number;
+  supplierId?: string;
+  disposalDate?: string;
+  disposalProceeds?: number;
+  lastDepreciationDate?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface AssetCategory {
+  _id: string;
+  name: string;
+  code?: string;
+  description?: string;
+  defaultAssetAccountCode?: string;
+  defaultAccumDepreciationAccountCode?: string;
+  defaultDepreciationExpenseAccountCode?: string;
+  defaultUsefulLifeMonths?: number;
+  defaultDepreciationMethod?: string;
+  isActive?: boolean;
+  // Additional fields
+  depreciationMethod?: string;
+  usefulLifeMonths?: number;
+  assetAccountCode?: string;
+  accumDepreciationAccountCode?: string;
+  depreciationExpenseAccountCode?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface DepreciationScheduleItem {
+  period: number;
+  date: string;
+  label: string;
+  openingNBV: number;
+  depreciation: number;
+  closingNBV: number;
+}
+
+export interface DepreciationEntry {
+  _id: string;
+  periodDate: string;
+  depreciationAmount: number;
+  accumulatedBefore: number;
+  accumulatedAfter: number;
+  netBookValueAfter: number;
+  journalEntryId?: string;
+  createdAt: string;
+}
+
 // Journal Entries & Accounting API
 export interface JournalEntryLine {
   accountCode: string;
@@ -2503,6 +3080,7 @@ export interface JournalEntry {
 }
 
 export interface ChartOfAccounts {
+  _id?: string;
   code: string;
   name: string;
   type: 'asset' | 'liability' | 'equity' | 'revenue' | 'expense';
@@ -2553,6 +3131,26 @@ export interface TrialBalanceEntry {
   credit: number;
 }
 
+// Chart of Accounts API - for fetching accounts to map to products
+export interface ChartAccount {
+  _id?: string;
+  code: string;
+  accountCode?: string;
+  name: string;
+  accountName?: string;
+  type: string;
+  accountType?: string;
+  subtype?: string;
+  isActive?: boolean;
+}
+
+export const accountsApi = {
+  getAll: (params?: { type?: string; subtype?: string }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; data: ChartAccount[] }>(`/journal-entries/accounts${query ? `?${query}` : ''}`);
+  },
+};
+
 export const journalEntriesApi = {
   // Journal Entries
   getAll: (params?: {
@@ -2597,7 +3195,8 @@ export const journalEntriesApi = {
   void: (id: string, reason?: string) => request<{ success: boolean; message: string }>(`/journal-entries/${id}/void`, { method: 'PUT', body: { reason } }),
 
   // Chart of Accounts
-  getAccounts: () => request<{ success: boolean; data: ChartOfAccounts[] }>('/journal-entries/accounts'),
+  getAccounts: (params?: { type?: string; subtype?: string; includeInactive?: boolean | string }) => 
+    request<{ success: boolean; data: ChartOfAccounts[] }>('/journal-entries/accounts', { params }),
   createAccount: (data: {
     code: string;
     name: string;
@@ -2897,5 +3496,205 @@ export const bankHubApi = {
       if (!res.ok) throw new Error('Failed to export transactions');
       return res.blob();
     });
+  },
+};
+
+// AR Receipts API - Step 57-59
+interface ARReceiptData {
+  _id: string;
+  referenceNo: string;
+  client: { _id: string; name: string; code: string };
+  receiptDate: string;
+  paymentMethod: string;
+  bankAccount?: { _id: string; accountName: string; accountCode: string };
+  amountReceived: string;
+  currencyCode: string;
+  exchangeRate: string;
+  reference?: string;
+  status: 'draft' | 'posted' | 'reversed';
+  notes?: string;
+  unallocatedAmount?: string;
+  postedBy?: { name: string };
+  createdBy?: { name: string };
+  createdAt: string;
+  updatedAt?: string;
+}
+
+interface ARReceiptAllocation {
+  _id: string;
+  receipt: string;
+  invoice: { _id: string; invoiceNumber: string; referenceNo: string; balance: string };
+  amountAllocated: string;
+}
+
+export const arReceiptsApi = {
+  // List receipts with filters
+  getAll: (params?: {
+    client_id?: string;
+    status?: string;
+    date_from?: string;
+    date_to?: string;
+    page?: number;
+    limit?: number;
+  }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; count: number; data: ARReceiptData[] }>(`/ar/receipts${query ? `?${query}` : ''}`);
+  },
+
+  // Get single receipt with allocations
+  getById: (id: string) =>
+    request<{ success: boolean; data: ARReceiptData; allocations: ARReceiptAllocation[] }>(`/ar/receipts/${id}`),
+
+  // Create receipt
+  create: (data: {
+    client: string;
+    receiptDate?: string;
+    paymentMethod: string;
+    bankAccount?: string;
+    amountReceived: number;
+    currencyCode?: string;
+    exchangeRate?: number;
+    reference?: string;
+    notes?: string;
+  }) => request<{ success: boolean; data: ARReceiptData }>('/ar/receipts', { method: 'POST', body: data }),
+
+  // Update receipt (draft only)
+  update: (id: string, data: Partial<{
+    receiptDate: string;
+    paymentMethod: string;
+    bankAccount: string;
+    amountReceived: number;
+    currencyCode: string;
+    exchangeRate: number;
+    reference: string;
+    notes: string;
+  }>) => request<{ success: boolean; data: ARReceiptData }>(`/ar/receipts/${id}`, { method: 'PUT', body: data }),
+
+  // Post receipt (draft -> posted)
+  post: (id: string) =>
+    request<{ success: boolean; message: string; data: ARReceiptData }>(`/ar/receipts/${id}/post`, { method: 'POST' }),
+
+  // Reverse posted receipt
+  reverse: (id: string, reason: string) =>
+    request<{ success: boolean; message: string; data: ARReceiptData }>(`/ar/receipts/${id}/reverse`, { method: 'POST', body: { reason } }),
+
+  // Allocate receipt to invoice
+  allocate: (id: string, data: { invoiceId: string; amount: number }) =>
+    request<{ success: boolean; data: ARReceiptAllocation }>(`/ar/receipts/${id}/allocate`, { method: 'POST', body: data }),
+
+  // Get aging report
+  getAgingReport: (params?: { client_id?: string; as_of_date?: string }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<any>(`/ar/aging${query ? `?${query}` : ''}`);
+  },
+
+  // Get client statement (drill down)
+  getClientStatement: (clientId: string, params?: { startDate?: string; endDate?: string }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<any>(`/ar/statement/${clientId}${query ? `?${query}` : ''}`);
+  },
+};
+
+// AP Payment Types
+export interface APPayment {
+  _id: string;
+  referenceNo: string;
+  supplier: {
+    _id: string;
+    name: string;
+    code?: string;
+  };
+  paymentDate: string;
+  paymentMethod: string;
+  amountPaid: string;
+  currencyCode: string;
+  status: 'draft' | 'posted' | 'reversed';
+  bankAccount?: {
+    _id: string;
+    accountName: string;
+    accountNumber: string;
+  };
+  reference?: string;
+  notes?: string;
+  createdAt: string;
+}
+
+export interface APPaymentAllocation {
+  _id: string;
+  payment: string;
+  grn: { _id: string; referenceNo: string; totalAmount: string; balance: string };
+  amountAllocated: string;
+}
+
+// AP Payments API
+export const apPaymentsApi = {
+  // List payments with filters
+  getAll: (params?: {
+    supplier_id?: string;
+    status?: string;
+    date_from?: string;
+    date_to?: string;
+    page?: number;
+    limit?: number;
+  }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; count: number; data: APPayment[] }>(`/ap/payments${query ? `?${query}` : ''}`);
+  },
+
+  // Get single payment with allocations
+  getById: (id: string) =>
+    request<{ success: boolean; data: APPayment; allocations: APPaymentAllocation[] }>(`/ap/payments/${id}`),
+
+  // Create payment
+  create: (data: {
+    supplierId: string;
+    paymentDate?: string;
+    paymentMethod: string;
+    bankAccountId: string;
+    amountPaid: number;
+    currencyCode?: string;
+    exchangeRate?: number;
+    reference?: string;
+    notes?: string;
+  }) => request<{ success: boolean; data: APPayment }>('/ap/payments', { method: 'POST', body: data }),
+
+  // Update payment (draft only)
+  update: (id: string, data: Partial<{
+    paymentDate: string;
+    paymentMethod: string;
+    bankAccountId: string;
+    amountPaid: number;
+    currencyCode: string;
+    exchangeRate: number;
+    reference: string;
+    notes: string;
+  }>) => request<{ success: boolean; data: APPayment }>(`/ap/payments/${id}`, { method: 'PUT', body: data }),
+
+  // Post payment (draft -> posted)
+  post: (id: string) =>
+    request<{ success: boolean; message: string; data: APPayment }>(`/ap/payments/${id}/post`, { method: 'POST' }),
+
+  // Reverse posted payment
+  reverse: (id: string, reason: string) =>
+    request<{ success: boolean; message: string; data: APPayment }>(`/ap/payments/${id}/reverse`, { method: 'POST', body: { reason } }),
+
+  // Allocate payment to GRN
+  allocate: (paymentId: string, data: { grnId: string; amount: number }) =>
+    request<{ success: boolean; data: APPaymentAllocation }>('/ap/allocations', { method: 'POST', body: { payment: paymentId, grn: data.grnId, amountAllocated: data.amount } }),
+
+  // Get allocations for a payment
+  getAllocations: (paymentId: string) =>
+    request<{ success: boolean; data: APPaymentAllocation[] }>(`/ap/allocations?payment_id=${paymentId}`),
+
+  // Get aging report
+  getAgingReport: (params?: { supplier_id?: string; as_of_date?: string }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<any>(`/ap/aging${query ? `?${query}` : ''}`);
+  },
+
+  // Get supplier statement (drill down)
+  getSupplierStatement: (supplierId: string, params?: { startDate?: string; endDate?: string }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<any>(`/ap/statement/${supplierId}${query ? `?${query}` : ''}`);
   },
 };

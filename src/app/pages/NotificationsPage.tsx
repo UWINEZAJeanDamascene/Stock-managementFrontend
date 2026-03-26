@@ -4,7 +4,7 @@ import { notificationsApi, Notification } from '../../lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { 
   Bell, 
   Package, 
@@ -14,9 +14,7 @@ import {
   Check, 
   Trash2, 
   CheckCheck,
-  Filter,
   RefreshCw,
-  Info,
   AlertCircle,
   AlertOctagon
 } from 'lucide-react';

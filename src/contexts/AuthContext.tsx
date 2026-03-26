@@ -1,150 +1,77 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { authApi, companyApi } from '@/lib/api';
-import { UserRole, hasPermission, hasAnyPermission, canEdit, isAdmin, Permission } from '@/lib/permissions';
+import { createContext, useContext, ReactNode, useCallback } from 'react';
+import { useAuthStore, User, Membership } from '@/store/authStore';
 
-interface Company {
-  _id: string;
-  name: string;
-  email: string;
-  isActive: boolean;
-}
-
-interface User {
-  _id: string;
-  name: string;
-  email: string;
-  role: UserRole;
-  company: Company | string;
-  mustChangePassword?: boolean;
-}
-
-interface LoginResponse {
-  success: boolean;
-  token: string;
-  data: User;
-  company?: Company;
-  requirePasswordChange?: boolean;
-  isPlatformAdmin?: boolean;
-}
-
+// Auth Context Type
 interface AuthContextType {
   user: User | null;
-  company: Company | null;
-  token: string | null;
+  companyId: string | null;
+  accessToken: string | null;
   loading: boolean;
-  requirePasswordChange: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  registerCompany: (companyData: { name: string; email: string; tin?: string; phone?: string }, adminData: { name: string; email: string; password: string }) => Promise<void>;
-  logout: () => Promise<void>;
   isAuthenticated: boolean;
-  // Role checking functions
-  hasPermission: (permission: Permission) => boolean;
-  hasAnyPermission: (permissions: Permission[]) => boolean;
+  hasPermission: (permission: string) => boolean;
+  hasAnyPermission: (permissions: string[]) => boolean;
   canEdit: () => boolean;
   isAdmin: () => boolean;
+  login: (user: User, accessToken: string, refreshToken: string, memberships: Membership[]) => void;
+  logout: () => void;
+  refreshTokens: (accessToken: string, refreshToken: string) => void;
+  updateUser: (user: Partial<User>) => void;
+  setActiveCompany: (companyId: string, role: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [company, setCompany] = useState<Company | null>(null);
-  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
-  const [loading, setLoading] = useState(true);
-  const [requirePasswordChange, setRequirePasswordChange] = useState(false);
-
-  useEffect(() => {
-    const initAuth = async () => {
-      const storedToken = localStorage.getItem('token');
-      if (storedToken) {
-        try {
-          const response = await authApi.getMe();
-          const userData = response.data as User;
-          setUser(userData);
-          // If company is populated
-          if (userData.company) {
-            if (typeof userData.company === 'object') {
-              setCompany(userData.company as Company);
-            }
-          }
-        } catch {
-          localStorage.removeItem('token');
-          setToken(null);
-        }
-      }
-      setLoading(false);
-    };
-
-    initAuth();
-  }, []);
-
-  const login = async (email: string, password: string) => {
-    const response = await authApi.login(email, password) as unknown as LoginResponse;
-    localStorage.setItem('token', response.token);
-    setToken(response.token);
-    setUser(response.data);
-    
-    // Set company from response
-    if (response.company) {
-      setCompany(response.company);
-    }
-    
-    // Check if user needs to change password
-    if (response.requirePasswordChange) {
-      setRequirePasswordChange(true);
-    }
-    
-    // Store platform admin flag
-    if (response.isPlatformAdmin) {
-      localStorage.setItem('isPlatformAdmin', 'true');
-    } else {
-      localStorage.removeItem('isPlatformAdmin');
-    }
+  const store = useAuthStore();
+  
+  // Check permissions based on user role/permissions
+  const hasPermission = useCallback((permission: string) => {
+    if (!store.user) return false;
+    // Admin has all permissions
+    if (store.user.role === 'admin' || store.user.role === 'super_admin') return true;
+    // Check if permission exists in user's permissions array
+    const permissions = store.user.permissions as string[] | undefined;
+    return permissions?.includes(permission) ?? false;
+  }, [store.user]);
+  
+  const hasAnyPermission = useCallback((permissions: string[]) => {
+    if (!store.user) return false;
+    // Admin has all permissions
+    if (store.user.role === 'admin' || store.user.role === 'super_admin') return true;
+    const userPermissions = store.user.permissions as string[] | undefined;
+    return permissions.some(permission => userPermissions?.includes(permission));
+  }, [store.user]);
+  
+  const canEdit = useCallback(() => {
+    if (!store.user) return false;
+    // Admin and editor roles can edit
+    return ['admin', 'super_admin', 'editor'].includes(store.user.role ?? '');
+  }, [store.user]);
+  
+  const isAdmin = useCallback(() => {
+    if (!store.user) return false;
+    return store.user.role === 'admin' || store.user.role === 'super_admin';
+  }, [store.user]);
+  
+  const value: AuthContextType = {
+    user: store.user,
+    companyId: store.activeCompanyId,
+    accessToken: store.accessToken,
+    loading: store.loading,
+    isAuthenticated: store.isAuthenticated,
+    hasPermission,
+    hasAnyPermission,
+    canEdit,
+    isAdmin,
+    login: store.login,
+    logout: store.logout,
+    refreshTokens: store.refreshTokens,
+    updateUser: store.updateUser,
+    setActiveCompany: store.setActiveCompany,
   };
-
-  const registerCompany = async (
-    companyData: { name: string; email: string; tin?: string; phone?: string },
-    adminData: { name: string; email: string; password: string }
-  ) => {
-    const response = await companyApi.register(companyData, adminData);
-    // Don't set token - company needs approval first
-    // The response contains company info but no token
-    // User will need to wait for approval before logging in
-  };
-
-  const logout = async () => {
-    try {
-      await authApi.logout();
-    } finally {
-      localStorage.removeItem('token');
-      localStorage.removeItem('isPlatformAdmin');
-      setToken(null);
-      setUser(null);
-      setCompany(null);
-    }
-  };
-
-  // Get user role
-  const userRole = user?.role as UserRole | undefined;
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        company,
-        token,
-        loading,
-        requirePasswordChange,
-        login,
-        registerCompany,
-        logout,
-        isAuthenticated: !!token && !!user,
-        hasPermission: (permission: Permission) => hasPermission(userRole, permission),
-        hasAnyPermission: (permissions: Permission[]) => hasAnyPermission(userRole, permissions),
-        canEdit: () => canEdit(userRole),
-        isAdmin: () => isAdmin(userRole),
-      }}
-    >
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
@@ -153,7 +80,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    // Return default values matching the store
+    const store = useAuthStore.getState();
+    return {
+      user: store.user,
+      companyId: store.activeCompanyId,
+      accessToken: store.accessToken,
+      loading: store.loading,
+      isAuthenticated: store.isAuthenticated,
+      hasPermission: () => false,
+      hasAnyPermission: () => false,
+      canEdit: () => false,
+      isAdmin: () => false,
+      login: store.login,
+      logout: store.logout,
+      refreshTokens: store.refreshTokens,
+      updateUser: store.updateUser,
+      setActiveCompany: store.setActiveCompany,
+    };
   }
   return context;
 }

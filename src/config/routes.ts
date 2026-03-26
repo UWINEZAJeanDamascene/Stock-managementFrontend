@@ -1,0 +1,182 @@
+// Route path constants - matching backend API structure
+
+// Public auth routes (no auth required)
+export const PUBLIC_ROUTES = {
+  // Landing/Home
+  HOME: '/',
+  
+  // Auth routes
+  LOGIN: '/login',
+  REGISTER: '/register',
+  FORGOT_PASSWORD: '/forgot-password',
+  RESET_PASSWORD: '/reset-password',
+} as const;
+
+// Protected app routes (auth required)
+export const APP_ROUTES = {
+  // Dashboard
+  DASHBOARD: '/dashboard',
+  
+  // System Management
+  USERS: '/users',
+  ROLES: '/roles',
+  SECURITY: '/security',
+  BACKUPS: '/backups',
+  DEPARTMENTS: '/departments',
+  BULK_DATA: '/bulk-data',
+  AUDIT_TRAIL: '/audit-trail',
+  
+  // Notifications
+  NOTIFICATIONS: '/notifications',
+  NOTIFICATION_SETTINGS: '/notifications/settings',
+  
+  // Other
+  TESTIMONIALS: '/testimonials',
+  
+  // Products
+  PRODUCTS: '/products',
+  PRODUCT_DETAIL: '/products/:id',
+  PRODUCT_NEW: '/products/new',
+  
+  // Categories
+  CATEGORIES: '/categories',
+  
+  // Warehouses
+  WAREHOUSES: '/warehouses',
+  
+  // Stock Levels
+  STOCK_LEVELS: '/stock-levels',
+  
+  // Stock Movements
+  STOCK_MOVEMENTS: '/stock-movements',
+  
+  // Stock Transfers
+  STOCK_TRANSFERS: '/stock-transfers',
+  STOCK_TRANSFER_NEW: '/stock-transfers/new',
+  STOCK_TRANSFER_DETAIL: '/stock-transfers/:id',
+  
+  // Stock Audits
+  STOCK_AUDITS: '/stock-audits',
+  STOCK_AUDIT_DETAIL: '/stock-audits/:id',
+  
+  // Purchase Orders
+  PURCHASE_ORDERS: '/purchases',
+  PURCHASE_ORDER_NEW: '/purchases/new',
+  PURCHASE_ORDER_DETAIL: '/purchases/:id',
+  PURCHASE_ORDER_EDIT: '/purchases/:id/edit',
+  
+  // GRN (Goods Received Note)
+  GRN: '/grn',
+  GRN_NEW: '/grn/new',
+  GRN_DETAIL: '/grn/:id',
+  
+  // AR Receipts
+  AR_RECEIPTS: '/ar-receipts',
+  AR_RECEIPT_NEW: '/ar-receipts/new',
+  AR_RECEIPT_DETAIL: '/ar-receipts/:id',
+  AR_RECEIPT_EDIT: '/ar-receipts/:id/edit',
+  
+  // AR Aging
+  AR_AGING: '/ar-aging',
+  
+  // AP Payments
+  AP_PAYMENTS: '/ap-payments',
+  AP_PAYMENT_NEW: '/ap-payments/new',
+  AP_PAYMENT_DETAIL: '/ap-payments/:id',
+  AP_PAYMENT_EDIT: '/ap-payments/:id/edit',
+  
+  // Bank Accounts
+  BANK_ACCOUNTS: '/bank-accounts',
+  BANK_ACCOUNT_NEW: '/bank-accounts/new',
+  BANK_ACCOUNT_DETAIL: '/bank-accounts/:id',
+  
+  // Petty Cash
+  PETTY_CASH: '/petty-cash',
+  PETTY_CASH_TRANSACTIONS: '/petty-cash/:id/transactions',
+  
+  // Fixed Assets
+  ASSETS: '/assets',
+  ASSET_NEW: '/assets/new',
+  ASSET_DETAIL: '/assets/:id',
+  ASSET_EDIT: '/assets/:id/edit',
+  
+  // Liabilities
+  LIABILITIES: '/liabilities',
+  LIABILITY_NEW: '/liabilities/new',
+  LIABILITY_DETAIL: '/liabilities/:id',
+  LIABILITY_EDIT: '/liabilities/:id/edit',
+  
+  // Expenses
+  EXPENSES: '/expenses',
+  EXPENSE_NEW: '/expenses/new',
+  EXPENSE_DETAIL: '/expenses/:id',
+  EXPENSE_EDIT: '/expenses/:id/edit',
+  
+  // Company (for multi-tenancy)
+  COMPANY_SELECT: '/company',
+  
+  // Platform Admin
+  PLATFORM_ADMIN: '/platform-admin',
+} as const;
+
+// Route groups
+export const ROUTE_GROUPS = {
+  PUBLIC: Object.values(PUBLIC_ROUTES),
+  PROTECTED: Object.values(APP_ROUTES),
+} as const;
+
+// All routes as array
+export const ALL_ROUTES = [
+  ...ROUTE_GROUPS.PUBLIC,
+  ...ROUTE_GROUPS.PROTECTED,
+] as const;
+
+// Permission to route mapping
+export const ROUTE_PERMISSIONS: Record<string, string> = {
+  [APP_ROUTES.DASHBOARD]: 'dashboard:read',
+  [APP_ROUTES.USERS]: 'users:read',
+  [APP_ROUTES.ROLES]: 'roles:read',
+  [APP_ROUTES.SECURITY]: 'security:read',
+  [APP_ROUTES.BACKUPS]: 'backups:read',
+  [APP_ROUTES.DEPARTMENTS]: 'departments:read',
+  [APP_ROUTES.BULK_DATA]: 'import:read',
+  [APP_ROUTES.AUDIT_TRAIL]: 'auditLogs:read',
+  [APP_ROUTES.NOTIFICATIONS]: 'notifications:read',
+  [APP_ROUTES.NOTIFICATION_SETTINGS]: 'notifications:read',
+  [APP_ROUTES.TESTIMONIALS]: 'users:read',
+  [APP_ROUTES.PRODUCTS]: 'products:read',
+  [APP_ROUTES.CATEGORIES]: 'categories:read',
+  [APP_ROUTES.WAREHOUSES]: 'stock:read',
+  [APP_ROUTES.STOCK_LEVELS]: 'stock:read',
+  [APP_ROUTES.STOCK_MOVEMENTS]: 'stock:read',
+  [APP_ROUTES.STOCK_TRANSFERS]: 'stock:read',
+  [APP_ROUTES.STOCK_AUDITS]: 'stock:read',
+  [APP_ROUTES.PURCHASE_ORDERS]: 'stock:read',
+  [APP_ROUTES.GRN]: 'stock:read',
+  [APP_ROUTES.AP_PAYMENTS]: 'stock:read',
+  [APP_ROUTES.BANK_ACCOUNTS]: 'stock:read',
+};
+
+// API routes (for reference)
+export const API_ROUTES = {
+  AUTH: {
+    LOGIN: '/auth/login',
+    REGISTER: '/auth/register',
+    LOGOUT: '/auth/logout',
+    ME: '/auth/me',
+    REFRESH: '/auth/refresh',
+    FORGOT_PASSWORD: '/auth/forgot-password',
+    RESET_PASSWORD: '/auth/reset-password',
+    CHANGE_PASSWORD: '/auth/change-password',
+  },
+  NOTIFICATIONS: {
+    LIST: '/notifications',
+    UNREAD_COUNT: '/notifications/unread-count',
+    MARK_READ: (id: string) => `/notifications/${id}/read`,
+    MARK_ALL_READ: '/notifications/read-all',
+  },
+} as const;
+
+// Type exports
+export type PublicRoute = typeof PUBLIC_ROUTES[keyof typeof PUBLIC_ROUTES];
+export type AppRoute = typeof APP_ROUTES[keyof typeof APP_ROUTES];

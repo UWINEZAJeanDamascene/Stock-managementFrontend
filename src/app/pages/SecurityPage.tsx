@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { Layout } from '../layout/Layout';
 import { accessApi } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
-import { hasPermission } from '@/lib/permissions';
+import { hasPermission, UserRole } from '@/lib/permissions';
 import { 
-  Shield, Lock, Globe, Smartphone, Plus, Trash2, Eye, EyeOff, CheckCircle, XCircle
+  Shield, Lock, Globe, Smartphone, Plus, Trash2, CheckCircle
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
@@ -34,7 +34,7 @@ export default function SecurityPage() {
   const [token, setToken] = useState('');
   const [verifying, setVerifying] = useState(false);
 
-  const canManage = hasPermission(user?.role, 'access:manage');
+  const canManage = hasPermission((user?.role || undefined) as UserRole | undefined, 'access:manage');
 
   useEffect(() => {
     loadIPList();

@@ -5,7 +5,6 @@ import { UserRole, roleDisplayNames } from '@/lib/permissions';
 import { useNavigate } from 'react-router';
 import { Layout } from '../layout/Layout';
 import { 
-  Users as UsersIcon, 
   Plus, 
   Search, 
   Trash2, 
@@ -79,11 +78,10 @@ export default function UsersPage() {
   const [success, setSuccess] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
 
-  // Redirect if not admin
+  // Check admin access on mount - show access denied message instead of redirecting
   useEffect(() => {
-    if (!isAdmin()) {
-      window.location.href = '/dashboard';
-    }
+    // Only log for debugging
+    console.log('isAdmin check:', isAdmin());
   }, [isAdmin]);
 
   const fetchUsers = async () => {
@@ -195,7 +193,18 @@ export default function UsersPage() {
   };
 
   if (!isAdmin()) {
-    return null;
+    return (
+      <Layout>
+        <div className="p-6 text-center">
+          <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
+            Access Denied
+          </h2>
+          <p className="mt-2 text-slate-500 dark:text-slate-400">
+            You need administrator privileges to access this page.
+          </p>
+        </div>
+      </Layout>
+    );
   }
 
   return (

@@ -3,7 +3,6 @@ import { Link } from 'react-router';
 import { Button } from '@/app/components/ui/button';
 import { Menu, X, Package, Sun, Moon, Languages } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
-import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTranslation } from 'react-i18next';
 
@@ -11,7 +10,6 @@ export function LandingNavbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
-  const { isAuthenticated } = useAuth();
   const { language, toggleLanguage } = useLanguage();
   const { t } = useTranslation();
   const isDark = theme === 'dark';
@@ -64,7 +62,7 @@ export function LandingNavbar() {
             ))}
           </nav>
 
-          {/* Desktop CTA Buttons */}
+          {/* Desktop CTA Buttons - Always show login/signup regardless of auth */}
           <div className="hidden md:flex items-center gap-2">
             {/* Language Toggle */}
             <Button
@@ -88,29 +86,24 @@ export function LandingNavbar() {
               {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>
 
-            {isAuthenticated ? (
-              <Link to="/dashboard">
-                <Button className="font-medium px-5 bg-purple-600 hover:bg-purple-700 text-white">
-                  {t('landing.backToDashboard')}
-                </Button>
-              </Link>
-            ) : (
-              <>
-                <Button
-                  variant="outline"
-                  className="font-medium px-5 border-slate-300 text-slate-800 dark:border-slate-600 dark:text-slate-100 bg-transparent"
-                  onClick={() => (window as any)?.openLoginModal?.()}
-                >
-                  {t('landing.login')}
-                </Button>
-                <Button
-                  className="text-white font-medium px-5 bg-purple-600 hover:bg-purple-700"
-                  onClick={() => (window as any)?.openRegisterModal?.()}
-                >
-                  {t('landing.getStarted')}
-                </Button>
-              </>
-            )}
+            {/* Login Link */}
+            <Link to="/login">
+              <Button
+                variant="ghost"
+                className="font-medium text-slate-700 dark:text-slate-200 hover:text-purple-600 dark:hover:text-purple-400"
+              >
+                Log In
+              </Button>
+            </Link>
+
+            {/* Register Link */}
+            <Link to="/register">
+              <Button
+                className="font-medium px-5 bg-purple-600 hover:bg-purple-700 text-white"
+              >
+                Sign Up
+              </Button>
+            </Link>
           </div>
 
           {/* Mobile Controls */}
@@ -169,26 +162,23 @@ export function LandingNavbar() {
               </a>
             ))}
             <div className="pt-4 space-y-3 border-t border-slate-200 dark:border-slate-700">
-              <Button
-                variant="outline"
-                className="w-full font-medium border-slate-300 text-slate-800 dark:border-slate-600 dark:text-slate-100 bg-transparent"
-                onClick={() => { (window as any)?.openLoginModal?.(); setMobileMenuOpen(false); }}
-              >
-                {t('landing.login')}
-              </Button>
-              <Button
-                className="w-full text-white font-medium bg-purple-600 hover:bg-purple-700"
-                onClick={() => { (window as any)?.openRegisterModal?.(); setMobileMenuOpen(false); }}
-              >
-                {t('landing.getStarted')}
-              </Button>
-              {isAuthenticated && (
-                <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}>
-                  <Button className="w-full mt-2 font-medium bg-purple-500 hover:bg-purple-600 text-white">
-                    {t('landing.backToDashboard')}
-                  </Button>
-                </Link>
-              )}
+              {/* Mobile Login/Register Links */}
+              <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
+                <Button variant="ghost" className="w-full font-medium text-slate-700 dark:text-slate-200">
+                  Log In
+                </Button>
+              </Link>
+              <Link to="/register" onClick={() => setMobileMenuOpen(false)}>
+                <Button className="w-full font-medium bg-purple-500 hover:bg-purple-600 text-white">
+                  Sign Up
+                </Button>
+              </Link>
+              {/* Navigation Links */}
+              <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}>
+                <Button className="w-full font-medium bg-purple-500 hover:bg-purple-600 text-white">
+                  Go to Dashboard
+                </Button>
+              </Link>
             </div>
           </div>
         </div>

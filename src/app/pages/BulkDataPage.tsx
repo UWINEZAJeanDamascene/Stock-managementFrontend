@@ -14,7 +14,6 @@ import {
   CheckCircle,
   AlertCircle,
   FileDown,
-  X,
   ArrowRight,
   ArrowLeft,
   Eye,
@@ -654,8 +653,6 @@ export default function BulkDataPage() {
                   <div className="divide-y divide-slate-100 dark:divide-slate-700/50 max-h-[420px] overflow-y-auto">
                     {parsedHeaders.map(header => {
                       const mapped = columnMapping[header] || '';
-                      const matchedTarget = targetFields.find(f => f.field === mapped);
-                      const isRequired = matchedTarget?.required;
 
                       return (
                         <div key={header} className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 py-3">
