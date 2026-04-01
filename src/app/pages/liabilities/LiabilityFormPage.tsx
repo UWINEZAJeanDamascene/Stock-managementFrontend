@@ -56,6 +56,7 @@ export default function LiabilityFormPage() {
     name: '',
     loanType: 'loan',
     lenderName: '',
+    lenderContact: '',
     originalAmount: 0,
     interestRate: 0,
     startDate: new Date().toISOString().split('T')[0],
@@ -64,7 +65,9 @@ export default function LiabilityFormPage() {
     interestExpenseAccountId: '',
     purpose: '',
     durationMonths: 12,
-    interestMethod: 'simple'
+    interestMethod: 'simple',
+    paymentTerms: 'monthly',
+    collateral: ''
   });
 
   // Calculate payment schedule when relevant fields change
@@ -144,15 +147,18 @@ export default function LiabilityFormPage() {
           name: liability.name || '',
           loanType: liability.loanType || liability.type || 'loan',
           lenderName: liability.lenderName || '',
+          lenderContact: liability.lenderContact || '',
           originalAmount: liability.originalAmount || 0,
           interestRate: liability.interestRate || 0,
           startDate: liability.startDate ? liability.startDate.split('T')[0] : '',
           endDate: liability.endDate ? liability.endDate.split('T')[0] : '',
-          liabilityAccountId: (liability as any).liabilityAccountId || '',
-          interestExpenseAccountId: (liability as any).interestExpenseAccountId || '',
+          liabilityAccountId: (liability as any).liabilityAccountId?._id || (liability as any).liabilityAccountId || '',
+          interestExpenseAccountId: (liability as any).interestExpenseAccountId?._id || (liability as any).interestExpenseAccountId || '',
           purpose: (liability as any).purpose || '',
           durationMonths: (liability as any).durationMonths || 12,
-          interestMethod: (liability as any).interestMethod || 'simple'
+          interestMethod: (liability as any).interestMethod || 'simple',
+          paymentTerms: (liability as any).paymentTerms || 'monthly',
+          collateral: (liability as any).collateral || ''
         });
       }
     } catch (error) {
@@ -191,6 +197,7 @@ export default function LiabilityFormPage() {
         name: formData.name,
         loanType: formData.loanType,
         lenderName: formData.lenderName,
+        lenderContact: formData.lenderContact || undefined,
         originalAmount: formData.originalAmount,
         outstandingBalance: formData.originalAmount,
         interestRate: formData.interestRate,
@@ -201,6 +208,8 @@ export default function LiabilityFormPage() {
         interestExpenseAccountId: formData.interestExpenseAccountId || undefined,
         purpose: formData.purpose,
         durationMonths: formData.durationMonths,
+        paymentTerms: formData.paymentTerms,
+        collateral: formData.collateral || undefined,
         status: 'active'
       };
 
@@ -317,6 +326,16 @@ export default function LiabilityFormPage() {
                     onChange={(e) => handleChange('lenderName', e.target.value)}
                     placeholder="Bank Name"
                     required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="lenderContact">{t('liabilities.lenderContact')}</Label>
+                  <Input 
+                    id="lenderContact"
+                    value={formData.lenderContact}
+                    onChange={(e) => handleChange('lenderContact', e.target.value)}
+                    placeholder="Contact person or phone"
                   />
                 </div>
               </CardContent>
@@ -443,6 +462,34 @@ export default function LiabilityFormPage() {
                     type="date"
                     value={formData.endDate}
                     onChange={(e) => handleChange('endDate', e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="paymentTerms">{t('liabilities.paymentTerms')}</Label>
+                  <Select 
+                    value={formData.paymentTerms} 
+                    onValueChange={(value) => handleChange('paymentTerms', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select payment terms" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="monthly">{t('liabilities.paymentTermOptions.monthly')}</SelectItem>
+                      <SelectItem value="quarterly">{t('liabilities.paymentTermOptions.quarterly')}</SelectItem>
+                      <SelectItem value="annually">{t('liabilities.paymentTermOptions.annually')}</SelectItem>
+                      <SelectItem value="bullet">{t('liabilities.paymentTermOptions.bullet')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="collateral">{t('liabilities.collateral')}</Label>
+                  <Input 
+                    id="collateral"
+                    value={formData.collateral}
+                    onChange={(e) => handleChange('collateral', e.target.value)}
+                    placeholder="Collateral description"
                   />
                 </div>
 

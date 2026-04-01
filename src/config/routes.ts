@@ -16,6 +16,10 @@ export const PUBLIC_ROUTES = {
 export const APP_ROUTES = {
   // Dashboard
   DASHBOARD: '/dashboard',
+  INVENTORY_DASHBOARD: '/dashboard/inventory',
+  SALES_DASHBOARD: '/dashboard/sales',
+  PURCHASE_DASHBOARD: '/dashboard/purchases',
+  FINANCE_DASHBOARD: '/dashboard/finance',
   
   // System Management
   USERS: '/users',
@@ -59,16 +63,27 @@ export const APP_ROUTES = {
   STOCK_AUDITS: '/stock-audits',
   STOCK_AUDIT_DETAIL: '/stock-audits/:id',
   
+  // Direct Purchases
+  PURCHASES: '/purchases',
+  PURCHASE_NEW: '/purchases/new',
+  PURCHASE_DETAIL: '/purchases/:id',
+
   // Purchase Orders
-  PURCHASE_ORDERS: '/purchases',
-  PURCHASE_ORDER_NEW: '/purchases/new',
-  PURCHASE_ORDER_DETAIL: '/purchases/:id',
-  PURCHASE_ORDER_EDIT: '/purchases/:id/edit',
-  
+  PURCHASE_ORDERS: '/purchase-orders',
+  PURCHASE_ORDER_NEW: '/purchase-orders/new',
+  PURCHASE_ORDER_DETAIL: '/purchase-orders/:id',
+  PURCHASE_ORDER_EDIT: '/purchase-orders/:id/edit',
+
   // GRN (Goods Received Note)
   GRN: '/grn',
   GRN_NEW: '/grn/new',
   GRN_DETAIL: '/grn/:id',
+  GRN_EDIT: '/grn/:id/edit',
+
+  // Purchase Returns
+  PURCHASE_RETURNS: '/purchase-returns',
+  PURCHASE_RETURN_NEW: '/purchase-returns/new',
+  PURCHASE_RETURN_DETAIL: '/purchase-returns/:id',
   
   // AR Receipts
   AR_RECEIPTS: '/ar-receipts',
@@ -105,13 +120,20 @@ export const APP_ROUTES = {
   LIABILITY_NEW: '/liabilities/new',
   LIABILITY_DETAIL: '/liabilities/:id',
   LIABILITY_EDIT: '/liabilities/:id/edit',
-  
-  // Expenses
-  EXPENSES: '/expenses',
-  EXPENSE_NEW: '/expenses/new',
-  EXPENSE_DETAIL: '/expenses/:id',
-  EXPENSE_EDIT: '/expenses/:id/edit',
-  
+
+  // Budgets
+  BUDGETS: '/budgets',
+  BUDGET_NEW: '/budgets/new',
+  BUDGET_DETAIL: '/budgets/:id',
+  BUDGET_EDIT: '/budgets/:id/edit',
+
+  // Journal Entries
+  JOURNAL: '/journal',
+  JOURNAL_NEW: '/journal/new',
+  JOURNAL_DETAIL: '/journal/:id',
+  JOURNAL_TRIAL_BALANCE: '/journal/trial-balance',
+  JOURNAL_GENERAL_LEDGER: '/journal/general-ledger',
+
   // Company (for multi-tenancy)
   COMPANY_SELECT: '/company',
   
@@ -151,8 +173,11 @@ export const ROUTE_PERMISSIONS: Record<string, string> = {
   [APP_ROUTES.STOCK_MOVEMENTS]: 'stock:read',
   [APP_ROUTES.STOCK_TRANSFERS]: 'stock:read',
   [APP_ROUTES.STOCK_AUDITS]: 'stock:read',
+  [APP_ROUTES.PURCHASES]: 'stock:read',
   [APP_ROUTES.PURCHASE_ORDERS]: 'stock:read',
   [APP_ROUTES.GRN]: 'stock:read',
+  [APP_ROUTES.PURCHASE_RETURNS]: 'stock:read',
+  [APP_ROUTES.PURCHASE_DASHBOARD]: 'stock:read',
   [APP_ROUTES.AP_PAYMENTS]: 'stock:read',
   [APP_ROUTES.BANK_ACCOUNTS]: 'stock:read',
 };

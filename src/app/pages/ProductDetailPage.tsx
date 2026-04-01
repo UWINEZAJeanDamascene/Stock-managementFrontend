@@ -13,7 +13,12 @@ import {
   TrendingDown,
   AlertTriangle,
   History,
-  BarChart3
+  BarChart3,
+  QrCode,
+  FileText,
+  Clock,
+  ShoppingCart,
+  Receipt
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card';
@@ -54,6 +59,10 @@ interface Product {
     _id: string;
     name: string;
   };
+  preferredSupplier?: {
+    _id: string;
+    name: string;
+  };
   currentStock: number | string;
   isActive: boolean;
   isStockable: boolean;
@@ -63,6 +72,9 @@ interface Product {
   sellingPrice: number | string;
   costPrice?: number | string;
   costingMethod: string;
+  inventoryAccount?: string;
+  cogsAccount?: string;
+  revenueAccount?: string;
   taxCode?: string;
   taxRate?: number;
   brand?: string;
@@ -70,6 +82,14 @@ interface Product {
   trackingType?: string;
   reorderPoint?: number;
   reorderQuantity?: number;
+  defaultWarehouse?: {
+    _id: string;
+    name: string;
+  };
+  createdBy?: {
+    _id: string;
+    name: string;
+  };
   createdAt: string;
   updatedAt?: string;
 }
@@ -99,14 +119,73 @@ interface StockMovement {
   createdAt: string;
 }
 
+interface ProductHistoryEntry {
+  action: string;
+  changes?: Record<string, any>;
+  changedBy?: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+  timestamp: string;
+  notes?: string;
+}
+
+interface LifecycleTimelineEntry {
+  type: string;
+  date: string;
+  description: string;
+  details?: any;
+}
+
+const MOVEMENT_REASON_LABELS: Record<string, string> = {
+  purchase: 'Purchase',
+  sale: 'Sale',
+  return: 'Return',
+  damage: 'Damage',
+  loss: 'Loss',
+  theft: 'Theft',
+  expired: 'Expired',
+  transfer_in: 'Transfer In',
+  transfer_out: 'Transfer Out',
+  correction: 'Correction',
+  initial_stock: 'Initial Stock',
+  audit_surplus: 'Audit Surplus',
+  audit_shortage: 'Audit Shortage',
+  dispatch: 'Dispatch',
+  dispatch_reversal: 'Dispatch Reversal',
+};
+
+const getReasonLabel = (reason: string): string => {
+  return MOVEMENT_REASON_LABELS[reason] || reason.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+};
+
+const getActionBadgeClass = (action: string): string => {
+  switch (action) {
+    case 'created': return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
+    case 'updated': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
+    case 'archived': return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400';
+    case 'restored': return 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400';
+    default: return 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300';
+  }
+};
+
+const getTimelineIcon = (type: string) => {
+  switch (type) {
+    case 'product_created': return <Package className="h-4 w-4" />;
+    case 'stock_movement': return <Warehouse className="h-4 w-4" />;
+    case 'quotation': return <FileText className="h-4 w-4" />;
+    case 'invoice': return <Receipt className="h-4 w-4" />;
+    default: return <Clock className="h-4 w-4" />;
+  }
+};
+
 export default function ProductDetailPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { id } = useParams();
   const [searchParams] = useSearchParams();
   const initialTab = searchParams.get('tab') || 'details';
-  
-  console.log('[ProductDetailPage] Rendering, id:', id, 'initialTab:', initialTab);
 
   const [loading, setLoading] = useState(true);
   const [product, setProduct] = useState<Product | null>(null);
@@ -118,6 +197,14 @@ export default function ProductDetailPage() {
     total: 0
   });
 
+  // History state
+  const [history, setHistory] = useState<ProductHistoryEntry[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
+  // Lifecycle state
+  const [lifecycle, setLifecycle] = useState<LifecycleTimelineEntry[]>([]);
+  const [lifecycleLoading, setLifecycleLoading] = useState(false);
+
   useEffect(() => {
     loadProduct();
   }, [id]);
@@ -126,20 +213,28 @@ export default function ProductDetailPage() {
     if (product && initialTab === 'movements') {
       loadMovements();
     }
-  }, [product, initialTab, movementPagination.currentPage]);
+    if (product && initialTab === 'history') {
+      loadHistory();
+    }
+    if (product && initialTab === 'lifecycle') {
+      loadLifecycle();
+    }
+  }, [product, initialTab]);
+
+  useEffect(() => {
+    if (initialTab === 'movements') {
+      loadMovements();
+    }
+  }, [movementPagination.currentPage]);
 
   const loadProduct = async () => {
-    console.log('[ProductDetailPage] loadProduct called, id:', id);
     if (!id) {
-      console.log('[ProductDetailPage] No ID, returning early');
       setLoading(false);
       return;
     }
     setLoading(true);
     try {
-      console.log('[ProductDetailPage] Calling API with id:', id);
       const response = await productsApi.getById(id);
-      console.log('[ProductDetailPage] API response:', response);
       if (response.success && response.data) {
         setProduct(response.data as Product);
       }
@@ -151,9 +246,7 @@ export default function ProductDetailPage() {
   };
 
   const loadMovements = async () => {
-    if (!id) {
-      return;
-    }
+    if (!id) return;
     setMovementsLoading(true);
     try {
       const response = await stockApi.getMovements({
@@ -178,6 +271,37 @@ export default function ProductDetailPage() {
     }
   };
 
+  const loadHistory = async () => {
+    if (!id) return;
+    setHistoryLoading(true);
+    try {
+      const response = await productsApi.getHistory(id);
+      if (response.success && response.data) {
+        setHistory(response.data as ProductHistoryEntry[]);
+      }
+    } catch (error) {
+      console.error('Failed to load history:', error);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  const loadLifecycle = async () => {
+    if (!id) return;
+    setLifecycleLoading(true);
+    try {
+      const response = await productsApi.getLifecycle(id);
+      if (response.success && response.data) {
+        const data = response.data as any;
+        setLifecycle(data.timeline || []);
+      }
+    } catch (error) {
+      console.error('Failed to load lifecycle:', error);
+    } finally {
+      setLifecycleLoading(false);
+    }
+  };
+
   const formatCurrency = (value: number | string | undefined) => {
     if (!value) return '0.00';
     const num = typeof value === 'string' ? parseFloat(value) : value;
@@ -195,6 +319,15 @@ export default function ProductDetailPage() {
     });
   };
 
+  const formatDateShort = (date: string | undefined) => {
+    if (!date) return '-';
+    return new Date(date).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
   const getStockStatus = () => {
     if (!product) return { label: '-', color: '' };
     const stock = Number(product.currentStock) || 0;
@@ -205,8 +338,6 @@ export default function ProductDetailPage() {
     return { label: t('products.inStock'), color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' };
   };
 
-  console.log('[ProductDetailPage] Render state: loading:', loading, 'product:', product ? 'exists' : 'null');
-  
   if (loading) {
     return (
       <Layout>
@@ -326,7 +457,7 @@ export default function ProductDetailPage() {
 
         {/* Tabs */}
         <Tabs defaultValue={initialTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 max-w-md">
+          <TabsList className="grid w-full grid-cols-5 max-w-2xl">
             <TabsTrigger value="details">
               <Package className="h-4 w-4 mr-2" />
               {t('products.details') || 'Details'}
@@ -338,6 +469,14 @@ export default function ProductDetailPage() {
             <TabsTrigger value="movements">
               <History className="h-4 w-4 mr-2" />
               {t('products.movements') || 'Movements'}
+            </TabsTrigger>
+            <TabsTrigger value="history" onClick={() => { if (history.length === 0) loadHistory(); }}>
+              <Clock className="h-4 w-4 mr-2" />
+              {t('products.history') || 'History'}
+            </TabsTrigger>
+            <TabsTrigger value="lifecycle" onClick={() => { if (lifecycle.length === 0) loadLifecycle(); }}>
+              <FileText className="h-4 w-4 mr-2" />
+              {t('products.lifecycle') || 'Lifecycle'}
             </TabsTrigger>
           </TabsList>
 
@@ -370,6 +509,14 @@ export default function ProductDetailPage() {
                     <span className="font-medium">{product.supplier?.name || '-'}</span>
                   </div>
                   <div className="flex justify-between">
+                    <span className="text-slate-500 dark:text-slate-400">{t('products.preferredSupplier') || 'Preferred Supplier'}</span>
+                    <span className="font-medium">{product.preferredSupplier?.name || '-'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500 dark:text-slate-400">{t('products.defaultWarehouse') || 'Default Warehouse'}</span>
+                    <span className="font-medium">{product.defaultWarehouse?.name || '-'}</span>
+                  </div>
+                  <div className="flex justify-between">
                     <span className="text-slate-500 dark:text-slate-400">{t('products.brand') || 'Brand'}</span>
                     <span className="font-medium">{product.brand || '-'}</span>
                   </div>
@@ -385,6 +532,10 @@ export default function ProductDetailPage() {
                   <CardTitle>{t('products.pricingInventory') || 'Pricing & Inventory'}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  <div className="flex justify-between">
+                    <span className="text-slate-500 dark:text-slate-400">{t('products.averageCost') || 'Average Cost'}</span>
+                    <span className="font-medium">{formatCurrency(product.averageCost)}</span>
+                  </div>
                   <div className="flex justify-between">
                     <span className="text-slate-500 dark:text-slate-400">{t('products.costPrice') || 'Cost Price'}</span>
                     <span className="font-medium">{formatCurrency(product.costPrice || product.averageCost)}</span>
@@ -407,7 +558,11 @@ export default function ProductDetailPage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-500 dark:text-slate-400">{t('products.isStockable') || 'Track Inventory'}</span>
-                    <span className="font-medium">{product.isStockable ? t('common.yes') : t('common.no')}</span>
+                    <span className="font-medium">{product.isStockable ? t('common.yes') || 'Yes' : t('common.no') || 'No'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500 dark:text-slate-400">{t('products.lowStockThreshold') || 'Low Stock Threshold'}</span>
+                    <span className="font-medium">{product.lowStockThreshold || 10}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-500 dark:text-slate-400">{t('products.reorderPoint') || 'Reorder Point'}</span>
@@ -420,26 +575,65 @@ export default function ProductDetailPage() {
                 </CardContent>
               </Card>
 
-              {product.barcode && (
-                <Card className="md:col-span-2">
-                  <CardHeader>
-                    <CardTitle>{t('products.barcode') || 'Barcode'}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center gap-6">
+              {/* Accounting */}
+              <Card className="md:col-span-2">
+                <CardHeader>
+                  <CardTitle>{t('products.accounting') || 'Accounting'}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <span className="text-sm text-slate-500 dark:text-slate-400">{t('products.inventoryAccount') || 'Inventory Account'}</span>
+                      <p className="font-medium">{product.inventoryAccount || '-'}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm text-slate-500 dark:text-slate-400">{t('products.cogsAccount') || 'COGS Account'}</span>
+                      <p className="font-medium">{product.cogsAccount || '-'}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm text-slate-500 dark:text-slate-400">{t('products.revenueAccount') || 'Revenue Account'}</span>
+                      <p className="font-medium">{product.revenueAccount || '-'}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Barcode and QR Code */}
+              <Card className="md:col-span-2">
+                <CardHeader>
+                  <CardTitle>{t('products.barcodeAndQR') || 'Barcode & QR Code'}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap items-start gap-8">
+                    {product.barcode && (
+                      <div className="flex flex-col items-center gap-2">
+                        <span className="text-sm text-slate-500 dark:text-slate-400 mb-1">{t('products.barcode') || 'Barcode'}</span>
+                        <BarcodeDisplay 
+                          productId={product._id} 
+                          type="barcode"
+                          barcodeParams={{ type: product.barcodeType || 'CODE128', height: 80 }}
+                          className="h-20"
+                        />
+                        <code className="bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded text-xs">{product.barcode}</code>
+                      </div>
+                    )}
+                    <div className="flex flex-col items-center gap-2">
+                      <span className="text-sm text-slate-500 dark:text-slate-400 mb-1">{t('products.qrCode') || 'QR Code'}</span>
                       <BarcodeDisplay 
                         productId={product._id} 
-                        type="barcode"
-                        barcodeParams={{ type: product.barcodeType || 'CODE128', height: 80 }}
-                        className="h-20"
+                        type="qrcode"
+                        qrParams={{ width: 150 }}
+                        className="h-[150px] w-[150px]"
                       />
-                      <div className="text-slate-500 dark:text-slate-400">
-                        <code className="bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">{product.barcode}</code>
-                      </div>
                     </div>
-                  </CardContent>
-                </Card>
-              )}
+                    {!product.barcode && (
+                      <p className="text-sm text-slate-500 dark:text-slate-400 self-center">
+                        {t('products.noBarcode') || 'No barcode set for this product'}
+                      </p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
 
               {product.description && (
                 <Card className="md:col-span-2">
@@ -555,7 +749,7 @@ export default function ProductDetailPage() {
                                 {movement.type}
                               </Badge>
                             </TableCell>
-                            <TableCell className="capitalize">{movement.reason}</TableCell>
+                            <TableCell>{getReasonLabel(movement.reason)}</TableCell>
                             <TableCell className="text-right font-medium">
                               {movement.type === 'in' ? '+' : movement.type === 'out' ? '-' : ''}{movement.quantity}
                             </TableCell>
@@ -595,6 +789,134 @@ export default function ProductDetailPage() {
                       </div>
                     )}
                   </>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* History Tab */}
+          <TabsContent value="history" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>{t('products.productHistory') || 'Product History'}</CardTitle>
+                <CardDescription>
+                  {t('products.productHistoryDesc') || 'Audit trail of all changes made to this product'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {historyLoading ? (
+                  <div className="flex items-center justify-center p-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+                  </div>
+                ) : history.length === 0 ? (
+                  <div className="text-center p-8 text-slate-500 dark:text-slate-400">
+                    <Clock className="h-12 w-12 mx-auto mb-4 text-slate-300" />
+                    <p>{t('products.noHistory') || 'No history records yet'}</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {history.map((entry, index) => (
+                      <div key={index} className="flex gap-4 p-4 rounded-lg border border-slate-200 dark:border-slate-700">
+                        <div className="flex-shrink-0">
+                          <Badge className={getActionBadgeClass(entry.action)}>
+                            {entry.action}
+                          </Badge>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium text-slate-900 dark:text-white">
+                              {entry.changedBy?.name || t('products.unknownUser') || 'Unknown User'}
+                            </span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400">
+                              {formatDate(entry.timestamp)}
+                            </span>
+                          </div>
+                          {entry.notes && (
+                            <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{entry.notes}</p>
+                          )}
+                          {entry.changes && entry.action === 'updated' && entry.changes.new && (
+                            <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                              <span className="font-medium">{t('products.changedFields') || 'Changed'}: </span>
+                              {Object.keys(entry.changes.new as Record<string, any>)
+                                .filter(k => !['__v', '_id', 'updatedAt', 'createdAt', 'history'].includes(k))
+                                .join(', ')}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Lifecycle Tab */}
+          <TabsContent value="lifecycle" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>{t('products.productLifecycle') || 'Product Lifecycle'}</CardTitle>
+                <CardDescription>
+                  {t('products.productLifecycleDesc') || 'Complete timeline of product activity including stock, quotations, and invoices'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {lifecycleLoading ? (
+                  <div className="flex items-center justify-center p-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+                  </div>
+                ) : lifecycle.length === 0 ? (
+                  <div className="text-center p-8 text-slate-500 dark:text-slate-400">
+                    <FileText className="h-12 w-12 mx-auto mb-4 text-slate-300" />
+                    <p>{t('products.noLifecycle') || 'No lifecycle events yet'}</p>
+                  </div>
+                ) : (
+                  <div className="relative pl-6">
+                    <div className="absolute left-2 top-0 bottom-0 w-px bg-slate-200 dark:bg-slate-700" />
+                    <div className="space-y-6">
+                      {lifecycle.map((event, index) => (
+                        <div key={index} className="relative">
+                          <div className="absolute -left-4 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600">
+                            <span className="text-slate-500 dark:text-slate-400">
+                              {getTimelineIcon(event.type)}
+                            </span>
+                          </div>
+                          <div className="ml-4 p-4 rounded-lg border border-slate-200 dark:border-slate-700">
+                            <div className="flex items-center justify-between mb-1">
+                              <Badge variant="outline" className="text-xs">
+                                {event.type.replace(/_/g, ' ')}
+                              </Badge>
+                              <span className="text-xs text-slate-500 dark:text-slate-400">
+                                {formatDate(event.date)}
+                              </span>
+                            </div>
+                            <p className="text-sm font-medium text-slate-900 dark:text-white">
+                              {event.description}
+                            </p>
+                            {event.details && event.type === 'stock_movement' && (
+                              <div className="mt-2 text-xs text-slate-500 dark:text-slate-400 space-y-1">
+                                {event.details.type && <p>Type: {event.details.type} ({getReasonLabel(event.details.reason)})</p>}
+                                {event.details.quantity && <p>Qty: {event.details.quantity}</p>}
+                                {event.details.newStock !== undefined && <p>New Stock: {event.details.newStock}</p>}
+                              </div>
+                            )}
+                            {event.details && event.type === 'quotation' && (
+                              <div className="mt-2 text-xs text-slate-500 dark:text-slate-400 space-y-1">
+                                {event.details.status && <p>Status: {event.details.status}</p>}
+                                {event.details.client?.name && <p>Client: {event.details.client.name}</p>}
+                              </div>
+                            )}
+                            {event.details && event.type === 'invoice' && (
+                              <div className="mt-2 text-xs text-slate-500 dark:text-slate-400 space-y-1">
+                                {event.details.status && <p>Status: {event.details.status}</p>}
+                                {event.details.client?.name && <p>Client: {event.details.client.name}</p>}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </CardContent>
             </Card>

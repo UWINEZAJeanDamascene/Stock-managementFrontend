@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { productsApi, categoriesApi, suppliersApi } from '@/lib/api';
 import { Layout } from '../layout/Layout';
@@ -14,7 +14,9 @@ import {
   Loader2,
   Package,
   AlertTriangle,
-  X
+  X,
+  Trash2,
+  Bell
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
@@ -51,12 +53,14 @@ import {
 } from '@/app/components/ui/dialog';
 import { Badge } from '@/app/components/ui/badge';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 
 interface Product {
   _id: string;
   name: string;
   sku: string;
   barcode?: string;
+  barcodeType?: string;
   description?: string;
   category?: {
     _id: string;
@@ -64,6 +68,10 @@ interface Product {
   };
   unit: string;
   supplier?: {
+    _id: string;
+    name: string;
+  };
+  preferredSupplier?: {
     _id: string;
     name: string;
   };
@@ -76,6 +84,9 @@ interface Product {
   sellingPrice: number | string;
   costPrice?: number | string;
   costingMethod: string;
+  inventoryAccount?: string;
+  cogsAccount?: string;
+  revenueAccount?: string;
   taxCode?: string;
   taxRate?: number;
   brand?: string;
@@ -83,6 +94,14 @@ interface Product {
   trackingType?: string;
   reorderPoint?: number;
   reorderQuantity?: number;
+  defaultWarehouse?: {
+    _id: string;
+    name: string;
+  };
+  createdBy?: {
+    _id: string;
+    name: string;
+  };
   createdAt: string;
   updatedAt?: string;
 }
@@ -90,6 +109,12 @@ interface Product {
 interface Category {
   _id: string;
   name: string;
+}
+
+interface Supplier {
+  _id: string;
+  name: string;
+  code: string;
 }
 
 interface PaginationInfo {
@@ -106,6 +131,7 @@ export default function ProductsListPage() {
   const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
@@ -119,15 +145,17 @@ export default function ProductsListPage() {
   
   // Filters
   const [categoryFilter, setCategoryFilter] = useState<string>('');
+  const [supplierFilter, setSupplierFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   
   // Dialog states
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
-  // Load categories on mount
+  // Load categories and suppliers on mount
   useEffect(() => {
     loadCategories();
+    loadSuppliers();
   }, []);
 
   const loadCategories = async () => {
@@ -138,6 +166,17 @@ export default function ProductsListPage() {
       }
     } catch (error) {
       console.error('Failed to load categories:', error);
+    }
+  };
+
+  const loadSuppliers = async () => {
+    try {
+      const response = await suppliersApi.getAll({ limit: 100 });
+      if (response.success && response.data) {
+        setSuppliers(response.data as Supplier[]);
+      }
+    } catch (error) {
+      console.error('Failed to load suppliers:', error);
     }
   };
 
@@ -153,6 +192,7 @@ export default function ProductsListPage() {
       
       if (searchTerm) params.search = searchTerm;
       if (categoryFilter) params.category = categoryFilter;
+      if (supplierFilter) params.supplier = supplierFilter;
       // Status filter: 'active', 'archived', or stock status 'in_stock', 'low_stock', 'out_of_stock'
       if (statusFilter === 'archived') {
         params.isArchived = true;
@@ -183,13 +223,12 @@ export default function ProductsListPage() {
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, categoryFilter, statusFilter]);
+  }, [searchTerm, categoryFilter, supplierFilter, statusFilter]);
 
-  // Load products on mount and when page/limit changes
+  // Load products on mount and when page/limit/filters change
   useEffect(() => {
     loadProducts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pagination.currentPage, pagination.limit]);
+  }, [pagination.currentPage, pagination.limit, searchTerm, categoryFilter, supplierFilter, statusFilter]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -214,14 +253,18 @@ export default function ProductsListPage() {
     try {
       if (product.isArchived) {
         await productsApi.restore(product._id);
+        toast.success(t('products.restored') || 'Product restored successfully');
       } else if (product.isActive) {
         await productsApi.archive(product._id);
+        toast.success(t('products.archived') || 'Product archived successfully');
       } else {
         await productsApi.restore(product._id);
+        toast.success(t('products.activated') || 'Product activated successfully');
       }
       await loadProducts();
     } catch (error) {
       console.error('Failed to toggle product status:', error);
+      toast.error(t('products.toggleStatusFailed') || 'Failed to update product status');
     } finally {
       setActionLoading(false);
     }
@@ -229,9 +272,11 @@ export default function ProductsListPage() {
 
   const handleExport = async () => {
     try {
-      const blob = await fetch(`${import.meta.env.VITE_API_URL || 'https://stock-tenancy-system.onrender.com/api'}/bulk/export/products`, {
+      const token = localStorage.getItem('token');
+      const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://stock-tenancy-system.onrender.com/api';
+      const blob = await fetch(`${API_BASE_URL}/bulk/export/products`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${token}`
         }
       }).then(res => {
         if (!res.ok) throw new Error('Export failed');
@@ -248,6 +293,43 @@ export default function ProductsListPage() {
       document.body.removeChild(a);
     } catch (error) {
       console.error('Export failed:', error);
+    }
+  };
+
+  const handleDeleteClick = (product: Product) => {
+    setSelectedProduct(product);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!selectedProduct) return;
+    setActionLoading(true);
+    try {
+      await productsApi.delete(selectedProduct._id);
+      toast.success(t('products.deleted') || 'Product deleted successfully');
+      setDeleteDialogOpen(false);
+      setSelectedProduct(null);
+      await loadProducts();
+    } catch (error) {
+      console.error('Failed to delete product:', error);
+      toast.error(t('products.deleteFailed') || 'Failed to delete product');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleCheckLowStock = async () => {
+    setActionLoading(true);
+    try {
+      const response = await productsApi.checkLowStockAndNotify();
+      if (response.success) {
+        toast.success(response.message || 'Low stock notifications sent');
+      }
+    } catch (error) {
+      console.error('Failed to check low stock:', error);
+      toast.error(t('products.lowStockCheckFailed') || 'Failed to check low stock');
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -317,6 +399,10 @@ export default function ProductsListPage() {
             </p>
           </div>
           <div className="flex gap-2">
+            <Button onClick={handleCheckLowStock} variant="outline" size="sm" disabled={actionLoading}>
+              <Bell className="h-4 w-4 mr-2" />
+              {t('products.checkLowStock') || 'Check Low Stock'}
+            </Button>
             <Button onClick={handleExport} variant="outline" size="sm">
               <Download className="h-4 w-4 mr-2" />
               {t('common.export') || 'Export'}
@@ -352,6 +438,18 @@ export default function ProductsListPage() {
                   <SelectItem value="all">{t('products.allCategories') || 'All Categories'}</SelectItem>
                   {categories.map((cat) => (
                     <SelectItem key={cat._id} value={cat._id}>{cat.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={supplierFilter || 'all'} onValueChange={(value) => { setSupplierFilter(value === 'all' ? '' : value); setPagination(prev => ({ ...prev, currentPage: 1 })); }}>
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue placeholder={t('products.allSuppliers') || 'All Suppliers'} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('products.allSuppliers') || 'All Suppliers'}</SelectItem>
+                  {suppliers.map((sup) => (
+                    <SelectItem key={sup._id} value={sup._id}>{sup.name} ({sup.code})</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -401,10 +499,12 @@ export default function ProductsListPage() {
                     <TableHead className="font-semibold">{t('products.name') || 'Name'}</TableHead>
                     <TableHead className="font-semibold">{t('products.category') || 'Category'}</TableHead>
                     <TableHead className="font-semibold">{t('products.unit') || 'Unit'}</TableHead>
+                    <TableHead className="font-semibold text-right">{t('products.averageCost') || 'Avg Cost'}</TableHead>
                     <TableHead className="font-semibold text-right">{t('products.costPrice') || 'Cost Price'}</TableHead>
                     <TableHead className="font-semibold text-right">{t('products.sellingPrice') || 'Selling Price'}</TableHead>
-                    <TableHead className="font-semibold">{t('products.costingMethod') || 'Costing'}</TableHead>
                     <TableHead className="font-semibold text-center">{t('products.stock') || 'Stock'}</TableHead>
+                    <TableHead className="font-semibold text-right">{t('products.stockValue') || 'Stock Value'}</TableHead>
+                    <TableHead className="font-semibold">{t('products.costingMethod') || 'Costing'}</TableHead>
                     <TableHead className="font-semibold text-center">{t('products.status') || 'Status'}</TableHead>
                     <TableHead className="font-semibold text-right">{t('common.actions') || 'Actions'}</TableHead>
                   </TableRow>
@@ -415,6 +515,9 @@ export default function ProductsListPage() {
                     const stock = typeof product.currentStock === 'string' 
                       ? parseFloat(product.currentStock) 
                       : product.currentStock;
+                    const avgCost = typeof product.averageCost === 'string' ? parseFloat(product.averageCost) : product.averageCost || 0;
+                    const costP = typeof product.costPrice === 'string' ? parseFloat(product.costPrice) : product.costPrice || 0;
+                    const effectiveCost = avgCost > 0 ? avgCost : costP;
                     
                     return (
                       <TableRow key={product._id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
@@ -439,13 +542,9 @@ export default function ProductsListPage() {
                           )}
                         </TableCell>
                         <TableCell className="capitalize">{product.unit}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(product.averageCost)}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(effectiveCost)}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(product.costPrice)}</TableCell>
                         <TableCell className="text-right">{formatCurrency(product.sellingPrice)}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="text-xs uppercase">
-                            {product.costingMethod || 'fifo'}
-                          </Badge>
-                        </TableCell>
                         <TableCell className="text-center">
                           <div className="flex items-center justify-center gap-1">
                             {stock === 0 && <AlertTriangle className="h-4 w-4 text-red-500" />}
@@ -453,6 +552,14 @@ export default function ProductsListPage() {
                               {stock.toFixed(0)}
                             </span>
                           </div>
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                          {formatCurrency(stock * effectiveCost)}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs uppercase">
+                            {product.costingMethod || 'fifo'}
+                          </Badge>
                         </TableCell>
                         <TableCell className="text-center">
                           <span className={stockStatus.color}>
@@ -489,6 +596,15 @@ export default function ProductsListPage() {
                               ) : (
                                 <ToggleLeft className="h-4 w-4 text-red-500" />
                               )}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteClick(product)}
+                              disabled={actionLoading}
+                              title={t('common.delete') || 'Delete'}
+                            >
+                              <Trash2 className="h-4 w-4 text-red-500" />
                             </Button>
                           </div>
                         </TableCell>
@@ -538,6 +654,49 @@ export default function ProductsListPage() {
             </div>
           )}
         </div>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{t('products.confirmDelete') || 'Delete Product'}</DialogTitle>
+              <DialogDescription>
+                {t('products.deleteConfirmMessage') || 'Are you sure you want to delete this product? This action cannot be undone.'}
+                {selectedProduct && (
+                  <span className="block mt-2 font-medium text-slate-900 dark:text-white">
+                    {selectedProduct.name} ({selectedProduct.sku})
+                  </span>
+                )}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => { setDeleteDialogOpen(false); setSelectedProduct(null); }}
+                disabled={actionLoading}
+              >
+                {t('common.cancel') || 'Cancel'}
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteConfirm}
+                disabled={actionLoading}
+              >
+                {actionLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    {t('common.deleting') || 'Deleting...'}
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    {t('common.delete') || 'Delete'}
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );

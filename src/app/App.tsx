@@ -10,6 +10,10 @@ import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import ResetPasswordPage from './pages/auth/ResetPasswordPage';
 import CompanySelectorPage from './pages/auth/CompanySelectorPage';
 import DashboardPage from './pages/DashboardPage';
+import InventoryDashboardPage from './pages/InventoryDashboardPage';
+import SalesDashboardPage from './pages/SalesDashboardPage';
+import PurchaseDashboardPage from './pages/PurchaseDashboardPage';
+import FinanceDashboardPage from './pages/FinanceDashboardPage';
 import UsersPage from './pages/UsersPage';
 import SecurityPage from './pages/SecurityPage';
 import NotificationsPage from './pages/NotificationsPage';
@@ -33,6 +37,9 @@ import AuditsListPage from './pages/AuditsListPage';
 import AuditDetailPage from './pages/AuditDetailPage';
 import AuditCreatePage from './pages/AuditCreatePage';
 import BatchesPage from './pages/BatchesPage';
+import PurchasesListPage from './pages/purchases/PurchasesListPage';
+import PurchaseDetailPage from './pages/purchases/PurchaseDetailPage';
+import PurchaseFormPage from './pages/purchases/PurchaseFormPage';
 import PurchaseOrdersListPage from './pages/purchases/PurchaseOrdersListPage';
 import PurchaseOrderFormPage from './pages/purchases/PurchaseOrderFormPage';
 import PurchaseOrderDetailPage from './pages/purchases/PurchaseOrderDetailPage';
@@ -41,9 +48,13 @@ import GRNCreatePage from './pages/grn/GRNCreatePage';
 import GRNDetailPage from './pages/grn/GRNDetailPage';
 import PurchaseReturnsListPage from './pages/purchase-returns/PurchaseReturnsListPage';
 import PurchaseReturnCreatePage from './pages/purchase-returns/PurchaseReturnCreatePage';
+import PurchaseReturnDetailPage from './pages/purchase-returns/PurchaseReturnDetailPage';
 import ClientsListPage from './pages/clients/ClientsListPage';
 import ClientFormPage from './pages/clients/ClientFormPage';
 import ClientDetailPage from './pages/clients/ClientDetailPage';
+import SuppliersListPage from './pages/suppliers/SuppliersListPage';
+import SupplierFormPage from './pages/suppliers/SupplierFormPage';
+import SupplierDetailPage from './pages/suppliers/SupplierDetailPage';
 import QuotationsListPage from './pages/quotations/QuotationsListPage';
 import QuotationFormPage from './pages/quotations/QuotationFormPage';
 import InvoicesListPage from './pages/invoices/InvoicesListPage';
@@ -68,10 +79,30 @@ import AssetDetailPage from './pages/assets/AssetDetailPage';
 import LiabilitiesListPage from './pages/liabilities/LiabilitiesListPage';
 import LiabilityDetailPage from './pages/liabilities/LiabilityDetailPage';
 import LiabilityFormPage from './pages/liabilities/LiabilityFormPage';
+import BudgetsListPage from './pages/budgets/BudgetsListPage';
+import BudgetFormPage from './pages/budgets/BudgetFormPage';
+import BudgetDetailPage from './pages/budgets/BudgetDetailPage';
+import ARAgingPage from './pages/ar/ARAgingPage';
 import ExpensesListPage from './pages/expenses/ExpensesListPage';
 import ExpenseDetailPage from './pages/expenses/ExpenseDetailPage';
-import ExpenseFormPage from './pages/expenses/ExpenseFormPage';
-import ARAgingPage from './pages/ar/ARAgingPage';
+import ChartOfAccountsPage from './pages/settings/ChartOfAccountsPage';
+import PayrollListPage from './pages/payroll/PayrollListPage';
+import PayrollRunsListPage from './pages/payroll/PayrollRunsListPage';
+import PayrollDetailPage from './pages/payroll/PayrollDetailPage';
+import PayrollRunDetailPage from './pages/payroll/PayrollRunDetailPage';
+import TaxesPage from './pages/taxes/TaxesPage';
+import JournalEntriesPage from './pages/journal/JournalEntriesPage';
+import JournalEntryDetailPage from './pages/journal/JournalEntryDetailPage';
+import JournalEntryFormPage from './pages/journal/JournalEntryFormPage';
+import TrialBalancePage from './pages/journal/TrialBalancePage';
+import GeneralLedgerPage from './pages/journal/GeneralLedgerPage';
+import ProfitLossPage from './pages/reports/ProfitLossPage';
+import BalanceSheetPage from './pages/reports/BalanceSheetPage';
+import CashFlowPage from './pages/reports/CashFlowPage';
+import FinancialRatiosPage from './pages/reports/FinancialRatiosPage';
+import AccountingPeriodsPage from './pages/settings/AccountingPeriodsPage';
+import CompanyProfilePage from './pages/settings/CompanyProfilePage';
+import RolesSettingsPage from './pages/settings/RolesSettingsPage';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import ChatBot from './components/ChatBot';
 import OfflineSyncBanner from './components/OfflineSyncBanner';
@@ -184,6 +215,10 @@ function AppRoutes() {
         
         {/* System routes - pages already have Layout component */}
         <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/dashboard/inventory" element={<InventoryDashboardPage />} />
+        <Route path="/dashboard/sales" element={<SalesDashboardPage />} />
+        <Route path="/dashboard/purchases" element={<PurchaseDashboardPage />} />
+        <Route path="/dashboard/finance" element={<FinanceDashboardPage />} />
         <Route path="/users" element={<UsersPage />} />
         <Route path="/security" element={<SecurityPage />} />
         <Route path="/notifications" element={<NotificationSettingsPage />} />
@@ -204,7 +239,15 @@ function AppRoutes() {
         <Route path="/purchase-orders" element={<PurchaseOrdersListPage />} />
         <Route path="/purchase-orders/new" element={<PurchaseOrderFormPage />} />
         <Route path="/purchase-orders/:id/edit" element={<PurchaseOrderFormPage />} />
-        <Route path="/purchase-orders/:id" element={<PurchaseOrderDetailPage />} />
+        <Route path="/purchase-orders/:id" element={
+          <ErrorBoundary>
+            <PurchaseOrderDetailPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/purchases" element={<PurchasesListPage />} />
+        <Route path="/purchases/new" element={<PurchaseFormPage />} />
+        <Route path="/purchases/:id/edit" element={<PurchaseFormPage />} />
+        <Route path="/purchases/:id" element={<PurchaseDetailPage />} />
         <Route path="/grn" element={
           <ErrorBoundary>
             <GRNListPageWrapper />
@@ -214,10 +257,15 @@ function AppRoutes() {
         <Route path="/grn/:id" element={<GRNDetailPage />} />
         <Route path="/purchase-returns" element={<PurchaseReturnsListPage />} />
         <Route path="/purchase-returns/new" element={<PurchaseReturnCreatePage />} />
+        <Route path="/purchase-returns/:id" element={<PurchaseReturnDetailPage />} />
         <Route path="/clients" element={<ClientsListPage />} />
         <Route path="/clients/new" element={<ClientFormPage />} />
         <Route path="/clients/:id/edit" element={<ClientFormPage />} />
         <Route path="/clients/:id" element={<ClientDetailPage />} />
+        <Route path="/suppliers" element={<SuppliersListPage />} />
+        <Route path="/suppliers/new" element={<SupplierFormPage />} />
+        <Route path="/suppliers/:id/edit" element={<SupplierFormPage />} />
+        <Route path="/suppliers/:id" element={<SupplierDetailPage />} />
         <Route path="/quotations" element={<QuotationsListPage />} />
         <Route path="/quotations/new" element={<QuotationFormPage />} />
         <Route path="/quotations/:id/edit" element={<QuotationFormPage />} />
@@ -360,6 +408,27 @@ function AppRoutes() {
             <LiabilityFormPage />
           </ErrorBoundary>
         } />
+        {/* Budgets */}
+        <Route path="/budgets" element={
+          <ErrorBoundary>
+            <BudgetsListPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/budgets/new" element={
+          <ErrorBoundary>
+            <BudgetFormPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/budgets/:id" element={
+          <ErrorBoundary>
+            <BudgetDetailPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/budgets/:id/edit" element={
+          <ErrorBoundary>
+            <BudgetFormPage />
+          </ErrorBoundary>
+        } />
         {/* Expenses */}
         <Route path="/expenses" element={
           <ErrorBoundary>
@@ -368,7 +437,7 @@ function AppRoutes() {
         } />
         <Route path="/expenses/new" element={
           <ErrorBoundary>
-            <ExpenseFormPage />
+            <ExpensesListPage />
           </ErrorBoundary>
         } />
         <Route path="/expenses/:id" element={
@@ -378,13 +447,122 @@ function AppRoutes() {
         } />
         <Route path="/expenses/:id/edit" element={
           <ErrorBoundary>
-            <ExpenseFormPage />
+            <ExpenseDetailPage />
+          </ErrorBoundary>
+        } />
+        {/* Chart of Accounts */}
+        <Route path="/chart-of-accounts" element={
+          <ErrorBoundary>
+            <ChartOfAccountsPage />
           </ErrorBoundary>
         } />
         <Route path="/bulk-data" element={<BulkDataPage />} />
         <Route path="/audit-trail" element={<AuditTrailPage />} />
         <Route path="/platform-admin" element={<PlatformAdminPage />} />
         
+        {/* Payroll routes */}
+        <Route path="/payroll" element={
+          <ErrorBoundary>
+            <PayrollListPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/payroll-runs" element={
+          <ErrorBoundary>
+            <PayrollRunsListPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/payroll-runs/new" element={
+          <ErrorBoundary>
+            <PayrollRunDetailPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/payroll-runs/:id" element={
+          <ErrorBoundary>
+            <PayrollRunDetailPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/payroll/:id" element={
+          <ErrorBoundary>
+            <PayrollDetailPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/payroll/:id/edit" element={
+          <ErrorBoundary>
+            <PayrollDetailPage />
+          </ErrorBoundary>
+        } />
+
+        {/* Taxes routes */}
+        <Route path="/taxes" element={
+          <ErrorBoundary>
+            <TaxesPage />
+          </ErrorBoundary>
+        } />
+
+        {/* Journal routes */}
+        <Route path="/journal" element={
+          <ErrorBoundary>
+            <JournalEntriesPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/journal/new" element={
+          <ErrorBoundary>
+            <JournalEntryFormPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/journal/trial-balance" element={
+          <ErrorBoundary>
+            <TrialBalancePage />
+          </ErrorBoundary>
+        } />
+        <Route path="/journal/general-ledger" element={
+          <ErrorBoundary>
+            <GeneralLedgerPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/journal/:id" element={
+          <ErrorBoundary>
+            <JournalEntryDetailPage />
+          </ErrorBoundary>
+        } />
+
+        {/* Reports routes */}
+        <Route path="/reports/profit-loss" element={
+          <ErrorBoundary>
+            <ProfitLossPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/reports/balance-sheet" element={
+          <ErrorBoundary>
+            <BalanceSheetPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/reports/cash-flow" element={
+          <ErrorBoundary>
+            <CashFlowPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/reports/financial-ratios" element={
+          <ErrorBoundary>
+            <FinancialRatiosPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/periods" element={
+          <ErrorBoundary>
+            <AccountingPeriodsPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/company-settings" element={
+          <ErrorBoundary>
+            <CompanyProfilePage />
+          </ErrorBoundary>
+        } />
+        <Route path="/roles" element={
+          <ErrorBoundary>
+            <RolesSettingsPage />
+          </ErrorBoundary>
+        } />
+
         {/* Products routes - debug: direct access without auth check */}
         <Route path="/products-debug" element={
           <ErrorBoundary>

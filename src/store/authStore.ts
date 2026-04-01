@@ -12,6 +12,7 @@ export interface User {
   isActive?: boolean;
   lastLogin?: string;
   mustChangePassword?: boolean;
+  permissions?: string[];
   [key: string]: unknown;
 }
 

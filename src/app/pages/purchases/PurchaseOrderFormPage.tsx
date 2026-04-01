@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { purchaseOrdersApi, suppliersApi, warehousesApi, productsApi } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
@@ -9,7 +9,8 @@ import {
   Plus, 
   Trash2,
   Loader2,
-  Calculator
+  Calculator,
+  X
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
@@ -92,7 +93,7 @@ export default function PurchaseOrderFormPage() {
     warehouse: '',
     orderDate: new Date().toISOString().split('T')[0],
     expectedDeliveryDate: '',
-    currencyCode: 'USD',
+    currencyCode: 'FRW',
     notes: '',
     lines: [],
   });
@@ -142,7 +143,7 @@ export default function PurchaseOrderFormPage() {
           warehouse: po.warehouse?._id || '',
           orderDate: po.orderDate ? new Date(po.orderDate).toISOString().split('T')[0] : '',
           expectedDeliveryDate: po.expectedDeliveryDate ? new Date(po.expectedDeliveryDate).toISOString().split('T')[0] : '',
-          currencyCode: po.currencyCode || 'USD',
+          currencyCode: po.currencyCode || 'FRW',
           notes: po.notes || '',
           lines: po.lines?.map((line: any) => ({
             _id: line._id,
@@ -198,12 +199,21 @@ export default function PurchaseOrderFormPage() {
     setFormData({ ...formData, lines: newLines });
   };
 
+  const [openDropdownIndex, setOpenDropdownIndex] = useState<number | null>(null);
+  const [selectedProductIndex, setSelectedProductIndex] = useState<number | null>(null);
+  const dropdownRefs = useRef<Record<number, HTMLDivElement | null>>({});
+
   const handleProductSelect = (index: number, productId: string) => {
     const product = products.find(p => p._id === productId);
     if (product) {
-      handleLineChange(index, 'product', productId);
-      handleLineChange(index, 'productName', product.name);
+      setFormData(prev => {
+        const newLines = [...prev.lines];
+        newLines[index] = { ...newLines[index], product: productId, productName: product.name };
+        return { ...prev, lines: newLines };
+      });
     }
+    setSelectedProductIndex(null);
+    setOpenDropdownIndex(null);
   };
 
   const addLine = () => {
@@ -241,28 +251,50 @@ export default function PurchaseOrderFormPage() {
       return;
     }
 
+    // Filter out incomplete lines (no product selected)
+    const validLines = formData.lines.filter(line => line.product && line.product.trim() !== '');
+    if (validLines.length === 0) {
+      alert(t('purchase.form.addProduct', 'Please add at least one product'));
+      return;
+    }
+
     setSaving(true);
     try {
       // Calculate all line totals before saving
-      const linesWithTotals = formData.lines.map(line => {
+      const linesWithTotals = validLines.map(line => {
         const calculated = calculateLineTotals(line);
         return {
-          ...line,
+          product: line.product,
+          qtyOrdered: line.qtyOrdered,
+          unitCost: line.unitCost,
+          taxRate: line.taxRate,
           taxAmount: calculated.taxAmount,
           lineTotal: calculated.lineTotal,
         };
       });
 
       const payload = {
-        ...formData,
+        supplier: formData.supplier,
+        warehouse: formData.warehouse,
+        orderDate: formData.orderDate,
+        expectedDeliveryDate: formData.expectedDeliveryDate || undefined,
+        currencyCode: formData.currencyCode,
+        notes: formData.notes || undefined,
         lines: linesWithTotals,
-        status: submitForApproval ? 'approved' : 'draft',
       };
 
+      let savedPoId: string | undefined;
       if (isEdit && id) {
         await purchaseOrdersApi.update(id, payload);
+        savedPoId = id;
       } else {
-        await purchaseOrdersApi.create(payload);
+        const createRes = await purchaseOrdersApi.create(payload);
+        savedPoId = (createRes.data as any)?._id;
+      }
+
+      // If submit for approval, call the approve endpoint separately
+      if (submitForApproval && savedPoId) {
+        await purchaseOrdersApi.approve(savedPoId);
       }
 
       navigate('/purchase-orders');
@@ -319,39 +351,47 @@ export default function PurchaseOrderFormPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label>{t('purchase.form.supplier', 'Supplier')}</Label>
-                    <Select 
-                      value={formData.supplier} 
-                      onValueChange={(value) => setFormData({ ...formData, supplier: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('purchase.form.selectSupplier', 'Select supplier')} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {suppliers.map((supplier) => (
-                          <SelectItem key={supplier._id} value={supplier._id}>
-                            {supplier.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    {suppliers.length > 0 ? (
+                      <Select 
+                        value={formData.supplier || undefined} 
+                        onValueChange={(value) => setFormData({ ...formData, supplier: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={t('purchase.form.selectSupplier', 'Select supplier')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {suppliers.map((supplier) => (
+                            <SelectItem key={supplier._id} value={supplier._id}>
+                              {supplier.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Input disabled placeholder="Loading suppliers..." />
+                    )}
                   </div>
                   <div>
                     <Label>{t('purchase.form.warehouse', 'Warehouse')}</Label>
-                    <Select 
-                      value={formData.warehouse} 
-                      onValueChange={(value) => setFormData({ ...formData, warehouse: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('purchase.form.selectWarehouse', 'Select warehouse')} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {warehouses.map((warehouse) => (
-                          <SelectItem key={warehouse._id} value={warehouse._id}>
-                            {warehouse.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    {warehouses.length > 0 ? (
+                      <Select 
+                        value={formData.warehouse || undefined} 
+                        onValueChange={(value) => setFormData({ ...formData, warehouse: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={t('purchase.form.selectWarehouse', 'Select warehouse')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {warehouses.map((warehouse) => (
+                            <SelectItem key={warehouse._id} value={warehouse._id}>
+                              {warehouse.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Input disabled placeholder="Loading warehouses..." />
+                    )}
                   </div>
                   <div>
                     <Label>{t('purchase.form.orderDate', 'Order Date')}</Label>
@@ -372,7 +412,7 @@ export default function PurchaseOrderFormPage() {
                   <div>
                     <Label>{t('purchase.form.currency', 'Currency')}</Label>
                     <Select 
-                      value={formData.currencyCode} 
+                      value={formData.currencyCode || 'FRW'} 
                       onValueChange={(value) => setFormData({ ...formData, currencyCode: value })}
                     >
                       <SelectTrigger>
@@ -428,25 +468,112 @@ export default function PurchaseOrderFormPage() {
                         <TableHead></TableHead>
                       </TableRow>
                     </TableHeader>
-                    <TableBody>
-                      {formData.lines.map((line, index) => (
+                      <TableBody>
+                      {formData.lines.map((line, index) => {
+                        const search = (line.productName || '').toLowerCase();
+                        const filteredProducts = search
+                          ? products.filter(p =>
+                              p.name.toLowerCase().includes(search) ||
+                              p.sku.toLowerCase().includes(search)
+                            ).slice(0, 20)
+                          : products.slice(0, 20);
+                        const isOpen = openDropdownIndex === index;
+                        return (
                         <TableRow key={index}>
                           <TableCell>
-                            <Select 
-                              value={line.product} 
-                              onValueChange={(value) => handleProductSelect(index, value)}
+                            <div 
+                              className="relative w-[220px]"
+                              ref={(el) => { dropdownRefs.current[index] = el; }}
                             >
-                              <SelectTrigger className="w-[200px]">
-                                <SelectValue placeholder={t('purchase.form.selectProduct', 'Select product')} />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {products.map((product) => (
-                                  <SelectItem key={product._id} value={product._id}>
-                                    {product.name} ({product.sku})
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                              <input
+                                type="text"
+                                placeholder={t('purchase.form.selectProduct', 'Search product...')}
+                                value={line.productName || ''}
+                                onChange={(e) => {
+                                  setFormData(prev => {
+                                    const newLines = [...prev.lines];
+                                    newLines[index] = { ...newLines[index], productName: e.target.value, product: '' };
+                                    return { ...prev, lines: newLines };
+                                  });
+                                  setOpenDropdownIndex(index);
+                                  setSelectedProductIndex(null);
+                                }}
+                                onFocus={() => setOpenDropdownIndex(index)}
+                                onBlur={() => {
+                                  setTimeout(() => setOpenDropdownIndex(null), 150);
+                                }}
+                                onKeyDown={(e) => {
+                                  if (!isOpen) {
+                                    setOpenDropdownIndex(index);
+                                  }
+                                  if (e.key === 'ArrowDown') {
+                                    e.preventDefault();
+                                    setSelectedProductIndex(prev =>
+                                      prev === null ? 0 : Math.min(prev + 1, filteredProducts.length - 1)
+                                    );
+                                  } else if (e.key === 'ArrowUp') {
+                                    e.preventDefault();
+                                    setSelectedProductIndex(prev =>
+                                      prev === null ? 0 : Math.max(prev - 1, 0)
+                                    );
+                                  } else if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    if (selectedProductIndex !== null && filteredProducts[selectedProductIndex]) {
+                                      handleProductSelect(index, filteredProducts[selectedProductIndex]._id);
+                                      setOpenDropdownIndex(null);
+                                    }
+                                  } else if (e.key === 'Escape') {
+                                    setOpenDropdownIndex(null);
+                                  }
+                                }}
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pr-8"
+                              />
+                              {line.productName && (
+                                <button
+                                  type="button"
+                                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                  onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    setFormData(prev => {
+                                      const newLines = [...prev.lines];
+                                      newLines[index] = { ...newLines[index], productName: '', product: '' };
+                                      return { ...prev, lines: newLines };
+                                    });
+                                  }}
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              )}
+                              {isOpen && (
+                                <div 
+                                  className="absolute z-[100] mt-1 w-full max-h-[200px] overflow-y-auto rounded-md border bg-white shadow-lg"
+                                >
+                                  {filteredProducts.length === 0 ? (
+                                    <div className="px-3 py-2 text-sm text-muted-foreground">
+                                      {t('purchase.form.noProductsFound', 'No products found')}
+                                    </div>
+                                  ) : (
+                                    filteredProducts.map((product, pIdx) => (
+                                      <div
+                                        key={product._id}
+                                        className={`px-3 py-2 text-sm cursor-pointer ${
+                                          pIdx === selectedProductIndex ? 'bg-accent text-accent-foreground' : 'hover:bg-accent hover:text-accent-foreground'
+                                        }`}
+                                        onMouseDown={(e) => {
+                                          e.preventDefault();
+                                          handleProductSelect(index, product._id);
+                                          setOpenDropdownIndex(null);
+                                        }}
+                                        onMouseEnter={() => setSelectedProductIndex(pIdx)}
+                                      >
+                                        <div className="font-medium">{product.name}</div>
+                                        <div className="text-xs text-muted-foreground">{product.sku}</div>
+                                      </div>
+                                    ))
+                                  )}
+                                </div>
+                              )}
+                            </div>
                           </TableCell>
                           <TableCell>
                             <Input 
@@ -489,7 +616,8 @@ export default function PurchaseOrderFormPage() {
                             </Button>
                           </TableCell>
                         </TableRow>
-                      ))}
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 )}

@@ -1,348 +1,800 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router';
-import { useTranslation } from 'react-i18next';
-import { expensesApi, Expense } from '@/lib/api';
+import { expensesApi } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
-import { Button } from '../../components/ui/button';
-import { Badge } from '../../components/ui/badge';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '../../components/ui/table';
-import { 
-  Plus, 
-  Eye, 
-  RefreshCcw, 
+import {
+  Plus,
+  Eye,
+  RefreshCw,
+  Loader2,
+  Receipt,
+  TrendingUp,
+  TrendingDown,
+  AlertCircle,
+  Search,
   Filter,
-  CreditCard
+  Calendar,
+  DollarSign,
+  FileText,
+  Edit,
+  Trash2,
+  Download,
+  ChevronLeft,
+  ChevronRight,
+  Repeat,
+  CheckCircle,
+  XCircle,
 } from 'lucide-react';
+import { Button } from '@/app/components/ui/button';
+import { Input } from '@/app/components/ui/input';
+import { Badge } from '@/app/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/app/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/app/components/ui/select';
+import { Label } from '@/app/components/ui/label';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/app/components/ui/table';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+
+interface Expense {
+  _id: string;
+  reference: string;
+  date: string;
+  description: string;
+  account: {
+    _id: string;
+    code: string;
+    name: string;
+  } | null;
+  method: string;
+  amount: number;
+  taxAmount: number;
+  totalAmount: number;
+  status: string;
+  type?: string;
+  category?: string;
+  bankAccount?: {
+    _id: string;
+    code: string;
+    name: string;
+  } | null;
+  pettyCashFund?: {
+    _id: string;
+    name: string;
+  } | null;
+  receiptRef?: string;
+  isRecurring?: boolean;
+  recurringFrequency?: string;
+  createdBy?: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
 
 export default function ExpensesListPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [limit, setLimit] = useState(20);
+
+  // Filters
   const [filters, setFilters] = useState({
     type: '',
-    expenseAccountId: '',
-    paymentMethod: '',
     startDate: '',
-    endDate: ''
+    endDate: '',
+    paymentMethod: '',
+    status: '', // Added status filter
   });
-  const [summary, setSummary] = useState<any>(null);
 
-  useEffect(() => {
-    fetchExpenses();
-    fetchSummary();
-  }, [filters]);
+  // Form states
+  const [newExpenseForm, setNewExpenseForm] = useState({
+    description: '',
+    amount: 0,
+    taxAmount: 0,
+    expenseAccountId: '',
+    paymentMethod: 'bank',
+    bankAccountId: '',
+    expenseDate: new Date().toISOString().split('T')[0],
+    type: 'other_expense',
+    reference: '',
+    notes: '',
+    paid: true,
+    isRecurring: false,
+    recurringFrequency: 'monthly',
+  });
 
-  const fetchExpenses = async () => {
+  const [expenseAccounts, setExpenseAccounts] = useState<any[]>([]);
+  const [bankAccounts, setBankAccounts] = useState<any[]>([]);
+
+  const fetchExpenses = useCallback(async () => {
     setLoading(true);
     try {
-      const params: any = {};
+      const params: any = {
+        page: currentPage,
+        limit: limit,
+      };
       if (filters.type) params.type = filters.type;
-      if (filters.expenseAccountId) params.expenseAccountId = filters.expenseAccountId;
-      if (filters.paymentMethod) params.paymentMethod = filters.paymentMethod;
       if (filters.startDate) params.startDate = filters.startDate;
       if (filters.endDate) params.endDate = filters.endDate;
-      
+      if (filters.paymentMethod) params.paymentMethod = filters.paymentMethod;
+      if (filters.status) params.status = filters.status;
+
       const response = await expensesApi.getAll(params);
+      console.log('[ExpensesListPage] API Response:', response);
       if (response.success) {
         setExpenses(response.data || []);
+        setTotalCount(response.total || 0);
+        setTotalPages(response.pages || 1);
       }
     } catch (error) {
       console.error('[ExpensesListPage] Failed to fetch expenses:', error);
-      toast.error(t('expenses.errors.fetchFailed'));
+      toast.error('Failed to load expenses');
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, limit, filters]);
 
-  const fetchSummary = async () => {
+  const fetchAccounts = useCallback(async () => {
+    console.log('[ExpensesListPage] Fetching accounts...');
     try {
-      const params: any = {};
-      if (filters.startDate) params.startDate = filters.startDate;
-      if (filters.endDate) params.endDate = filters.endDate;
-      
-      const response = await expensesApi.getSummary(params);
-      if (response.success) {
-        setSummary(response.data);
+      const response = await expensesApi.getExpenseAccounts();
+      console.log('[ExpensesListPage] Accounts response:', response);
+      if (response.success && response.data) {
+        console.log('[ExpensesListPage] Setting accounts:', response.data.length);
+        setExpenseAccounts(response.data);
+      } else {
+        console.log('[ExpensesListPage] No accounts data or success=false');
       }
     } catch (error) {
-      console.error('[ExpensesListPage] Failed to fetch summary:', error);
+      console.error('[ExpensesListPage] Failed to fetch expense accounts:', error);
     }
-  };
+  }, []);
 
-  const handleReverse = async (id: string) => {
-    if (!confirm(t('expenses.confirmReverse'))) return;
-    
+  const fetchBankAccounts = useCallback(async () => {
     try {
-      const response = await expensesApi.reverse(id, t('expenses.reversalReason'));
+      const response = await expensesApi.getBankAccounts();
+      if (response.success && response.data) {
+        setBankAccounts(response.data);
+      }
+    } catch (error) {
+      console.error('[ExpensesListPage] Failed to fetch bank accounts:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchExpenses();
+    fetchAccounts();
+    fetchBankAccounts();
+  }, [fetchExpenses, fetchAccounts, fetchBankAccounts]);
+
+  const handleCreateExpense = async () => {
+    if (!newExpenseForm.description || newExpenseForm.amount <= 0) {
+      toast.error('Please provide valid expense details');
+      return;
+    }
+    if (!newExpenseForm.expenseAccountId) {
+      toast.error('Please select an expense account');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const response = await expensesApi.create({
+        description: newExpenseForm.description,
+        amount: newExpenseForm.amount,
+        tax_amount: newExpenseForm.taxAmount,
+        total_amount: newExpenseForm.amount + newExpenseForm.taxAmount,
+        expense_account_id: newExpenseForm.expenseAccountId,
+        payment_method: newExpenseForm.paymentMethod,
+        bank_account_id: newExpenseForm.bankAccountId || undefined,
+        expense_date: newExpenseForm.expenseDate,
+        type: newExpenseForm.type,
+        reference: newExpenseForm.reference,
+        notes: newExpenseForm.notes,
+        paid: newExpenseForm.paid,
+        isRecurring: newExpenseForm.isRecurring,
+        recurringFrequency: newExpenseForm.recurringFrequency,
+      });
+
       if (response.success) {
-        toast.success(t('expenses.reverseSuccess'));
+        toast.success('Expense created successfully');
+        setShowCreateDialog(false);
+        setNewExpenseForm({
+          description: '',
+          amount: 0,
+          taxAmount: 0,
+          expenseAccountId: '',
+          paymentMethod: 'bank',
+          bankAccountId: '',
+          expenseDate: new Date().toISOString().split('T')[0],
+          type: 'other_expense',
+          reference: '',
+          notes: '',
+          paid: true,
+          isRecurring: false,
+          recurringFrequency: 'monthly',
+        });
         fetchExpenses();
-        fetchSummary();
+      } else {
+        toast.error('Failed to create expense');
       }
-    } catch (error) {
-      console.error('[ExpensesListPage] Failed to reverse expense:', error);
-      toast.error(t('expenses.errors.reverseFailed'));
+    } catch (error: any) {
+      console.error('[ExpensesListPage] Create expense error:', error);
+      toast.error(error.response?.data?.message || 'Failed to create expense');
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    const config: Record<string, { variant: string; className: string }> = {
-      posted: { variant: 'default', className: 'bg-green-500' },
-      reversed: { variant: 'secondary', className: 'bg-orange-500' },
-      draft: { variant: 'outline', className: 'bg-gray-500' },
-      cancelled: { variant: 'destructive', className: '' },
-      default: { variant: 'outline', className: '' },
-    };
-    const { variant, className } = config[status] || config.default;
-    return <Badge variant={variant as any} className={className}>{t(`expenses.status.${status}`)}</Badge>;
+  const handleDeleteExpense = async () => {
+    if (!selectedExpense) return;
+
+    setSubmitting(true);
+    try {
+      const response = await expensesApi.delete(selectedExpense._id);
+      if (response.success) {
+        toast.success('Expense cancelled successfully');
+        setShowDeleteDialog(false);
+        setSelectedExpense(null);
+        fetchExpenses();
+      } else {
+        toast.error('Failed to cancel expense');
+      }
+    } catch (error: any) {
+      console.error('[ExpensesListPage] Delete expense error:', error);
+      toast.error(error.response?.data?.message || 'Failed to cancel expense');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleExport = () => {
+    const dataToExport = expenses.map(exp => ({
+      Reference: exp.reference,
+      Date: exp.date,
+      Description: exp.description,
+      Account: exp.account ? `${exp.account.code} - ${exp.account.name}` : '',
+      Method: exp.method,
+      Amount: exp.amount,
+      Tax: exp.taxAmount,
+      Total: exp.totalAmount,
+      Status: exp.status,
+      Type: exp.type,
+      Notes: exp.notes || '',
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(dataToExport);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Expenses");
+    
+    const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const data = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    saveAs(data, `expenses_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', { 
-      style: 'currency', 
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
       currency: 'USD',
-      minimumFractionDigits: 2 
+      minimumFractionDigits: 2,
     }).format(amount || 0);
   };
 
   const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+    return new Date(date).toLocaleDateString();
   };
 
-  const totalAmount = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+  const getStatusBadge = (status: string) => {
+    const config: Record<string, { variant: string; className: string }> = {
+      pending: { variant: 'outline', className: 'bg-yellow-500 text-white' },
+      approved: { variant: 'default', className: 'bg-green-500' },
+      rejected: { variant: 'destructive', className: '' },
+      posted: { variant: 'default', className: 'bg-green-500' },
+      reversed: { variant: 'secondary', className: 'bg-orange-500 text-white' },
+      cancelled: { variant: 'outline', className: 'bg-gray-500 text-white' },
+    };
+    const { variant, className } = config[status] || config.posted;
+    return <Badge variant={variant as any} className={className}>{status}</Badge>;
+  };
 
-  const expenseTypes = [
-    { value: 'salaries_wages', label: t('expenses.types.salaries_wages') },
-    { value: 'rent', label: t('expenses.types.rent') },
-    { value: 'utilities', label: t('expenses.types.utilities') },
-    { value: 'transport_delivery', label: t('expenses.types.transport_delivery') },
-    { value: 'marketing_advertising', label: t('expenses.types.marketing_advertising') },
-    { value: 'other_expense', label: t('expenses.types.other_expense') },
-    { value: 'interest_income', label: t('expenses.types.interest_income') },
-    { value: 'other_income', label: t('expenses.types.other_income') },
-  ];
-
-  const paymentMethods = [
-    { value: 'bank', label: t('expenses.paymentMethods.bank') },
-    { value: 'petty_cash', label: t('expenses.paymentMethods.petty_cash') },
-    { value: 'credit_card', label: t('expenses.paymentMethods.credit_card') },
-    { value: 'payable', label: t('expenses.paymentMethods.payable') },
-  ];
+  const getPaymentMethodBadge = (method: string) => {
+    const config: Record<string, { variant: string; className: string }> = {
+      bank: { variant: 'default', className: 'bg-blue-500' },
+      cash: { variant: 'secondary', className: 'bg-green-500' },
+      bank_transfer: { variant: 'outline', className: 'bg-blue-600' },
+      cheque: { variant: 'outline', className: 'bg-purple-500' },
+      mobile_money: { variant: 'outline', className: 'bg-yellow-500' },
+      credit_card: { variant: 'outline', className: 'bg-pink-500' },
+      petty_cash: { variant: 'outline', className: 'bg-orange-500' },
+      payable: { variant: 'outline', className: 'bg-gray-500' },
+    };
+    const { variant, className } = config[method] || { variant: 'outline', className: '' };
+    return <Badge variant={variant as any} className={className}>{method}</Badge>;
+  };
 
   return (
     <Layout>
       <div className="container mx-auto py-6">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-3xl font-bold">{t('expenses.title')}</h1>
-            <p className="text-muted-foreground">{t('expenses.subtitle')}</p>
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4">
+            <Receipt className="h-8 w-8 text-indigo-600" />
+            <div>
+              <h1 className="text-3xl font-bold">Expenses</h1>
+              <p className="text-muted-foreground">Manage business expenses</p>
+            </div>
           </div>
-          <Button onClick={() => navigate('/expenses/new')}>
-            <Plus className="mr-2 h-4 w-4" />
-            {t('expenses.addExpense')}
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleExport}>
+              <Download className="mr-2 h-4 w-4" />
+              Export
+            </Button>
+            <Button onClick={() => setShowCreateDialog(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              New Expense
+            </Button>
+          </div>
         </div>
+
+        {/* Summary Cards - We'll keep them for now but maybe move them to a dashboard view later */}
+        {/* We can also add a recurring expenses summary here if needed */}
 
         {/* Filters */}
         <Card className="mb-6">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center">
-              <Filter className="mr-2 h-4 w-4" />
-              {t('common.filters')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-              <div>
-                <label className="text-sm font-medium mb-1 block">{t('expenses.filters.type')}</label>
-                <select
-                  className="w-full border rounded-md px-3 py-2"
-                  value={filters.type}
-                  onChange={(e) => setFilters({ ...filters, type: e.target.value })}
-                >
-                  <option value="">{t('common.all')}</option>
-                  {expenseTypes.map(type => (
-                    <option key={type.value} value={type.value}>{type.label}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-1 block">{t('expenses.filters.paymentMethod')}</label>
-                <select
-                  className="w-full border rounded-md px-3 py-2"
-                  value={filters.paymentMethod}
-                  onChange={(e) => setFilters({ ...filters, paymentMethod: e.target.value })}
-                >
-                  <option value="">{t('common.all')}</option>
-                  {paymentMethods.map(method => (
-                    <option key={method.value} value={method.value}>{method.label}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-1 block">{t('expenses.filters.startDate')}</label>
-                <input
-                  type="date"
-                  className="w-full border rounded-md px-3 py-2"
-                  value={filters.startDate}
-                  onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
+          <CardContent className="pt-4">
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+              <div className="relative col-span-2">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search expenses..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
                 />
               </div>
-              <div>
-                <label className="text-sm font-medium mb-1 block">{t('expenses.filters.endDate')}</label>
-                <input
-                  type="date"
-                  className="w-full border rounded-md px-3 py-2"
-                  value={filters.endDate}
-                  onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
-                />
-              </div>
-              <div className="flex items-end">
-                <Button 
-                  variant="outline" 
-                  onClick={() => setFilters({ type: '', expenseAccountId: '', paymentMethod: '', startDate: '', endDate: '' })}
-                  className="w-full"
-                >
-                  {t('common.clearFilters')}
-                </Button>
-              </div>
+              <Select
+                value={filters.type}
+                onValueChange={(value) => setFilters({ ...filters, type: value === 'all' ? '' : value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="salaries_wages">Salaries & Wages</SelectItem>
+                  <SelectItem value="rent">Rent</SelectItem>
+                  <SelectItem value="utilities">Utilities</SelectItem>
+                  <SelectItem value="transport_delivery">Transport & Delivery</SelectItem>
+                  <SelectItem value="marketing_advertising">Marketing & Advertising</SelectItem>
+                  <SelectItem value="other_expense">Other Expense</SelectItem>
+                  <SelectItem value="interest_income">Interest Income</SelectItem>
+                  <SelectItem value="other_income">Other Income</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select
+                value={filters.status}
+                onValueChange={(value) => setFilters({ ...filters, status: value === 'all' ? '' : value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                  <SelectItem value="posted">Posted</SelectItem>
+                  <SelectItem value="reversed">Reversed</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+              <Input
+                type="date"
+                placeholder="Start Date"
+                value={filters.startDate}
+                onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
+              />
+              <Input
+                type="date"
+                placeholder="End Date"
+                value={filters.endDate}
+                onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
+              />
+            </div>
+            <div className="flex justify-end mt-4">
+              <Button variant="ghost" onClick={() => setFilters({ type: '', startDate: '', endDate: '', paymentMethod: '', status: '' })}>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Clear Filters
+              </Button>
             </div>
           </CardContent>
         </Card>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">{t('expenses.totalExpenses')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{expenses.length}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">{t('expenses.totalAmount')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(totalAmount)}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">{t('expenses.operatingExpenses')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(summary?.totalOperating || 0)}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">{t('expenses.otherIncome')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(summary?.totalOtherIncome || 0)}</div>
-            </CardContent>
-          </Card>
-        </div>
-
         {/* Expenses Table */}
         <Card>
-          <CardHeader>
-            <CardTitle>{t('expenses.list')}</CardTitle>
-          </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             {loading ? (
-              <div className="flex justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin" />
+              </div>
+            ) : expenses.length === 0 ? (
+              <div className="flex flex-col items-center py-12">
+                <AlertCircle className="h-12 w-12 mb-4 text-muted-foreground" />
+                <p className="text-muted-foreground">No expenses found</p>
+                <Button className="mt-4" onClick={() => setShowCreateDialog(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create First Expense
+                </Button>
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t('expenses.date')}</TableHead>
-                    <TableHead>{t('expenses.reference')}</TableHead>
-                    <TableHead>{t('expenses.description')}</TableHead>
-                    <TableHead>{t('expenses.account')}</TableHead>
-                    <TableHead>{t('expenses.method')}</TableHead>
-                    <TableHead className="text-right">{t('expenses.amount')}</TableHead>
-                    <TableHead>{t('expenses.status')}</TableHead>
-                    <TableHead className="text-right">{t('common.actions')}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {expenses.length === 0 ? (
+              <>
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                        {t('expenses.noExpenses')}
-                      </TableCell>
+                      <TableHead>Reference</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead>Account</TableHead>
+                      <TableHead>Method</TableHead>
+                      <TableHead className="text-right">Total</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
-                  ) : (
-                    expenses.map((expense) => (
+                  </TableHeader>
+                  <TableBody>
+                    {expenses.map((expense) => (
                       <TableRow key={expense._id}>
-                        <TableCell>{formatDate(expense.expenseDate)}</TableCell>
-                        <TableCell className="font-medium">{expense.reference || expense.expenseNumber || '-'}</TableCell>
-                        <TableCell>{expense.description || '-'}</TableCell>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-2">
+                            {expense.isRecurring && <Repeat className="h-4 w-4 text-purple-500" />}
+                            {expense.reference}
+                          </div>
+                        </TableCell>
+                        <TableCell>{formatDate(expense.date)}</TableCell>
+                        <TableCell>{expense.description}</TableCell>
                         <TableCell>
                           {expense.account ? (
                             <div>
-                              <div className="font-medium">{expense.account.name}</div>
-                              <div className="text-xs text-muted-foreground">{expense.account.code}</div>
+                              <div className="font-medium">{expense.account.code}</div>
+                              <div className="text-xs text-muted-foreground">{expense.account.name}</div>
                             </div>
-                          ) : '-'}
+                          ) : (
+                            '-'
+                          )}
                         </TableCell>
-                        <TableCell>
-                          <div className="flex items-center">
-                            <CreditCard className="mr-2 h-4 w-4" />
-                            {expense.method || expense.paymentMethod || '-'}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right font-medium">
-                          {formatCurrency(expense.amount)}
-                        </TableCell>
+                        <TableCell>{getPaymentMethodBadge(expense.method)}</TableCell>
+                        <TableCell className="text-right font-medium">{formatCurrency(expense.totalAmount)}</TableCell>
                         <TableCell>{getStatusBadge(expense.status)}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               onClick={() => navigate(`/expenses/${expense._id}`)}
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
-                            {expense.status === 'posted' && (
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                onClick={() => handleReverse(expense._id)}
-                              >
-                                <RefreshCcw className="h-4 w-4" />
-                              </Button>
+                            {expense.status === 'pending' && (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => navigate(`/expenses/${expense._id}/edit`)}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => {
+                                    setSelectedExpense(expense);
+                                    setShowDeleteDialog(true);
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </>
                             )}
                           </div>
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+                    ))}
+                  </TableBody>
+                </Table>
+                
+                {/* Pagination */}
+                <div className="flex items-center justify-between px-4 py-4 border-t">
+                  <div className="text-sm text-muted-foreground">
+                    Showing {((currentPage - 1) * limit) + 1} to {Math.min(currentPage * limit, totalCount)} of {totalCount} expenses
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <div className="text-sm">
+                      Page {currentPage} of {totalPages}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                    <Select
+                      value={limit.toString()}
+                      onValueChange={(val) => {
+                        setLimit(parseInt(val));
+                        setCurrentPage(1);
+                      }}
+                    >
+                      <SelectTrigger className="w-[80px]">
+                        <SelectValue placeholder="Limit" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="10">10</SelectItem>
+                        <SelectItem value="20">20</SelectItem>
+                        <SelectItem value="50">50</SelectItem>
+                        <SelectItem value="100">100</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
+
+        {/* Create Expense Dialog */}
+        <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Create New Expense</DialogTitle>
+              <DialogDescription>
+                Record a new business expense. Fields marked with * are required.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid grid-cols-2 gap-4 py-4 max-h-[70vh] overflow-y-auto pr-2">
+              <div className="space-y-2 col-span-2">
+                <Label>Description *</Label>
+                <Input
+                  placeholder="Enter expense description"
+                  value={newExpenseForm.description}
+                  onChange={(e) => setNewExpenseForm({ ...newExpenseForm, description: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Amount (Net) *</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={newExpenseForm.amount || ''}
+                  onChange={(e) => setNewExpenseForm({ ...newExpenseForm, amount: parseFloat(e.target.value) || 0 })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Tax Amount</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={newExpenseForm.taxAmount || ''}
+                  onChange={(e) => setNewExpenseForm({ ...newExpenseForm, taxAmount: parseFloat(e.target.value) || 0 })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Expense Account *</Label>
+                <Select
+                  value={newExpenseForm.expenseAccountId}
+                  onValueChange={(value) => setNewExpenseForm({ ...newExpenseForm, expenseAccountId: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select account" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {expenseAccounts.map((account) => (
+                      <SelectItem key={account._id} value={account._id}>
+                        {account.code} - {account.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Payment Method *</Label>
+                <Select
+                  value={newExpenseForm.paymentMethod}
+                  onValueChange={(value) => setNewExpenseForm({ ...newExpenseForm, paymentMethod: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="bank">Bank</SelectItem>
+                    <SelectItem value="cash">Cash</SelectItem>
+                    <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                    <SelectItem value="cheque">Cheque</SelectItem>
+                    <SelectItem value="mobile_money">Mobile Money</SelectItem>
+                    <SelectItem value="credit_card">Credit Card</SelectItem>
+                    <SelectItem value="petty_cash">Petty Cash</SelectItem>
+                    <SelectItem value="payable">Payable</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Bank Account</Label>
+                <Select
+                  value={newExpenseForm.bankAccountId}
+                  onValueChange={(value) => setNewExpenseForm({ ...newExpenseForm, bankAccountId: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select bank account" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {bankAccounts.map((account) => (
+                      <SelectItem key={account._id} value={account._id}>
+                        {account.accountName} - {account.bankName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Expense Date *</Label>
+                <Input
+                  type="date"
+                  value={newExpenseForm.expenseDate}
+                  onChange={(e) => setNewExpenseForm({ ...newExpenseForm, expenseDate: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Type</Label>
+                <Select
+                  value={newExpenseForm.type}
+                  onValueChange={(value) => setNewExpenseForm({ ...newExpenseForm, type: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="salaries_wages">Salaries & Wages</SelectItem>
+                    <SelectItem value="rent">Rent</SelectItem>
+                    <SelectItem value="utilities">Utilities</SelectItem>
+                    <SelectItem value="transport_delivery">Transport & Delivery</SelectItem>
+                    <SelectItem value="marketing_advertising">Marketing & Advertising</SelectItem>
+                    <SelectItem value="other_expense">Other Expense</SelectItem>
+                    <SelectItem value="interest_income">Interest Income</SelectItem>
+                    <SelectItem value="other_income">Other Income</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2 col-span-2 border-t pt-4 mt-2">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="isRecurring"
+                    checked={newExpenseForm.isRecurring}
+                    onChange={(e) => setNewExpenseForm({ ...newExpenseForm, isRecurring: e.target.checked })}
+                    className="w-4 h-4 rounded border-gray-300"
+                  />
+                  <Label htmlFor="isRecurring" className="flex items-center gap-2 cursor-pointer">
+                    <Repeat className="h-4 w-4 text-purple-500" />
+                    Recurring Expense
+                  </Label>
+                </div>
+                {newExpenseForm.isRecurring && (
+                  <div className="ml-6 mt-2">
+                    <Label className="text-sm text-muted-foreground">Frequency</Label>
+                    <Select
+                      value={newExpenseForm.recurringFrequency}
+                      onValueChange={(value) => setNewExpenseForm({ ...newExpenseForm, recurringFrequency: value })}
+                    >
+                      <SelectTrigger className="w-full mt-1">
+                        <SelectValue placeholder="Select frequency" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="daily">Daily</SelectItem>
+                        <SelectItem value="weekly">Weekly</SelectItem>
+                        <SelectItem value="monthly">Monthly</SelectItem>
+                        <SelectItem value="quarterly">Quarterly</SelectItem>
+                        <SelectItem value="yearly">Yearly</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label>Reference</Label>
+                <Input
+                  placeholder="Reference number"
+                  value={newExpenseForm.reference}
+                  onChange={(e) => setNewExpenseForm({ ...newExpenseForm, reference: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2 col-span-2">
+                <Label>Notes</Label>
+                <Input
+                  placeholder="Additional notes"
+                  value={newExpenseForm.notes}
+                  onChange={(e) => setNewExpenseForm({ ...newExpenseForm, notes: e.target.value })}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleCreateExpense} disabled={submitting}>
+                {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Create Expense
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Cancel Expense</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to cancel this expense? This action will reverse any associated journal entries.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+                No, Keep It
+              </Button>
+              <Button variant="destructive" onClick={handleDeleteExpense} disabled={submitting}>
+                {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Yes, Cancel Expense
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );

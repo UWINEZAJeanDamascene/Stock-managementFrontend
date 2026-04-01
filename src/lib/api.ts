@@ -211,7 +211,7 @@ export const companyApi = {
       }>;
     };
   }) =>
-    request<{ success: boolean; data: unknown }>('/companies', { method: 'PUT', body: data }),
+    request<{ success: boolean; data: unknown }>('/companies/me', { method: 'PUT', body: data }),
 
   // Platform admin endpoints
   getPendingCompanies: () => request<{ success: boolean; data: unknown[] }>('/companies/pending'),
@@ -235,6 +235,356 @@ export const companyApi = {
   getCapitalBalance: () =>
     request<{ success: boolean; data: { shareCapital: number; ownerCapital: number; totalCapital: number } }>('/companies/capital/balance'),
 };
+
+// Executive Dashboard types
+export interface ExecutiveMetric {
+  this_month: number;
+  fiscal_year_to_date: number;
+  vs_last_month: number | null;
+  label: string;
+  is_profit?: boolean;
+}
+
+export interface ExecutiveCashBalance {
+  current: number;
+  label: string;
+}
+
+export interface ExecutiveDashboardData {
+  company_id: string;
+  generated_at: string;
+  key_metrics: {
+    revenue: ExecutiveMetric;
+    expenses: ExecutiveMetric;
+    net_profit: ExecutiveMetric;
+    cash_balance: ExecutiveCashBalance;
+  };
+  accounts_receivable: {
+    outstanding_total: number;
+    outstanding_count: number;
+    overdue_total: number;
+    overdue_count: number;
+    overdue_pct_of_outstanding: number;
+  };
+  recent_journal_entries: Array<{
+    _id: string;
+    referenceNo?: string;
+    description?: string;
+    date: string;
+    sourceType?: string;
+    totalDebit?: number;
+    totalCredit?: number;
+  }>;
+  date_context: {
+    this_month_start: string;
+    this_month_end: string;
+    fiscal_year_start: string;
+    fiscal_year_end: string;
+  };
+}
+
+export interface InventoryStockSummary {
+  total_sku_count: number;
+  total_units: number;
+  total_value: number;
+  total_reserved: number;
+  total_available: number;
+  in_stock_count: number;
+  zero_stock_count: number;
+}
+
+export interface InventoryLowStockAlert {
+  product_id: string;
+  product_code: string;
+  product_name: string;
+  warehouse_id: string;
+  warehouse_name: string;
+  qty_on_hand: number;
+  qty_reserved: number;
+  qty_available: number;
+  reorder_point: number;
+  reorder_qty: number;
+  shortage: number;
+}
+
+export interface InventoryDeadStock {
+  product_id: string;
+  product_code: string;
+  product_name: string;
+  qty_on_hand: number;
+  avg_cost: number;
+  stock_value: number;
+  days_no_movement: number;
+}
+
+export interface InventoryTopMovingProduct {
+  product_id: string;
+  product_code: string;
+  product_name: string;
+  total_qty: number;
+  total_value: number;
+  move_count: number;
+}
+
+export interface InventoryWarehouseBreakdown {
+  warehouse_id: string;
+  warehouse_name: string;
+  warehouse_code: string;
+  sku_count: number;
+  total_units: number;
+  total_value: number;
+}
+
+export interface InventoryDashboardData {
+  company_id: string;
+  generated_at: string;
+  date_context: {
+    dead_stock_no_dispatch_since: string;
+    dead_stock_lookback_days: number;
+    top_moving_window_start: string;
+    top_moving_window_end: string;
+    top_moving_window_days: number;
+    recent_movements_limit: number;
+  };
+  summary: InventoryStockSummary;
+  low_stock_alerts: {
+    count: number;
+    items: InventoryLowStockAlert[];
+  };
+  dead_stock: {
+    count: number;
+    total_value: number;
+    items: InventoryDeadStock[];
+  };
+  top_moving_products: InventoryTopMovingProduct[];
+  warehouse_breakdown: InventoryWarehouseBreakdown[];
+  recent_movements: any[];
+}
+
+export interface SalesARAging {
+  not_due: number;
+  days_1_30: number;
+  days_31_60: number;
+  days_61_90: number;
+  days_90_plus: number;
+  total_overdue: number;
+  total_ar_outstanding: number;
+}
+
+export interface SalesTopClient {
+  client_id: string;
+  client_name: string;
+  client_code: string;
+  total_invoiced: number;
+  total_paid: number;
+  outstanding: number;
+  invoice_count: number;
+}
+
+export interface SalesInvoiceByStatus {
+  status: string;
+  count: number;
+  total_amount: number;
+}
+
+export interface SalesDashboardData {
+  company_id: string;
+  generated_at: string;
+  date_context: {
+    current_month_start: string;
+    current_month_end: string;
+  };
+  summary: {
+    invoices_raised_mtd: number;
+    total_invoiced_mtd: number;
+    total_outstanding_ar: number;
+    collection_rate_pct: number;
+    credit_notes_mtd: number;
+  };
+  invoices: {
+    invoices_raised: number;
+    total_invoiced: number;
+    total_collected: number;
+    total_outstanding: number;
+  };
+  ar_aging: SalesARAging;
+  top_clients: SalesTopClient[];
+  by_status: Record<string, { count: number; total_amount: number }>;
+  by_status_list: SalesInvoiceByStatus[];
+  credit_notes: {
+    count: number;
+    total_value: number;
+  };
+  collection_rate: {
+    total_billed: number;
+    total_collected: number;
+    collection_rate_pct: number;
+  };
+}
+
+export interface PurchaseAPAging {
+  not_due: number;
+  days_1_30: number;
+  days_31_60: number;
+  days_61_90: number;
+  days_90_plus: number;
+  total_outstanding: number;
+}
+
+export interface PurchaseTopSupplier {
+  supplier_id: string;
+  supplier_name: string;
+  supplier_code: string;
+  total_value: number;
+  grn_count: number;
+}
+
+export interface PurchaseByStatus {
+  status: string;
+  count: number;
+  total_value: number;
+}
+
+export interface PurchaseDashboardData {
+  company_id: string;
+  generated_at: string;
+  date_context: {
+    current_month_start: string;
+    current_month_end: string;
+  };
+  summary: {
+    po_count_mtd: number;
+    po_open_value: number;
+    grn_pending_count: number;
+    grn_pending_balance: number;
+    ap_total_outstanding: number;
+    ap_overdue_amount: number;
+  };
+  purchase_orders: {
+    po_count: number;
+    total_value: number;
+    open_count: number;
+    open_value: number;
+  };
+  grn_pending: {
+    count: number;
+    total_value: number;
+    total_balance_outstanding: number;
+  };
+  accounts_payable: {
+    total_outstanding: number;
+    invoice_count: number;
+    overdue_amount: number;
+    overdue_count: number;
+  };
+  ap_aging: PurchaseAPAging;
+  top_suppliers: PurchaseTopSupplier[];
+  by_status: Record<string, { count: number; total_value: number }>;
+  by_status_list: PurchaseByStatus[];
+  purchase_returns: {
+    total_count: number;
+    total_amount: number;
+    draft_count: number;
+    confirmed_count: number;
+  };
+}
+
+// Finance Dashboard types
+export interface FinanceDashboardBankAccount {
+  bank_account_id: string;
+  bank_name: string;
+  account_number: string | null;
+  currency: string;
+  current_balance: number;
+  opening_balance: number;
+  is_default: boolean;
+}
+
+export interface FinanceDashboardUpcomingPayment {
+  type: string;
+  reference: string;
+  party_name: string;
+  amount: number;
+  due_date: string;
+  days_until_due: number;
+}
+
+export interface FinanceDashboardBudgetLine {
+  account_id: string;
+  budgeted_amount: number;
+  actual_amount: number;
+  variance: number;
+  variance_pct: number;
+  status: 'under_budget' | 'over_budget';
+}
+
+export interface FinanceDashboardCashFlowSource {
+  source_type: string;
+  cash_debit: number;
+  cash_credit: number;
+}
+
+export interface FinanceDashboardData {
+  company_id: string;
+  generated_at: string;
+  date_context: {
+    current_month_start: string;
+    current_month_end: string;
+    cash_flow_period_start: string;
+    cash_flow_period_end: string;
+    upcoming_payments_from: string;
+    upcoming_payments_to: string;
+  };
+  summary: {
+    total_bank_balance: number;
+    upcoming_ap_total: number;
+    upcoming_ap_count: number;
+    net_vat_payable: number;
+    net_cash_flow_30d: number;
+    cash_inflows_30d: number;
+    cash_outflows_30d: number;
+    budget_has_data: boolean;
+    budget_over_budget: boolean | null;
+  };
+  bank_balances: {
+    accounts: FinanceDashboardBankAccount[];
+    total_balance: number;
+  };
+  upcoming_payments: {
+    days_ahead: number;
+    count: number;
+    total: number;
+    items: FinanceDashboardUpcomingPayment[];
+  };
+  budget_vs_actual: {
+    has_budget: boolean;
+    budget_id?: string;
+    budget_name?: string;
+    period_month?: number;
+    period_year?: number;
+    total_budgeted?: number;
+    total_actual?: number;
+    total_variance?: number;
+    over_budget?: boolean;
+    lines?: FinanceDashboardBudgetLine[];
+    message?: string;
+  };
+  tax_liability: {
+    output_vat: number;
+    input_vat: number;
+    net_vat_payable: number;
+    tax_accounts_configured: number;
+  };
+  cash_flow_30_days: {
+    period_days: number;
+    period_start: string;
+    period_end: string;
+    inflows: number;
+    outflows: number;
+    net: number;
+    by_source: FinanceDashboardCashFlowSource[];
+  };
+}
 
 // Dashboard API
 export const dashboardApi = {
@@ -260,10 +610,46 @@ export const dashboardApi = {
     const query = buildQuery(params as Record<string, any>);
     return request<{ success: boolean; data: unknown }>(`/dashboard/stock-movement-chart${query ? `?${query}` : ''}`);
   },
-  
+
   // Reorder alerts: products needing reorder based on configured reorder points
   getReorderAlerts: () => request<{ success: boolean; data: unknown }>(`/stock/advanced/reorder-points/needing-reorder`),
 
+  // Executive Dashboard (Phase 3)
+  getExecutive: async () => {
+    const res = await request<{ success: boolean; data: ExecutiveDashboardData }>('/dashboard/executive');
+    return res.data;
+  },
+  clearCache: () => request<{ success: boolean; message: string }>('/dashboard/cache/clear', { method: 'POST' }),
+
+  // Inventory Dashboard (Phase 3)
+  getInventory: async () => {
+    const res = await request<{ success: boolean; data: InventoryDashboardData }>('/dashboard/inventory');
+    return res.data;
+  },
+
+  // Sales Dashboard (Phase 3)
+  getSales: async () => {
+    const res = await request<{ success: boolean; data: SalesDashboardData }>('/dashboard/sales');
+    return res.data;
+  },
+
+  // Purchase Dashboard (Phase 3)
+  getPurchase: async () => {
+    const res = await request<{ success: boolean; data: PurchaseDashboardData }>('/dashboard/purchase');
+    return res.data;
+  },
+
+  // Finance Dashboard (Phase 3)
+  getFinance: async () => {
+    const res = await request<{ success: boolean; data: FinanceDashboardData }>('/dashboard/finance');
+    return res.data;
+  },
+
+  // Purchase Returns Summary
+  getPurchaseReturnsSummary: async () => {
+    const res = await request<{ success: boolean; data: { total: number; byStatus: Array<{ _id: string; count: number; totalAmount: number }> } }>('/purchase-returns/summary');
+    return res.data;
+  },
 };
 
 // Products API
@@ -697,6 +1083,16 @@ export const accessApi = {
   setup2FA: () => request<{ success: boolean; data: { qr: string; secret: string } }>('/access/2fa/setup', { method: 'POST' }),
   verify2FA: (token: string) => request<{ success: boolean; message: string }>('/access/2fa/verify', { method: 'POST', body: { token } }),
   disable2FA: () => request<{ success: boolean; message: string }>('/access/2fa/disable', { method: 'POST' }),
+  // Security overview
+  getSecurityOverview: () => request<{ success: boolean; data: Record<string, unknown> }>('/access/security-overview'),
+  getLoginHistory: (params?: { page?: number; limit?: number }) => {
+    const query = params ? '?' + new URLSearchParams(Object.entries(params).map(([k, v]) => [k, String(v)])).toString() : '';
+    return request<{ success: boolean; data: unknown[]; pagination: Record<string, number> }>(`/access/login-history${query}`);
+  },
+  getActiveSessions: () => request<{ success: boolean; data: { sessions: unknown[]; totalActive: number; maxConcurrent: number } }>('/access/active-sessions'),
+  terminateAllSessions: () => request<{ success: boolean; message: string }>('/access/terminate-sessions', { method: 'POST' }),
+  getPasswordStatus: () => request<{ success: boolean; data: Record<string, unknown> }>('/access/password-status'),
+  getLockStatus: () => request<{ success: boolean; data: Record<string, unknown> }>('/access/lock-status'),
   // IP Whitelist
   getIPWhitelist: () => request<{ success: boolean; data: unknown }>('/access/ip-whitelist'),
   createIPWhitelist: (data: { ip: string; description?: string; enabled?: boolean }) => request<{ success: boolean; data: unknown }>('/access/ip-whitelist', { method: 'POST', body: data }),
@@ -759,7 +1155,7 @@ export const purchaseOrdersApi = {
     const query = buildQuery(params as Record<string, any>);
     return request<{ success: boolean; data: unknown; pagination?: unknown }>(`/stock/advanced/purchase-orders${query ? `?${query}` : ''}`);
   },
-  getById: (id: string) => request<{ success: boolean; data: unknown; grns?: unknown[] }>(`/stock/advanced/purchase-orders/${id}`),
+  getById: (id: string) => request<{ success: boolean; data: unknown; grns?: unknown[]; message?: string }>(`/stock/advanced/purchase-orders/${id}`),
   create: (po: unknown) => request<{ success: boolean; data: unknown }>('/stock/advanced/purchase-orders', { method: 'POST', body: po }),
   update: (id: string, po: unknown) => request<{ success: boolean; data: unknown }>(`/stock/advanced/purchase-orders/${id}`, { method: 'PUT', body: po }),
   approve: (id: string) => request<{ success: boolean; data: unknown }>(`/stock/advanced/purchase-orders/${id}/approve`, { method: 'POST' }),
@@ -892,21 +1288,21 @@ export const reportsApi = {
     const query = buildQuery(params as Record<string, any>);
     return request<{ success: boolean; data: { count: number; data: Array<{ _id: unknown; totalSales: number; orders: number; avgOrder: number; firstOrder: Date; lastOrder: Date }> }; fromCache?: boolean }>(`/reports/clv${query ? `?${query}` : ''}`);
   },
-  getCashFlow: (params?: { startDate?: string; endDate?: string; companyId?: string; period?: 'weekly' | 'monthly' | 'yearly' }) => {
+  getCashFlow: (params?: { date_from?: string; date_to?: string; comparative_date_from?: string; comparative_date_to?: string }) => {
     const query = buildQuery(params as Record<string, any>);
-    return request<{ success: boolean; data: { period: unknown; periodType: unknown; months: unknown }; fromCache?: boolean }>(`/reports/cash-flow${query ? `?${query}` : ''}`);
+    return request<CashFlowReport & { from_cache: boolean; warning?: string }>(`/reports/cash-flow${query ? `?${query}` : ''}`);
   },
   getBudgetVsActual: (params?: { budgetId: string }) => {
     const query = buildQuery(params as Record<string, any>);
     return request<{ success: boolean; data: unknown }>(`/reports/budget-vs-actual${query ? `?${query}` : ''}`);
   },
-  getBalanceSheet: (params?: { asOfDate?: string; startDate?: string; endDate?: string; companyId?: string }) => {
+  getBalanceSheet: (params?: { as_of_date?: string; comparative_date?: string }) => {
     const query = buildQuery(params as Record<string, any>);
-    return request<{ success: boolean; data: unknown }>(`/reports/balance-sheet${query ? `?${query}` : ''}`);
+    return request<BalanceSheetReport & { from_cache: boolean; warning?: string }>(`/reports/balance-sheet${query ? `?${query}` : ''}`);
   },
-  getFinancialRatios: (params?: { asOfDate?: string; startDate?: string; endDate?: string; companyId?: string }) => {
+  getFinancialRatios: (params?: { as_of_date?: string; date_from?: string; date_to?: string }) => {
     const query = buildQuery(params as Record<string, any>);
-    return request<{ success: boolean; data: unknown }>(`/reports/financial-ratios${query ? `?${query}` : ''}`);
+    return request<FinancialRatiosReport & { from_cache: boolean }>(`/reports/financial-ratios${query ? `?${query}` : ''}`);
   },
   
   // Client/Supplier Reports
@@ -1504,28 +1900,53 @@ export interface Budget {
   budgetId: string;
   name: string;
   description?: string;
-  company: string;
+  company?: string;
+  company_id?: string;
   type: 'revenue' | 'expense' | 'profit';
-  status: 'draft' | 'active' | 'closed' | 'cancelled';
+  status: 'draft' | 'active' | 'approved' | 'closed' | 'cancelled' | 'locked';
+  fiscal_year?: number;
   periodStart: string;
   periodEnd: string;
   periodType: 'monthly' | 'quarterly' | 'yearly' | 'custom';
   amount: number;
-  originalAmount: number;
+  originalAmount?: number;
   adjustedAmount?: number;
   items?: BudgetItem[];
-  department?: string;
+  department?: { _id: string; name: string } | string | null;
   notes?: string;
-  approvalStatus: 'pending' | 'approved' | 'rejected';
-  approvedBy?: { _id: string; name: string; email: string };
-  approvedAt?: string;
+  approvalStatus?: 'pending' | 'approved' | 'rejected';
+  approvedBy?: { _id: string; name: string; email: string } | null;
+  approved_by?: { _id: string; name: string; email: string } | null;
+  approvedAt?: string | null;
+  approved_at?: string | null;
+  locked_at?: string | null;
   rejectionReason?: string;
-  createdBy: { _id: string; name: string; email: string };
+  rejected_by?: { _id: string; name: string; email: string } | null;
+  rejected_at?: string | null;
+  closed_by?: { _id: string; name: string; email: string } | null;
+  closed_at?: string | null;
+  closeNotes?: string;
+  createdBy?: { _id: string; name: string; email: string };
+  created_by?: { _id: string; name: string; email: string };
   updatedBy?: { _id: string; name: string; email: string };
-  version: number;
+  version?: number;
   previousVersion?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface BudgetLine {
+  _id: string;
+  company_id: string;
+  budget_id: string;
+  account_id: { _id: string; code: string; name: string; type: string } | string;
+  category?: string;
+  period_month: number;
+  period_year: number;
+  budgeted_amount: number;
+  notes?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface BudgetComparison {
@@ -1561,6 +1982,8 @@ export const budgetsApi = {
     limit?: number;
     status?: string;
     type?: string;
+    fiscal_year?: number;
+    department?: string;
     search?: string;
     startDate?: string;
     endDate?: string;
@@ -1574,8 +1997,9 @@ export const budgetsApi = {
     description?: string;
     type: 'revenue' | 'expense' | 'profit';
     status?: 'draft' | 'active';
-    periodStart: string;
-    periodEnd: string;
+    fiscal_year: number;
+    periodStart?: string;
+    periodEnd?: string;
     periodType?: 'monthly' | 'quarterly' | 'yearly' | 'custom';
     amount: number;
     department?: string;
@@ -1587,6 +2011,7 @@ export const budgetsApi = {
     description: string;
     type: 'revenue' | 'expense' | 'profit';
     status: 'draft' | 'active' | 'closed' | 'cancelled';
+    fiscal_year: number;
     periodStart: string;
     periodEnd: string;
     periodType: 'monthly' | 'quarterly' | 'yearly' | 'custom';
@@ -1652,6 +2077,24 @@ export const budgetsApi = {
     request<{ success: boolean; data: Budget; message: string }>(`/budgets/${id}/clone`, { method: 'POST', body: data }),
   close: (id: string, notes?: string) =>
     request<{ success: boolean; data: Budget; message: string }>(`/budgets/${id}/close`, { method: 'POST', body: { notes } }),
+  lock: (id: string) =>
+    request<{ success: boolean; data: Budget; message: string }>(`/budgets/${id}/lock`, { method: 'POST' }),
+  upsertLines: (id: string, lines: Array<{
+    account_id: string;
+    category?: string;
+    period_month: number;
+    period_year: number;
+    budgeted_amount: number;
+    notes?: string;
+  }>) => request<{ success: boolean; data: any[] }>(`/budgets/${id}/lines`, { method: 'POST', body: { lines } }),
+  getLines: (id: string, params?: { period_year?: number; period_month?: number }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; data: any[] }>(`/budgets/${id}/lines${query ? `?${query}` : ''}`);
+  },
+  getVarianceReport: (id: string, params: { periodStart: string; periodEnd: string }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; data: any }>(`/budgets/${id}/variance-report${query ? `?${query}` : ''}`);
+  },
   // Forecasting methods
   getRevenueForecast: (months?: number) => {
     const query = months ? `?months=${months}` : '';
@@ -1732,117 +2175,6 @@ export const budgetsApi = {
       }
     } }>(`/budgets/forecast/cashflow${query}`);
   }
-};
-
-// Expenses API
-export interface Expense {
-  _id: string;
-  company: string;
-  type: 'salaries_wages' | 'rent' | 'utilities' | 'transport_delivery' | 'marketing_advertising' | 'other_expense' | 'interest_income' | 'other_income' | 'other_expense_income';
-  category: string;
-  expenseNumber?: string;
-  reference?: string;
-  description?: string;
-  amount: number;
-  taxAmount?: number;
-  totalAmount?: number;
-  expenseDate: string;
-  period: string;
-  status: 'draft' | 'recorded' | 'approved' | 'cancelled' | 'posted' | 'reversed';
-  paymentMethod: 'cash' | 'bank' | 'bank_transfer' | 'cheque' | 'mobile_money' | 'credit_card' | 'petty_cash' | 'payable';
-  paid: boolean;
-  paidDate?: string;
-  isRecurring: boolean;
-  recurringFrequency?: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
-  createdBy: { _id: string; name: string; email: string };
-  approvedBy?: { _id: string; name: string; email: string };
-  // New fields from backend
-  account?: {
-    _id: string;
-    code: string;
-    name: string;
-  } | null;
-  method?: string;
-  bankAccount?: {
-    _id: string;
-    code: string;
-    name: string;
-  } | null;
-  pettyCashFund?: {
-    _id: string;
-    name: string;
-  } | null;
-  receiptRef?: string;
-  notes?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export const expensesApi = {
-  getAll: (params?: {
-    type?: string;
-    startDate?: string;
-    endDate?: string;
-    expenseAccountId?: string;
-    paymentMethod?: string;
-    page?: number;
-    limit?: number;
-  }) => {
-    const query = buildQuery(params as Record<string, any>);
-    return request<{ success: boolean; count: number; total: number; pages: number; data: Expense[] }>(`/expenses${query ? `?${query}` : ''}`);
-  },
-  getById: (id: string) => request<{ success: boolean; data: Expense }>(`/expenses/${id}`),
-  create: (data: {
-    type: Expense['type'];
-    description?: string;
-    amount: number;
-    expenseDate?: string;
-    paymentMethod?: Expense['paymentMethod'];
-    paid?: boolean;
-    isRecurring?: boolean;
-    recurringFrequency?: Expense['recurringFrequency'];
-    notes?: string;
-  }) => request<{ success: boolean; data: Expense }>('/expenses', { method: 'POST', body: data }),
-  update: (id: string, data: Partial<{
-    type: Expense['type'];
-    description: string;
-    amount: number;
-    expenseDate: string;
-    status: Expense['status'];
-    paymentMethod: Expense['paymentMethod'];
-    paid: boolean;
-    paidDate: string;
-    notes: string;
-  }>) => request<{ success: boolean; data: Expense }>(`/expenses/${id}`, { method: 'PUT', body: data }),
-  delete: (id: string) => request<{ success: boolean; message: string }>(`/expenses/${id}`, { method: 'DELETE' }),
-  reverse: (id: string, reason?: string) => 
-    request<{ success: boolean; message: string; data: Expense; reversalJournalEntry?: any }>(`/expenses/${id}/reverse`, { 
-      method: 'POST', 
-      body: { reason } 
-    }),
-  getSummary: (params?: { startDate?: string; endDate?: string }) => {
-    const query = buildQuery(params as Record<string, any>);
-    return request<{ success: boolean; data: {
-      salariesWages: number;
-      rent: number;
-      utilities: number;
-      transportDelivery: number;
-      marketingAdvertising: number;
-      otherExpenses: number;
-      interestIncome: number;
-      otherIncome: number;
-      totalOperating: number;
-      totalOtherIncome: number;
-    } }>(`/expenses/summary${query ? `?${query}` : ''}`);
-  },
-  bulkCreate: (expenses: Array<{
-    type: Expense['type'];
-    description?: string;
-    amount: number;
-    expenseDate?: string;
-    paymentMethod?: Expense['paymentMethod'];
-    notes?: string;
-  }>) => request<{ success: boolean; count: number; data: Expense[] }>('/expenses/bulk', { method: 'POST', body: { expenses } }),
 };
 
 // Notifications API
@@ -2677,7 +3009,8 @@ export interface PayrollRecord {
   };
   deductions: {
     paye: number;
-    rssbEmployee: number;
+    rssbEmployeePension: number;
+    rssbEmployeeMaternity: number;
     healthInsurance: number;
     otherDeductions: number;
     loanDeductions: number;
@@ -2685,14 +3018,19 @@ export interface PayrollRecord {
   };
   netPay: number;
   contributions: {
-    rssbEmployer: number;
-    maternity: number;
+    rssbEmployerPension: number;
+    rssbEmployerMaternity: number;
+    occupationalHazard: number;
   };
   period: {
     month: number;
     year: number;
     monthName: string;
   };
+  payroll_run_id?: string | null;
+  pay_period_start?: string;
+  pay_period_end?: string;
+  record_status: 'draft' | 'finalised' | 'paid';
   payment: {
     status: 'pending' | 'processed' | 'paid' | 'cancelled';
     paymentDate?: string;
@@ -2708,9 +3046,9 @@ export interface PayrollRecord {
 }
 
 export const payrollApi = {
-  getAll: (params?: { month?: number; year?: number; status?: string; search?: string }) => {
+  getAll: (params?: { month?: number; year?: number; status?: string; search?: string; page?: number; limit?: number }) => {
     const query = buildQuery(params as Record<string, any>);
-    return request<{ success: boolean; count: number; data: PayrollRecord[]; summary: {
+    return request<{ success: boolean; count: number; data: PayrollRecord[]; pagination?: { page: number; limit: number; total: number; pages: number }; summary: {
       totalGrossSalary: number;
       totalNetPay: number;
       totalPAYE: number;
@@ -2806,7 +3144,322 @@ export const payrollApi = {
     period: { month: number; year: number };
     notes?: string;
   }) => request<{ success: boolean; count: number; data: PayrollRecord[] }>('/payroll/bulk', { method: 'POST', body: data }),
+  finalise: (id: string) =>
+    request<{ success: boolean; data: PayrollRecord; message: string }>(`/payroll/${id}/finalise`, { method: 'POST' }),
+  getPayslip: (id: string) =>
+    request<{ success: boolean; data: {
+      employee: PayrollRecord['employee'];
+      period: PayrollRecord['period'];
+      earnings: { basicSalary: number; transportAllowance: number; housingAllowance: number; otherAllowances: number; grossSalary: number };
+      deductions: { paye: number; rssbPension: number; rssbMaternity: number; totalDeductions: number };
+      netPay: number;
+      employerContributions: PayrollRecord['contributions'];
+      status: string;
+      payrollRunId?: string;
+    } }>(`/payroll/${id}/payslip`),
 };
+
+// Payroll Run Types & API
+export interface PayrollRunLine {
+  employee_name: string;
+  employee_id: string;
+  gross_salary: number;
+  tax_deduction: number;
+  other_deductions: number;
+  rssb_employer: number;
+  net_pay: number;
+  payroll_id?: string;
+}
+
+export interface PayrollRun {
+  _id: string;
+  company: string;
+  reference_no: string;
+  pay_period_start: string;
+  pay_period_end: string;
+  payment_date: string;
+  status: 'draft' | 'posted' | 'reversed';
+  total_gross: number;
+  total_tax: number;
+  total_other_deductions: number;
+  total_net: number;
+  bank_account_id: { _id: string; name: string; accountCode?: string } | string;
+  salary_account_id: { _id: string; name: string; code: string } | string;
+  tax_payable_account_id: { _id: string; name: string; code: string } | string;
+  other_deductions_account_id?: { _id: string; name: string; code: string } | string | null;
+  journal_entry_id?: { _id: string; entryNumber: string } | string | null;
+  reversal_journal_entry_id?: string | null;
+  notes?: string | null;
+  posted_by?: { _id: string; name: string } | null;
+  lines: PayrollRunLine[];
+  employee_count: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PayrollRunPreview {
+  employeeCount: number;
+  totals: { gross: number; tax: number; rssbEmployee: number; rssbEmployer: number; net: number };
+  lines: Array<{ accountCode: string; accountName: string; description: string; debit: number; credit: number }>;
+  isBalanced: boolean;
+}
+
+export const payrollRunApi = {
+  getAll: (params?: { status?: string; startDate?: string; endDate?: string; page?: number; limit?: number }) => {
+    return request<{ success: boolean; count: number; data: PayrollRun[]; pagination?: { page: number; limit: number; total: number; pages: number } }>(
+      `/payroll-runs${buildQuery(params as Record<string, any>) ? `?${buildQuery(params as Record<string, any>)}` : ''}`
+    );
+  },
+  getById: (id: string) =>
+    request<{ success: boolean; data: PayrollRun }>(`/payroll-runs/${id}`),
+  create: (data: {
+    pay_period_start: string;
+    pay_period_end: string;
+    payment_date: string;
+    total_gross: number;
+    total_tax: number;
+    total_other_deductions: number;
+    total_net: number;
+    bank_account_id: string;
+    salary_account_id: string;
+    tax_payable_account_id: string;
+    other_deductions_account_id?: string;
+    lines: Array<{ employee_name: string; employee_id: string; gross_salary: number; tax_deduction: number; other_deductions: number; rssb_employer: number; net_pay: number; payroll_id?: string }>;
+    notes?: string;
+  }) => request<{ success: boolean; data: PayrollRun }>('/payroll-runs', { method: 'POST', body: data }),
+  post: (id: string) =>
+    request<{ success: boolean; data: PayrollRun; message: string }>(`/payroll-runs/${id}/post`, { method: 'POST' }),
+  reverse: (id: string, data: { reason?: string; reversal_date?: string }) =>
+    request<{ success: boolean; data: PayrollRun; message: string }>(`/payroll-runs/${id}/reverse`, { method: 'POST', body: data }),
+  delete: (id: string) =>
+    request<{ success: boolean; message: string }>(`/payroll-runs/${id}`, { method: 'DELETE' }),
+  preview: (params: { pay_period_start: string; pay_period_end: string; salary_account_id: string; tax_payable_account_id: string; bank_account_id: string; other_deductions_account_id?: string }) => {
+    return request<{ success: boolean; data: PayrollRunPreview }>(`/payroll-runs/preview?${buildQuery(params as Record<string, any>)}`);
+  },
+  createFromRecords: (data: {
+    pay_period_start: string;
+    pay_period_end: string;
+    payment_date: string;
+    salary_account_id: string;
+    tax_payable_account_id: string;
+    bank_account_id: string;
+    other_deductions_account_id?: string;
+    notes?: string;
+  }) => request<{ success: boolean; data: PayrollRun }>('/payroll-runs/from-records', { method: 'POST', body: data }),
+};
+
+// Tax Rate Configuration API
+export interface TaxRate {
+  _id: string;
+  company: string;
+  name: string;
+  code: string;
+  rate_pct: number;
+  type: 'vat' | 'sales_tax' | 'withholding' | 'exempt' | 'zero_rated';
+  input_account_id: string | { _id: string; name: string; code: string };
+  output_account_id: string | { _id: string; name: string; code: string };
+  input_account_code: string;
+  output_account_code: string;
+  is_active: boolean;
+  effective_from: string;
+  effective_to?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface LiabilityReportItem {
+  tax_code: string;
+  tax_name: string;
+  rate_pct: number;
+  tax_type: string;
+  output_vat: number;
+  input_vat: number;
+  net_payable: number;
+}
+
+export interface LiabilityReportVat {
+  output_vat_collected: number;
+  output_vat_reversed: number;
+  net_output_vat: number;
+  input_vat_claimed: number;
+  input_vat_reversed: number;
+  net_input_vat: number;
+  net_vat_payable: number;
+  is_payable: boolean;
+  refund_due: number;
+  accounts_queried: { output: string[]; input: string[] };
+}
+
+export interface LiabilityReportPaye {
+  total_withheld: number;
+  total_remitted: number;
+  outstanding: number;
+  accounts_queried: string[];
+}
+
+export interface LiabilityReportRssb {
+  total_contributions: number;
+  total_remitted: number;
+  outstanding: number;
+  accounts_queried: string[];
+}
+
+export interface LiabilityReport {
+  company_id: string;
+  period_start: string;
+  period_end: string;
+  computed_at: string;
+  vat: LiabilityReportVat;
+  paye: LiabilityReportPaye;
+  rssb: LiabilityReportRssb;
+  totals: {
+    total_tax_liability: number;
+    total_remitted: number;
+  };
+  // Legacy fields for backward compatibility
+  total_output_vat?: number;
+  total_input_vat?: number;
+  net_vat_payable?: number;
+  breakdown?: LiabilityReportItem[];
+}
+
+export interface SettlementResult {
+  settlement_reference: string;
+  settlement_type: string;
+  journal_entry_id: string;
+  amount: number;
+  tax_code: string;
+  settlement_date: string;
+  journal_entry: any;
+}
+
+export const taxRatesApi = {
+  getAll: (params?: { is_active?: boolean; type?: string; code?: string }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; data: TaxRate[]; count: number }>(`/taxes/rates${query ? `?${query}` : ''}`);
+  },
+  getById: (id: string) => request<{ success: boolean; data: TaxRate }>(`/taxes/rates/${id}`),
+  create: (data: {
+    name: string;
+    code: string;
+    rate_pct: number;
+    type: 'vat' | 'sales_tax' | 'withholding' | 'exempt' | 'zero_rated';
+    input_account_id: string;
+    output_account_id: string;
+    input_account_code: string;
+    output_account_code: string;
+    is_active?: boolean;
+    effective_from: string;
+    effective_to?: string;
+  }) => request<{ success: boolean; data: TaxRate }>('/taxes/rates', { method: 'POST', body: data }),
+  update: (id: string, data: Partial<TaxRate>) =>
+    request<{ success: boolean; data: TaxRate }>(`/taxes/rates/${id}`, { method: 'PUT', body: data }),
+  delete: (id: string) => request<{ success: boolean; message: string }>(`/taxes/rates/${id}`, { method: 'DELETE' }),
+};
+
+export const taxLiabilityApi = {
+  getReport: (params: { periodStart: string; periodEnd: string; taxCode?: string }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; data: LiabilityReport }>(`/taxes/liability-report${query ? `?${query}` : ''}`);
+  },
+  postSettlement: (data: {
+    tax_code: string;
+    amount: number;
+    settlement_date: string;
+    payment_method?: string;
+    bank_account_id?: string;
+    period_description?: string;
+    settlement_type?: 'vat' | 'paye' | 'rssb';
+  }) => request<{ success: boolean; data: SettlementResult }>('/taxes/settlements', { method: 'POST', body: data }),
+  postVatSettlement: (data: {
+    amount: number;
+    settlement_date: string;
+    payment_method?: string;
+    bank_account_id?: string;
+    period_description?: string;
+  }) => request<{ success: boolean; data: SettlementResult }>('/taxes/settlements/vat', { method: 'POST', body: data }),
+  postPayeSettlement: (data: {
+    amount: number;
+    settlement_date: string;
+    payment_method?: string;
+    bank_account_id?: string;
+    period_description?: string;
+  }) => request<{ success: boolean; data: SettlementResult }>('/taxes/settlements/paye', { method: 'POST', body: data }),
+  postRssbSettlement: (data: {
+    amount: number;
+    settlement_date: string;
+    payment_method?: string;
+    bank_account_id?: string;
+    period_description?: string;
+  }) => request<{ success: boolean; data: SettlementResult }>('/taxes/settlements/rssb', { method: 'POST', body: data }),
+  preview: (data: {
+    transactionType: string;
+    [key: string]: any;
+  }) => request<{ success: boolean; data: { computedTax: number; gross: number; journalLines: any[]; breakdown: any } }>('/taxes/preview', { method: 'POST', body: data }),
+};
+
+// Tax Dashboard API - Auto-detected from all sources
+export interface TaxDashboardData {
+  vat: {
+    output: number;
+    input: number;
+    net: number;
+    isPayable: boolean;
+    refund: number;
+    invoiceCount: number;
+    expenseCount: number;
+  };
+  paye: {
+    collected: number;
+    payableBalance: number;
+    grossSalaries: number;
+    employeeCount: number;
+  };
+  withholding: {
+    total: number;
+  };
+  corporateIncome: {
+    total: number;
+    rate: number;
+  };
+  totals: {
+    vat: number;
+    paye: number;
+    withholding: number;
+    corporate: number;
+    grandTotal: number;
+  };
+  taxRates: TaxRate[];
+  upcomingDeadlines: TaxCalendarEntry[];
+  overdue: TaxCalendarEntry[];
+  period: {
+    year: number | null;
+    month: number | null;
+  };
+}
+
+export const taxDashboardApi = {
+  get: (params?: { year?: number; month?: number }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; data: TaxDashboardData }>(`/taxes/dashboard${query ? `?${query}` : ''}`);
+  },
+};
+
+// Chart of Accounts API for tax mapping
+export interface ChartOfAccount {
+  _id: string;
+  company: string;
+  code: string;
+  name: string;
+  type: 'asset' | 'liability' | 'equity' | 'revenue' | 'expense' | 'cogs';
+  subtype: string;
+  normalBalance: 'debit' | 'credit';
+  allowDirectPosting: boolean;
+  isActive: boolean;
+  parentId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 // Tax Management API
 export interface TaxPayment {
@@ -3067,14 +3720,20 @@ export interface JournalEntry {
   reference?: string;
   referenceType?: string;
   referenceId?: string;
+  sourceType?: string;
+  sourceReference?: string;
   lines: JournalEntryLine[];
   totalDebit: number;
   totalCredit: number;
   isBalanced: boolean;
-  status: 'draft' | 'posted' | 'voided';
+  status: 'draft' | 'posted' | 'voided' | 'reversed';
   createdBy: { _id: string; name: string; email: string };
   approvedBy?: { _id: string; name: string; email: string };
   notes?: string;
+  reversalOf?: string;
+  reversed?: boolean;
+  reversedAt?: string;
+  reversalEntryId?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -3158,6 +3817,7 @@ export const journalEntriesApi = {
     endDate?: string;
     status?: string;
     search?: string;
+    sourceType?: string;
     page?: number;
     limit?: number;
   }) => {
@@ -3193,6 +3853,7 @@ export const journalEntriesApi = {
   deletePermanent: (id: string) => request<{ success: boolean; message: string }>(`/journal-entries/${id}/permanent`, { method: 'DELETE' }),
   post: (id: string) => request<{ success: boolean; data: JournalEntry }>(`/journal-entries/${id}/post`, { method: 'PUT' }),
   void: (id: string, reason?: string) => request<{ success: boolean; message: string }>(`/journal-entries/${id}/void`, { method: 'PUT', body: { reason } }),
+  reverse: (id: string, reason?: string) => request<{ success: boolean; data: JournalEntry }>(`/journal-entries/${id}/reverse`, { method: 'POST', body: { reason } }),
 
   // Chart of Accounts
   getAccounts: (params?: { type?: string; subtype?: string; includeInactive?: boolean | string }) => 
@@ -3698,3 +4359,528 @@ export const apPaymentsApi = {
     return request<any>(`/ap/statement/${supplierId}${query ? `?${query}` : ''}`);
   },
 };
+
+// Expense Types
+export interface Expense {
+  _id: string;
+  reference: string;
+  date: string;
+  description: string;
+  account: {
+    _id: string;
+    code: string;
+    name: string;
+  } | null;
+  method: string;
+  amount: number;
+  taxAmount: number;
+  totalAmount: number;
+  status: string;
+  type?: string;
+  category?: string;
+  bankAccount?: {
+    _id: string;
+    code: string;
+    name: string;
+  } | null;
+  pettyCashFund?: {
+    _id: string;
+    name: string;
+  } | null;
+  receiptRef?: string;
+  createdBy?: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+  approvedBy?: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Expenses API
+export const expensesApi = {
+  // List expenses with filters
+  getAll: (params?: {
+    type?: string;
+    startDate?: string;
+    endDate?: string;
+    expenseAccountId?: string;
+    paymentMethod?: string;
+    page?: number;
+    limit?: number;
+  }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; count: number; total: number; pages: number; currentPage: number; data: Expense[] }>(`/expenses${query ? `?${query}` : ''}`);
+  },
+
+  // Get single expense
+  getById: (id: string) =>
+    request<{ success: boolean; data: Expense }>(`/expenses/${id}`),
+
+  // Create expense
+  create: (data: {
+    description: string;
+    amount: number;
+    tax_amount?: number;
+    total_amount: number;
+    expense_account_id: string;
+    payment_method: string;
+    bank_account_id?: string;
+    petty_cash_fund_id?: string;
+    expense_date: string;
+    type?: string;
+    reference?: string;
+    notes?: string;
+    paid?: boolean;
+    isRecurring?: boolean;
+    recurringFrequency?: string;
+  }) => request<{ success: boolean; data: Expense }>('/expenses', { method: 'POST', body: data }),
+
+  // Update expense
+  update: (id: string, data: Partial<{
+    description: string;
+    amount: number;
+    tax_amount: number;
+    total_amount: number;
+    expense_account_id: string;
+    payment_method: string;
+    bank_account_id: string;
+    expense_date: string;
+    type: string;
+    reference: string;
+    notes: string;
+    paid: boolean;
+  }>) => request<{ success: boolean; data: Expense }>(`/expenses/${id}`, { method: 'PUT', body: data }),
+
+  // Delete/Cancel expense
+  delete: (id: string) =>
+    request<{ success: boolean; message: string }>(`/expenses/${id}`, { method: 'DELETE' }),
+
+  // Reverse expense
+  reverse: (id: string, reason: string) =>
+    request<{ success: boolean; message: string; data: Expense }>(`/expenses/${id}/reverse`, { method: 'POST', body: { reason } }),
+
+  // Approve expense
+  approve: (id: string) =>
+    request<{ success: boolean; message: string; data: Expense }>(`/expenses/${id}/approve`, { method: 'PUT' }),
+
+  // Reject expense
+  reject: (id: string, reason: string) =>
+    request<{ success: boolean; message: string; data: Expense }>(`/expenses/${id}/reject`, { method: 'PUT', body: { reason } }),
+
+  // Post expense
+  post: (id: string, data?: { bankAccountId?: string }) =>
+    request<{ success: boolean; message: string; data: Expense }>(`/expenses/${id}/post`, { method: 'PUT', body: data }),
+
+  // Get expense summary
+  getSummary: (params?: { startDate?: string; endDate?: string }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; data: {
+      salariesWages: number;
+      rent: number;
+      utilities: number;
+      transportDelivery: number;
+      marketingAdvertising: number;
+      otherExpenses: number;
+      interestIncome: number;
+      otherIncome: number;
+      totalOperating: number;
+      totalOtherIncome: number;
+    } }>(`/expenses/summary${query ? `?${query}` : ''}`);
+  },
+
+  // Bulk create expenses
+  bulkCreate: (expenses: Array<{
+    description: string;
+    amount: number;
+    expense_account_id: string;
+    payment_method: string;
+    expense_date: string;
+    type?: string;
+    notes?: string;
+  }>) => request<{ success: boolean; count: number; data: Expense[] }>('/expenses/bulk', { method: 'POST', body: { expenses } }),
+
+  // Get expense accounts (Chart of Accounts)
+  getExpenseAccounts: () =>
+    request<{ success: boolean; data: Array<{ _id: string; code: string; name: string }> }>('/expenses/accounts'),
+
+  // Get bank accounts for payment
+  getBankAccounts: () =>
+    request<{ success: boolean; data: Array<{ _id: string; accountName: string; bankName: string; isActive: boolean }> }>('/bank-accounts?isActive=true'),
+};
+
+// Chart of Accounts Types
+export interface ChartOfAccountItem {
+  _id: string;
+  company: string;
+  code: string;
+  name: string;
+  type: 'asset' | 'liability' | 'equity' | 'revenue' | 'expense' | 'cogs';
+  subtype: string | null;
+  normal_balance: 'debit' | 'credit';
+  allow_direct_posting: boolean;
+  isActive: boolean;
+  parent_id: string | null;
+  createdBy?: { _id: string; name: string; email: string };
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Chart of Accounts API
+export const chartOfAccountsApi = {
+  // List all accounts with optional filters
+  getAll: (params?: {
+    type?: string;
+    subtype?: string;
+    isActive?: boolean;
+    includeInactive?: boolean;
+  }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; data: ChartOfAccountItem[]; grouped: Record<string, ChartOfAccountItem[]>; count: number }>(`/chart-of-accounts${query ? `?${query}` : ''}`);
+  },
+
+  // Get single account
+  getById: (id: string) =>
+    request<{ success: boolean; data: ChartOfAccountItem }>(`/chart-of-accounts/${id}`),
+
+  // Create account
+  create: (data: {
+    code: string;
+    name: string;
+    type: string;
+    subtype?: string;
+    normal_balance?: string;
+    allow_direct_posting?: boolean;
+    parent_id?: string;
+  }) => request<{ success: boolean; data: ChartOfAccountItem; message: string }>('/chart-of-accounts', { method: 'POST', body: data }),
+
+  // Update account
+  update: (id: string, data: Partial<{
+    name: string;
+    subtype: string;
+    normal_balance: string;
+    allow_direct_posting: boolean;
+    isActive: boolean;
+    parent_id: string;
+  }>) => request<{ success: boolean; data: ChartOfAccountItem; message: string }>(`/chart-of-accounts/${id}`, { method: 'PUT', body: data }),
+
+  // Delete/deactivate account
+  delete: (id: string) =>
+    request<{ success: boolean; message: string; data?: ChartOfAccountItem; softDelete?: boolean }>(`/chart-of-accounts/${id}`, { method: 'DELETE' }),
+
+  // Reactivate account
+  reactivate: (id: string) =>
+    request<{ success: boolean; data: ChartOfAccountItem; message: string }>(`/chart-of-accounts/${id}/reactivate`, { method: 'PUT' }),
+
+  // Bulk create accounts (admin only)
+  bulkCreate: (accounts: Array<{
+    code: string;
+    name: string;
+    type: string;
+    subtype?: string;
+    normal_balance?: string;
+    allow_direct_posting?: boolean;
+  }>) => request<{ success: boolean; count: number; data: ChartOfAccountItem[]; message: string }>('/chart-of-accounts/bulk', { method: 'POST', body: { accounts } }),
+};
+
+// P&L Statement Types
+export interface PLLineItem {
+  account_id: string;
+  account_code: string;
+  account_name: string;
+  amount: number;
+}
+
+export interface PLSection {
+  lines: PLLineItem[];
+  total: number;
+}
+
+export interface PLPeriodData {
+  // Revenue & COGS
+  revenue: PLSection;
+  cogs: PLSection;
+  gross_profit: number;
+  gross_margin_pct: number;
+
+  // IAS 1 classified expenses
+  other_income: PLSection;
+  distribution_costs: PLSection;
+  administrative_expenses: PLSection;
+  other_expenses: PLSection;
+
+  // Operating Profit
+  operating_profit: number;
+  operating_margin_pct: number;
+
+  // EBITDA
+  ebitda: number;
+  ebitda_margin_pct: number;
+  depreciation_and_amortisation: number;
+
+  // Finance & Tax
+  finance_costs: PLSection;
+  share_of_associates: number;
+  profit_before_tax: number;
+
+  tax: PLSection;
+  corporate_tax_rate: number;
+  effective_tax_rate: number;
+  computed_tax: boolean;
+
+  // Profit after tax
+  profit_after_tax: number;
+
+  // Discontinued operations
+  discontinued_operations: { total: number };
+
+  // Profit for period
+  profit_for_period: number;
+
+  // OCI
+  other_comprehensive_income: PLSection;
+
+  // Total Comprehensive Income
+  total_comprehensive_income: number;
+
+  // Attribution
+  profit_attributable_to_owners: number;
+  profit_attributable_to_nci: number;
+  comprehensive_income_attributable_to_owners: number;
+  comprehensive_income_attributable_to_nci: number;
+
+  // EPS
+  earnings_per_share: {
+    weighted_avg_shares: number;
+    basic_eps: number | null;
+    diluted_eps: number | null;
+  };
+
+  // Convenience aliases
+  net_profit: number;
+  net_margin_pct: number;
+  is_profit: boolean;
+
+  // Legacy (backward compat)
+  operating_expenses: PLSection;
+  expenses: PLSection;
+}
+
+export interface PLStatement {
+  company_id: string;
+  date_from: string;
+  date_to: string;
+  current: PLPeriodData;
+  comparative: PLPeriodData | null;
+  generated_at: string;
+}
+
+// P&L API
+export const profitLossApi = {
+  getStatement: (params: {
+    date_from: string;
+    date_to: string;
+    comparative_date_from?: string;
+    comparative_date_to?: string;
+  }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<PLStatement & { from_cache: boolean }>(`/reports/profit-and-loss${query ? `?${query}` : ''}`);
+  },
+};
+
+// Accounting Period Types
+export interface PeriodStats {
+  entry_count: number;
+  total_debit: number;
+  total_credit: number;
+}
+
+export interface AccountingPeriod {
+  _id: string;
+  company_id: string;
+  name: string;
+  period_type: 'month' | 'quarter' | 'year';
+  start_date: string;
+  end_date: string;
+  fiscal_year: number;
+  status: 'open' | 'closed' | 'locked';
+  closed_by: string | null;
+  closed_at: string | null;
+  year_end_close_entry_id: string | null;
+  is_year_end: boolean;
+  stats?: PeriodStats;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const periodApi = {
+  getAll: (params?: { fiscal_year?: number; status?: string; period_type?: string; include_stats?: boolean }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; data: AccountingPeriod[]; company_name: string; count: number }>(`/periods${query ? `?${query}` : ''}`);
+  },
+  getById: (id: string) => {
+    return request<{ success: boolean; data: AccountingPeriod & { stats: PeriodStats } }>(`/periods/${id}`);
+  },
+  getCurrent: () => {
+    return request<{ success: boolean; data: AccountingPeriod }>(`/periods/current`);
+  },
+  generate: (fiscalYear: number) => {
+    return request<{ success: boolean; data: AccountingPeriod[]; message: string }>(`/periods/generate`, {
+      method: 'POST',
+      body: { fiscal_year: fiscalYear },
+    });
+  },
+  close: (id: string) => {
+    return request<{ success: boolean; data: { success: boolean; warnings?: string[] }; message: string }>(`/periods/${id}/close`, {
+      method: 'POST',
+    });
+  },
+  reopen: (id: string) => {
+    return request<{ success: boolean; data: { success: boolean }; message: string }>(`/periods/${id}/reopen`, {
+      method: 'POST',
+    });
+  },
+  lock: (id: string) => {
+    return request<{ success: boolean; data: { success: boolean }; message: string }>(`/periods/${id}/lock`, {
+      method: 'POST',
+    });
+  },
+  yearEndClose: (fiscalYear: number) => {
+    return request<{ success: boolean; data: { fiscal_year: number; net_profit: number; close_entry_id: string; periods_locked: boolean }; message: string }>(`/periods/year-end-close`, {
+      method: 'POST',
+      body: { fiscal_year: fiscalYear },
+    });
+  },
+};
+
+// Balance Sheet Types (IAS 1 Statement of Financial Position)
+export interface BSLineItem {
+  account_id: string;
+  account_code: string;
+  account_name: string;
+  sub_type: string;
+  amount: number;
+}
+
+export interface BSSection {
+  lines: BSLineItem[];
+  total: number;
+}
+
+export interface BSPeriodData {
+  non_current_assets: BSSection;
+  current_assets: BSSection;
+  total_assets: number;
+  equity: BSSection;
+  non_current_liabilities: BSSection;
+  current_liabilities: BSSection;
+  total_liabilities: number;
+  total_equity_and_liabilities: number;
+  is_balanced: boolean;
+  difference: number;
+  current_period_net_profit: number;
+}
+
+export interface BalanceSheetReport {
+  company_id: string;
+  company_name: string;
+  as_of_date: string;
+  comparative_date: string | null;
+  current: BSPeriodData;
+  comparative: BSPeriodData | null;
+  generated_at: string;
+}
+
+// Cash Flow Types (IAS 7 Statement of Cash Flows)
+export interface CFLineItem {
+  source_type: string;
+  label: string;
+  account_code: string;
+  cash_in: number;
+  cash_out: number;
+  net: number;
+  entry_count: number;
+}
+
+export interface CFSection {
+  inflows: CFLineItem[];
+  outflows: CFLineItem[];
+  total_inflows: number;
+  total_outflows: number;
+  net_cash_from_operating?: number;
+  net_cash_from_investing?: number;
+  net_cash_from_financing?: number;
+}
+
+export interface CFPeriodData {
+  opening_cash_balance: number;
+  operating: CFSection;
+  investing: CFSection;
+  financing: CFSection;
+  net_change_in_cash: number;
+  closing_cash_balance: number;
+  computed_closing_balance: number;
+  is_reconciled: boolean;
+  reconciliation_diff: number;
+}
+
+export interface CashFlowReport {
+  company_id: string;
+  company_name: string;
+  date_from: string;
+  date_to: string;
+  comparative_date_from: string | null;
+  comparative_date_to: string | null;
+  current: CFPeriodData;
+  comparative: CFPeriodData | null;
+  generated_at: string;
+}
+
+// Financial Ratios Types
+export interface FRRatio {
+  value: number | null;
+  label: string;
+  formula: string;
+  benchmark: string;
+  inputs: Record<string, number>;
+  status: 'good' | 'warning' | 'danger' | 'neutral';
+}
+
+export interface FRCategory {
+  label: string;
+  ratios: Record<string, FRRatio>;
+}
+
+export interface FRSummary {
+  overall: 'good' | 'warning' | 'danger';
+  liquidity: string;
+  profitability: string;
+  efficiency: string;
+  leverage: string;
+  good_count: number;
+  warning_count: number;
+  danger_count: number;
+}
+
+export interface FinancialRatiosReport {
+  company_id: string;
+  company_name: string;
+  as_of_date: string;
+  date_from: string;
+  date_to: string;
+  days_in_period: number;
+  ratios: {
+    liquidity: FRCategory;
+    profitability: FRCategory;
+    efficiency: FRCategory;
+    leverage: FRCategory;
+  };
+  summary: FRSummary;
+  generated_at: string;
+}

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { productsApi, categoriesApi, suppliersApi, warehousesApi, journalEntriesApi } from '@/lib/api';
+import { productsApi, categoriesApi, suppliersApi, warehousesApi, stockApi, chartOfAccountsApi } from '@/lib/api';
 import { Layout } from '../layout/Layout';
 import { 
   ArrowLeft, 
@@ -31,12 +31,15 @@ import {
   TooltipTrigger,
 } from '@/app/components/ui/tooltip';
 import { HelpCircle } from 'lucide-react';
+import { Badge } from '@/app/components/ui/badge';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
 interface Category {
   _id: string;
   name: string;
+  children?: Category[];
+  parent?: string | null;
 }
 
 interface Supplier {
@@ -66,12 +69,15 @@ interface ProductFormData {
   name: string;
   sku: string;
   barcode: string;
+  barcodeType: string;
   description: string;
   category: string;
   unit: string;
   supplier: string;
+  preferredSupplier: string;
   isStockable: boolean;
   costPrice: string;
+  averageCost: string;
   sellingPrice: string;
   taxCode: string;
   taxRate: string;
@@ -81,6 +87,7 @@ interface ProductFormData {
   lowStockThreshold: string;
   brand: string;
   location: string;
+  weight: string;
   trackingType: string;
   defaultWarehouse: string;
   inventory_account_id: string;
@@ -101,6 +108,22 @@ const getTrackingTypeLabel = (t: Function, value: string) => t(`products.trackin
 const TAX_CODE_VALUES = ['A', 'B', 'None'];
 const COSTING_METHOD_VALUES = ['fifo', 'weighted', 'wac', 'avg'];
 const TRACKING_TYPE_VALUES = ['none', 'batch', 'serial'];
+const BARCODE_TYPE_VALUES = ['CODE128', 'EAN13', 'EAN8', 'UPC', 'CODE39', 'ITF14', 'QR', 'NONE'];
+
+const getBarcodeTypeLabel = (t: Function, value: string) => t(`products.barcodeTypes.${value}`) || value;
+
+// Flatten nested category tree for dropdown display
+const flattenCategories = (cats: Category[], prefix = ''): { _id: string; label: string }[] => {
+  const result: { _id: string; label: string }[] = [];
+  for (const cat of cats) {
+    const label = prefix ? `${prefix} > ${cat.name}` : cat.name;
+    result.push({ _id: cat._id, label });
+    if (cat.children && cat.children.length > 0) {
+      result.push(...flattenCategories(cat.children, label));
+    }
+  }
+  return result;
+};
 
 export default function ProductFormPage() {
   const { t } = useTranslation();
@@ -112,20 +135,26 @@ export default function ProductFormPage() {
   const [saving, setSaving] = useState(false);
   
   const [categories, setCategories] = useState<Category[]>([]);
+  const [flatCategories, setFlatCategories] = useState<{ _id: string; label: string }[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [accounts, setAccounts] = useState<ChartAccount[]>([]);
+  const [costingMethodLocked, setCostingMethodLocked] = useState(false);
+  const [skuWarning, setSkuWarning] = useState<string | null>(null);
   
   const [formData, setFormData] = useState<ProductFormData>({
     name: '',
     sku: '',
     barcode: '',
+    barcodeType: 'CODE128',
     description: '',
     category: '',
     unit: 'pcs',
     supplier: '',
+    preferredSupplier: '',
     isStockable: true,
     costPrice: '0',
+    averageCost: '0',
     sellingPrice: '0',
     taxCode: 'A',
     taxRate: '0',
@@ -135,11 +164,12 @@ export default function ProductFormPage() {
     lowStockThreshold: '10',
     brand: '',
     location: '',
+    weight: '0',
     trackingType: 'none',
     defaultWarehouse: '',
-    inventory_account_id: '', // Inventory account code (e.g., 1400)
-    cogs_account_id: '', // COGS account code (e.g., 5000)
-    revenue_account_id: '', // Revenue/Sales account code (e.g., 4000)
+    inventory_account_id: '',
+    cogs_account_id: '',
+    revenue_account_id: '',
   });
 
   useEffect(() => {
@@ -156,7 +186,10 @@ export default function ProductFormPage() {
     try {
       const response = await categoriesApi.getAll();
       if (response.success && response.data) {
-        setCategories(response.data as Category[]);
+        const raw = response.data as any;
+        const cats = Array.isArray(raw) ? raw : [];
+        setCategories(cats);
+        setFlatCategories(flattenCategories(cats));
       }
     } catch (error) {
       console.error('Failed to load categories:', error);
@@ -190,21 +223,18 @@ export default function ProductFormPage() {
   const loadAccounts = async () => {
     try {
       console.log('[ProductForm] Loading accounts...');
-      const response = await journalEntriesApi.getAccounts();
+      const response = await chartOfAccountsApi.getAll({ isActive: true });
       console.log('[ProductForm] Accounts API response:', response);
       if (response.success && response.data) {
-        // Backend returns: { success: true, data: [{ code, name, type, subtype, ... }] }
         const accountsData = Array.isArray(response.data) ? response.data : [];
         console.log('[ProductForm] Loaded accounts count:', accountsData.length);
         setAccounts(accountsData as ChartAccount[]);
       } else {
         console.log('[ProductForm] Accounts API returned no data:', response);
-        // Fallback: try to set empty array to prevent blank page
         setAccounts([]);
       }
     } catch (error) {
       console.error('[ProductForm] Failed to load accounts:', error);
-      // Fallback: set empty array on error to prevent blank page
       setAccounts([]);
     }
   };
@@ -212,21 +242,22 @@ export default function ProductFormPage() {
   const loadProduct = async () => {
     setInitialLoading(true);
     try {
-      console.log('[ProductForm] Loading product ID:', id);
       const response = await productsApi.getById(id!);
-      console.log('[ProductForm] Product API response:', response);
       if (response.success && response.data) {
         const product = response.data as any;
         setFormData({
           name: product.name || '',
           sku: product.sku || '',
           barcode: product.barcode || '',
+          barcodeType: product.barcodeType || 'CODE128',
           description: product.description || '',
           category: product.category?._id || product.category || '',
           unit: product.unit || 'pcs',
           supplier: product.supplier?._id || product.supplier || '',
+          preferredSupplier: product.preferredSupplier?._id || product.preferredSupplier || '',
           isStockable: product.isStockable !== false,
-          costPrice: String(product.costPrice || product.averageCost || 0),
+          costPrice: String(product.costPrice || 0),
+          averageCost: String(product.averageCost || 0),
           sellingPrice: String(product.sellingPrice || 0),
           taxCode: product.taxCode || 'A',
           taxRate: String(product.taxRate || 0),
@@ -236,6 +267,7 @@ export default function ProductFormPage() {
           lowStockThreshold: String(product.lowStockThreshold || 10),
           brand: product.brand || '',
           location: product.location || '',
+          weight: String(product.weight || 0),
           trackingType: product.trackingType || 'none',
           defaultWarehouse: product.defaultWarehouse?._id || product.defaultWarehouse || '',
           inventory_account_id: product.inventory_account_id || product.inventoryAccount || '',
@@ -255,6 +287,27 @@ export default function ProductFormPage() {
   const handleChange = (field: keyof ProductFormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
+
+  // Check if costing method should be locked (product has stock movements)
+  useEffect(() => {
+    if (isEditMode && id) {
+      const checkStockMovements = async () => {
+        try {
+          const response = await stockApi.getMovements({ productId: id, limit: 1 });
+          if (response.success && response.data) {
+            const data = response.data as any;
+            const movements = Array.isArray(data) ? data : data.movements || [];
+            if (movements.length > 0) {
+              setCostingMethodLocked(true);
+            }
+          }
+        } catch (error) {
+          // If we can't check, don't lock - let backend handle validation
+        }
+      };
+      checkStockMovements();
+    }
+  }, [id, isEditMode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -293,10 +346,12 @@ export default function ProductFormPage() {
         name: formData.name.trim(),
         sku: formData.sku.trim().toUpperCase(),
         barcode: formData.barcode.trim() || null,
+        barcodeType: formData.barcodeType,
         description: formData.description.trim() || null,
         category: formData.category,
         unit: formData.unit,
         supplier: formData.supplier || null,
+        preferredSupplier: formData.preferredSupplier || null,
         isStockable: formData.isStockable,
         costPrice: parseFloat(formData.costPrice) || 0,
         sellingPrice: parseFloat(formData.sellingPrice) || 0,
@@ -308,6 +363,7 @@ export default function ProductFormPage() {
         lowStockThreshold: parseFloat(formData.lowStockThreshold) || 10,
         brand: formData.brand.trim() || null,
         location: formData.location.trim() || null,
+        weight: parseFloat(formData.weight) || 0,
         trackingType: formData.trackingType,
         defaultWarehouse: formData.defaultWarehouse || null,
         inventoryAccount: formData.inventory_account_id || null,
@@ -331,8 +387,11 @@ export default function ProductFormPage() {
       }
     } catch (error: any) {
       console.error('[ProductForm] Save failed:', error);
-      // Show backend error message if available
-      if (error?.response?.data?.errors) {
+      // Handle costing method locked error specifically
+      if (error?.status === 409 || error?.message?.includes('COSTING_METHOD_LOCKED') || error?.message?.includes('costing_method')) {
+        toast.error(t('products.costingMethodLocked') || 'Cannot change costing method: this product already has stock movements. The costing method is locked to prevent data inconsistency.');
+        setCostingMethodLocked(true);
+      } else if (error?.response?.data?.errors) {
         const errors = error.response.data.errors;
         const errorMessages = Object.entries(errors)
           .map(([key, value]) => `${key}: ${value}`)
@@ -405,10 +464,16 @@ export default function ProductFormPage() {
                   <Input
                     id="sku"
                     value={formData.sku}
-                    onChange={(e) => handleChange('sku', e.target.value.toUpperCase())}
+                    onChange={(e) => {
+                      handleChange('sku', e.target.value.toUpperCase());
+                      setSkuWarning(null);
+                    }}
                     placeholder={t('products.skuPlaceholder') || 'e.g., PRD-001'}
                     required
                   />
+                  {skuWarning && (
+                    <p className="text-xs text-amber-600 dark:text-amber-400">{skuWarning}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -422,6 +487,23 @@ export default function ProductFormPage() {
                 </div>
 
                 <div className="space-y-2">
+                  <Label htmlFor="barcodeType">{t('products.barcodeType') || 'Barcode Type'}</Label>
+                  <Select 
+                    value={formData.barcodeType} 
+                    onValueChange={(value) => handleChange('barcodeType', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {BARCODE_TYPE_VALUES.map((type) => (
+                        <SelectItem key={type} value={type}>{getBarcodeTypeLabel(t, type)}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="category">{t('products.category') || 'Category'} *</Label>
                   <Select 
                     value={formData.category} 
@@ -431,8 +513,8 @@ export default function ProductFormPage() {
                       <SelectValue placeholder={t('products.selectCategory') || 'Select category'} />
                     </SelectTrigger>
                     <SelectContent>
-                      {categories.map((cat) => (
-                        <SelectItem key={cat._id} value={cat._id}>{cat.name}</SelectItem>
+                      {flatCategories.map((cat) => (
+                        <SelectItem key={cat._id} value={cat._id}>{cat.label}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -470,6 +552,34 @@ export default function ProductFormPage() {
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <TooltipProvider>
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="preferredSupplier">{t('products.preferredSupplier') || 'Preferred Supplier'}</Label>
+                      <Tooltip>
+                        <TooltipTrigger><HelpCircle className="h-4 w-4 text-slate-400" /></TooltipTrigger>
+                        <TooltipContent className="max-w-xs">
+                          <p className="font-semibold">Preferred Supplier</p>
+                          <p className="text-sm mt-1">The preferred supplier for reordering this product. This supplier will be suggested when creating purchase orders.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                    <Select 
+                      value={formData.preferredSupplier} 
+                      onValueChange={(value) => handleChange('preferredSupplier', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={t('products.selectPreferredSupplier') || 'Select preferred supplier'} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {suppliers.map((sup) => (
+                          <SelectItem key={sup._id} value={sup._id}>{sup.name} ({sup.code})</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </TooltipProvider>
                 </div>
 
                 <div className="space-y-2 md:col-span-2">
@@ -663,25 +773,37 @@ export default function ProductFormPage() {
                   <TooltipProvider>
                     <div className="flex items-center gap-2">
                       <Label htmlFor="costingMethod">{t('products.costingMethod') || 'Costing Method'}</Label>
+                      {costingMethodLocked && (
+                        <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800">
+                          {t('products.locked') || 'Locked'}
+                        </Badge>
+                      )}
                       <Tooltip>
                         <TooltipTrigger><HelpCircle className="h-4 w-4 text-slate-400" /></TooltipTrigger>
                         <TooltipContent className="max-w-xs">
                           <p className="font-semibold">Inventory Costing Method</p>
-                          <p className="text-sm mt-1">Determines how inventory costs are calculated:</p>
-                          <ul className="text-sm mt-1 list-disc pl-4">
-                            <li><strong>FIFO</strong> - First In, First Out (oldest inventory sold first)</li>
-                            <li><strong>WAC</strong> - Weighted Average Cost</li>
-                            <li><strong>AVG</strong> - Average Cost</li>
-                            <li><strong>Weighted</strong> - Weighted average</li>
-                          </ul>
+                          {costingMethodLocked ? (
+                            <p className="text-sm mt-1 text-amber-600">This setting is locked because the product already has stock movements. Changing it would cause data inconsistency.</p>
+                          ) : (
+                            <>
+                              <p className="text-sm mt-1">Determines how inventory costs are calculated:</p>
+                              <ul className="text-sm mt-1 list-disc pl-4">
+                                <li><strong>FIFO</strong> - First In, First Out (oldest inventory sold first)</li>
+                                <li><strong>WAC</strong> - Weighted Average Cost</li>
+                                <li><strong>AVG</strong> - Average Cost</li>
+                                <li><strong>Weighted</strong> - Weighted average</li>
+                              </ul>
+                            </>
+                          )}
                         </TooltipContent>
                       </Tooltip>
                     </div>
                     <Select 
                       value={formData.costingMethod} 
                       onValueChange={(value) => handleChange('costingMethod', value)}
+                      disabled={costingMethodLocked}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className={costingMethodLocked ? 'opacity-60 cursor-not-allowed' : ''}>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -690,6 +812,11 @@ export default function ProductFormPage() {
                         ))}
                       </SelectContent>
                     </Select>
+                    {costingMethodLocked && (
+                      <p className="text-xs text-amber-600 dark:text-amber-400">
+                        {t('products.costingMethodLockedHint') || 'Costing method cannot be changed because stock movements exist for this product.'}
+                      </p>
+                    )}
                   </TooltipProvider>
                 </div>
 
@@ -854,6 +981,19 @@ export default function ProductFormPage() {
                     value={formData.location}
                     onChange={(e) => handleChange('location', e.target.value)}
                     placeholder={t('products.locationPlaceholder') || 'e.g., Warehouse A, Shelf 3'}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="weight">{t('products.weight') || 'Weight'}</Label>
+                  <Input
+                    id="weight"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.weight}
+                    onChange={(e) => handleChange('weight', e.target.value)}
+                    placeholder={t('products.weightPlaceholder') || 'Weight in kg'}
                   />
                 </div>
               </CardContent>

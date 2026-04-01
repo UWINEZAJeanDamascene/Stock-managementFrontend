@@ -28,18 +28,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const hasPermission = useCallback((permission: string) => {
     if (!store.user) return false;
     // Admin has all permissions
-    if (store.user.role === 'admin' || store.user.role === 'super_admin') return true;
+    if (store.user.role === 'admin' || store.user.role === 'super_admin' || store.user.role === 'platform_admin') return true;
     // Check if permission exists in user's permissions array
     const permissions = store.user.permissions as string[] | undefined;
-    return permissions?.includes(permission) ?? false;
+    if (!permissions) return false;
+    // Check for exact match, wildcard resource, or wildcard action
+    const [resource, action] = permission.split(':');
+    return permissions.some(p => {
+      if (p === '*') return true;                          // Full wildcard
+      if (p === `${resource}:*`) return true;              // Wildcard action for resource
+      if (p === `*:${action}`) return true;                // Wildcard resource for action
+      return p === permission;                             // Exact match
+    });
   }, [store.user]);
   
   const hasAnyPermission = useCallback((permissions: string[]) => {
     if (!store.user) return false;
     // Admin has all permissions
-    if (store.user.role === 'admin' || store.user.role === 'super_admin') return true;
+    if (store.user.role === 'admin' || store.user.role === 'super_admin' || store.user.role === 'platform_admin') return true;
     const userPermissions = store.user.permissions as string[] | undefined;
-    return permissions.some(permission => userPermissions?.includes(permission));
+    if (!userPermissions) return false;
+    return permissions.some(permission => {
+      const [resource, action] = permission.split(':');
+      return userPermissions.some(p => {
+        if (p === '*') return true;
+        if (p === `${resource}:*`) return true;
+        if (p === `*:${action}`) return true;
+        return p === permission;
+      });
+    });
   }, [store.user]);
   
   const canEdit = useCallback(() => {
@@ -50,7 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
   const isAdmin = useCallback(() => {
     if (!store.user) return false;
-    return store.user.role === 'admin' || store.user.role === 'super_admin';
+    return store.user.role === 'admin' || store.user.role === 'super_admin' || store.user.role === 'platform_admin';
   }, [store.user]);
   
   const value: AuthContextType = {

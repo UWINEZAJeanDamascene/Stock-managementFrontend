@@ -88,6 +88,7 @@ export default function PurchaseOrdersListPage() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   
   // Filters
+  const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [supplierFilter, setSupplierFilter] = useState<string>('');
   const [dateFrom, setDateFrom] = useState<string>('');
@@ -110,9 +111,9 @@ export default function PurchaseOrdersListPage() {
   const fetchPurchaseOrders = useCallback(async () => {
     setLoading(true);
     try {
-      console.log('[PurchaseOrdersListPage] Fetching with params:', { statusFilter, supplierFilter, dateFrom, dateTo });
+      console.log('[PurchaseOrdersListPage] Fetching with params:', { page, statusFilter, supplierFilter, dateFrom, dateTo });
       const params: any = {
-        page: 1,
+        page: page,
         limit: 20,
       };
       
@@ -120,6 +121,7 @@ export default function PurchaseOrdersListPage() {
       if (supplierFilter) params.supplier_id = supplierFilter;
       if (dateFrom) params.date_from = dateFrom;
       if (dateTo) params.date_to = dateTo;
+      if (searchQuery) params.search = searchQuery;
       
       const response = await purchaseOrdersApi.getAll(params);
       console.log('[PurchaseOrdersListPage] API Response:', response);
@@ -137,7 +139,7 @@ export default function PurchaseOrdersListPage() {
     } finally {
       setLoading(false);
     }
-  }, [statusFilter, supplierFilter, dateFrom, dateTo]);
+  }, [page, statusFilter, supplierFilter, dateFrom, dateTo, searchQuery]);
 
   useEffect(() => {
     fetchSuppliers();
@@ -188,8 +190,8 @@ export default function PurchaseOrdersListPage() {
     return new Date(dateStr).toLocaleDateString();
   };
 
-  const handlePageChange = (page: number) => {
-    // Handle pagination
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
   };
 
   return (

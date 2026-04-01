@@ -262,7 +262,7 @@ export default function PurchaseReturnCreatePage() {
                 <CardTitle>{t('purchaseReturn.selectGRN', 'Select GRN')}</CardTitle>
               </CardHeader>
               <CardContent>
-                <Select value={selectedGRNId} onValueChange={handleGRNSelect}>
+                <Select value={selectedGRNId || undefined} onValueChange={handleGRNSelect}>
                   <SelectTrigger>
                     <SelectValue placeholder={t('purchaseReturn.selectGRNPlaceholder', 'Select a confirmed GRN...')} />
                   </SelectTrigger>
@@ -353,7 +353,7 @@ export default function PurchaseReturnCreatePage() {
                 </div>
                 <div>
                   <Label>{t('purchaseReturn.warehouse', 'Warehouse')}</Label>
-                  <Select value={warehouseId} onValueChange={setWarehouseId}>
+                  <Select value={warehouseId || undefined} onValueChange={setWarehouseId}>
                     <SelectTrigger>
                       <SelectValue placeholder={t('purchaseReturn.selectWarehouse', 'Select warehouse')} />
                     </SelectTrigger>

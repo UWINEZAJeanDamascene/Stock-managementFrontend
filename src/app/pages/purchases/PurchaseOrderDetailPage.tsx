@@ -110,21 +110,43 @@ export default function PurchaseOrderDetailPage() {
   const { id } = useParams();
 
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [purchaseOrder, setPurchaseOrder] = useState<PurchaseOrder | null>(null);
   const [grns, setGrns] = useState<GRN[]>([]);
 
   const fetchPurchaseOrder = useCallback(async () => {
-    if (!id) return;
+    if (!id) {
+      setError('No purchase order ID provided');
+      setLoading(false);
+      return;
+    }
     setLoading(true);
+    setError(null);
     try {
       const response = await purchaseOrdersApi.getById(id);
-      if (response.success) {
-        setPurchaseOrder(response.data as PurchaseOrder);
-        setGrns(response.grns as GRN[] || []);
+      if (response.success && response.data) {
+        const po = response.data as any;
+        // Ensure lines is always an array
+        if (!Array.isArray(po.lines)) {
+          po.lines = [];
+        }
+        // Ensure supplier and warehouse are objects (not just IDs)
+        if (typeof po.supplier === 'string') {
+          po.supplier = { _id: po.supplier, name: 'Unknown' };
+        }
+        if (typeof po.warehouse === 'string') {
+          po.warehouse = { _id: po.warehouse, name: 'Unknown' };
+        }
+        setPurchaseOrder(po as PurchaseOrder);
+        setGrns(Array.isArray(response.grns) ? response.grns as GRN[] : []);
+      } else {
+        setError('Failed to load purchase order: ' + (response.message || 'Unknown error'));
+        setPurchaseOrder(null);
       }
-    } catch (error) {
-      console.error('Failed to fetch purchase order:', error);
+    } catch (err: any) {
+      console.error('[PurchaseOrderDetailPage] Error:', err);
+      setError(err.message || 'Failed to fetch purchase order');
     } finally {
       setLoading(false);
     }
@@ -180,8 +202,13 @@ export default function PurchaseOrderDetailPage() {
   };
 
   const formatCurrency = (amount: number | string, currency: string = 'USD') => {
-    const num = typeof amount === 'string' ? parseFloat(amount) : amount;
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(num || 0);
+    try {
+      const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+      return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(num || 0);
+    } catch {
+      const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+      return (num || 0).toFixed(2);
+    }
   };
 
   const formatDate = (dateStr: string) => {
@@ -199,11 +226,20 @@ export default function PurchaseOrderDetailPage() {
     );
   }
 
-  if (!purchaseOrder) {
+  if (error || !purchaseOrder) {
     return (
       <Layout>
         <div className="container mx-auto py-6">
-          <p>Purchase order not found</p>
+          <div className="flex items-center gap-4 mb-6">
+            <Button variant="ghost" onClick={() => navigate('/purchase-orders')}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              {t('common.back', 'Back')}
+            </Button>
+          </div>
+          <div className="bg-card rounded-lg border p-8 text-center">
+            <p className="text-muted-foreground mb-2">{error || 'Purchase order not found'}</p>
+            <p className="text-sm text-muted-foreground">ID: {id || 'undefined'}</p>
+          </div>
         </div>
       </Layout>
     );
@@ -237,9 +273,9 @@ export default function PurchaseOrderDetailPage() {
                 <div>
                   <p className="text-muted-foreground">{t('purchase.detail.supplier', 'Supplier')}</p>
                   <p className="font-medium">{purchaseOrder.supplier?.name || '-'}</p>
-                  {purchaseOrder.supplier?.contact && <p className="text-muted-foreground">{purchaseOrder.supplier.contact}</p>}
-                  {purchaseOrder.supplier?.email && <p className="text-muted-foreground">{purchaseOrder.supplier.email}</p>}
-                  {purchaseOrder.supplier?.phone && <p className="text-muted-foreground">{purchaseOrder.supplier.phone}</p>}
+                  {purchaseOrder.supplier?.contact?.contactPerson && <p className="text-muted-foreground">{purchaseOrder.supplier.contact.contactPerson}</p>}
+                  {purchaseOrder.supplier?.contact?.email && <p className="text-muted-foreground">{purchaseOrder.supplier.contact.email}</p>}
+                  {purchaseOrder.supplier?.contact?.phone && <p className="text-muted-foreground">{purchaseOrder.supplier.contact.phone}</p>}
                 </div>
                 <div>
                   <p className="text-muted-foreground">{t('purchase.detail.warehouse', 'Warehouse')}</p>

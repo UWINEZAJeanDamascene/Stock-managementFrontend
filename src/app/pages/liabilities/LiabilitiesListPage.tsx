@@ -56,7 +56,10 @@ export default function LiabilitiesListPage() {
     const config: Record<string, { variant: string; className: string }> = {
       active: { variant: 'default', className: 'bg-green-500' },
       fully_repaid: { variant: 'secondary', className: 'bg-blue-500' },
+      'paid-off': { variant: 'secondary', className: 'bg-blue-500' },
       closed: { variant: 'outline', className: 'bg-gray-500' },
+      cancelled: { variant: 'outline', className: 'bg-gray-400' },
+      defaulted: { variant: 'destructive', className: '' },
       default: { variant: 'destructive', className: '' },
     };
     const { variant, className } = config[status] || config.default;

@@ -39,9 +39,12 @@ interface GRNDetail {
     _id: string;
     name: string;
     code?: string;
-    email?: string;
-    phone?: string;
-    address?: string;
+    contact?: {
+      phone?: string;
+      email?: string;
+      address?: string;
+      contactPerson?: string;
+    };
   };
   warehouse?: {
     _id: string;
@@ -229,14 +232,14 @@ export default function GRNDetailPage() {
                     {grn.supplier?.code && (
                       <div className="text-sm text-muted-foreground">{grn.supplier.code}</div>
                     )}
-                    {grn.supplier?.address && (
-                      <div className="text-sm text-muted-foreground mt-1">{grn.supplier.address}</div>
+                    {grn.supplier?.contact?.address && (
+                      <div className="text-sm text-muted-foreground mt-1">{grn.supplier.contact.address}</div>
                     )}
-                    {grn.supplier?.email && (
-                      <div className="text-sm text-muted-foreground">{grn.supplier.email}</div>
+                    {grn.supplier?.contact?.email && (
+                      <div className="text-sm text-muted-foreground">{grn.supplier.contact.email}</div>
                     )}
-                    {grn.supplier?.phone && (
-                      <div className="text-sm text-muted-foreground">{grn.supplier.phone}</div>
+                    {grn.supplier?.contact?.phone && (
+                      <div className="text-sm text-muted-foreground">{grn.supplier.contact.phone}</div>
                     )}
                   </div>
                   <div>

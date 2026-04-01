@@ -2,6 +2,16 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { loansApi, Liability, LiabilityTransaction, bankAccountsApi } from '@/lib/api';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../../components/ui/alert-dialog';
 import { Layout } from '../../layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -63,6 +73,8 @@ export default function LiabilityDetailPage() {
   const [paymentSchedule, setPaymentSchedule] = useState<any>(null);
   const [submitting, setSubmitting] = useState(false);
   const [bankAccounts, setBankAccounts] = useState<any[]>([]);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
 
   // Form states
   const [repaymentForm, setRepaymentForm] = useState({
@@ -83,10 +95,12 @@ export default function LiabilityDetailPage() {
   });
 
   useEffect(() => {
-    if (id) {
-      fetchLiability();
-      fetchTransactions();
+    if (!id) {
+      setLoading(false);
+      return;
     }
+    fetchLiability();
+    fetchTransactions();
     fetchBankAccounts();
   }, [id]);
 
@@ -286,6 +300,45 @@ export default function LiabilityDetailPage() {
     }
   };
 
+  const handleDelete = async () => {
+    setSubmitting(true);
+    try {
+      const response: any = await loansApi.delete(id!);
+      if (response.success) {
+        toast.success(t('liabilities.success.deleted'));
+        navigate('/liabilities');
+      } else {
+        toast.error(response.error || t('liabilities.errors.deleteFailed'));
+      }
+    } catch (error: any) {
+      console.error('[LiabilityDetailPage] Delete error:', error);
+      toast.error(error.response?.data?.message || t('liabilities.errors.deleteFailed'));
+    } finally {
+      setSubmitting(false);
+      setDeleteDialogOpen(false);
+    }
+  };
+
+  const handleCancel = async () => {
+    setSubmitting(true);
+    try {
+      const response: any = await loansApi.cancel(id!);
+      if (response.success) {
+        toast.success(t('liabilities.success.cancelled'));
+        setCancelDialogOpen(false);
+        fetchLiability();
+      } else {
+        toast.error(response.error || t('liabilities.errors.cancelFailed'));
+      }
+    } catch (error: any) {
+      console.error('[LiabilityDetailPage] Cancel error:', error);
+      toast.error(error.response?.data?.message || t('liabilities.errors.cancelFailed'));
+    } finally {
+      setSubmitting(false);
+      setCancelDialogOpen(false);
+    }
+  };
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', { 
       style: 'currency', 
@@ -302,7 +355,10 @@ export default function LiabilityDetailPage() {
     const config: Record<string, { variant: string; className: string }> = {
       active: { variant: 'default', className: 'bg-green-500' },
       fully_repaid: { variant: 'secondary', className: 'bg-blue-500' },
+      'paid-off': { variant: 'secondary', className: 'bg-blue-500' },
       closed: { variant: 'outline', className: 'bg-gray-500' },
+      cancelled: { variant: 'outline', className: 'bg-gray-400' },
+      defaulted: { variant: 'destructive', className: '' },
       default: { variant: 'destructive', className: '' },
     };
     const { variant, className } = config[status] || config.default;
@@ -350,6 +406,16 @@ export default function LiabilityDetailPage() {
           <Button variant="outline" onClick={() => navigate(`/liabilities/${id}/edit`)}>
             <Pencil className="mr-2 h-4 w-4" />
             {t('liabilities.editLiability')}
+          </Button>
+          {liability.status !== 'cancelled' && liability.status !== 'fully_repaid' && liability.status !== 'paid-off' && (
+            <Button variant="outline" onClick={() => setCancelDialogOpen(true)}>
+              <XCircle className="mr-2 h-4 w-4" />
+              {t('liabilities.actions.cancel')}
+            </Button>
+          )}
+          <Button variant="destructive" onClick={() => setDeleteDialogOpen(true)}>
+            <Trash2 className="mr-2 h-4 w-4" />
+            {t('liabilities.actions.delete')}
           </Button>
           {/* Check if liability account is valid (has been resolved with name) - also allow string codes */}
           {(() => {
@@ -717,6 +783,39 @@ export default function LiabilityDetailPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        {/* Cancel Dialog */}
+        <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{t('liabilities.dialogs.cancel.title')}</DialogTitle>
+              <DialogDescription>{t('liabilities.dialogs.cancel.description')}</DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setCancelDialogOpen(false)}>{t('common.cancel')}</Button>
+              <Button variant="destructive" onClick={handleCancel} disabled={submitting}>
+                {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {t('liabilities.actions.cancel')}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{t('liabilities.dialogs.delete.title')}</AlertDialogTitle>
+              <AlertDialogDescription>{t('liabilities.dialogs.delete.description')}</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDelete} disabled={submitting}>
+                {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {t('liabilities.actions.delete')}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </Layout>
   );

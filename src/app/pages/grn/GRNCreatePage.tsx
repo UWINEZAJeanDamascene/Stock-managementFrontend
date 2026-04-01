@@ -101,16 +101,19 @@ export default function GRNCreatePage() {
     try {
       console.log('[GRNCreatePage] Fetching purchase orders...');
       const response = await purchaseOrdersApi.getAll({ status: 'approved', limit: 50 });
-      console.log('[GRNCreatePage] POs response:', response);
+      const responsePartial = await purchaseOrdersApi.getAll({ status: 'partially_received', limit: 50 });
+      console.log('[GRNCreatePage] POs response:', response, responsePartial);
       
+      const poList: PurchaseOrder[] = [];
       if (response.success && response.data) {
-        const poData = Array.isArray(response.data) 
-          ? response.data 
-          : (response.data as unknown[]);
-        setPurchaseOrders(poData as PurchaseOrder[]);
-      } else {
-        console.error('[GRNCreatePage] Failed to fetch POs:', response);
+        const poData = Array.isArray(response.data) ? response.data : [];
+        poList.push(...(poData as PurchaseOrder[]));
       }
+      if (responsePartial.success && responsePartial.data) {
+        const poData = Array.isArray(responsePartial.data) ? responsePartial.data : [];
+        poList.push(...(poData as PurchaseOrder[]));
+      }
+      setPurchaseOrders(poList);
     } catch (error) {
       console.error('[GRNCreatePage] Error fetching POs:', error);
     }
@@ -237,6 +240,7 @@ export default function GRNCreatePage() {
         warehouse: warehouseId,
         referenceNo: referenceNo || `GRN-${Date.now()}`,
         supplierInvoiceNo: supplierInvoiceNo || undefined,
+        receivedDate: receivedDate || undefined,
         lines: validLines
       };
 
@@ -278,14 +282,14 @@ export default function GRNCreatePage() {
                 <CardTitle>{t('grn.selectPO', 'Select Purchase Order')}</CardTitle>
               </CardHeader>
               <CardContent>
-                <Select value={selectedPOId} onValueChange={handlePOSelect}>
+                <Select value={selectedPOId || undefined} onValueChange={handlePOSelect}>
                   <SelectTrigger>
-                    <SelectValue placeholder={t('grn.selectPOPlaceholder', 'Select a purchase order...')} />
+                    <SelectValue placeholder={purchaseOrders.length === 0 ? 'No approved POs available' : t('grn.selectPOPlaceholder', 'Select a purchase order...')} />
                   </SelectTrigger>
                   <SelectContent>
                     {purchaseOrders.map((po) => (
                       <SelectItem key={po._id} value={po._id}>
-                        {po.referenceNo} - {po.supplier?.name}
+                        {po.referenceNo} - {po.supplier?.name || 'N/A'}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -366,7 +370,7 @@ export default function GRNCreatePage() {
                 </div>
                 <div>
                   <Label>{t('grn.warehouse', 'Warehouse')}</Label>
-                  <Select value={warehouseId} onValueChange={setWarehouseId}>
+                  <Select value={warehouseId || undefined} onValueChange={setWarehouseId}>
                     <SelectTrigger>
                       <SelectValue placeholder={t('grn.selectWarehouse', 'Select warehouse')} />
                     </SelectTrigger>

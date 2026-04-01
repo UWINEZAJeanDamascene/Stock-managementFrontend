@@ -350,7 +350,7 @@ export default function GRNListPage() {
                 {Array.from({ length: pagination.totalPages }, (_, i) => (
                   <PaginationItem key={i + 1}>
                     <PaginationLink 
-                      onClick={() => setStatusFilter('')}
+                      onClick={() => setPage(i + 1)}
                       isActive={pagination.currentPage === i + 1}
                     >
                       {i + 1}
