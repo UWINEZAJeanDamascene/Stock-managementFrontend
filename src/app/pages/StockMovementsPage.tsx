@@ -38,22 +38,25 @@ import { Layout } from '../layout/Layout';
 
 interface StockMovement {
   _id: string;
-  date: string;
+  date?: string;
+  movementDate?: string;
   product: {
     _id: string;
     name: string;
     sku: string;
   };
-  warehouse: {
+  warehouse?: {
     _id: string;
     name: string;
-  };
+  } | string | null;
   type: 'in' | 'out' | 'adjustment';
-  quantity: number;
-  unitCost: number;
-  totalCost: number;
-  sourceType: string;
+  quantity: number | string;
+  unitCost: number | string;
+  totalCost: number | string;
+  sourceType?: string;
+  referenceType?: string;
   reference?: string;
+  referenceNumber?: string;
   notes?: string;
 }
 
@@ -160,16 +163,16 @@ export default function StockMovementsPage() {
     ];
     
     const rows = movements.map(item => [
-      new Date(item.date).toLocaleDateString(),
+      new Date(item.movementDate || item.date || '').toLocaleDateString(),
       item.product?.sku || '',
       item.product?.name || '',
-      item.warehouse?.name || '',
+      typeof item.warehouse === 'object' && item.warehouse?.name ? item.warehouse.name : typeof item.warehouse === 'string' ? item.warehouse : '',
       item.type,
-      item.quantity,
-      item.unitCost,
-      item.totalCost,
-      item.sourceType || '',
-      item.reference || ''
+      toNum(item.quantity),
+      toNum(item.unitCost),
+      toNum(item.totalCost),
+      item.sourceType || item.referenceType || '',
+      item.referenceNumber || item.reference || ''
     ]);
     
     const csvContent = [
@@ -200,23 +203,30 @@ export default function StockMovementsPage() {
     return <Chip label={typeLabels[type] || type} color={typeColors[type] || 'default'} size="small" />;
   };
 
-  const formatCurrency = (value: number) => {
+  const toNum = (v: number | string | null | undefined): number => {
+    if (v == null) return 0;
+    const n = typeof v === 'number' ? v : parseFloat(v);
+    return isNaN(n) ? 0 : n;
+  };
+
+  const formatCurrency = (value: number | string) => {
+    const num = toNum(value);
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD'
-    }).format(value);
+    }).format(num);
   };
 
   // Calculate summary
   const totalIn = movements
     .filter(m => m.type === 'in')
-    .reduce((sum, m) => sum + m.totalCost, 0);
+    .reduce((sum, m) => sum + toNum(m.totalCost), 0);
   const totalOut = movements
     .filter(m => m.type === 'out')
-    .reduce((sum, m) => sum + m.totalCost, 0);
+    .reduce((sum, m) => sum + toNum(m.totalCost), 0);
   const totalAdjustments = movements
     .filter(m => m.type === 'adjustment')
-    .reduce((sum, m) => sum + Math.abs(m.totalCost), 0);
+    .reduce((sum, m) => sum + Math.abs(toNum(m.totalCost)), 0);
 
   return (
     <Layout>
@@ -373,7 +383,7 @@ export default function StockMovementsPage() {
                   movements.map((item) => (
                     <TableRow key={item._id} hover>
                       <TableCell>
-                        {item.date ? new Date(item.date).toLocaleDateString() : '-'}
+                        {item.movementDate || item.date ? new Date(item.movementDate || item.date!).toLocaleDateString() : '-'}
                       </TableCell>
                       <TableCell>
                         <Typography variant="body2">{item.product?.name || '-'}</Typography>
@@ -381,7 +391,13 @@ export default function StockMovementsPage() {
                           {item.product?.sku || ''}
                         </Typography>
                       </TableCell>
-                      <TableCell>{item.warehouse?.name || '-'}</TableCell>
+                      <TableCell>
+                        {typeof item.warehouse === 'object' && item.warehouse?.name
+                          ? item.warehouse.name
+                          : typeof item.warehouse === 'string' && item.warehouse
+                            ? item.warehouse
+                            : '-'}
+                      </TableCell>
                       <TableCell>{getTypeChip(item.type)}</TableCell>
                       <TableCell 
                         align="right"
@@ -390,18 +406,18 @@ export default function StockMovementsPage() {
                           fontWeight: item.type === 'out' ? 'bold' : 'normal'
                         }}
                       >
-                        {item.type === 'out' ? '-' : ''}{item.quantity.toLocaleString()}
+                        {item.type === 'out' ? '-' : ''}{toNum(item.quantity).toLocaleString()}
                       </TableCell>
                       <TableCell align="right">{formatCurrency(item.unitCost)}</TableCell>
                       <TableCell align="right">{formatCurrency(item.totalCost)}</TableCell>
                       <TableCell>
                         <Chip 
-                          label={item.sourceType || '-'} 
+                          label={item.sourceType || item.referenceType || '-'} 
                           size="small" 
                           variant="outlined"
                         />
                       </TableCell>
-                      <TableCell>{item.reference || '-'}</TableCell>
+                      <TableCell>{item.referenceNumber || item.reference || '-'}</TableCell>
                     </TableRow>
                   ))
                 )}

@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useParams } from 'react-router';
-import { deliveryNotesApi, quotationsApi, clientsApi, productsApi } from '@/lib/api';
+import { useNavigate, useParams, useSearchParams } from 'react-router';
+import { deliveryNotesApi, invoicesApi, clientsApi, productsApi, warehousesApi } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
+import { ErrorBoundary } from '../../components/ErrorBoundary';
 import { 
   ArrowLeft, 
   Save, 
@@ -33,30 +34,21 @@ import {
 } from '@/app/components/ui/table';
 import { useTranslation } from 'react-i18next';
 
-interface Product {
-  _id: string;
-  name: string;
-  sku: string;
-  trackBatches?: boolean;
-  trackSerials?: boolean;
-}
-
-interface Client {
-  _id: string;
-  name: string;
-  code?: string;
-}
-
-interface Quotation {
+interface Invoice {
   _id: string;
   referenceNo: string;
+  invoiceNumber?: string;
   client: {
     _id: string;
     name: string;
     code?: string;
+    contact?: {
+      phone?: string;
+      address?: string;
+    };
   };
-  quotationDate: string;
-  validUntil: string;
+  invoiceDate: string;
+  dueDate: string;
   status: string;
   grandTotal: number;
   currencyCode: string;
@@ -69,68 +61,31 @@ interface Quotation {
       trackBatches?: boolean;
       trackSerials?: boolean;
     };
-    qtyOrdered: number;
-    qtyDelivered: number;
+    qty: number;
+    quantity: number;
     unitPrice: number;
     lineTotal: number;
   }>;
 }
 
-interface DeliveryNoteLine {
-  _id: string;
-  product: string;
-  productName?: string;
-  productSku?: string;
-  qtyOrdered: number;
-  qtyDelivered: number;
-  qtyToDeliver: number;
-  unitPrice: number;
-  lineTotal: number;
-  trackBatches?: boolean;
-  trackSerials?: boolean;
-  batchId?: string;
-  serialNumbers?: string[];
-}
-
-interface DeliveryNoteFormData {
-  quotation: string;
-  client: string;
-  deliveryDate: string;
-  deliveredBy: string;
-  vehicle: string;
-  deliveryAddress: string;
-  carrier: string;
-  trackingNumber: string;
-  notes: string;
-  lines: DeliveryNoteLine[];
-}
-
-const emptyLine: DeliveryNoteLine = {
-  _id: '',
-  product: '',
-  productName: '',
-  productSku: '',
-  qtyOrdered: 0,
-  qtyDelivered: 0,
-  qtyToDeliver: 0,
-  unitPrice: 0,
-  lineTotal: 0,
-};
-
-export default function DeliveryNoteCreatePage() {
+function DeliveryNoteCreatePageContent() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const invoiceId = searchParams.get('invoice');
   const isEditMode = Boolean(id);
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [quotations, setQuotations] = useState<Quotation[]>([]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [warehouses, setWarehouses] = useState<any[]>([]);
+  const [warehouse, setWarehouse] = useState<string>('');
 
   const [formData, setFormData] = useState<DeliveryNoteFormData>({
-    quotation: '',
+    invoice: '',
     client: '',
     deliveryDate: new Date().toISOString().split('T')[0],
     deliveredBy: '',
@@ -142,16 +97,57 @@ export default function DeliveryNoteCreatePage() {
     lines: [],
   });
 
-  const fetchQuotations = useCallback(async () => {
+  // Load invoice data if invoice ID is provided
+  useEffect(() => {
+    if (invoiceId) {
+      const loadInvoiceData = async () => {
+        try {
+          const response = await invoicesApi.getById(invoiceId);
+          if (response.success && response.data) {
+            const invoice = response.data as any;
+            setFormData(prev => ({
+              ...prev,
+              invoice: invoiceId,
+              client: invoice.client?._id || invoice.client || '',
+              deliveryAddress: invoice.customerAddress || invoice.client?.contact?.address || '',
+              lines: invoice.lines ? invoice.lines.map((line: any) => ({
+                _id: line._id || line.lineId,
+                product: line.product?._id || line.product || '',
+                productName: line.product?.name || '',
+                productSku: line.product?.sku || '',
+                qtyOrdered: parseFloat(line.qty) || parseFloat(line.quantity) || 0,
+                qtyDelivered: line.qtyDelivered || 0,
+                qtyToDeliver: (parseFloat(line.qty) || parseFloat(line.quantity) || 0) - (line.qtyDelivered || 0),
+                unitPrice: parseFloat(line.unitPrice) || 0,
+                lineTotal: parseFloat(line.lineTotal) || 0,
+                trackBatches: line.product?.trackBatches,
+                trackSerials: line.product?.trackSerials,
+              })) : [],
+            }));
+          }
+        } catch (error) {
+          console.error('Failed to load invoice:', error);
+        }
+      };
+      loadInvoiceData();
+    }
+  }, [invoiceId]);
+
+  const fetchInvoices = useCallback(async () => {
     try {
-      const response = await quotationsApi.getAll({ limit: 100 });
+      // Fetch all invoices and filter for confirmed/draft on client side
+      const response = await invoicesApi.getAll({ limit: 100 });
       if (response.success && response.data) {
         const data = response.data as any;
-        const quotationData = Array.isArray(data) ? data : (data.quotations || []);
-        setQuotations(quotationData as Quotation[]);
+        const allInvoices = Array.isArray(data) ? data : (data.invoices || []);
+        // Filter for confirmed and draft status
+        const filteredInvoices = allInvoices.filter((inv: any) => 
+          inv.status === 'confirmed' || inv.status === 'draft'
+        );
+        setInvoices(filteredInvoices as Invoice[]);
       }
     } catch (error) {
-      console.error('Failed to fetch quotations:', error);
+      console.error('Failed to fetch invoices:', error);
     }
   }, []);
 
@@ -183,6 +179,23 @@ export default function DeliveryNoteCreatePage() {
     }
   }, []);
 
+  const fetchWarehouses = useCallback(async () => {
+    try {
+      const response = await warehousesApi.getAll({ limit: 100 });
+      if (response.success && response.data) {
+        const warehouseData = Array.isArray(response.data)
+          ? response.data
+          : (response.data as any[]);
+        setWarehouses(warehouseData);
+        if (warehouseData.length > 0) {
+          setWarehouse(warehouseData[0]._id);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch warehouses:', error);
+    }
+  }, []);
+
   const fetchDeliveryNote = useCallback(async (deliveryNoteId: string) => {
     setLoading(true);
     try {
@@ -201,9 +214,10 @@ export default function DeliveryNoteCreatePage() {
           notes: dn.notes || '',
           lines: dn.lines ? dn.lines.map((line: any) => ({
             _id: line._id,
+            invoiceLineId: line.invoiceLineId?._id || line.invoiceLineId || '',
             product: line.product?._id || line.product || '',
-            productName: line.product?.name,
-            productSku: line.product?.sku,
+            productName: line.product?.name || '',
+            productSku: line.product?.sku || '',
             qtyOrdered: line.qtyOrdered || 0,
             qtyDelivered: line.qtyDelivered || 0,
             qtyToDeliver: line.deliveredQty || 0,
@@ -213,6 +227,9 @@ export default function DeliveryNoteCreatePage() {
             trackSerials: line.product?.trackSerials,
           })) : [],
         });
+        if (dn.warehouse) {
+          setWarehouse(dn.warehouse._id || dn.warehouse);
+        }
       }
     } catch (error) {
       console.error('Failed to fetch delivery note:', error);
@@ -222,10 +239,11 @@ export default function DeliveryNoteCreatePage() {
   }, []);
 
   useEffect(() => {
-    fetchQuotations();
+    fetchInvoices();
     fetchClients();
     fetchProducts();
-  }, [fetchQuotations, fetchClients, fetchProducts]);
+    fetchWarehouses();
+  }, [fetchInvoices, fetchClients, fetchProducts, fetchWarehouses]);
 
   useEffect(() => {
     if (isEditMode && id) {
@@ -233,28 +251,30 @@ export default function DeliveryNoteCreatePage() {
     }
   }, [id, isEditMode, fetchDeliveryNote]);
 
-  const handleQuotationChange = (quotationId: string) => {
-    const quotation = quotations.find(q => q._id === quotationId);
-    if (quotation) {
-      // Transform quotation lines to delivery note lines
-      const lines = quotation.lines.map(line => ({
+  const handleInvoiceChange = (invoiceId: string) => {
+    const invoice = invoices.find(inv => inv._id === invoiceId);
+    if (invoice) {
+      // Transform invoice lines to delivery note lines
+      const lines = invoice.lines.map(line => ({
         _id: line._id,
-        product: line.product._id,
-        productName: line.product.name,
-        productSku: line.product.sku,
-        qtyOrdered: line.qtyOrdered,
-        qtyDelivered: line.qtyDelivered,
-        qtyToDeliver: line.qtyOrdered - (line.qtyDelivered || 0), // Default to remaining qty
-        unitPrice: line.unitPrice,
-        lineTotal: (line.qtyOrdered - (line.qtyDelivered || 0)) * line.unitPrice,
-        trackBatches: line.product.trackBatches,
-        trackSerials: line.product.trackSerials,
+        invoiceLineId: line._id,
+        product: line.product?._id || line.product || '',
+        productName: line.product?.name || '',
+        productSku: line.product?.sku || '',
+        qtyOrdered: parseFloat(line.qty as any) || parseFloat(line.quantity as any) || 0,
+        qtyDelivered: 0,
+        qtyToDeliver: (parseFloat(line.qty as any) || parseFloat(line.quantity as any) || 0),
+        unitPrice: parseFloat(line.unitPrice as any) || 0,
+        lineTotal: parseFloat(line.lineTotal as any) || 0,
+        trackBatches: line.product?.trackBatches,
+        trackSerials: line.product?.trackSerials,
       }));
 
       setFormData(prev => ({
         ...prev,
-        quotation: quotationId,
-        client: quotation.client._id,
+        invoice: invoiceId,
+        client: invoice.client?._id || '',
+        deliveryAddress: invoice.client?.contact?.address || '',
         lines,
       }));
     }
@@ -283,8 +303,13 @@ export default function DeliveryNoteCreatePage() {
   };
 
   const handleSave = async (confirmImmediately: boolean = false) => {
-    if (!formData.quotation || formData.lines.length === 0) {
-      alert(t('deliveryNote.selectQuotation', 'Please select a quotation'));
+    if (!warehouse) {
+      alert('Please select a warehouse');
+      return;
+    }
+
+    if (!formData.invoice || formData.lines.length === 0) {
+      alert(t('deliveryNote.selectInvoice', 'Please select an invoice'));
       return;
     }
 
@@ -297,8 +322,17 @@ export default function DeliveryNoteCreatePage() {
 
     setSaving(true);
     try {
+      // Use invoice from form directly
+      const invoiceIdValue = invoiceId || formData.invoice;
+      
+      if (!invoiceIdValue) {
+        alert('Please select an invoice to create delivery note');
+        return;
+      }
+      
       const deliveryNoteData = {
-        quotation: formData.quotation,
+        invoice: invoiceIdValue,
+        warehouse: warehouse,
         deliveryDate: formData.deliveryDate,
         deliveredBy: formData.deliveredBy,
         vehicle: formData.vehicle,
@@ -309,6 +343,7 @@ export default function DeliveryNoteCreatePage() {
         lines: formData.lines
           .filter(line => line.qtyToDeliver > 0)
           .map(line => ({
+            invoiceLineId: line._id,
             product: line.product,
             deliveredQty: line.qtyToDeliver,
             unitPrice: line.unitPrice,
@@ -375,19 +410,45 @@ export default function DeliveryNoteCreatePage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label>{t('deliveryNote.quotation')} *</Label>
+                  <Label>{t('deliveryNote.invoice')} *</Label>
                   <Select 
-                    value={formData.quotation} 
-                    onValueChange={(value) => handleQuotationChange(value)}
+                    value={formData.invoice} 
+                    onValueChange={(value) => handleInvoiceChange(value)}
+                    disabled={isEditMode || !!invoiceId}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('deliveryNote.selectInvoice')} />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-96 overflow-y-auto">
+                      {invoices.length === 0 ? (
+                        <div className="p-4 text-center text-muted-foreground">
+                          No invoices available
+                        </div>
+                      ) : (
+                        invoices.map(inv => (
+                          <SelectItem key={inv._id} value={inv._id}>
+                            {inv.referenceNo || inv.invoiceNumber} - {inv.client?.name || 'No client'}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label>Warehouse *</Label>
+                  <Select 
+                    value={warehouse} 
+                    onValueChange={(value) => setWarehouse(value)}
                     disabled={isEditMode}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder={t('deliveryNote.selectQuotation')} />
+                      <SelectValue placeholder="Select warehouse" />
                     </SelectTrigger>
                     <SelectContent>
-                      {quotations.map(q => (
-                        <SelectItem key={q._id} value={q._id}>
-                          {q.referenceNo} - {q.client.name}
+                      {warehouses.map(wh => (
+                        <SelectItem key={wh._id} value={wh._id}>
+                          {wh.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -553,7 +614,7 @@ export default function DeliveryNoteCreatePage() {
             <div className="flex flex-col gap-2">
               <Button
                 onClick={() => handleSave(false)}
-                disabled={saving || !formData.quotation}
+                disabled={saving || !formData.invoice}
                 variant="outline"
               >
                 {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
@@ -561,7 +622,7 @@ export default function DeliveryNoteCreatePage() {
               </Button>
               <Button
                 onClick={() => handleSave(true)}
-                disabled={saving || !formData.quotation}
+                disabled={saving || !formData.invoice}
               >
                 {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
                 {t('deliveryNote.confirmDispatch', 'Confirm & Dispatch')}
@@ -571,5 +632,13 @@ export default function DeliveryNoteCreatePage() {
         </div>
       </div>
     </Layout>
+  );
+}
+
+export default function DeliveryNoteCreatePage() {
+  return (
+    <ErrorBoundary>
+      <DeliveryNoteCreatePageContent />
+    </ErrorBoundary>
   );
 }

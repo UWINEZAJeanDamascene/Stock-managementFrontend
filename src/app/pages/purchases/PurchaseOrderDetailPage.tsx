@@ -11,7 +11,9 @@ import {
   Clock,
   Loader2,
   Plus,
-  Truck
+  Truck,
+  CreditCard,
+  DollarSign
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
@@ -25,6 +27,16 @@ import {
   TableHeader, 
   TableRow 
 } from '@/app/components/ui/table';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/app/components/ui/select';
+import { Input } from '@/app/components/ui/input';
+import { Textarea } from '@/app/components/ui/textarea';
+import { Label } from '@/app/components/ui/label';
 import { useTranslation } from 'react-i18next';
 
 interface PurchaseOrder {
@@ -51,6 +63,16 @@ interface PurchaseOrder {
   subtotal: number;
   taxAmount: number;
   totalAmount: number;
+  amountPaid?: number;
+  balance?: number;
+  paymentStatus?: string;
+  payments?: Array<{
+    amount: number;
+    paymentMethod: string;
+    reference?: string;
+    notes?: string;
+    paidDate: string;
+  }>;
   notes?: string;
   createdBy?: {
     name: string;
@@ -182,6 +204,33 @@ export default function PurchaseOrderDetailPage() {
     }
   };
 
+  // Payment state
+  const [paymentOpen, setPaymentOpen] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('bank_transfer');
+  const [paymentNotes, setPaymentNotes] = useState('');
+  const [paymentSaving, setPaymentSaving] = useState(false);
+
+  const handleRecordPayment = async () => {
+    if (!id || !paymentAmount) return;
+    setPaymentSaving(true);
+    try {
+      await purchaseOrdersApi.recordPayment(id, {
+        amount: parseFloat(paymentAmount),
+        paymentMethod,
+        notes: paymentNotes || undefined,
+      });
+      setPaymentOpen(false);
+      setPaymentAmount('');
+      setPaymentNotes('');
+      fetchPurchaseOrder();
+    } catch (error) {
+      console.error('Failed to record payment:', error);
+    } finally {
+      setPaymentSaving(false);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { variant: 'default' | 'secondary' | 'outline' | 'destructive'; label: string }> = {
       draft: { variant: 'secondary', label: t('purchase.status.draft', 'Draft') },
@@ -201,13 +250,23 @@ export default function PurchaseOrderDetailPage() {
     return stepIndex;
   };
 
-  const formatCurrency = (amount: number | string, currency: string = 'USD') => {
+  const formatCurrency = (amount: number | string | object | null | undefined, currency: string = 'USD') => {
     try {
-      const num = typeof amount === 'string' ? parseFloat(amount) : amount;
-      return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(num || 0);
+      let num: number;
+      if (amount == null) {
+        num = 0;
+      } else if (typeof amount === 'object') {
+        // Handle Decimal128: { $numberDecimal: "123" }
+        const raw = (amount as any).$numberDecimal || (amount as any).toString();
+        num = parseFloat(raw) || 0;
+      } else if (typeof amount === 'string') {
+        num = parseFloat(amount) || 0;
+      } else {
+        num = amount;
+      }
+      return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(num);
     } catch {
-      const num = typeof amount === 'string' ? parseFloat(amount) : amount;
-      return (num || 0).toFixed(2);
+      return '0.00';
     }
   };
 
@@ -358,6 +417,12 @@ export default function PurchaseOrderDetailPage() {
                 {t('purchase.detail.createGRN', 'Create GRN')}
               </Button>
             )}
+            {(purchaseOrder.status === 'approved' || purchaseOrder.status === 'partially_received' || purchaseOrder.status === 'fully_received') && (purchaseOrder as any).paymentStatus !== 'paid' && (
+              <Button variant="outline" onClick={() => setPaymentOpen(true)}>
+                <DollarSign className="mr-2 h-4 w-4" />
+                {t('purchase.detail.recordPayment', 'Record Payment')}
+              </Button>
+            )}
           </div>
         </div>
 
@@ -368,6 +433,10 @@ export default function PurchaseOrderDetailPage() {
             <TabsTrigger value="grns">
               {t('purchase.detail.tabs.grns', 'GRNs')} 
               {grns.length > 0 && <Badge variant="secondary" className="ml-2">{grns.length}</Badge>}
+            </TabsTrigger>
+            <TabsTrigger value="payments">
+              {t('purchase.detail.tabs.payments', 'Payments')}
+              {(purchaseOrder.payments?.length || 0) > 0 && <Badge variant="secondary" className="ml-2">{purchaseOrder.payments?.length}</Badge>}
             </TabsTrigger>
             <TabsTrigger value="history">{t('purchase.detail.tabs.history', 'History')}</TabsTrigger>
           </TabsList>
@@ -482,6 +551,113 @@ export default function PurchaseOrderDetailPage() {
                       ))}
                     </TableBody>
                   </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="payments" className="mt-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>{t('purchase.detail.paymentsTitle', 'Payments')}</CardTitle>
+                {purchaseOrder.status !== 'cancelled' && (purchaseOrder.paymentStatus || 'unpaid') !== 'paid' && (
+                  <Button size="sm" onClick={() => setPaymentOpen(true)}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    {t('purchase.detail.recordPayment', 'Record Payment')}
+                  </Button>
+                )}
+              </CardHeader>
+              <CardContent>
+                {/* Payment Summary */}
+                <div className="grid grid-cols-3 gap-4 mb-4">
+                  <div className="bg-muted rounded-lg p-3">
+                    <p className="text-sm text-muted-foreground">{t('purchase.detail.totalAmount', 'Total Amount')}</p>
+                    <p className="text-lg font-bold">{formatCurrency(purchaseOrder.totalAmount, purchaseOrder.currencyCode)}</p>
+                  </div>
+                  <div className="bg-muted rounded-lg p-3">
+                    <p className="text-sm text-muted-foreground">{t('purchase.detail.amountPaid', 'Amount Paid')}</p>
+                    <p className="text-lg font-bold text-green-600">{formatCurrency((purchaseOrder as any).amountPaid || 0, purchaseOrder.currencyCode)}</p>
+                  </div>
+                  <div className="bg-muted rounded-lg p-3">
+                    <p className="text-sm text-muted-foreground">{t('purchase.detail.balance', 'Balance')}</p>
+                    <p className="text-lg font-bold text-red-600">{formatCurrency((purchaseOrder as any).balance ?? purchaseOrder.totalAmount, purchaseOrder.currencyCode)}</p>
+                  </div>
+                </div>
+
+                {/* Payments Table */}
+                {(!purchaseOrder.payments || purchaseOrder.payments.length === 0) ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <DollarSign className="mx-auto h-8 w-8 mb-2" />
+                    <p>{t('purchase.detail.noPayments', 'No payments recorded yet')}</p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{t('purchase.detail.date', 'Date')}</TableHead>
+                        <TableHead>{t('purchase.detail.method', 'Method')}</TableHead>
+                        <TableHead className="text-right">{t('purchase.detail.amount', 'Amount')}</TableHead>
+                        <TableHead>{t('purchase.detail.notes', 'Notes')}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {(purchaseOrder.payments || []).map((payment: any, idx: number) => (
+                        <TableRow key={idx}>
+                          <TableCell>{new Date(payment.paidDate || payment.date).toLocaleDateString()}</TableCell>
+                          <TableCell><Badge variant="outline">{payment.paymentMethod}</Badge></TableCell>
+                          <TableCell className="text-right font-medium">{formatCurrency(payment.amount, purchaseOrder.currencyCode)}</TableCell>
+                          <TableCell>{payment.notes || '-'}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+
+                {/* Record Payment Dialog */}
+                {paymentOpen && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                    <div className="bg-background rounded-lg border p-6 max-w-md w-full mx-4">
+                      <h3 className="text-lg font-semibold mb-4">{t('purchase.detail.recordPayment', 'Record Payment')}</h3>
+                      <div className="space-y-4">
+                        <div>
+                          <Label>{t('purchase.detail.paymentAmount', 'Amount')}</Label>
+                          <Input
+                            type="number"
+                            value={paymentAmount}
+                            onChange={(e) => setPaymentAmount(e.target.value)}
+                            placeholder={String((purchaseOrder as any).balance ?? purchaseOrder.totalAmount)}
+                          />
+                        </div>
+                        <div>
+                          <Label>{t('purchase.detail.paymentMethod', 'Payment Method')}</Label>
+                          <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="cash">Cash</SelectItem>
+                              <SelectItem value="card">Card</SelectItem>
+                              <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                              <SelectItem value="cheque">Cheque</SelectItem>
+                              <SelectItem value="mobile_money">Mobile Money</SelectItem>
+                              <SelectItem value="credit">Credit</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label>{t('purchase.detail.paymentNotes', 'Notes')}</Label>
+                          <Textarea value={paymentNotes} onChange={(e) => setPaymentNotes(e.target.value)} rows={2} />
+                        </div>
+                      </div>
+                      <div className="flex justify-end gap-2 mt-4">
+                        <Button variant="outline" onClick={() => setPaymentOpen(false)}>{t('common.cancel', 'Cancel')}</Button>
+                        <Button onClick={handleRecordPayment} disabled={paymentSaving || !paymentAmount}>
+                          {paymentSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2 h-4 w-4" />}
+                          {t('purchase.detail.submitPayment', 'Submit Payment')}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
                 )}
               </CardContent>
             </Card>

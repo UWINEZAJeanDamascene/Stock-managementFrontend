@@ -10,7 +10,10 @@ import {
   FileText,
   Loader2,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  UserCheck,
+  UserX,
+  Trash2
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
@@ -41,6 +44,7 @@ interface Client {
   outstandingBalance?: number;
   outstandingInvoices?: number;
   totalOutstanding?: number;
+  overdueAmount?: number;
 }
 
 interface PaginationInfo {
@@ -61,6 +65,8 @@ export default function ClientsListPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchClients = useCallback(async () => {
     setLoading(true);
@@ -111,6 +117,54 @@ export default function ClientsListPage() {
     e.preventDefault();
     setSearch(searchInput);
     setPage(1);
+  };
+
+  const handleToggleStatus = async (clientId: string) => {
+    try {
+      await clientsApi.toggleStatus(clientId);
+      fetchClients();
+    } catch (error) {
+      console.error('Failed to toggle status:', error);
+    }
+  };
+
+  const handleStatement = (clientId: string) => {
+    const token = localStorage.getItem('token');
+    const baseUrl = import.meta.env.VITE_API_URL || 'https://stock-tenancy-system.onrender.com/api';
+    fetch(`${baseUrl}/clients/${clientId}/statement`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    })
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to download statement');
+        return res.blob();
+      })
+      .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `client-statement-${clientId}.pdf`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      })
+      .catch(err => console.error('Statement download failed:', err));
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      const response = await clientsApi.delete(deleteTarget.id);
+      if (response.success) {
+        setDeleteTarget(null);
+        fetchClients();
+      } else {
+        alert(response.message || 'Failed to delete client');
+      }
+    } catch (err: any) {
+      alert(err?.message || 'Failed to delete client');
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const formatCurrency = (amount: number | undefined) => {
@@ -194,9 +248,8 @@ export default function ClientsListPage() {
                       <TableCell className="font-medium">
                         {formatCurrency(client.totalOutstanding || client.outstandingBalance)}
                       </TableCell>
-                      <TableCell>
-                        {/* Overdue amount - would need additional backend support */}
-                        -
+                      <TableCell className="font-medium">
+                        {formatCurrency(client.overdueAmount || 0)}
                       </TableCell>
                       <TableCell>
                         <Badge variant={client.isActive ? 'default' : 'secondary'}>
@@ -224,10 +277,26 @@ export default function ClientsListPage() {
                           <Button 
                             variant="ghost" 
                             size="sm"
-                            onClick={() => clientsApi.exportPDF({ isActive: true }).then(() => {})}
+                            onClick={() => handleStatement(client._id)}
                             title={t('clients.statement', 'Statement')}
                           >
                             <FileText className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleToggleStatus(client._id)}
+                            title={client.isActive ? t('common.deactivate', 'Deactivate') : t('common.activate', 'Activate')}
+                          >
+                            {client.isActive ? <UserX className="h-4 w-4 text-destructive" /> : <UserCheck className="h-4 w-4 text-green-600" />}
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => setDeleteTarget({ id: client._id, name: client.name })}
+                            title={t('common.delete', 'Delete')}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
                         </div>
                       </TableCell>
@@ -266,6 +335,27 @@ export default function ClientsListPage() {
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Confirmation Dialog */}
+        {deleteTarget && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <div className="bg-background rounded-lg border p-6 max-w-md w-full mx-4">
+              <h3 className="text-lg font-semibold mb-2">{t('common.confirmDelete', 'Confirm Delete')}</h3>
+              <p className="text-muted-foreground mb-4">
+                {t('clients.deleteConfirm', 'Are you sure you want to delete')} <strong>{deleteTarget.name}</strong>? {t('common.cannotUndo', 'This action cannot be undone.')}
+              </p>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={deleting}>
+                  {t('common.cancel', 'Cancel')}
+                </Button>
+                <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+                  {deleting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
+                  {t('common.delete', 'Delete')}
+                </Button>
+              </div>
             </div>
           </div>
         )}

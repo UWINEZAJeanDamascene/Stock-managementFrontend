@@ -109,28 +109,46 @@ export default function DeliveryNotesListPage() {
         status: statusFilter !== 'all' ? statusFilter : undefined,
         clientId: clientFilter !== 'all' ? clientFilter : undefined,
         quotationId: quotationFilter !== 'all' ? quotationFilter : undefined,
-        startDate: dateFrom || undefined,
-        endDate: dateTo || undefined,
+        dateFrom: dateFrom || undefined,
+        dateTo: dateTo || undefined,
       });
       
       if (response.success && response.data) {
         const data = response.data as any;
+        console.log('API response:', response);
+        console.log('Delivery notes response:', JSON.stringify(data).slice(0, 500));
+        
+        let notes: any[] = [];
+        
         if (Array.isArray(data)) {
-          setDeliveryNotes(data);
+          notes = data;
           setPagination(prev => ({ ...prev, total: data.length }));
-        } else if (data.deliveryNotes) {
-          setDeliveryNotes(data.deliveryNotes);
+        } else if (Array.isArray(data.data)) {
+          notes = data.data;
           setPagination(prev => ({ 
             ...prev, 
-            total: data.total || data.deliveryNotes.length,
-            page: data.page || 1 
+            total: data.total || data.data.length,
+            page: data.currentPage || 1 
           }));
-        } else {
-          setDeliveryNotes([]);
+        } else if (data.data && Array.isArray(data.data.deliveryNotes)) {
+          notes = data.data.deliveryNotes;
+          setPagination(prev => ({ 
+            ...prev, 
+            total: data.total || data.data.deliveryNotes.length,
+            page: data.currentPage || 1 
+          }));
         }
+        
+        setDeliveryNotes(notes);
+      } else {
+        setDeliveryNotes([]);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch delivery notes:', error);
+      console.error('Error status:', error.status);
+      console.error('Error message:', error.message);
+      console.error('Error response:', error.response?.data);
+      setDeliveryNotes([]);
     } finally {
       setLoading(false);
     }

@@ -47,7 +47,7 @@ interface Quotation {
   quotationDate: string;
   expiryDate: string;
   status: 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired' | 'converted';
-  grandTotal: number;
+  totalAmount: number;
   currency: string;
   convertedToInvoice?: string;
 }
@@ -115,27 +115,27 @@ export default function QuotationsListPage() {
       const response = await quotationsApi.getAll(params);
       console.log('[QuotationsListPage] Quotations response:', response);
       
-      if (response.success) {
-        const quotationData = Array.isArray(response.data) 
-          ? response.data 
-          : (response.data as unknown[]);
-        setQuotations(quotationData as Quotation[]);
-        
-        // Handle pagination if response has it
-        const responseWithPagination = response as unknown as { 
-          pages?: string; 
-          currentPage?: string; 
-          total?: string 
-        };
-        if (responseWithPagination.pages) {
-          setPagination({
-            currentPage: parseInt(responseWithPagination.currentPage || '1'),
-            totalPages: parseInt(responseWithPagination.pages) || 1,
-            total: parseInt(responseWithPagination.total || '0'),
-            limit: 20
-          });
-        }
-      }
+       if (response.success) {
+         const quotationData = Array.isArray(response.data) 
+           ? response.data 
+           : (response.data as unknown[]);
+         setQuotations(quotationData as Quotation[]);
+         
+         // Handle pagination if response has it
+         const responseWithPagination = response as unknown as { 
+           pages?: number; 
+           currentPage?: number; 
+           total?: number 
+         };
+         if (responseWithPagination.pages !== undefined) {
+           setPagination({
+             currentPage: responseWithPagination.currentPage || 1,
+             totalPages: responseWithPagination.pages || 1,
+             total: responseWithPagination.total || 0,
+             limit: 20
+           });
+         }
+       }
     } catch (error) {
       console.error('[QuotationsListPage] Failed to fetch quotations:', error);
     } finally {
@@ -338,9 +338,9 @@ export default function QuotationsListPage() {
                       <TableCell>{formatDate(quotation.quotationDate)}</TableCell>
                       <TableCell>{formatDate(quotation.expiryDate)}</TableCell>
                       <TableCell>{getStatusBadge(quotation.status)}</TableCell>
-                      <TableCell className="text-right font-medium">
-                        {formatCurrency(quotation.grandTotal, quotation.currency)}
-                      </TableCell>
+                       <TableCell className="text-right font-medium">
+                         {formatCurrency(quotation.totalAmount, quotation.currency)}
+                       </TableCell>
                       <TableCell>
                         {quotation.convertedToInvoice ? (
                           <span className="text-green-600 text-sm">{quotation.convertedToInvoice}</span>

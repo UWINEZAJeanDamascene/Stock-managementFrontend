@@ -10,7 +10,7 @@ import {
   FileText,
   Eye,
   Edit,
-  MoreHorizontal
+  CheckCircle
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
@@ -25,12 +25,6 @@ import {
   TableRow 
 } from '@/app/components/ui/table';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/app/components/ui/dropdown-menu';
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -43,6 +37,10 @@ interface Invoice {
   _id: string;
   referenceNo: string;
   invoiceNumber?: string;
+  quotation?: {
+    _id: string;
+    referenceNo: string;
+  };
   client: {
     _id: string;
     name: string;
@@ -327,7 +325,8 @@ export default function InvoicesListPage() {
                     <TableHead>{t('invoice.status', 'Status')}</TableHead>
                     <TableHead className="text-right">{t('invoice.total', 'Total')}</TableHead>
                     <TableHead className="text-right">{t('invoice.balance', 'Balance')}</TableHead>
-                    <TableHead></TableHead>
+                    <TableHead>{t('invoice.source', 'Source')}</TableHead>
+                    <TableHead className="text-right">{t('common.actions', 'Actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -347,25 +346,53 @@ export default function InvoicesListPage() {
                         {formatCurrency(invoice.balance || (invoice.grandTotal - invoice.amountPaid), invoice.currencyCode)}
                       </TableCell>
                       <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreHorizontal className="h-4 w-4" />
+                        {invoice.quotation ? (
+                          <span className="text-sm text-muted-foreground">{invoice.quotation.referenceNo}</span>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 w-8 p-0 hover:bg-gray-100"
+                            onClick={() => navigate(`/invoices/${invoice._id}`)}
+                            title={t('common.view', 'View')}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          {invoice.status === 'draft' && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-8 w-8 p-0 hover:bg-gray-100"
+                              onClick={() => navigate(`/invoices/${invoice._id}/edit`)}
+                              title={t('common.edit', 'Edit')}
+                            >
+                              <Edit className="h-4 w-4" />
                             </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => navigate(`/invoices/${invoice._id}`)}>
-                              <Eye className="mr-2 h-4 w-4" />
-                              {t('common.view', 'View')}
-                            </DropdownMenuItem>
-                            {invoice.status === 'draft' && (
-                              <DropdownMenuItem onClick={() => navigate(`/invoices/${invoice._id}/edit`)}>
-                                <Edit className="mr-2 h-4 w-4" />
-                                {t('common.edit', 'Edit')}
-                              </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                          )}
+                          {invoice.status === 'draft' && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-8 w-8 p-0 hover:bg-green-100 text-green-600"
+                              onClick={async () => {
+                                try {
+                                  await invoicesApi.confirm(invoice._id);
+                                  fetchInvoices();
+                                } catch (error) {
+                                  console.error('Failed to confirm invoice:', error);
+                                }
+                              }}
+                              title={t('invoice.confirm', 'Confirm')}
+                            >
+                              <CheckCircle className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}

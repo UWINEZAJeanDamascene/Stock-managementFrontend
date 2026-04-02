@@ -77,6 +77,7 @@ class ApiError extends Error {
 
 async function request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
   const token = localStorage.getItem('token');
+  const companyId = localStorage.getItem('companyId');
   
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -85,6 +86,10 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
+  }
+  
+  if (companyId) {
+    headers['X-Company-Id'] = companyId;
   }
 
   // Build query string from params
@@ -793,6 +798,10 @@ export const clientsApi = {
     const query = buildQuery(params as Record<string, any>);
     return request<{ success: boolean; data: unknown; summary?: unknown }>(`/clients/${id}/credit-notes${query ? `?${query}` : ''}`);
   },
+  getQuotations: (id: string, params?: { page?: number; limit?: number; status?: string }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; data: unknown }>(`/quotations/client/${id}${query ? `?${query}` : ''}`);
+  },
   getStatementPDF: (id: string, params?: { startDate?: string; endDate?: string }) => {
     const token = localStorage.getItem('token');
     const query = buildQuery(params as Record<string, any>);
@@ -896,30 +905,30 @@ export const invoicesApi = {
     search?: string;
   }) => {
     const query = buildQuery(params as Record<string, any>);
-    return request<{ success: boolean; data: unknown }>(`/invoices${query ? `?${query}` : ''}`);
+    return request<{ success: boolean; data: unknown }>(`/sales-invoices${query ? `?${query}` : ''}`);
   },
-  getById: (id: string) => request<{ success: boolean; data: unknown }>(`/invoices/${id}`),
-  create: (invoice: unknown) => request<{ success: boolean; data: unknown }>('/invoices', { method: 'POST', body: invoice }),
-  update: (id: string, invoice: unknown) => request<{ success: boolean; data: unknown }>(`/invoices/${id}`, { method: 'PUT', body: invoice }),
-  delete: (id: string) => request<{ success: boolean; message: string }>(`/invoices/${id}`, { method: 'DELETE' }),
-  confirm: (id: string) => request<{ success: boolean; data: unknown }>(`/invoices/${id}/confirm`, { method: 'PUT' }),
+  getById: (id: string) => request<{ success: boolean; data: unknown }>(`/sales-invoices/${id}`),
+  create: (invoice: unknown) => request<{ success: boolean; data: unknown }>('/sales-invoices', { method: 'POST', body: invoice }),
+  update: (id: string, invoice: unknown) => request<{ success: boolean; data: unknown }>(`/sales-invoices/${id}`, { method: 'PUT', body: invoice }),
+  delete: (id: string) => request<{ success: boolean; message: string }>(`/sales-invoices/${id}`, { method: 'DELETE' }),
+  confirm: (id: string) => request<{ success: boolean; data: unknown }>(`/sales-invoices/${id}/confirm`, { method: 'PUT' }),
   recordPayment: (id: string, data: {
     amount: number;
     paymentMethod: 'cash' | 'card' | 'bank_transfer' | 'cheque' | 'mobile_money';
     reference?: string;
     notes?: string;
-  }) => request<{ success: boolean; data: unknown }>(`/invoices/${id}/payment`, { method: 'POST', body: data }),
-  cancel: (id: string, reason?: string) => request<{ success: boolean; data: unknown }>(`/invoices/${id}/cancel`, { method: 'PUT', body: { reason } }),
+  }) => request<{ success: boolean; data: unknown }>(`/sales-invoices/${id}/payment`, { method: 'POST', body: data }),
+  cancel: (id: string, reason?: string) => request<{ success: boolean; data: unknown }>(`/sales-invoices/${id}/cancel`, { method: 'PUT', body: { reason } }),
   saveReceiptMetadata: (id: string, data: {
     sdcId?: string;
     receiptNumber?: string;
     receiptSignature?: string;
     internalData?: string;
     mrcCode?: string;
-  }) => request<{ success: boolean; data: unknown }>(`/invoices/${id}/receipt-metadata`, { method: 'POST', body: data }),
+  }) => request<{ success: boolean; data: unknown }>(`/sales-invoices/${id}/receipt-metadata`, { method: 'POST', body: data }),
   getPDF: (id: string) => {
     const token = localStorage.getItem('token');
-    return fetch(`${API_BASE_URL}/invoices/${id}/pdf`, {
+    return fetch(`${API_BASE_URL}/sales-invoices/${id}/pdf`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -928,9 +937,9 @@ export const invoicesApi = {
       return res.blob();
     });
   },
-  getClientInvoices: (clientId: string) => request<{ success: boolean; data: unknown }>(`/invoices/client/${clientId}`),
-  getProductInvoices: (productId: string) => request<{ success: boolean; data: unknown }>(`/invoices/product/${productId}`),
-  sendEmail: (id: string) => request<{ success: boolean; message: string }>(`/invoices/${id}/send-email`, { method: 'POST' }),
+  getClientInvoices: (clientId: string) => request<{ success: boolean; data: unknown }>(`/sales-invoices/client/${clientId}`),
+  getProductInvoices: (productId: string) => request<{ success: boolean; data: unknown }>(`/sales-invoices/product/${productId}`),
+  sendEmail: (id: string) => request<{ success: boolean; message: string }>(`/sales-invoices/${id}/send-email`, { method: 'POST' }),
 };
 
 // Recurring Invoices API
@@ -1036,6 +1045,7 @@ export const deliveryNotesApi = {
     clientId?: string; 
     status?: string;
     quotationId?: string;
+    invoiceId?: string;
     startDate?: string;
     endDate?: string;
     page?: number; 
@@ -1160,6 +1170,8 @@ export const purchaseOrdersApi = {
   update: (id: string, po: unknown) => request<{ success: boolean; data: unknown }>(`/stock/advanced/purchase-orders/${id}`, { method: 'PUT', body: po }),
   approve: (id: string) => request<{ success: boolean; data: unknown }>(`/stock/advanced/purchase-orders/${id}/approve`, { method: 'POST' }),
   cancel: (id: string) => request<{ success: boolean; data: unknown }>(`/stock/advanced/purchase-orders/${id}/cancel`, { method: 'POST' }),
+  recordPayment: (id: string, data: { amount: number; paymentMethod: string; reference?: string; notes?: string }) =>
+    request<{ success: boolean; data: unknown }>(`/stock/advanced/purchase-orders/${id}/payment`, { method: 'POST', body: data }),
 };
 
 // GRN API
@@ -1520,19 +1532,19 @@ export const inventoryBatchApi = {
 
 // Advanced Stock API - Serial Numbers
 export const serialNumberApi = {
-  getAll: (params?: { page?: number; limit?: number; productId?: string; warehouseId?: string; status?: string; search?: string }) => {
+  getAll: (params?: { page?: number; limit?: number; product?: string; warehouse?: string; status?: string; search?: string }) => {
     const query = buildQuery(params as Record<string, any>);
-    return request<{ success: boolean; data: unknown }>(`/stock/advanced/serial-numbers${query ? `?${query}` : ''}`);
+    return request<{ success: boolean; data: unknown; pagination?: { page: number; limit: number; total: number; pages: number } }>(`/serial-numbers${query ? `?${query}` : ''}`);
   },
-  getById: (id: string) => request<{ success: boolean; data: unknown }>(`/stock/advanced/serial-numbers/${id}`),
-  create: (data: unknown) => request<{ success: boolean; data: unknown }>('/stock/advanced/serial-numbers', { method: 'POST', body: data }),
-  update: (id: string, data: unknown) => request<{ success: boolean; data: unknown }>(`/stock/advanced/serial-numbers/${id}`, { method: 'PUT', body: data }),
+  getById: (id: string) => request<{ success: boolean; data: unknown }>(`/serial-numbers/${id}`),
+  create: (data: unknown) => request<{ success: boolean; data: unknown }>('/serial-numbers', { method: 'POST', body: data }),
+  update: (id: string, data: unknown) => request<{ success: boolean; data: unknown }>(`/serial-numbers/${id}`, { method: 'PUT', body: data }),
   sell: (id: string, data: { clientId?: string; saleDate?: string; salePrice?: number; invoiceId?: string; warrantyEndDate?: string; notes?: string }) =>
-    request<{ success: boolean; data: unknown }>(`/stock/advanced/serial-numbers/${id}/sell`, { method: 'POST', body: data }),
+    request<{ success: boolean; data: unknown }>(`/serial-numbers/${id}/sell`, { method: 'POST', body: data }),
   return: (id: string, data: { warehouseId?: string; notes?: string }) =>
-    request<{ success: boolean; data: unknown }>(`/stock/advanced/serial-numbers/${id}/return`, { method: 'POST', body: data }),
-  lookup: (serial: string) => request<{ success: boolean; data: unknown }>(`/stock/advanced/serial-numbers/lookup/${serial}`),
-  getAvailable: (productId: string) => request<{ success: boolean; data: unknown }>(`/stock/advanced/serial-numbers/product/${productId}/available`),
+    request<{ success: boolean; data: unknown }>(`/serial-numbers/${id}/return`, { method: 'POST', body: data }),
+  lookup: (serial: string) => request<{ success: boolean; data: unknown }>(`/serial-numbers/lookup/${serial}`),
+  getAvailable: (productId: string) => request<{ success: boolean; data: unknown }>(`/serial-numbers/product/${productId}/available`),
 };
 
 // Advanced Stock API - Stock Transfers
@@ -1681,17 +1693,17 @@ export const stockBatchApi = {
     search?: string;
   }) => {
     const query = buildQuery(params as Record<string, any>);
-    return request<{ success: boolean; data: StockBatch[]; pagination: { page: number; limit: number; total: number; pages: number } }>(`/stock-batches${query ? `?${query}` : ''}`);
+    return request<{ success: boolean; data: StockBatch[]; pagination: { page: number; limit: number; total: number; pages: number } }>(`/batches${query ? `?${query}` : ''}`);
   },
   // Get single stock batch by ID
-  getById: (id: string) => request<{ success: boolean; data: StockBatch }>(`/stock-batches/${id}`),
+  getById: (id: string) => request<{ success: boolean; data: StockBatch }>(`/batches/${id}`),
   // Get expiring batches
   getExpiring: (params?: { page?: number; limit?: number; days?: number }) => {
     const query = buildQuery(params as Record<string, any>);
-    return request<{ success: boolean; data: StockBatch[] }>(`/stock-batches/expiring${query ? `?${query}` : ''}`);
+    return request<{ success: boolean; data: StockBatch[] }>(`/batches/expiring${query ? `?${query}` : ''}`);
   },
   // Toggle quarantine status
-  toggleQuarantine: (id: string) => request<{ success: boolean; data: StockBatch }>(`/stock-batches/${id}/quarantine`, { method: 'PUT' }),
+  toggleQuarantine: (id: string) => request<{ success: boolean; data: StockBatch }>(`/batches/${id}/quarantine`, { method: 'PUT' }),
 };
 
 // Advanced Stock API - Reorder Points

@@ -136,9 +136,19 @@ export default function GRNDetailPage() {
     }
   };
 
-  const formatCurrency = (amount: number | string) => {
-    const num = typeof amount === 'string' ? parseFloat(amount) : amount;
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num || 0);
+  const formatCurrency = (amount: number | string | object | null | undefined) => {
+    let num: number;
+    if (amount == null) {
+      num = 0;
+    } else if (typeof amount === 'object') {
+      const raw = (amount as any).$numberDecimal || (amount as any).toString();
+      num = parseFloat(raw) || 0;
+    } else if (typeof amount === 'string') {
+      num = parseFloat(amount) || 0;
+    } else {
+      num = amount;
+    }
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num);
   };
 
   const formatDate = (dateStr: string) => {
@@ -152,16 +162,22 @@ export default function GRNDetailPage() {
     });
   };
 
+  const toNum = (v: any): number => {
+    if (v == null) return 0;
+    if (typeof v === 'object' && v.$numberDecimal) return parseFloat(v.$numberDecimal) || 0;
+    return parseFloat(String(v)) || 0;
+  };
+
   const calculateSubtotal = () => {
     if (!grn?.lines) return 0;
-    return grn.lines.reduce((sum, line) => sum + (line.qtyReceived * line.unitCost), 0);
+    return grn.lines.reduce((sum, line) => sum + (toNum(line.qtyReceived) * toNum(line.unitCost)), 0);
   };
 
   const calculateTax = () => {
     if (!grn?.lines) return 0;
     return grn.lines.reduce((sum, line) => {
-      const lineTotal = line.qtyReceived * line.unitCost;
-      return sum + (lineTotal * (line.taxRate / 100));
+      const lineTotal = toNum(line.qtyReceived) * toNum(line.unitCost);
+      return sum + (lineTotal * (toNum(line.taxRate) / 100));
     }, 0);
   };
 
@@ -282,7 +298,7 @@ export default function GRNDetailPage() {
                         <TableCell className="text-right">{formatCurrency(line.unitCost)}</TableCell>
                         <TableCell className="text-right">{line.taxRate}%</TableCell>
                         <TableCell className="text-right font-medium">
-                          {formatCurrency(line.lineTotal)}
+                          {formatCurrency((Number(line.qtyReceived) || 0) * (Number(line.unitCost) || 0))}
                         </TableCell>
                       </TableRow>
                     ))}

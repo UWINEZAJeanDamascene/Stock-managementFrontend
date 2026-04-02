@@ -33,10 +33,12 @@ import StockLevelsPage from './pages/StockLevelsPage';
 import StockMovementsPage from './pages/StockMovementsPage';
 import TransfersListPage from './pages/TransfersListPage';
 import TransferCreatePage from './pages/TransferCreatePage';
+import TransferDetailPage from './pages/TransferDetailPage';
 import AuditsListPage from './pages/AuditsListPage';
 import AuditDetailPage from './pages/AuditDetailPage';
 import AuditCreatePage from './pages/AuditCreatePage';
 import BatchesPage from './pages/BatchesPage';
+import SerialNumbersPage from './pages/SerialNumbersPage';
 import PurchasesListPage from './pages/purchases/PurchasesListPage';
 import PurchaseDetailPage from './pages/purchases/PurchaseDetailPage';
 import PurchaseFormPage from './pages/purchases/PurchaseFormPage';
@@ -232,10 +234,12 @@ function AppRoutes() {
         <Route path="/stock-movements" element={<StockMovementsPage />} />
         <Route path="/stock-transfers" element={<TransfersListPage />} />
         <Route path="/stock-transfers/new" element={<TransferCreatePage />} />
+        <Route path="/stock-transfers/:id" element={<TransferDetailPage />} />
         <Route path="/stock-audits" element={<AuditsListPage />} />
         <Route path="/stock-audits/new" element={<AuditCreatePage />} />
         <Route path="/stock-audits/:id" element={<AuditDetailPage />} />
         <Route path="/batches" element={<BatchesPage />} />
+        <Route path="/serial-numbers" element={<SerialNumbersPage />} />
         <Route path="/purchase-orders" element={<PurchaseOrdersListPage />} />
         <Route path="/purchase-orders/new" element={<PurchaseOrderFormPage />} />
         <Route path="/purchase-orders/:id/edit" element={<PurchaseOrderFormPage />} />
@@ -274,10 +278,10 @@ function AppRoutes() {
         <Route path="/invoices/new" element={<InvoiceFormPage />} />
         <Route path="/invoices/:id/edit" element={<InvoiceFormPage />} />
         <Route path="/invoices/:id" element={<InvoiceDetailPage />} />
-        <Route path="/delivery-notes" element={<DeliveryNotesListPage />} />
         <Route path="/delivery-notes/new" element={<DeliveryNoteCreatePage />} />
         <Route path="/delivery-notes/:id/edit" element={<DeliveryNoteCreatePage />} />
         <Route path="/delivery-notes/:id" element={<DeliveryNotesListPage />} />
+        <Route path="/delivery-notes" element={<DeliveryNotesListPage />} />
         <Route path="/credit-notes" element={<CreditNotesListPage />} />
         <Route path="/credit-notes/new" element={<CreditNoteCreatePage />} />
         <Route path="/credit-notes/:id/edit" element={<CreditNoteCreatePage />} />

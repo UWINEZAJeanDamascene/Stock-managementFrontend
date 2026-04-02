@@ -75,6 +75,15 @@ interface Receipt {
   status: string;
 }
 
+interface Quotation {
+  _id: string;
+  referenceNo: string;
+  quotationDate: string;
+  expiryDate: string;
+  status: 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired' | 'converted';
+  totalAmount: number;
+}
+
 export default function ClientDetailPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -85,6 +94,7 @@ export default function ClientDetailPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [creditNotes, setCreditNotes] = useState<CreditNote[]>([]);
   const [receipts, setReceipts] = useState<Receipt[]>([]);
+  const [quotations, setQuotations] = useState<Quotation[]>([]);
   const [invoiceSummary, setInvoiceSummary] = useState({ totalAmount: 0, totalPaid: 0, totalBalance: 0 });
 
   useEffect(() => {
@@ -93,6 +103,7 @@ export default function ClientDetailPage() {
       fetchInvoices(id);
       fetchCreditNotes(id);
       fetchReceipts(id);
+      fetchQuotations(id);
     }
   }, [id]);
 
@@ -146,6 +157,17 @@ export default function ClientDetailPage() {
     }
   };
 
+  const fetchQuotations = async (clientId: string) => {
+    try {
+      const response = await clientsApi.getQuotations(clientId, { limit: 50 });
+      if (response.success) {
+        setQuotations(response.data as Quotation[]);
+      }
+    } catch (error) {
+      console.error('Failed to fetch quotations:', error);
+    }
+  };
+
   const handleDownloadStatement = async () => {
     if (!id) return;
     try {
@@ -180,7 +202,12 @@ export default function ClientDetailPage() {
       overdue: { variant: 'destructive', label: 'Overdue' },
       cancelled: { variant: 'outline', label: 'Cancelled' },
       draft: { variant: 'outline', label: 'Draft' },
-      confirmed: { variant: 'default', label: 'Confirmed' }
+      confirmed: { variant: 'default', label: 'Confirmed' },
+      sent: { variant: 'default', label: 'Sent' },
+      accepted: { variant: 'secondary', label: 'Accepted' },
+      rejected: { variant: 'destructive', label: 'Rejected' },
+      expired: { variant: 'outline', label: 'Expired' },
+      converted: { variant: 'secondary', label: 'Converted' }
     };
     const config = statusMap[status] || { variant: 'outline', label: status };
     return <Badge variant={config.variant}>{config.label}</Badge>;
@@ -285,6 +312,7 @@ export default function ClientDetailPage() {
         <Tabs defaultValue="overview" className="w-full">
           <TabsList>
             <TabsTrigger value="overview">{t('clients.tabs.overview', 'Overview')}</TabsTrigger>
+            <TabsTrigger value="quotations">{t('clients.tabs.quotations', 'Quotations')}</TabsTrigger>
             <TabsTrigger value="invoices">{t('clients.tabs.invoices', 'Invoices')}</TabsTrigger>
             <TabsTrigger value="receipts">{t('clients.tabs.receipts', 'Receipts')}</TabsTrigger>
             <TabsTrigger value="creditNotes">{t('clients.tabs.creditNotes', 'Credit Notes')}</TabsTrigger>
@@ -351,6 +379,47 @@ export default function ClientDetailPage() {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          {/* Quotations Tab */}
+          <TabsContent value="quotations">
+            <Card>
+              <CardHeader>
+                <CardTitle>{t('clients.quotations', 'Quotations')}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t('clients.quotationNumber', 'Quotation #')}</TableHead>
+                      <TableHead>{t('clients.date', 'Date')}</TableHead>
+                      <TableHead>{t('clients.expiryDate', 'Expiry Date')}</TableHead>
+                      <TableHead className="text-right">{t('clients.total', 'Total')}</TableHead>
+                      <TableHead>{t('clients.status', 'Status')}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {quotations.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                          {t('clients.noQuotations', 'No quotations found')}
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      quotations.map((quotation) => (
+                        <TableRow key={quotation._id}>
+                          <TableCell className="font-medium">{quotation.referenceNo || '-'}</TableCell>
+                          <TableCell>{formatDate(quotation.quotationDate)}</TableCell>
+                          <TableCell>{formatDate(quotation.expiryDate)}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(quotation.totalAmount)}</TableCell>
+                          <TableCell>{getStatusBadge(quotation.status)}</TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Invoices Tab */}

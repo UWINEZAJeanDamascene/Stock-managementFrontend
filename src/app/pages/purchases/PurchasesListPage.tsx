@@ -9,6 +9,9 @@ import {
   FileText,
   ChevronLeft,
   ChevronRight,
+  CheckCircle,
+  XCircle,
+  Truck,
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
@@ -175,6 +178,25 @@ export default function PurchasesListPage() {
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '-';
     return new Date(dateStr).toLocaleDateString();
+  };
+
+  const handleReceive = async (id: string) => {
+    try {
+      await purchasesApi.receive(id);
+      fetchPurchases();
+    } catch (error) {
+      console.error('Failed to receive purchase:', error);
+    }
+  };
+
+  const handleCancel = async (id: string) => {
+    if (!confirm(t('purchases.confirmCancel', 'Are you sure you want to cancel this purchase?'))) return;
+    try {
+      await purchasesApi.cancel(id);
+      fetchPurchases();
+    } catch (error) {
+      console.error('Failed to cancel purchase:', error);
+    }
   };
 
   return (
@@ -355,13 +377,36 @@ export default function PurchasesListPage() {
                         {p.items?.length || 0}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => navigate(`/purchases/${p._id}`)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => navigate(`/purchases/${p._id}`)}
+                            title={t('common.view', 'View')}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          {(p.status === 'draft' || p.status === 'ordered') && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleReceive(p._id)}
+                              title={t('purchases.receive', 'Receive')}
+                            >
+                              <Truck className="h-4 w-4 text-green-600" />
+                            </Button>
+                          )}
+                          {p.status !== 'cancelled' && p.status !== 'received' && p.status !== 'paid' && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleCancel(p._id)}
+                              title={t('common.cancel', 'Cancel')}
+                            >
+                              <XCircle className="h-4 w-4 text-destructive" />
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))

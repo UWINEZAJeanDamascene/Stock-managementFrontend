@@ -13,7 +13,8 @@ import {
   CreditCard,
   Download,
   Send,
-  DollarSign
+  DollarSign,
+  X
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
@@ -26,6 +27,15 @@ import {
   TableHead, 
   TableRow 
 } from '@/app/components/ui/table';
+import { Input } from '@/app/components/ui/input';
+import { Label } from '@/app/components/ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/app/components/ui/dialog';
 import { useTranslation } from 'react-i18next';
 
 interface Invoice {
@@ -85,7 +95,8 @@ interface Invoice {
     _id: string;
     amount: number;
     paymentMethod: string;
-    recordedAt: string;
+    recordedAt?: string;
+    paidDate?: string;
     recordedBy?: {
       name: string;
       email: string;
@@ -138,6 +149,10 @@ export default function InvoiceDetailPage() {
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [creditNotes] = useState<CreditNote[]>([]);
   const [deliveryNotes] = useState<DeliveryNote[]>([]);
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('cash');
+  const [paymentReference, setPaymentReference] = useState('');
 
   const fetchInvoice = useCallback(async () => {
     if (!id) return;
@@ -188,24 +203,28 @@ export default function InvoiceDetailPage() {
   };
 
   const handleRecordPayment = () => {
-    // TODO: Open payment dialog
-    const amount = prompt(t('invoice.enterPaymentAmount', 'Enter payment amount:'));
-    if (!amount) return;
-    
-    const method = prompt(t('invoice.enterPaymentMethod', 'Enter payment method (cash, card, bank_transfer, cheque, mobile_money):'));
-    if (!method) return;
-    
+    setPaymentAmount(invoice?.balance?.toString() || invoice?.amountOutstanding?.toString() || '');
+    setPaymentReference('');
+    setPaymentMethod('cash');
+    setShowPaymentDialog(true);
+  };
+
+  const handlePaymentSubmit = async () => {
+    if (!paymentAmount || !id) return;
     setActionLoading(true);
-    invoicesApi.recordPayment(id!, {
-      amount: parseFloat(amount),
-      paymentMethod: method as any
-    }).then(() => {
+    try {
+      await invoicesApi.recordPayment(id, {
+        amount: parseFloat(paymentAmount),
+        paymentMethod: paymentMethod as any,
+        reference: paymentReference || undefined
+      });
+      setShowPaymentDialog(false);
       fetchInvoice();
-    }).catch(error => {
+    } catch (error) {
       console.error('Failed to record payment:', error);
-    }).finally(() => {
+    } finally {
       setActionLoading(false);
-    });
+    }
   };
 
   const handleDownloadPDF = async () => {
@@ -445,11 +464,11 @@ export default function InvoiceDetailPage() {
                           <div className="font-medium">{line.product?.name || '-'}</div>
                           <div className="text-sm text-muted-foreground">{line.product?.sku}</div>
                         </TableCell>
-                        <TableCell className="text-right">{line.qtyOrdered || line.qtyReceived || 0}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(line.unitCost, invoice.currencyCode)}</TableCell>
-                        <TableCell className="text-right">0%</TableCell>
-                        <TableCell className="text-right">{formatCurrency(line.taxAmount, invoice.currencyCode)}</TableCell>
-                        <TableCell className="text-right font-medium">{formatCurrency(line.lineTotal, invoice.currencyCode)}</TableCell>
+                        <TableCell className="text-right">{line.qty || line.quantity || 0}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(line.unitPrice || 0, invoice.currencyCode)}</TableCell>
+                        <TableCell className="text-right">{(line.discountPct || line.discount || 0)}%</TableCell>
+                        <TableCell className="text-right">{formatCurrency(line.lineTax || line.taxAmount || 0, invoice.currencyCode)}</TableCell>
+                        <TableCell className="text-right font-medium">{formatCurrency(line.lineTotal || line.totalWithTax || 0, invoice.currencyCode)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -463,7 +482,7 @@ export default function InvoiceDetailPage() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">{t('invoice.tax', 'Tax')}</span>
-                      <span className="font-medium">{formatCurrency(invoice.totalTax, invoice.currencyCode)}</span>
+                      <span className="font-medium">{formatCurrency(invoice.taxAmount || 0, invoice.currencyCode)}</span>
                     </div>
                     <div className="flex justify-between border-t pt-2">
                       <span className="font-bold">{t('invoice.total', 'Total')}</span>
@@ -510,7 +529,7 @@ export default function InvoiceDetailPage() {
                     <TableBody>
                       {invoice.payments.map((payment) => (
                         <TableRow key={payment._id}>
-                          <TableCell>{formatDate(payment.recordedAt)}</TableCell>
+                          <TableCell>{formatDate(payment.paidDate || payment.recordedAt)}</TableCell>
                           <TableCell className="capitalize">{payment.paymentMethod?.replace('_', ' ')}</TableCell>
                           <TableCell>{payment.reference || '-'}</TableCell>
                           <TableCell>{payment.recordedBy?.name || '-'}</TableCell>
@@ -572,8 +591,12 @@ export default function InvoiceDetailPage() {
           {/* Deliveries Tab */}
           <TabsContent value="deliveries">
             <Card>
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>{t('invoice.deliveries', 'Delivery Notes')}</CardTitle>
+                <Button variant="outline" onClick={() => navigate(`/delivery-notes/new?invoice=${id}`)}>
+                  <Truck className="mr-2 h-4 w-4" />
+                  {t('invoice.newDeliveryNote', 'New Delivery Note')}
+                </Button>
               </CardHeader>
               <CardContent>
                 {deliveryNotes.length > 0 ? (
@@ -648,6 +671,59 @@ export default function InvoiceDetailPage() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Payment Dialog */}
+        <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{t('invoice.recordPayment', 'Record Payment')}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="amount">{t('invoice.amount', 'Amount')}</Label>
+                <Input
+                  id="amount"
+                  type="number"
+                  value={paymentAmount}
+                  onChange={(e) => setPaymentAmount(e.target.value)}
+                  placeholder="Enter amount"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="method">{t('invoice.paymentMethod', 'Payment Method')}</Label>
+                <select
+                  id="method"
+                  className="w-full h-10 px-3 border rounded-md bg-background"
+                  value={paymentMethod}
+                  onChange={(e) => setPaymentMethod(e.target.value)}
+                >
+                  <option value="cash">Cash</option>
+                  <option value="card">Card</option>
+                  <option value="bank_transfer">Bank Transfer</option>
+                  <option value="cheque">Cheque</option>
+                  <option value="mobile_money">Mobile Money</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="reference">{t('invoice.reference', 'Reference')}</Label>
+                <Input
+                  id="reference"
+                  value={paymentReference}
+                  onChange={(e) => setPaymentReference(e.target.value)}
+                  placeholder="Optional reference"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowPaymentDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handlePaymentSubmit} disabled={actionLoading || !paymentAmount}>
+                {actionLoading ? 'Processing...' : 'Record Payment'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );

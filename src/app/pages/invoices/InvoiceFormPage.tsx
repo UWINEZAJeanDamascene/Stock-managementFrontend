@@ -312,7 +312,7 @@ export default function InvoiceFormPage() {
           discountPct: line.discountPct,
           discount: line.discount,
           taxRate: line.taxRate,
-          warehouse: line.warehouse
+          ...(line.warehouse && line.warehouse !== '' ? { warehouse: line.warehouse } : {})
         })),
         autoConfirm: confirmImmediately
       };

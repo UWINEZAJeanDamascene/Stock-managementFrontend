@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { purchaseOrdersApi, suppliersApi, warehousesApi, productsApi } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
@@ -9,8 +9,7 @@ import {
   Plus, 
   Trash2,
   Loader2,
-  Calculator,
-  X
+  Calculator
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
@@ -51,6 +50,10 @@ interface Product {
   name: string;
   sku: string;
   unit?: string;
+  costPrice?: number | string;
+  averageCost?: number | string;
+  taxRate?: number | string;
+  taxCode?: string;
 }
 
 interface POLine {
@@ -199,21 +202,27 @@ export default function PurchaseOrderFormPage() {
     setFormData({ ...formData, lines: newLines });
   };
 
-  const [openDropdownIndex, setOpenDropdownIndex] = useState<number | null>(null);
-  const [selectedProductIndex, setSelectedProductIndex] = useState<number | null>(null);
-  const dropdownRefs = useRef<Record<number, HTMLDivElement | null>>({});
-
   const handleProductSelect = (index: number, productId: string) => {
     const product = products.find(p => p._id === productId);
     if (product) {
+      const unitCost = parseFloat(String(product.costPrice || product.averageCost || 0)) || 0;
+      const taxRate = parseFloat(String(product.taxRate || 0)) || 0;
       setFormData(prev => {
         const newLines = [...prev.lines];
-        newLines[index] = { ...newLines[index], product: productId, productName: product.name };
+        const subtotal = (newLines[index].qtyOrdered || 1) * unitCost;
+        const taxAmount = subtotal * (taxRate / 100);
+        newLines[index] = {
+          ...newLines[index],
+          product: productId,
+          productName: product.name,
+          unitCost,
+          taxRate,
+          taxAmount,
+          lineTotal: subtotal + taxAmount,
+        };
         return { ...prev, lines: newLines };
       });
     }
-    setSelectedProductIndex(null);
-    setOpenDropdownIndex(null);
   };
 
   const addLine = () => {
@@ -470,110 +479,27 @@ export default function PurchaseOrderFormPage() {
                     </TableHeader>
                       <TableBody>
                       {formData.lines.map((line, index) => {
-                        const search = (line.productName || '').toLowerCase();
-                        const filteredProducts = search
-                          ? products.filter(p =>
-                              p.name.toLowerCase().includes(search) ||
-                              p.sku.toLowerCase().includes(search)
-                            ).slice(0, 20)
-                          : products.slice(0, 20);
-                        const isOpen = openDropdownIndex === index;
                         return (
                         <TableRow key={index}>
-                          <TableCell>
-                            <div 
-                              className="relative w-[220px]"
-                              ref={(el) => { dropdownRefs.current[index] = el; }}
+                          <TableCell className="min-w-[200px]">
+                            <Select
+                              value={line.product || ''}
+                              onValueChange={(value) => handleProductSelect(index, value)}
                             >
-                              <input
-                                type="text"
-                                placeholder={t('purchase.form.selectProduct', 'Search product...')}
-                                value={line.productName || ''}
-                                onChange={(e) => {
-                                  setFormData(prev => {
-                                    const newLines = [...prev.lines];
-                                    newLines[index] = { ...newLines[index], productName: e.target.value, product: '' };
-                                    return { ...prev, lines: newLines };
-                                  });
-                                  setOpenDropdownIndex(index);
-                                  setSelectedProductIndex(null);
-                                }}
-                                onFocus={() => setOpenDropdownIndex(index)}
-                                onBlur={() => {
-                                  setTimeout(() => setOpenDropdownIndex(null), 150);
-                                }}
-                                onKeyDown={(e) => {
-                                  if (!isOpen) {
-                                    setOpenDropdownIndex(index);
-                                  }
-                                  if (e.key === 'ArrowDown') {
-                                    e.preventDefault();
-                                    setSelectedProductIndex(prev =>
-                                      prev === null ? 0 : Math.min(prev + 1, filteredProducts.length - 1)
-                                    );
-                                  } else if (e.key === 'ArrowUp') {
-                                    e.preventDefault();
-                                    setSelectedProductIndex(prev =>
-                                      prev === null ? 0 : Math.max(prev - 1, 0)
-                                    );
-                                  } else if (e.key === 'Enter') {
-                                    e.preventDefault();
-                                    if (selectedProductIndex !== null && filteredProducts[selectedProductIndex]) {
-                                      handleProductSelect(index, filteredProducts[selectedProductIndex]._id);
-                                      setOpenDropdownIndex(null);
-                                    }
-                                  } else if (e.key === 'Escape') {
-                                    setOpenDropdownIndex(null);
-                                  }
-                                }}
-                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pr-8"
-                              />
-                              {line.productName && (
-                                <button
-                                  type="button"
-                                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                                  onMouseDown={(e) => {
-                                    e.preventDefault();
-                                    setFormData(prev => {
-                                      const newLines = [...prev.lines];
-                                      newLines[index] = { ...newLines[index], productName: '', product: '' };
-                                      return { ...prev, lines: newLines };
-                                    });
-                                  }}
-                                >
-                                  <X className="h-3 w-3" />
-                                </button>
-                              )}
-                              {isOpen && (
-                                <div 
-                                  className="absolute z-[100] mt-1 w-full max-h-[200px] overflow-y-auto rounded-md border bg-white shadow-lg"
-                                >
-                                  {filteredProducts.length === 0 ? (
-                                    <div className="px-3 py-2 text-sm text-muted-foreground">
-                                      {t('purchase.form.noProductsFound', 'No products found')}
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder={t('purchase.form.selectProduct', 'Select product...')} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {products.map((product) => (
+                                  <SelectItem key={product._id} value={product._id}>
+                                    <div className="flex flex-col">
+                                      <span className="font-medium">{product.name}</span>
+                                      <span className="text-xs text-muted-foreground">{product.sku}</span>
                                     </div>
-                                  ) : (
-                                    filteredProducts.map((product, pIdx) => (
-                                      <div
-                                        key={product._id}
-                                        className={`px-3 py-2 text-sm cursor-pointer ${
-                                          pIdx === selectedProductIndex ? 'bg-accent text-accent-foreground' : 'hover:bg-accent hover:text-accent-foreground'
-                                        }`}
-                                        onMouseDown={(e) => {
-                                          e.preventDefault();
-                                          handleProductSelect(index, product._id);
-                                          setOpenDropdownIndex(null);
-                                        }}
-                                        onMouseEnter={() => setSelectedProductIndex(pIdx)}
-                                      >
-                                        <div className="font-medium">{product.name}</div>
-                                        <div className="text-xs text-muted-foreground">{product.sku}</div>
-                                      </div>
-                                    ))
-                                  )}
-                                </div>
-                              )}
-                            </div>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </TableCell>
                           <TableCell>
                             <Input 
@@ -589,9 +515,10 @@ export default function PurchaseOrderFormPage() {
                               type="number"
                               min="0"
                               step="0.01"
-                              className="w-24"
+                              className="w-24 bg-muted/50"
                               value={line.unitCost}
-                              onChange={(e) => handleLineChange(index, 'unitCost', parseFloat(e.target.value) || 0)}
+                              readOnly
+                              title={t('purchase.form.autoFilled', 'Auto-filled from product')}
                             />
                           </TableCell>
                           <TableCell>
@@ -599,9 +526,10 @@ export default function PurchaseOrderFormPage() {
                               type="number"
                               min="0"
                               max="100"
-                              className="w-16"
+                              className="w-16 bg-muted/50"
                               value={line.taxRate}
-                              onChange={(e) => handleLineChange(index, 'taxRate', parseFloat(e.target.value) || 0)}
+                              readOnly
+                              title={t('purchase.form.autoFilled', 'Auto-filled from product')}
                             />
                           </TableCell>
                           <TableCell>{formatCurrency(line.taxAmount)}</TableCell>
