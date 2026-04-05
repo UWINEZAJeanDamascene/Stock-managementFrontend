@@ -1,11 +1,16 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router';
-import { Layout } from '../layout/Layout';
-import { dashboardApi, type InventoryDashboardData } from '@/lib/api';
-import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
-import { Button } from '@/app/components/ui/button';
-import { Skeleton } from '@/app/components/ui/skeleton';
-import { Badge } from '@/app/components/ui/badge';
+import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router";
+import { Layout } from "../layout/Layout";
+import { dashboardApi, type InventoryDashboardData } from "@/lib/api";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/app/components/ui/card";
+import { Button } from "@/app/components/ui/button";
+import { Skeleton } from "@/app/components/ui/skeleton";
+import { Badge } from "@/app/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -13,22 +18,14 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/app/components/ui/table';
+} from "@/app/components/ui/table";
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
   type ChartConfig,
-} from '@/app/components/ui/chart';
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  PieChart,
-  Pie,
-  Cell,
-} from 'recharts';
+} from "@/app/components/ui/chart";
+import { BarChart, Bar, XAxis, YAxis, PieChart, Pie, Cell } from "recharts";
 import {
   Package,
   Layers,
@@ -39,20 +36,29 @@ import {
   AlertCircle,
   ShoppingCart,
   Archive,
-} from 'lucide-react';
+} from "lucide-react";
 
 function formatNumber(value: number): string {
-  return new Intl.NumberFormat('en-US').format(value);
+  return new Intl.NumberFormat("en-US").format(value);
 }
 
 function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value);
 }
 
-const PIE_COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6'];
+const PIE_COLORS = [
+  "#6366f1",
+  "#22c55e",
+  "#f59e0b",
+  "#ef4444",
+  "#3b82f6",
+  "#8b5cf6",
+  "#ec4899",
+  "#14b8a6",
+];
 
 interface SummaryCardProps {
   title: string;
@@ -63,7 +69,14 @@ interface SummaryCardProps {
   loading?: boolean;
 }
 
-function SummaryCard({ title, value, subtitle, icon, colorClass, loading }: SummaryCardProps) {
+function SummaryCard({
+  title,
+  value,
+  subtitle,
+  icon,
+  colorClass,
+  loading,
+}: SummaryCardProps) {
   if (loading) {
     return (
       <Card>
@@ -85,17 +98,13 @@ function SummaryCard({ title, value, subtitle, icon, colorClass, loading }: Summ
         <CardTitle className="text-sm font-medium text-slate-500 dark:text-slate-400">
           {title}
         </CardTitle>
-        <div className={`p-2 rounded-lg ${colorClass}`}>
-          {icon}
-        </div>
+        <div className={`p-2 rounded-lg ${colorClass}`}>{icon}</div>
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold text-slate-900 dark:text-white">
           {value}
         </div>
-        {subtitle && (
-          <p className="text-xs text-slate-400 mt-1">{subtitle}</p>
-        )}
+        {subtitle && <p className="text-xs text-slate-400 mt-1">{subtitle}</p>}
       </CardContent>
     </Card>
   );
@@ -103,14 +112,14 @@ function SummaryCard({ title, value, subtitle, icon, colorClass, loading }: Summ
 
 const topMovingChartConfig = {
   total_qty: {
-    label: 'Units Moved',
-    color: '#6366f1',
+    label: "Units Moved",
+    color: "#6366f1",
   },
 } satisfies ChartConfig;
 
 const warehouseChartConfig = {
   value: {
-    label: 'Value',
+    label: "Value",
   },
 } satisfies ChartConfig;
 
@@ -127,7 +136,7 @@ export default function InventoryDashboardPage() {
       const result = await dashboardApi.getInventory();
       setData(result);
     } catch (err: any) {
-      setError(err.message || 'Failed to load inventory dashboard');
+      setError(err.message || "Failed to load inventory dashboard");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -182,7 +191,9 @@ export default function InventoryDashboardPage() {
             disabled={refreshing || loading}
             className="flex items-center gap-2"
           >
-            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw
+              className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
+            />
             Refresh
           </Button>
         </div>
@@ -193,7 +204,12 @@ export default function InventoryDashboardPage() {
             <CardContent className="flex items-center gap-3 py-4">
               <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0" />
               <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
-              <Button variant="outline" size="sm" onClick={handleRefresh} className="ml-auto">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefresh}
+                className="ml-auto"
+              >
                 Retry
               </Button>
             </CardContent>
@@ -206,7 +222,9 @@ export default function InventoryDashboardPage() {
             title="Total SKUs"
             value={formatNumber(summary?.total_sku_count ?? 0)}
             subtitle={`${summary?.in_stock_count ?? 0} in stock, ${summary?.zero_stock_count ?? 0} at zero`}
-            icon={<Package className="h-5 w-5 text-blue-600 dark:text-blue-400" />}
+            icon={
+              <Package className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            }
             colorClass="bg-blue-100 dark:bg-blue-900/30"
             loading={loading}
           />
@@ -214,7 +232,9 @@ export default function InventoryDashboardPage() {
             title="Total Units"
             value={formatNumber(summary?.total_units ?? 0)}
             subtitle={`${formatNumber(summary?.total_reserved ?? 0)} reserved`}
-            icon={<Layers className="h-5 w-5 text-green-600 dark:text-green-400" />}
+            icon={
+              <Layers className="h-5 w-5 text-green-600 dark:text-green-400" />
+            }
             colorClass="bg-green-100 dark:bg-green-900/30"
             loading={loading}
           />
@@ -222,7 +242,9 @@ export default function InventoryDashboardPage() {
             title="Total Value"
             value={`$${formatCurrency(summary?.total_value ?? 0)}`}
             subtitle="At average cost"
-            icon={<DollarSign className="h-5 w-5 text-amber-600 dark:text-amber-400" />}
+            icon={
+              <DollarSign className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+            }
             colorClass="bg-amber-100 dark:bg-amber-900/30"
             loading={loading}
           />
@@ -230,7 +252,9 @@ export default function InventoryDashboardPage() {
             title="Total Available"
             value={formatNumber(summary?.total_available ?? 0)}
             subtitle="On hand minus reserved"
-            icon={<CheckCircle className="h-5 w-5 text-purple-600 dark:text-purple-400" />}
+            icon={
+              <CheckCircle className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+            }
             colorClass="bg-purple-100 dark:bg-purple-900/30"
             loading={loading}
           />
@@ -271,8 +295,13 @@ export default function InventoryDashboardPage() {
                     <TableRow>
                       <TableHead>Product</TableHead>
                       <TableHead>Warehouse</TableHead>
-                      <TableHead className="text-right">Qty Available</TableHead>
-                      <TableHead className="text-right">Reorder Point</TableHead>
+                      <TableHead className="text-right">Qty on Hand</TableHead>
+                      <TableHead className="text-right">
+                        Qty Available
+                      </TableHead>
+                      <TableHead className="text-right">
+                        Reorder Point
+                      </TableHead>
                       <TableHead className="text-right">Shortage</TableHead>
                       <TableHead className="text-right">Action</TableHead>
                     </TableRow>
@@ -285,14 +314,30 @@ export default function InventoryDashboardPage() {
                             <p className="font-medium text-slate-900 dark:text-white">
                               {item.product_name}
                             </p>
-                            <p className="text-xs text-slate-400">{item.product_code}</p>
+                            <p className="text-xs text-slate-400">
+                              {item.product_code}
+                            </p>
                           </div>
                         </TableCell>
                         <TableCell className="text-slate-600 dark:text-slate-300">
-                          {item.warehouse_name || '—'}
+                          {item.warehouse_name || "—"}
                         </TableCell>
                         <TableCell className="text-right font-mono">
-                          {formatNumber(item.qty_available)}
+                          {formatNumber(item.qty_on_hand)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex flex-col items-end gap-0.5">
+                            <span
+                              className={`font-mono font-semibold ${item.qty_available <= 0 ? "text-red-600 dark:text-red-400" : "text-slate-900 dark:text-white"}`}
+                            >
+                              {formatNumber(item.qty_available)}
+                            </span>
+                            {item.qty_reserved > 0 && (
+                              <span className="text-xs text-amber-500 dark:text-amber-400">
+                                {formatNumber(item.qty_reserved)} reserved
+                              </span>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell className="text-right font-mono text-slate-500">
                           {formatNumber(item.reorder_point)}
@@ -306,7 +351,7 @@ export default function InventoryDashboardPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => navigate('/purchase-orders/new')}
+                            onClick={() => navigate("/purchase-orders/new")}
                             className="flex items-center gap-1"
                           >
                             <ShoppingCart className="h-3 w-3" />
@@ -332,7 +377,8 @@ export default function InventoryDashboardPage() {
                 Top Moving Products
               </CardTitle>
               <p className="text-sm text-slate-400">
-                Last {data?.date_context?.top_moving_window_days ?? 30} days by units dispatched
+                Last {data?.date_context?.top_moving_window_days ?? 30} days by
+                units dispatched
               </p>
             </CardHeader>
             <CardContent>
@@ -344,13 +390,17 @@ export default function InventoryDashboardPage() {
                   <p className="text-sm">No dispatch activity in this period</p>
                 </div>
               ) : (
-                <ChartContainer config={topMovingChartConfig} className="h-[250px] w-full">
+                <ChartContainer
+                  config={topMovingChartConfig}
+                  className="h-[250px] w-full"
+                >
                   <BarChart
                     accessibilityLayer
                     data={topMoving.map((p) => ({
-                      name: p.product_name?.length > 15
-                        ? p.product_name.substring(0, 15) + '...'
-                        : p.product_name,
+                      name:
+                        p.product_name?.length > 15
+                          ? p.product_name.substring(0, 15) + "..."
+                          : p.product_name,
                       total_qty: p.total_qty,
                     }))}
                     layout="vertical"
@@ -365,9 +415,7 @@ export default function InventoryDashboardPage() {
                       width={110}
                     />
                     <XAxis type="number" tickLine={false} axisLine={false} />
-                    <ChartTooltip
-                      content={<ChartTooltipContent />}
-                    />
+                    <ChartTooltip content={<ChartTooltipContent />} />
                     <Bar
                       dataKey="total_qty"
                       fill="var(--color-total_qty)"
@@ -399,7 +447,10 @@ export default function InventoryDashboardPage() {
                   <p className="text-sm">No warehouse data available</p>
                 </div>
               ) : (
-                <ChartContainer config={warehouseChartConfig} className="h-[250px] w-full">
+                <ChartContainer
+                  config={warehouseChartConfig}
+                  className="h-[250px] w-full"
+                >
                   <PieChart>
                     <ChartTooltip
                       content={
@@ -407,7 +458,9 @@ export default function InventoryDashboardPage() {
                           formatter={(value, name) => (
                             <div className="flex flex-col gap-0.5">
                               <span className="font-medium">{name}</span>
-                              <span className="font-mono">${formatCurrency(Number(value))}</span>
+                              <span className="font-mono">
+                                ${formatCurrency(Number(value))}
+                              </span>
                             </div>
                           )}
                         />
@@ -447,7 +500,9 @@ export default function InventoryDashboardPage() {
               Dead Stock
             </CardTitle>
             <p className="text-sm text-slate-400">
-              No movement in the last {data?.date_context?.dead_stock_lookback_days ?? 90} days — sorted by value
+              No movement in the last{" "}
+              {data?.date_context?.dead_stock_lookback_days ?? 90} days — sorted
+              by value
             </p>
           </CardHeader>
           <CardContent>
@@ -470,7 +525,9 @@ export default function InventoryDashboardPage() {
                       <TableHead>Product</TableHead>
                       <TableHead className="text-right">Qty on Hand</TableHead>
                       <TableHead className="text-right">Value</TableHead>
-                      <TableHead className="text-right">Days Since Last Movement</TableHead>
+                      <TableHead className="text-right">
+                        Days Since Last Movement
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -481,7 +538,9 @@ export default function InventoryDashboardPage() {
                             <p className="font-medium text-slate-900 dark:text-white">
                               {item.product_name}
                             </p>
-                            <p className="text-xs text-slate-400">{item.product_code}</p>
+                            <p className="text-xs text-slate-400">
+                              {item.product_code}
+                            </p>
                           </div>
                         </TableCell>
                         <TableCell className="text-right font-mono">

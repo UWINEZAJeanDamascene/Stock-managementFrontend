@@ -258,8 +258,10 @@ export default function PurchaseDetailPage() {
     return <Badge variant={c.variant}>{c.label}</Badge>;
   };
 
-  const formatCurrency = (amount: string | number) => {
+  const formatCurrency = (amount: string | number | undefined | null) => {
+    if (amount === undefined || amount === null || amount === '') return '-';
     const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+    if (isNaN(num)) return '-';
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: purchase?.currency || 'USD',

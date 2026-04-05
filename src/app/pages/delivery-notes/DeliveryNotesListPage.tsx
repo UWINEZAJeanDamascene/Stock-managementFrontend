@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router';
-import { deliveryNotesApi, clientsApi, quotationsApi } from '@/lib/api';
+import { deliveryNotesApi, clientsApi, quotationsApi, invoicesApi } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
 import { 
   Plus, 
@@ -10,15 +10,17 @@ import {
   FileText,
   Eye,
   Edit,
+  Trash2,
+  CheckCircle,
   Truck,
   XCircle,
-  CheckCircle,
-  MoreHorizontal
+  FilePlus
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { Card, CardContent } from '@/app/components/ui/card';
 import { Badge } from '@/app/components/ui/badge';
+import { toast } from "sonner";
 import { 
   Table, 
   TableBody, 
@@ -27,12 +29,6 @@ import {
   TableHeader, 
   TableRow 
 } from '@/app/components/ui/table';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/app/components/ui/dropdown-menu';
 import {
   Select,
   SelectContent,
@@ -100,7 +96,7 @@ export default function DeliveryNotesListPage() {
     total: 0,
   });
 
-  const fetchDeliveryNotes = useCallback(async () => {
+   const fetchDeliveryNotes = useCallback(async () => {
     setLoading(true);
     try {
       const response = await deliveryNotesApi.getAll({
@@ -109,50 +105,49 @@ export default function DeliveryNotesListPage() {
         status: statusFilter !== 'all' ? statusFilter : undefined,
         clientId: clientFilter !== 'all' ? clientFilter : undefined,
         quotationId: quotationFilter !== 'all' ? quotationFilter : undefined,
-        dateFrom: dateFrom || undefined,
-        dateTo: dateTo || undefined,
+        startDate: dateFrom || undefined,
+        endDate: dateTo || undefined,
       });
       
       if (response.success && response.data) {
         const data = response.data as any;
-        console.log('API response:', response);
-        console.log('Delivery notes response:', JSON.stringify(data).slice(0, 500));
-        
         let notes: any[] = [];
         
         if (Array.isArray(data)) {
           notes = data;
-          setPagination(prev => ({ ...prev, total: data.length }));
         } else if (Array.isArray(data.data)) {
           notes = data.data;
-          setPagination(prev => ({ 
-            ...prev, 
-            total: data.total || data.data.length,
-            page: data.currentPage || 1 
-          }));
         } else if (data.data && Array.isArray(data.data.deliveryNotes)) {
           notes = data.data.deliveryNotes;
-          setPagination(prev => ({ 
-            ...prev, 
-            total: data.total || data.data.deliveryNotes.length,
-            page: data.currentPage || 1 
-          }));
+        } else {
+          notes = [];
         }
         
         setDeliveryNotes(notes);
+        
+        if (Array.isArray(data)) {
+          setPagination(prev => ({ ...prev, total: data.length }));
+        } else if (Array.isArray(data.data)) {
+          setPagination(prev => ({ 
+            ...prev, 
+            total: data.total || data.data.length,
+          }));
+        } else if (data.data && Array.isArray(data.data.deliveryNotes)) {
+          setPagination(prev => ({ 
+            ...prev, 
+            total: data.total || data.data.deliveryNotes.length,
+          }));
+        }
       } else {
         setDeliveryNotes([]);
       }
     } catch (error: any) {
       console.error('Failed to fetch delivery notes:', error);
-      console.error('Error status:', error.status);
-      console.error('Error message:', error.message);
-      console.error('Error response:', error.response?.data);
       setDeliveryNotes([]);
     } finally {
       setLoading(false);
     }
-  }, [pagination.page, pagination.limit, statusFilter, clientFilter, quotationFilter, dateFrom, dateTo]);
+  }, [pagination.page, pagination.limit, statusFilter, clientFilter, quotationFilter, dateFrom, dateTo, search]);
 
   const fetchClients = useCallback(async () => {
     try {
@@ -238,6 +233,116 @@ export default function DeliveryNotesListPage() {
     setPagination(prev => ({ ...prev, page: 1 }));
   };
 
+  const handleDelete = async (id: string) => {
+    if (!confirm(t('deliveryNote.confirmDelete', 'Are you sure you want to delete this delivery note?'))) return;
+    try {
+      const response = await deliveryNotesApi.delete(id);
+      if (response.success) {
+        toast.success(t('deliveryNote.deleted', 'Delivery note deleted'));
+        fetchDeliveryNotes();
+      } else {
+        toast.error(response.message || t('deliveryNote.deleteFailed', 'Failed to delete'));
+      }
+    } catch (error) {
+      toast.error(t('deliveryNote.deleteFailed', 'Failed to delete delivery note'));
+    }
+  };
+
+  const handleConfirm = async (id: string) => {
+    try {
+      // Step 1: Create invoice from delivery note first
+      toast.info('Creating invoice from delivery note...');
+      const createResponse = await deliveryNotesApi.createInvoice(id);
+      
+      if (!createResponse.success) {
+        toast.error((createResponse as any).message || 'Failed to create invoice');
+        return;
+      }
+      
+      const invoiceId = (createResponse.data as any)?._id;
+      if (!invoiceId) {
+        toast.error('Invoice created but no ID returned');
+        return;
+      }
+      
+      toast.success('Invoice created successfully');
+
+      // Step 2: Confirm the invoice
+      toast.info('Confirming invoice...');
+      const confirmInvoiceResponse = await invoicesApi.confirm(invoiceId);
+      
+      if (!confirmInvoiceResponse.success) {
+        toast.error((confirmInvoiceResponse as any).message || 'Failed to confirm invoice');
+        return;
+      }
+      toast.success('Invoice confirmed');
+
+      // Step 3: Confirm the delivery note
+      toast.info('Confirming delivery note...');
+      console.log('Calling deliveryNotesApi.confirm for id:', id);
+      const response = await deliveryNotesApi.confirm(id, {});
+      console.log('Confirm delivery note response:', response);
+      
+      if (response.success) {
+        toast.success(t('deliveryNote.confirmed', 'Delivery note confirmed'));
+        console.log('Delivery note confirmed, refreshing list...');
+        await fetchDeliveryNotes();
+        console.log('List refreshed');
+      } else {
+        console.error('Failed to confirm delivery note:', response);
+        toast.error((response as any).message || t('deliveryNote.confirmFailed', 'Failed to confirm'));
+      }
+    } catch (error: any) {
+      console.error('Error in confirm workflow:', error);
+      console.error('Error response:', error?.response?.data);
+      console.error('Error message:', error?.message);
+      toast.error(error?.response?.data?.message || error?.message || t('deliveryNote.confirmFailed', 'Failed to confirm delivery note'));
+    }
+  };
+
+  const handleDispatch = async (id: string) => {
+    try {
+      const response = await deliveryNotesApi.dispatch(id, {});
+      if (response.success) {
+        toast.success(t('deliveryNote.dispatched', 'Delivery note dispatched'));
+        fetchDeliveryNotes();
+      } else {
+        toast.error((response as any).message || t('deliveryNote.dispatchFailed', 'Failed to dispatch'));
+      }
+    } catch (error) {
+      toast.error(t('deliveryNote.dispatchFailed', 'Failed to dispatch delivery note'));
+    }
+  };
+
+  const handleCancel = async (id: string) => {
+    if (!confirm(t('deliveryNote.confirmCancel', 'Are you sure you want to cancel this delivery note?'))) return;
+    try {
+      const response = await deliveryNotesApi.cancel(id);
+      if (response.success) {
+        toast.success(t('deliveryNote.cancelled', 'Delivery note cancelled'));
+        fetchDeliveryNotes();
+      } else {
+        toast.error((response as any).message || t('deliveryNote.cancelFailed', 'Failed to cancel'));
+      }
+    } catch (error) {
+      toast.error(t('deliveryNote.cancelFailed', 'Failed to cancel delivery note'));
+    }
+  };
+
+  const handleCreateInvoice = async (id: string) => {
+    try {
+      const response = await deliveryNotesApi.createInvoice(id);
+      if (response.success) {
+        toast.success(t('deliveryNote.invoiceCreated', 'Invoice created successfully'));
+        fetchDeliveryNotes();
+      } else {
+        toast.error((response as any).message || t('deliveryNote.invoiceFailed', 'Failed to create invoice'));
+      }
+    } catch (error) {
+      toast.error(t('deliveryNote.invoiceFailed', 'Failed to create invoice'));
+    }
+  };
+
   const handleExport = async () => {
     try {
       alert(t('common.comingSoon', 'Coming soon'));
@@ -245,6 +350,18 @@ export default function DeliveryNotesListPage() {
       console.error('Failed to export:', error);
     }
   };
+
+  // Client-side filtering for search
+  const filteredDeliveryNotes = useMemo(() => {
+    if (!search) return deliveryNotes;
+    const searchLower = search.toLowerCase();
+    return deliveryNotes.filter(dn => 
+      dn.referenceNo?.toLowerCase().includes(searchLower) ||
+      dn.client?.name?.toLowerCase().includes(searchLower) ||
+      dn.quotation?.referenceNo?.toLowerCase().includes(searchLower) ||
+      dn.carrier?.toLowerCase().includes(searchLower)
+    );
+  }, [deliveryNotes, search]);
 
   return (
     <Layout>
@@ -335,7 +452,7 @@ export default function DeliveryNotesListPage() {
               <div className="flex items-center justify-center p-8">
                 <Loader2 className="h-8 w-8 animate-spin" />
               </div>
-            ) : deliveryNotes.length === 0 ? (
+            ) : filteredDeliveryNotes.length === 0 ? (
               <div className="text-center py-12">
                 <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                 <h3 className="text-lg font-medium">{t('deliveryNote.noDeliveryNotes', 'No delivery notes found')}</h3>
@@ -363,7 +480,7 @@ export default function DeliveryNotesListPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {deliveryNotes.map((dn) => (
+                  {filteredDeliveryNotes.map((dn) => (
                     <TableRow key={dn._id}>
                       <TableCell className="font-medium">
                         {dn.referenceNo}
@@ -377,26 +494,83 @@ export default function DeliveryNotesListPage() {
                       <TableCell className="text-right font-medium">
                         {formatCurrency(dn.grandTotal, dn.currencyCode)}
                       </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreHorizontal className="h-4 w-4" />
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => navigate(`/delivery-notes/${dn._id}`)}
+                            title="View"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          
+                          {dn.status === 'draft' && (
+                            <>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => navigate(`/delivery-notes/${dn._id}/edit`)}
+                                title="Edit"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => handleConfirm(dn._id)}
+                                title="Confirm"
+                                className="text-blue-600"
+                              >
+                                <CheckCircle className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => handleDelete(dn._id)}
+                                title="Delete"
+                                className="text-red-600"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                          
+                          {dn.status === 'confirmed' && (
+                            <>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => handleDispatch(dn._id)}
+                                title="Dispatch"
+                                className="text-yellow-600"
+                              >
+                                <Truck className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => handleCancel(dn._id)}
+                                title="Cancel"
+                                className="text-red-600"
+                              >
+                                <XCircle className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                          
+                          {dn.status === 'delivered' && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleCreateInvoice(dn._id)}
+                              title="Create Invoice"
+                              className="text-green-600"
+                            >
+                              <FilePlus className="h-4 w-4" />
                             </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => navigate(`/delivery-notes/${dn._id}`)}>
-                              <Eye className="mr-2 h-4 w-4" />
-                              {t('common.view', 'View')}
-                            </DropdownMenuItem>
-                            {dn.status === 'draft' && (
-                              <DropdownMenuItem onClick={() => navigate(`/delivery-notes/${dn._id}/edit`)}>
-                                <Edit className="mr-2 h-4 w-4" />
-                                {t('common.edit', 'Edit')}
-                              </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}

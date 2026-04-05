@@ -42,8 +42,6 @@ import {
   SelectValue,
 } from '@/app/components/ui/select';
 import { useTranslation } from 'react-i18next';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/app/components/ui/dialog';
-import { Label } from '@/app/components/ui/label';
 
 interface RecurringInvoice {
   _id: string;
@@ -110,16 +108,7 @@ export default function RecurringInvoicesListPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [clientFilter, setClientFilter] = useState('all');
   const [frequencyFilter, setFrequencyFilter] = useState('all');
-  const [showCreateModal, setShowCreateModal] = useState(false);
   const [processing, setProcessing] = useState<string | null>(null);
-
-  // Create form state
-  const [selectedClient, setSelectedClient] = useState('');
-  const [frequency, setFrequency] = useState('monthly');
-  const [interval, setInterval] = useState(1);
-  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
-  const [autoConfirm, setAutoConfirm] = useState(false);
-  const [creating, setCreating] = useState(false);
 
   const fetchRecurringInvoices = useCallback(async () => {
     setLoading(true);
@@ -284,35 +273,6 @@ export default function RecurringInvoicesListPage() {
     }
   };
 
-  const handleCreate = async () => {
-    if (!selectedClient || !startDate) return;
-    
-    setCreating(true);
-    try {
-      const response = await recurringInvoicesApi.create({
-        client: selectedClient,
-        startDate,
-        schedule: {
-          frequency,
-          interval,
-        },
-        autoConfirm,
-        status: 'active',
-        nextRunDate: startDate,
-        lines: [],
-      });
-      
-      if (response.success && response.data) {
-        const newRI = response.data as RecurringInvoice;
-        setShowCreateModal(false);
-        navigate(`/recurring-invoices/${newRI._id}`);
-      }
-    } catch (error) {
-      console.error('Failed to create recurring invoice:', error);
-    } finally {
-      setCreating(false);
-    }
-  };
 
   const handleExport = async () => {
     alert(t('common.comingSoon', 'Coming soon'));
@@ -332,7 +292,7 @@ export default function RecurringInvoicesListPage() {
               <Download className="mr-2 h-4 w-4" />
               {t('common.export', 'Export')}
             </Button>
-            <Button onClick={() => setShowCreateModal(true)}>
+            <Button onClick={() => navigate('/recurring-invoices/new')}>
               <Plus className="mr-2 h-4 w-4" />
               {t('recurringInvoices.newRecurring', 'New Recurring Invoice')}
             </Button>
@@ -414,7 +374,7 @@ export default function RecurringInvoicesListPage() {
                 <p className="text-muted-foreground mb-4">
                   {t('recurringInvoices.noRecurringDescription', 'Create your first recurring invoice to get started')}
                 </p>
-                <Button onClick={() => setShowCreateModal(true)}>
+                <Button onClick={() => navigate('/recurring-invoices/new')}>
                   <Plus className="mr-2 h-4 w-4" />
                   {t('recurringInvoices.newRecurring', 'New Recurring Invoice')}
                 </Button>
@@ -451,50 +411,72 @@ export default function RecurringInvoicesListPage() {
                         )}
                       </TableCell>
                       <TableCell>{inv.lastRunAt ? formatDate(inv.lastRunAt) : '-'}</TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreHorizontal className="h-4 w-4" />
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => navigate(`/recurring-invoices/${inv._id}`)}
+                            title={t('common.view', 'View')}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          {(inv.status === 'active' || inv.status === 'paused') && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => navigate(`/recurring-invoices/${inv._id}/edit`)}
+                              title={t('common.edit', 'Edit')}
+                            >
+                              <Edit className="h-4 w-4" />
                             </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => navigate(`/recurring-invoices/${inv._id}`)}>
-                              <Eye className="mr-2 h-4 w-4" />
-                              {t('common.view', 'View')}
-                            </DropdownMenuItem>
-                            {(inv.status === 'active' || inv.status === 'paused') && (
-                              <DropdownMenuItem onClick={() => navigate(`/recurring-invoices/${inv._id}/edit`)}>
-                                <Edit className="mr-2 h-4 w-4" />
-                                {t('common.edit', 'Edit')}
-                              </DropdownMenuItem>
-                            )}
-                            {inv.status === 'active' && (
-                              <DropdownMenuItem onClick={() => handlePause(inv._id)} disabled={processing === inv._id}>
-                                <Pause className="mr-2 h-4 w-4" />
-                                {t('recurringInvoices.pause', 'Pause')}
-                              </DropdownMenuItem>
-                            )}
-                            {inv.status === 'paused' && (
-                              <DropdownMenuItem onClick={() => handleResume(inv._id)} disabled={processing === inv._id}>
-                                <Play className="mr-2 h-4 w-4" />
-                                {t('recurringInvoices.resume', 'Resume')}
-                              </DropdownMenuItem>
-                            )}
-                            {inv.status !== 'cancelled' && inv.status !== 'completed' && (
-                              <DropdownMenuItem onClick={() => handleTrigger(inv._id)} disabled={processing === inv._id}>
-                                <Zap className="mr-2 h-4 w-4" />
-                                {t('recurringInvoices.trigger', 'Trigger Now')}
-                              </DropdownMenuItem>
-                            )}
-                            {(inv.status === 'active' || inv.status === 'paused') && (
-                              <DropdownMenuItem onClick={() => handleCancel(inv._id)} disabled={processing === inv._id} className="text-red-600">
-                                <XCircle className="mr-2 h-4 w-4" />
-                                {t('recurringInvoices.cancel', 'Cancel')}
-                              </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                          )}
+                          {inv.status === 'active' && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => handlePause(inv._id)} 
+                              disabled={processing === inv._id}
+                              title={t('recurringInvoices.pause', 'Pause')}
+                            >
+                              <Pause className="h-4 w-4 text-amber-600" />
+                            </Button>
+                          )}
+                          {inv.status === 'paused' && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => handleResume(inv._id)} 
+                              disabled={processing === inv._id}
+                              title={t('recurringInvoices.resume', 'Resume')}
+                            >
+                              <Play className="h-4 w-4 text-green-600" />
+                            </Button>
+                          )}
+                          {inv.status !== 'cancelled' && inv.status !== 'completed' && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => handleTrigger(inv._id)} 
+                              disabled={processing === inv._id}
+                              title={t('recurringInvoices.trigger', 'Trigger Now')}
+                            >
+                              <Zap className="h-4 w-4 text-blue-600" />
+                            </Button>
+                          )}
+                          {(inv.status === 'active' || inv.status === 'paused') && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => handleCancel(inv._id)} 
+                              disabled={processing === inv._id}
+                              title={t('recurringInvoices.cancel', 'Cancel')}
+                              className="text-red-600"
+                            >
+                              <XCircle className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -504,92 +486,6 @@ export default function RecurringInvoicesListPage() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Create Recurring Invoice Modal */}
-      <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('recurringInvoices.createNew', 'Create New Recurring Invoice')}</DialogTitle>
-            <DialogDescription>
-              {t('recurringInvoices.createDescription', 'Set up a template for automatic invoice generation')}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div>
-              <Label>{t('recurringInvoices.client', 'Client')} *</Label>
-              <Select value={selectedClient} onValueChange={setSelectedClient}>
-                <SelectTrigger className="mt-2">
-                  <SelectValue placeholder={t('recurringInvoices.selectClient', 'Select Client')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {clients.map(client => (
-                    <SelectItem key={client._id} value={client._id}>
-                      {client.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>{t('recurringInvoices.frequency', 'Frequency')}</Label>
-                <Select value={frequency} onValueChange={setFrequency}>
-                  <SelectTrigger className="mt-2">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="daily">Daily</SelectItem>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                    <SelectItem value="quarterly">Quarterly</SelectItem>
-                    <SelectItem value="annually">Annually</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>{t('recurringInvoices.interval', 'Every')}</Label>
-                <Input
-                  type="number"
-                  min="1"
-                  value={interval}
-                  onChange={(e) => setInterval(parseInt(e.target.value) || 1)}
-                  className="mt-2"
-                />
-              </div>
-            </div>
-            <div>
-              <Label>{t('recurringInvoices.startDate', 'Start Date')} *</Label>
-              <Input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="mt-2"
-              />
-            </div>
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="autoConfirm"
-                checked={autoConfirm}
-                onChange={(e) => setAutoConfirm(e.target.checked)}
-                className="h-4 w-4"
-              />
-              <Label htmlFor="autoConfirm" className="cursor-pointer">
-                {t('recurringInvoices.autoConfirmLabel', 'Auto-confirm generated invoices')}
-              </Label>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreateModal(false)}>
-              {t('common.cancel', 'Cancel')}
-            </Button>
-            <Button onClick={handleCreate} disabled={!selectedClient || !startDate || creating}>
-              {creating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {t('common.create', 'Create')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </Layout>
   );
 }

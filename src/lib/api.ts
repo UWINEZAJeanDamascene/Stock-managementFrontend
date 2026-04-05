@@ -273,7 +273,7 @@ export interface ExecutiveDashboardData {
   };
   recent_journal_entries: Array<{
     _id: string;
-    referenceNo?: string;
+    entryNumber?: string;
     description?: string;
     date: string;
     sourceType?: string;
@@ -620,34 +620,30 @@ export const dashboardApi = {
   getReorderAlerts: () => request<{ success: boolean; data: unknown }>(`/stock/advanced/reorder-points/needing-reorder`),
 
   // Executive Dashboard (Phase 3)
+  // Phase 3 routes return raw service payload (no { success, data } wrapper)
   getExecutive: async () => {
-    const res = await request<{ success: boolean; data: ExecutiveDashboardData }>('/dashboard/executive');
-    return res.data;
+    return request<ExecutiveDashboardData>('/dashboard/executive');
   },
   clearCache: () => request<{ success: boolean; message: string }>('/dashboard/cache/clear', { method: 'POST' }),
 
   // Inventory Dashboard (Phase 3)
   getInventory: async () => {
-    const res = await request<{ success: boolean; data: InventoryDashboardData }>('/dashboard/inventory');
-    return res.data;
+    return request<InventoryDashboardData>('/dashboard/inventory');
   },
 
   // Sales Dashboard (Phase 3)
   getSales: async () => {
-    const res = await request<{ success: boolean; data: SalesDashboardData }>('/dashboard/sales');
-    return res.data;
+    return request<SalesDashboardData>('/dashboard/sales');
   },
 
   // Purchase Dashboard (Phase 3)
   getPurchase: async () => {
-    const res = await request<{ success: boolean; data: PurchaseDashboardData }>('/dashboard/purchase');
-    return res.data;
+    return request<PurchaseDashboardData>('/dashboard/purchase');
   },
 
   // Finance Dashboard (Phase 3)
   getFinance: async () => {
-    const res = await request<{ success: boolean; data: FinanceDashboardData }>('/dashboard/finance');
-    return res.data;
+    return request<FinanceDashboardData>('/dashboard/finance');
   },
 
   // Purchase Returns Summary
@@ -942,6 +938,72 @@ export const invoicesApi = {
   sendEmail: (id: string) => request<{ success: boolean; message: string }>(`/sales-invoices/${id}/send-email`, { method: 'POST' }),
 };
 
+// Sales Legacy API - Direct/POS workflow
+export interface SalesLegacyItem {
+  productId: string;
+  quantity: number;
+  unitPrice?: number;
+  discountPct?: number;
+  taxRate?: number;
+  taxCode?: string;
+  description?: string;
+  unit?: string;
+}
+
+export interface SalesLegacyRequest {
+  clientId?: string;
+  clientInfo?: {
+    name?: string;
+    contact?: {
+      phone?: string;
+      email?: string;
+    };
+    address?: string;
+  };
+  items: SalesLegacyItem[];
+  warehouseId: string;
+  paymentMethod?: 'cash' | 'card' | 'bank_transfer' | 'mobile_money';
+  paymentAmount?: number;
+  paymentReference?: string;
+  notes?: string;
+  dueDate?: string;
+  terms?: string;
+}
+
+export interface PosProduct {
+  _id: string;
+  name: string;
+  sku: string;
+  barcode?: string;
+  sellingPrice: number;
+  unit: string;
+  taxRate: number;
+  taxCode: string;
+  currentStock: number;
+  averageCost: number;
+  category?: string;
+  isAvailable: boolean;
+}
+
+export const salesLegacyApi = {
+  // Create direct sale (invoice + payment in one)
+  createDirectSale: (data: SalesLegacyRequest) => 
+    request<{ success: boolean; message: string; data: unknown }>('/sales-legacy/direct-sale', { 
+      method: 'POST', 
+      body: data 
+    }),
+  
+  // Get products for POS with stock availability
+  getProducts: (params?: { search?: string; warehouseId?: string; category?: string; limit?: number }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; count: number; data: PosProduct[] }>(`/sales-legacy/products${query ? `?${query}` : ''}`);
+  },
+  
+  // Get receipt for printing
+  getReceipt: (invoiceId: string) => 
+    request<{ success: boolean; data: { invoice: unknown; receiptDate: string; receiptNumber: string } }>(`/sales-legacy/receipt/${invoiceId}`),
+};
+
 // Recurring Invoices API
 export const recurringApi = {
   getAll: () => request<{ success: boolean; data: unknown }>('/recurring-invoices'),
@@ -964,7 +1026,10 @@ export const subscriptionsApi = {
 
 // Credit Notes API
 export const creditNotesApi = {
-  getAll: () => request<{ success: boolean; data: unknown }>('/credit-notes'),
+  getAll: (params?: { status?: string; client?: string; type?: string; dateFrom?: string; dateTo?: string; search?: string; page?: number; limit?: number }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; data: unknown }>(`/credit-notes${query ? `?${query}` : ''}`);
+  },
   getById: (id: string) => request<{ success: boolean; data: unknown }>(`/credit-notes/${id}`),
   create: (data: unknown) => request<{ success: boolean; data: unknown }>('/credit-notes', { method: 'POST', body: data }),
   approve: (id: string, opts?: { reverseStock?: boolean; warehouseId?: string }) => 
@@ -1054,16 +1119,18 @@ export const deliveryNotesApi = {
     const query = buildQuery(params as Record<string, any>);
     return request<{ success: boolean; data: unknown }>(`/delivery-notes${query ? `?${query}` : ''}`);
   },
-  getById: (id: string) => request<{ success: boolean; data: unknown }>(`/delivery-notes/${id}`),
+  getById: (id: string, nocache?: boolean) => request<{ success: boolean; data: unknown }>(`/delivery-notes/${id}${nocache ? `?t=${Date.now()}` : ''}`),
   create: (data: unknown) => request<{ success: boolean; data: unknown }>('/delivery-notes', { method: 'POST', body: data }),
   update: (id: string, data: unknown) => request<{ success: boolean; data: unknown }>(`/delivery-notes/${id}`, { method: 'PUT', body: data }),
   delete: (id: string) => request<{ success: boolean; message: string }>(`/delivery-notes/${id}`, { method: 'DELETE' }),
-  dispatch: (id: string, data: { deliveredBy?: string; vehicle?: string; deliveryAddress?: string; deliveryDate?: string }) => 
-    request<{ success: boolean; data: unknown }>(`/delivery-notes/${id}/dispatch`, { method: 'PUT', body: data }),
-  confirm: (id: string, data: { receivedBy?: string; receivedDate?: string; clientSignature?: string; clientStamp?: boolean; notes?: string }) => 
-    request<{ success: boolean; data: unknown }>(`/delivery-notes/${id}/confirm`, { method: 'PUT', body: data }),
+  dispatch: (id: string, data: { deliveredBy?: string; vehicle?: string; deliveryAddress?: string; deliveryDate?: string; carrier?: string; trackingNumber?: string }) => 
+    request<{ success: boolean; data: unknown; message?: string }>(`/delivery-notes/${id}/dispatch`, { method: 'PUT', body: data }),
+  markDelivered: (id: string, data?: { receivedBy?: string; receivedDate?: string; clientSignature?: string; clientStamp?: boolean; notes?: string }) => 
+    request<{ success: boolean; data: unknown; message?: string }>(`/delivery-notes/${id}/deliver`, { method: 'PUT', body: data }),
+  confirm: (id: string, data?: { receivedBy?: string; receivedDate?: string; clientSignature?: string; clientStamp?: boolean; notes?: string }) => 
+    request<{ success: boolean; data: unknown; message?: string }>(`/delivery-notes/${id}/confirm`, { method: 'POST', body: data }),
   cancel: (id: string, cancellationReason?: string) => 
-    request<{ success: boolean; data: unknown }>(`/delivery-notes/${id}/cancel`, { method: 'PUT', body: { cancellationReason } }),
+    request<{ success: boolean; data: unknown; message?: string }>(`/delivery-notes/${id}/cancel`, { method: 'PUT', body: { cancellationReason } }),
   createInvoice: (id: string, data?: { dueDate?: string; paymentTerms?: string; notes?: string; terms?: string }) => 
     request<{ success: boolean; data: unknown }>(`/delivery-notes/${id}/create-invoice`, { method: 'POST', body: data }),
   getQuotationDeliveryNotes: (quotationId: string) => 
@@ -4179,7 +4246,7 @@ interface ARReceiptData {
   client: { _id: string; name: string; code: string };
   receiptDate: string;
   paymentMethod: string;
-  bankAccount?: { _id: string; accountName: string; accountCode: string };
+  bankAccount?: { _id: string; name: string; accountNumber: string };
   amountReceived: string;
   currencyCode: string;
   exchangeRate: string;
@@ -4268,6 +4335,169 @@ export const arReceiptsApi = {
   },
 };
 
+// AR Reconciliation Types
+export interface ARTransaction {
+  _id: string;
+  company: string;
+  client: {
+    _id: string;
+    name: string;
+    code?: string;
+  };
+  invoice?: {
+    _id: string;
+    referenceNo?: string;
+    invoiceNumber?: string;
+  };
+  receipt?: {
+    _id: string;
+    referenceNo?: string;
+  };
+  transactionType: 'invoice_created' | 'invoice_cancelled' | 'receipt_posted' | 'receipt_reversed' | 'allocation_made' | 'allocation_removed' | 'credit_note_applied' | 'credit_note_reversed' | 'bad_debt_writeoff' | 'bad_debt_reversed' | 'payment_recorded' | 'payment_reversed' | 'manual_adjustment' | 'system_correction';
+  transactionDate: string;
+  referenceNo?: string;
+  description: string;
+  amount: number;
+  direction: 'increase' | 'decrease';
+  invoiceBalanceAfter?: number;
+  clientBalanceAfter?: number;
+  sourceType: string;
+  sourceId: string;
+  sourceReference?: string;
+  reconciliationStatus: 'pending' | 'verified' | 'discrepancy' | 'corrected';
+  createdBy?: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+  createdAt: string;
+}
+
+export interface ARDashboardStats {
+  totalTransactions: number;
+  recentTransactions: number;
+  pendingReconciliation: number;
+  discrepancyCount: number;
+}
+
+export interface ARTypeBreakdown {
+  _id: string;
+  count: number;
+  totalAmount: number;
+}
+
+export interface ARDashboardData {
+  stats: ARDashboardStats;
+  typeBreakdown: ARTypeBreakdown[];
+  recentActivity: ARTransaction[];
+}
+
+export interface ARReconciliationResult {
+  verified: boolean;
+  discrepancies: Array<{
+    type: 'invoice' | 'client';
+    id: string;
+    reference?: string;
+    name?: string;
+    ledgerBalance: number;
+    actualBalance: number;
+    difference: number;
+  }>;
+  totalChecked: number;
+}
+
+// AR Reconciliation API
+export const arReconciliationApi = {
+  // Get dashboard data
+  getDashboard: () =>
+    request<{ success: boolean; data: ARDashboardData }>('/ar-reconciliation/dashboard'),
+
+  // Get transactions with filters
+  getTransactions: (params?: {
+    page?: number;
+    limit?: number;
+    clientId?: string;
+    invoiceId?: string;
+    transactionType?: string;
+    startDate?: string;
+    endDate?: string;
+    reconciliationStatus?: string;
+  }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; count: number; total: number; pages: number; currentPage: number; data: ARTransaction[] }>(`/ar-reconciliation/transactions${query ? `?${query}` : ''}`);
+  },
+
+  // Get single transaction
+  getTransactionById: (id: string) =>
+    request<{ success: boolean; data: ARTransaction }>(`/ar-reconciliation/transactions/${id}`),
+
+  // Verify data integrity
+  verifyIntegrity: (data?: {
+    clientId?: string;
+    invoiceId?: string;
+    startDate?: string;
+    endDate?: string;
+  }) =>
+    request<{ success: boolean; data: ARReconciliationResult }>('/ar-reconciliation/verify', { method: 'POST', body: data }),
+
+  // Reconcile and auto-correct
+  reconcileAndCorrect: (data?: {
+    clientId?: string;
+    invoiceId?: string;
+    startDate?: string;
+    endDate?: string;
+  }) =>
+    request<{ success: boolean; message: string; corrected: number }>('/ar-reconciliation/reconcile', { method: 'POST', body: data }),
+
+  // Verify all pending transactions (force update)
+  verifyAllPending: () =>
+    request<{ success: boolean; message: string; count: number }>('/ar-reconciliation/verify-all', { method: 'POST' }),
+
+  // Find discrepancies
+  findDiscrepancies: (params?: {
+    clientId?: string;
+    startDate?: string;
+    endDate?: string;
+  }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; count: number; data: any[] }>(`/ar-reconciliation/discrepancies${query ? `?${query}` : ''}`);
+  },
+
+  // Get client AR summary
+  getClientSummary: (clientId: string) =>
+    request<{ success: boolean; data: { currentBalance: number; transactionSummary: any[]; totalTransactions: number } }>(`/ar-reconciliation/clients/${clientId}/summary`),
+
+  // Get client statement with transaction history
+  getClientStatementWithHistory: (clientId: string, params?: {
+    startDate?: string;
+    endDate?: string;
+    page?: number;
+    limit?: number;
+  }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; data: { statement: any; transactions: { data: ARTransaction[]; total: number; pages: number; currentPage: number } } }>(`/ar-reconciliation/clients/${clientId}/statement${query ? `?${query}` : ''}`);
+  },
+
+  // Get aging report with verification
+  getAgingWithVerification: (params?: {
+    clientId?: string;
+    asOfDate?: string;
+  }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; data: { aging: any; verification: { verified: boolean; discrepancyCount: number } } }>(`/ar-reconciliation/aging${query ? `?${query}` : ''}`);
+  },
+
+  // Get current receivables (outstanding invoices)
+  getCurrentReceivables: (params?: {
+    clientId?: string;
+    page?: number;
+    limit?: number;
+  }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; data: { invoices: any[]; summary: { totalOutstanding: number; totalInvoices: number; overdueAmount: number; overdueCount: number }; clientSummary: any[]; pagination: { total: number; pages: number; currentPage: number } } }>(`/ar-reconciliation/current-receivables${query ? `?${query}` : ''}`);
+  },
+};
+
 // AP Payment Types
 export interface APPayment {
   _id: string;
@@ -4284,7 +4514,7 @@ export interface APPayment {
   status: 'draft' | 'posted' | 'reversed';
   bankAccount?: {
     _id: string;
-    accountName: string;
+    name: string;
     accountNumber: string;
   };
   reference?: string;
@@ -4347,6 +4577,10 @@ export const apPaymentsApi = {
   post: (id: string) =>
     request<{ success: boolean; message: string; data: APPayment }>(`/ap/payments/${id}/post`, { method: 'POST' }),
 
+  // Save and post without journal entry
+  saveAndPost: (id: string) =>
+    request<{ success: boolean; message: string; data: APPayment }>(`/ap/payments/${id}/save-and-post`, { method: 'POST' }),
+
   // Reverse posted payment
   reverse: (id: string, reason: string) =>
     request<{ success: boolean; message: string; data: APPayment }>(`/ap/payments/${id}/reverse`, { method: 'POST', body: { reason } }),
@@ -4369,6 +4603,158 @@ export const apPaymentsApi = {
   getSupplierStatement: (supplierId: string, params?: { startDate?: string; endDate?: string }) => {
     const query = buildQuery(params as Record<string, any>);
     return request<any>(`/ap/statement/${supplierId}${query ? `?${query}` : ''}`);
+  },
+};
+
+// AP Reconciliation Types
+export interface APTransaction {
+  _id: string;
+  company: string;
+  supplier: {
+    _id: string;
+    name: string;
+    code?: string;
+  };
+  transactionType: 'grn_received' | 'payment_posted' | 'payment_allocation' | 'payment_reversed' | 'adjustment' | 'opening_balance' | 'write_off';
+  transactionDate: string;
+  referenceNo: string;
+  description: string;
+  amount: number;
+  direction: 'increase' | 'decrease';
+  supplierBalanceAfter: number;
+  grnBalanceAfter?: number;
+  grn?: {
+    _id: string;
+    referenceNo: string;
+    grnNumber?: string;
+  };
+  payment?: {
+    _id: string;
+    referenceNo: string;
+  };
+  sourceType: string;
+  sourceId: string;
+  sourceReference: string;
+  reconciliationStatus: 'pending' | 'verified' | 'discrepancy' | 'corrected';
+  verifiedAt?: string;
+  createdAt: string;
+}
+
+export interface APReconciliationResult {
+  verified: boolean;
+  discrepancyCount: number;
+  discrepancies: Array<{
+    type: string;
+    supplierId?: string;
+    supplierName?: string;
+    ledgerBalance?: number;
+    actualBalance?: number;
+    difference?: number;
+  }>;
+}
+
+export interface APDashboardData {
+  stats: {
+    totalTransactions: number;
+    recentTransactions: number;
+    pendingReconciliation: number;
+    discrepancyCount: number;
+  };
+  typeBreakdown: Array<{
+    _id: string;
+    count: number;
+    totalAmount: number;
+  }>;
+  recentActivity: APTransaction[];
+  integrity: APReconciliationResult;
+}
+
+// AP Reconciliation API
+export const apReconciliationApi = {
+  // Get dashboard data
+  getDashboard: () =>
+    request<{ stats: APDashboardData['stats']; typeBreakdown: APDashboardData['typeBreakdown']; recentActivity: APTransaction[]; integrity: APReconciliationResult }>('/ap-reconciliation/dashboard'),
+
+  // Get transactions with filters
+  getTransactions: (params?: {
+    supplierId?: string;
+    transactionType?: string;
+    reconciliationStatus?: string;
+    startDate?: string;
+    endDate?: string;
+    page?: number;
+    limit?: number;
+  }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; data: APTransaction[]; pagination: { total: number; page: number; limit: number; pages: number } }>(`/ap-reconciliation/transactions${query ? `?${query}` : ''}`);
+  },
+
+  // Get single transaction
+  getTransactionById: (id: string) =>
+    request<{ success: boolean; data: APTransaction }>(`/ap-reconciliation/transactions/${id}`),
+
+  // Verify data integrity
+  verifyIntegrity: (data?: {
+    supplierId?: string;
+    startDate?: string;
+    endDate?: string;
+  }) =>
+    request<{ success: boolean; data: APReconciliationResult }>('/ap-reconciliation/verify', { method: 'POST', body: data }),
+
+  // Reconcile and auto-correct
+  reconcileAndCorrect: (data?: {
+    supplierId?: string;
+    startDate?: string;
+    endDate?: string;
+  }) =>
+    request<{ success: boolean; message: string; corrected: number }>('/ap-reconciliation/reconcile', { method: 'POST', body: data }),
+
+  // Verify all pending transactions (force update)
+  verifyAllPending: () =>
+    request<{ success: boolean; message: string; count: number }>('/ap-reconciliation/verify-all', { method: 'POST' }),
+
+  // Find discrepancies
+  findDiscrepancies: (params?: {
+    supplierId?: string;
+    startDate?: string;
+    endDate?: string;
+  }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; count: number; data: any[] }>(`/ap-reconciliation/discrepancies${query ? `?${query}` : ''}`);
+  },
+
+  // Get supplier summary
+  getSupplierSummary: (supplierId: string) =>
+    request<{ success: boolean; data: { supplier: { _id: string; name: string; code: string }; summary: { totalTransactions: number; totalIncreases: number; totalDecreases: number; currentBalance: number } } }>(`/ap-reconciliation/suppliers/${supplierId}/summary`),
+
+  // Get supplier statement with transaction history
+  getSupplierStatementWithHistory: (supplierId: string, params?: {
+    startDate?: string;
+    endDate?: string;
+    page?: number;
+    limit?: number;
+  }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; data: { statement: any; transactions: { data: APTransaction[]; total: number; pages: number; currentPage: number } } }>(`/ap-reconciliation/suppliers/${supplierId}/statement${query ? `?${query}` : ''}`);
+  },
+
+  // Get aging report with verification
+  getAgingWithVerification: (params?: {
+    supplierId?: string;
+    asOfDate?: string;
+  }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; data: any[]; verification: { verified: boolean; discrepancyCount: number }; asOfDate?: string }>(`/ap-reconciliation/aging${query ? `?${query}` : ''}`);
+  },
+
+  // Get current payables (outstanding GRNs)
+  getCurrentPayables: (params?: {
+    supplierId?: string;
+    page?: number;
+    limit?: number;
+  }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; data: { grns: any[]; summary: { totalOutstanding: number; totalGRNs: number }; pagination: { total: number; pages: number; currentPage: number } } }>(`/ap-reconciliation/current-payables${query ? `?${query}` : ''}`);
   },
 };
 
@@ -4524,7 +4910,7 @@ export const expensesApi = {
 
   // Get bank accounts for payment
   getBankAccounts: () =>
-    request<{ success: boolean; data: Array<{ _id: string; accountName: string; bankName: string; isActive: boolean }> }>('/bank-accounts?isActive=true'),
+    request<{ success: boolean; data: Array<{ _id: string; name: string; accountNumber: string; bankName: string; isActive: boolean }> }>('/bank-accounts?isActive=true'),
 };
 
 // Chart of Accounts Types
@@ -4896,3 +5282,61 @@ export interface FinancialRatiosReport {
   summary: FRSummary;
   generated_at: string;
 }
+
+// Sales Orders API
+export const salesOrdersApi = {
+  getAll: (params?: {
+    status?: string;
+    clientId?: string;
+    startDate?: string;
+    endDate?: string;
+    page?: number;
+    limit?: number;
+    search?: string;
+  }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; data: unknown; pagination?: unknown }>(`/sales-orders${query ? `?${query}` : ''}`);
+  },
+  getById: (id: string) => request<{ success: boolean; data: unknown }>(`/sales-orders/${id}`),
+  create: (data: unknown) => request<{ success: boolean; data: unknown }>('/sales-orders', { method: 'POST', body: data }),
+  update: (id: string, data: unknown) => request<{ success: boolean; data: unknown }>(`/sales-orders/${id}`, { method: 'PUT', body: data }),
+  delete: (id: string) => request<{ success: boolean; message: string }>(`/sales-orders/${id}`, { method: 'DELETE' }),
+  confirm: (id: string) => request<{ success: boolean; data: unknown }>(`/sales-orders/${id}/confirm`, { method: 'POST' }),
+  cancel: (id: string, reason?: string) => request<{ success: boolean; data: unknown }>(`/sales-orders/${id}/cancel`, { method: 'POST', body: { reason } }),
+  getWorkflow: (id: string) => request<{ success: boolean; data: unknown }>(`/sales-orders/${id}/workflow`),
+  getReadyForPicking: () => request<{ success: boolean; data: unknown }>('/sales-orders/ready-for-picking'),
+  getReadyForPacking: () => request<{ success: boolean; data: unknown }>('/sales-orders/ready-for-packing'),
+  getBackorders: () => request<{ success: boolean; data: unknown }>('/sales-orders/backorders'),
+};
+
+// Pick & Pack API
+export const pickPackApi = {
+  getAll: (params?: {
+    status?: string;
+    salesOrderId?: string;
+    assignedTo?: string;
+    page?: number;
+    limit?: number;
+  }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; data: unknown; pagination?: unknown }>(`/pick-packs${query ? `?${query}` : ''}`);
+  },
+  getById: (id: string) => request<{ success: boolean; data: unknown }>(`/pick-packs/${id}`),
+  create: (data: unknown) => request<{ success: boolean; data: unknown }>('/pick-packs', { method: 'POST', body: data }),
+  update: (id: string, data: unknown) => request<{ success: boolean; data: unknown }>(`/pick-packs/${id}`, { method: 'PUT', body: data }),
+  delete: (id: string) => request<{ success: boolean; message: string }>(`/pick-packs/${id}`, { method: 'DELETE' }),
+  startPicking: (id: string) => request<{ success: boolean; data: unknown }>(`/pick-packs/${id}/start-picking`, { method: 'POST' }),
+  pickItems: (id: string, items: unknown[]) => request<{ success: boolean; data: unknown }>(`/pick-packs/${id}/pick-items`, { method: 'POST', body: { items } }),
+  completePicking: (id: string) => request<{ success: boolean; data: unknown }>(`/pick-packs/${id}/complete-picking`, { method: 'POST' }),
+  startPacking: (id: string) => request<{ success: boolean; data: unknown }>(`/pick-packs/${id}/start-packing`, { method: 'POST' }),
+  packItems: (id: string, items: unknown[], data?: { packageCount?: number; packageType?: string; totalWeight?: number; trackingNumber?: string }) => 
+    request<{ success: boolean; data: unknown }>(`/pick-packs/${id}/pack-items`, { method: 'POST', body: { items, ...data } }),
+  completePacking: (id: string, data?: { packageCount?: number; packageType?: string; totalWeight?: number; trackingNumber?: string }) => 
+    request<{ success: boolean; data: unknown }>(`/pick-packs/${id}/complete-packing`, { method: 'POST', body: data }),
+  cancel: (id: string, reason?: string) => request<{ success: boolean; data: unknown }>(`/pick-packs/${id}/cancel`, { method: 'POST', body: { reason } }),
+  reportIssue: (id: string, lineId: string, issueType: string, description?: string) => 
+    request<{ success: boolean; data: unknown }>(`/pick-packs/${id}/report-issue`, { method: 'POST', body: { lineId, issueType, description } }),
+  getMyTasks: () => request<{ success: boolean; data: unknown }>('/pick-packs/my-tasks'),
+  getPendingPick: () => request<{ success: boolean; data: unknown }>('/pick-packs/pending-pick'),
+  getPendingPack: () => request<{ success: boolean; data: unknown }>('/pick-packs/pending-pack'),
+};

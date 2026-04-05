@@ -62,15 +62,33 @@ import QuotationFormPage from './pages/quotations/QuotationFormPage';
 import InvoicesListPage from './pages/invoices/InvoicesListPage';
 import InvoiceFormPage from './pages/invoices/InvoiceFormPage';
 import InvoiceDetailPage from './pages/invoices/InvoiceDetailPage';
+import SalesLegacyPage from './pages/sales-legacy/SalesLegacyPage';
 import DeliveryNotesListPage from './pages/delivery-notes/DeliveryNotesListPage';
 import DeliveryNoteCreatePage from './pages/delivery-notes/DeliveryNoteCreatePage';
+import DeliveryNoteDetailPage from './pages/delivery-notes/DeliveryNoteDetailPage';
 import CreditNotesListPage from './pages/credit-notes/CreditNotesListPage';
 import CreditNoteCreatePage from './pages/credit-notes/CreditNoteCreatePage';
+import CreditNoteDetailPage from './pages/credit-notes/CreditNoteDetailPage';
 import RecurringInvoicesListPage from './pages/recurring-invoices/RecurringInvoicesListPage';
+import RecurringInvoiceDetailPage from './pages/recurring-invoices/RecurringInvoiceDetailPage';
+import RecurringInvoiceFormPage from './pages/recurring-invoices/RecurringInvoiceFormPage';
+// Sales Orders & Pick Pack
+import SalesOrdersListPage from './pages/sales-orders/SalesOrdersListPage';
+import SalesOrderCreatePage from './pages/sales-orders/SalesOrderCreatePage';
+import SalesOrderDetailPage from './pages/sales-orders/SalesOrderDetailPage';
+import PickPacksListPage from './pages/pick-packs/PickPacksListPage';
+import PickPackCreatePage from './pages/pick-packs/PickPackCreatePage';
+import PickPackDetailPage from './pages/pick-packs/PickPackDetailPage';
+import PickPackPickPage from './pages/pick-packs/PickPackPickPage';
+import PickPackPackPage from './pages/pick-packs/PickPackPackPage';
 import ARReceiptsListPage from './pages/ar/ARReceiptsListPage';
 import ARReceiptCreatePage from './pages/ar/ARReceiptCreatePage';
+import ARReceiptDetailPage from './pages/ar/ARReceiptDetailPage';
 import APPaymentsListPage from './pages/ap/APPaymentsListPage';
 import APPaymentCreatePage from './pages/ap/APPaymentCreatePage';
+import APPaymentDetailPage from './pages/ap/APPaymentDetailPage';
+import APAgingReportPage from './pages/ap/APAgingReportPage';
+import APReconciliationPage from './pages/ap/APReconciliationPage';
 import BankAccountsListPage from './pages/bank/BankAccountsListPage';
 import BankAccountDetailPage from './pages/bank/BankAccountDetailPage';
 import PettyCashListPage from './pages/petty-cash/PettyCashListPage';
@@ -85,6 +103,7 @@ import BudgetsListPage from './pages/budgets/BudgetsListPage';
 import BudgetFormPage from './pages/budgets/BudgetFormPage';
 import BudgetDetailPage from './pages/budgets/BudgetDetailPage';
 import ARAgingPage from './pages/ar/ARAgingPage';
+import ARReconciliationPage from './pages/ar/ARReconciliationPage';
 import ExpensesListPage from './pages/expenses/ExpensesListPage';
 import ExpenseDetailPage from './pages/expenses/ExpenseDetailPage';
 import ChartOfAccountsPage from './pages/settings/ChartOfAccountsPage';
@@ -108,6 +127,7 @@ import RolesSettingsPage from './pages/settings/RolesSettingsPage';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import ChatBot from './components/ChatBot';
 import OfflineSyncBanner from './components/OfflineSyncBanner';
+import { Toaster } from 'sonner';
 
 // Wrapper component with logging to debug Products page issue
 function ProductsListPageWrapper() {
@@ -278,18 +298,76 @@ function AppRoutes() {
         <Route path="/invoices/new" element={<InvoiceFormPage />} />
         <Route path="/invoices/:id/edit" element={<InvoiceFormPage />} />
         <Route path="/invoices/:id" element={<InvoiceDetailPage />} />
+        
+        {/* Sales Legacy / Direct Sale */}
+        <Route path="/sales-legacy" element={
+          <ErrorBoundary>
+            <SalesLegacyPage />
+          </ErrorBoundary>
+        } />
+        
         <Route path="/delivery-notes/new" element={<DeliveryNoteCreatePage />} />
         <Route path="/delivery-notes/:id/edit" element={<DeliveryNoteCreatePage />} />
-        <Route path="/delivery-notes/:id" element={<DeliveryNotesListPage />} />
+        <Route path="/delivery-notes/:id" element={<DeliveryNoteDetailPage />} />
         <Route path="/delivery-notes" element={<DeliveryNotesListPage />} />
+        
+        {/* Sales Orders */}
+        <Route path="/sales-orders" element={
+          <ErrorBoundary>
+            <SalesOrdersListPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/sales-orders/create" element={
+          <ErrorBoundary>
+            <SalesOrderCreatePage />
+          </ErrorBoundary>
+        } />
+        <Route path="/sales-orders/:id" element={
+          <ErrorBoundary>
+            <SalesOrderDetailPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/sales-orders/:id/edit" element={
+          <ErrorBoundary>
+            <SalesOrderCreatePage />
+          </ErrorBoundary>
+        } />
+        
+        {/* Pick & Pack */}
+        <Route path="/pick-packs" element={
+          <ErrorBoundary>
+            <PickPacksListPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/pick-packs/create" element={
+          <ErrorBoundary>
+            <PickPackCreatePage />
+          </ErrorBoundary>
+        } />
+        <Route path="/pick-packs/:id" element={
+          <ErrorBoundary>
+            <PickPackDetailPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/pick-packs/:id/pick" element={
+          <ErrorBoundary>
+            <PickPackPickPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/pick-packs/:id/pack" element={
+          <ErrorBoundary>
+            <PickPackPackPage />
+          </ErrorBoundary>
+        } />
+        
         <Route path="/credit-notes" element={<CreditNotesListPage />} />
         <Route path="/credit-notes/new" element={<CreditNoteCreatePage />} />
         <Route path="/credit-notes/:id/edit" element={<CreditNoteCreatePage />} />
-        <Route path="/credit-notes/:id" element={<CreditNotesListPage />} />
+        <Route path="/credit-notes/:id" element={<CreditNoteDetailPage />} />
         <Route path="/recurring-invoices" element={<RecurringInvoicesListPage />} />
-        <Route path="/recurring-invoices/new" element={<RecurringInvoicesListPage />} />
-        <Route path="/recurring-invoices/:id/edit" element={<RecurringInvoicesListPage />} />
-        <Route path="/recurring-invoices/:id" element={<RecurringInvoicesListPage />} />
+        <Route path="/recurring-invoices/new" element={<RecurringInvoiceFormPage />} />
+        <Route path="/recurring-invoices/:id/edit" element={<RecurringInvoiceFormPage />} />
+        <Route path="/recurring-invoices/:id" element={<RecurringInvoiceDetailPage />} />
         {/* AR Receipts */}
         <Route path="/ar-receipts" element={
           <ErrorBoundary>
@@ -308,13 +386,19 @@ function AppRoutes() {
         } />
         <Route path="/ar-receipts/:id" element={
           <ErrorBoundary>
-            <ARReceiptCreatePage />
+            <ARReceiptDetailPage />
           </ErrorBoundary>
         } />
         {/* AR Aging */}
         <Route path="/ar-aging" element={
           <ErrorBoundary>
             <ARAgingPage />
+          </ErrorBoundary>
+        } />
+        {/* AR Reconciliation */}
+        <Route path="/ar-reconciliation" element={
+          <ErrorBoundary>
+            <ARReconciliationPage />
           </ErrorBoundary>
         } />
         {/* AP Payments */}
@@ -335,7 +419,19 @@ function AppRoutes() {
         } />
         <Route path="/ap-payments/:id" element={
           <ErrorBoundary>
-            <APPaymentCreatePage />
+            <APPaymentDetailPage />
+          </ErrorBoundary>
+        } />
+        {/* AP Aging */}
+        <Route path="/ap-aging" element={
+          <ErrorBoundary>
+            <APAgingReportPage />
+          </ErrorBoundary>
+        } />
+        {/* AP Reconciliation */}
+        <Route path="/ap-reconciliation" element={
+          <ErrorBoundary>
+            <APReconciliationPage />
           </ErrorBoundary>
         } />
         {/* Bank Accounts */}
@@ -610,6 +706,7 @@ export default function App() {
           <AuthProvider>
             <CurrencyProvider>
               <ChatBot />
+              <Toaster position="top-right" richColors />
               <AppRoutes />
             </CurrencyProvider>
           </AuthProvider>

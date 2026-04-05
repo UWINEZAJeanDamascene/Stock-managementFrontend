@@ -12,7 +12,9 @@ import {
   Edit,
   MoreHorizontal,
   CreditCard,
-  X
+  X,
+  CheckCircle,
+  Trash2
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
@@ -42,6 +44,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/app/components/ui/dialog';
 import { Label } from '@/app/components/ui/label';
+import { toast } from 'sonner';
 
 interface CreditNote {
   _id: string;
@@ -107,12 +110,26 @@ export default function CreditNotesListPage() {
   const [dateTo, setDateTo] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState('');
+  const [createReason, setCreateReason] = useState('');
   const [creating, setCreating] = useState(false);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [selectedCreditNote, setSelectedCreditNote] = useState<CreditNote | null>(null);
 
   const fetchCreditNotes = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await creditNotesApi.getAll();
+      const params: any = {};
+      if (statusFilter && statusFilter !== 'all') params.status = statusFilter;
+      if (clientFilter && clientFilter !== 'all') params.client = clientFilter;
+      if (typeFilter && typeFilter !== 'all') params.type = typeFilter;
+      if (dateFrom) params.dateFrom = dateFrom;
+      if (dateTo) params.dateTo = dateTo;
+      if (search) params.search = search;
+      
+      const response = await creditNotesApi.getAll(params);
       
       if (response.success && response.data) {
         const data = response.data as any;
@@ -129,7 +146,7 @@ export default function CreditNotesListPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [statusFilter, clientFilter, typeFilter, dateFrom, dateTo, search]);
 
   const fetchClients = useCallback(async () => {
     try {
@@ -257,7 +274,7 @@ export default function CreditNotesListPage() {
   });
 
   const handleCreateCreditNote = async () => {
-    if (!selectedInvoice) return;
+    if (!selectedInvoice || !createReason.trim()) return;
     
     setCreating(true);
     try {
@@ -265,23 +282,76 @@ export default function CreditNotesListPage() {
         invoice: selectedInvoice,
         creditDate: new Date().toISOString(),
         type: 'goods_return',
-        reason: ''
+        reason: createReason.trim()
       });
       
       if (response.success && response.data) {
         const newCreditNote = response.data as CreditNote;
         navigate(`/credit-notes/${newCreditNote._id}/edit`);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to create credit note:', error);
+      toast.error(error?.message || 'Failed to create credit note');
     } finally {
       setCreating(false);
       setShowCreateModal(false);
+      setCreateReason('');
+      setSelectedInvoice('');
     }
   };
 
   const handleExport = async () => {
     alert(t('common.comingSoon', 'Coming soon'));
+  };
+
+  const openConfirmDialog = (cn: CreditNote) => {
+    setSelectedCreditNote(cn);
+    setShowConfirmDialog(true);
+  };
+
+  const openDeleteDialog = (cn: CreditNote) => {
+    setSelectedCreditNote(cn);
+    setShowDeleteDialog(true);
+  };
+
+  const handleConfirm = async () => {
+    if (!selectedCreditNote) return;
+    setConfirmingId(selectedCreditNote._id);
+    try {
+      const response = await creditNotesApi.confirm(selectedCreditNote._id);
+      if (response.success) {
+        toast.success('Credit note confirmed successfully');
+        setShowConfirmDialog(false);
+        fetchCreditNotes();
+      } else {
+        toast.error((response as any).message || 'Failed to confirm credit note');
+      }
+    } catch (error: any) {
+      console.error('Failed to confirm credit note:', error);
+      toast.error(error?.message || 'Failed to confirm credit note');
+    } finally {
+      setConfirmingId(null);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!selectedCreditNote) return;
+    setDeletingId(selectedCreditNote._id);
+    try {
+      const response = await creditNotesApi.delete(selectedCreditNote._id);
+      if (response.success) {
+        toast.success('Credit note deleted successfully');
+        setShowDeleteDialog(false);
+        fetchCreditNotes();
+      } else {
+        toast.error(response.message || 'Failed to delete credit note');
+      }
+    } catch (error: any) {
+      console.error('Failed to delete credit note:', error);
+      toast.error(error?.message || 'Failed to delete credit note');
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   return (
@@ -425,26 +495,47 @@ export default function CreditNotesListPage() {
                       <TableCell className="text-right font-medium">
                         {formatCurrency(cn.grandTotal || cn.totalAmount, cn.currencyCode)}
                       </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreHorizontal className="h-4 w-4" />
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => navigate(`/credit-notes/${cn._id}`)}
+                            title={t('common.view', 'View')}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          {(cn.status === 'draft' || cn.status === 'issued') && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => navigate(`/credit-notes/${cn._id}/edit`)}
+                              title={t('common.edit', 'Edit')}
+                            >
+                              <Edit className="h-4 w-4" />
                             </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => navigate(`/credit-notes/${cn._id}`)}>
-                              <Eye className="mr-2 h-4 w-4" />
-                              {t('common.view', 'View')}
-                            </DropdownMenuItem>
-                            {(cn.status === 'draft' || cn.status === 'issued') && (
-                              <DropdownMenuItem onClick={() => navigate(`/credit-notes/${cn._id}/edit`)}>
-                                <Edit className="mr-2 h-4 w-4" />
-                                {t('common.edit', 'Edit')}
-                              </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                          )}
+                          {cn.status === 'draft' && (
+                            <>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => openConfirmDialog(cn)}
+                                title={t('creditNotes.confirm', 'Confirm')}
+                              >
+                                <CheckCircle className="h-4 w-4 text-green-600" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => openDeleteDialog(cn)}
+                                title={t('common.delete', 'Delete')}
+                              >
+                                <Trash2 className="h-4 w-4 text-red-600" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -464,29 +555,128 @@ export default function CreditNotesListPage() {
               {t('creditNotes.selectInvoice', 'Select an invoice to create a credit note for')}
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
-            <Label>{t('creditNotes.invoice', 'Invoice')}</Label>
-            <Select value={selectedInvoice} onValueChange={setSelectedInvoice}>
-              <SelectTrigger className="mt-2">
-                <SelectValue placeholder={t('creditNotes.selectInvoicePlaceholder', 'Select an invoice')} />
-              </SelectTrigger>
-              <SelectContent>
-                {invoices.map(inv => (
-                  <SelectItem key={inv._id} value={inv._id}>
-                    {inv.referenceNo}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="py-4 space-y-4">
+            <div>
+              <Label>{t('creditNotes.invoice', 'Invoice')} *</Label>
+              <Select value={selectedInvoice} onValueChange={setSelectedInvoice}>
+                <SelectTrigger className="mt-2">
+                  <SelectValue placeholder={t('creditNotes.selectInvoicePlaceholder', 'Select an invoice')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {invoices.map(inv => (
+                    <SelectItem key={inv._id} value={inv._id}>
+                      {inv.referenceNo}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>{t('creditNotes.reason', 'Reason')} *</Label>
+              <Select value={createReason} onValueChange={setCreateReason}>
+                <SelectTrigger className="mt-2">
+                  <SelectValue placeholder={t('creditNotes.selectReason', 'Select a reason')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Goods returned by customer">Goods returned by customer</SelectItem>
+                  <SelectItem value="Price adjustment">Price adjustment</SelectItem>
+                  <SelectItem value="Order cancelled">Order cancelled</SelectItem>
+                  <SelectItem value="Damaged goods">Damaged goods</SelectItem>
+                  <SelectItem value="Wrong item shipped">Wrong item shipped</SelectItem>
+                  <SelectItem value="Quality issues">Quality issues</SelectItem>
+                  <SelectItem value="Customer discount">Customer discount</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreateModal(false)}>
+            <Button variant="outline" onClick={() => {
+              setShowCreateModal(false);
+              setCreateReason('');
+              setSelectedInvoice('');
+            }}>
               <X className="mr-2 h-4 w-4" />
               {t('common.cancel', 'Cancel')}
             </Button>
-            <Button onClick={handleCreateCreditNote} disabled={!selectedInvoice || creating}>
+            <Button onClick={handleCreateCreditNote} disabled={!selectedInvoice || !createReason.trim() || creating}>
               {creating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {t('creditNotes.create', 'Create')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirm Credit Note Dialog */}
+      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('creditNotes.confirmTitle', 'Confirm Credit Note')}</DialogTitle>
+            <DialogDescription>
+              {t('creditNotes.confirmDescription', 'This will process the credit note, reverse the journal entries, and return stock to inventory (for goods returns). This action cannot be undone.')}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="p-4 bg-muted rounded-lg">
+              <div className="flex justify-between mb-2">
+                <span>Reference:</span>
+                <span className="font-bold">{selectedCreditNote?.referenceNo}</span>
+              </div>
+              <div className="flex justify-between mb-2">
+                <span>Total Amount:</span>
+                <span className="font-bold">{formatCurrency(selectedCreditNote?.grandTotal || selectedCreditNote?.totalAmount || 0, selectedCreditNote?.currencyCode)}</span>
+              </div>
+              {selectedCreditNote?.type === 'goods_return' && (
+                <div className="flex justify-between text-sm">
+                  <span>Type:</span>
+                  <span>Goods Return - Stock will be returned to inventory</span>
+                </div>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowConfirmDialog(false)} disabled={!!confirmingId}>
+              <X className="mr-2 h-4 w-4" />
+              {t('common.cancel', 'Cancel')}
+            </Button>
+            <Button onClick={handleConfirm} disabled={!!confirmingId}>
+              {confirmingId && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              <CheckCircle className="mr-2 h-4 w-4" />
+              {t('creditNotes.confirm', 'Confirm')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Credit Note Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('creditNotes.deleteTitle', 'Delete Credit Note')}</DialogTitle>
+            <DialogDescription>
+              {t('creditNotes.deleteDescription', 'Are you sure you want to delete this draft credit note? This action cannot be undone.')}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="p-4 bg-destructive/10 rounded-lg">
+              <div className="flex justify-between mb-2">
+                <span>Reference:</span>
+                <span className="font-bold">{selectedCreditNote?.referenceNo}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Status:</span>
+                <Badge variant="secondary">{selectedCreditNote?.status}</Badge>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteDialog(false)} disabled={!!deletingId}>
+              <X className="mr-2 h-4 w-4" />
+              {t('common.cancel', 'Cancel')}
+            </Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={!!deletingId}>
+              {deletingId && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              <Trash2 className="mr-2 h-4 w-4" />
+              {t('common.delete', 'Delete')}
             </Button>
           </DialogFooter>
         </DialogContent>

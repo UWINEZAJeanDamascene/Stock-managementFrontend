@@ -234,7 +234,7 @@ export default function QuotationsListPage() {
         <div className="bg-card rounded-lg border p-4 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div>
-              <label className="text-sm font-medium mb-1 block">{t('quotation.status', 'Status')}</label>
+              <label className="text-sm font-medium mb-1 block">{t('quotation.statusLabel', 'Status')}</label>
               <Select value={statusFilter || 'all'} onValueChange={(value) => { setStatusFilter(value === 'all' ? '' : value); setPage(1); }}>
                 <SelectTrigger>
                   <SelectValue placeholder={t('quotation.allStatuses', 'All Statuses')} />
@@ -314,7 +314,7 @@ export default function QuotationsListPage() {
                   <TableHead>{t('quotation.client', 'Client')}</TableHead>
                   <TableHead>{t('quotation.date', 'Date')}</TableHead>
                   <TableHead>{t('quotation.expiryDate', 'Expiry Date')}</TableHead>
-                  <TableHead>{t('quotation.status', 'Status')}</TableHead>
+                  <TableHead>{t('quotation.statusLabel', 'Status')}</TableHead>
                   <TableHead className="text-right">{t('quotation.total', 'Total')}</TableHead>
                   <TableHead>{t('quotation.convertedTo', 'Converted To')}</TableHead>
                   <TableHead className="text-right">{t('common.actions', 'Actions')}</TableHead>

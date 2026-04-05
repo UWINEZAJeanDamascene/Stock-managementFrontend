@@ -31,6 +31,12 @@ import {
 } from '@/app/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { Label } from '@/app/components/ui/label';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TooltipProvider,
+} from '@/app/components/ui/tooltip';
 import { useTranslation } from 'react-i18next';
 
 interface Client {
@@ -296,8 +302,9 @@ export default function ARReceiptCreatePage() {
   }
 
   return (
-    <Layout>
-      <div className="container mx-auto py-6">
+    <TooltipProvider>
+      <Layout>
+        <div className="container mx-auto py-6">
         <div className="flex items-center gap-4 mb-6">
           <Button variant="ghost" onClick={() => navigate('/ar-receipts')}>
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -377,7 +384,7 @@ export default function ARReceiptCreatePage() {
                       <SelectContent>
                         {bankAccounts.map((account) => (
                           <SelectItem key={account._id} value={account._id}>
-                            {account.accountName} ({account.accountCode})
+                            {account.name} ({account.accountNumber || account.bankName || account.accountType})
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -515,25 +522,40 @@ export default function ARReceiptCreatePage() {
 
             {/* Actions */}
             <div className="flex flex-col gap-2">
-              <Button
-                onClick={() => handleSave(false)}
-                disabled={saving || !formData.client || !formData.amountReceived}
-              >
-                {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                {t('arReceipt.saveAsDraft', 'Save as Draft')}
-              </Button>
-              <Button
-                variant="default"
-                onClick={() => handleSave(true)}
-                disabled={saving || !formData.client || !formData.amountReceived}
-              >
-                {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                {t('arReceipt.saveAndPost', 'Save & Post')}
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={() => handleSave(false)}
+                    disabled={saving || !formData.client || !formData.amountReceived}
+                  >
+                    {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                    {t('arReceipt.saveAsDraft', 'Save as Draft')}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{t('arReceipt.saveAsDraftTooltip', 'Save receipt as draft to edit later')}</p>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="default"
+                    onClick={() => handleSave(true)}
+                    disabled={saving || !formData.client || !formData.amountReceived}
+                  >
+                    {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                    {t('arReceipt.saveAndPost', 'Save & Post')}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{t('arReceipt.saveAndPostTooltip', 'Save and post receipt to apply payment')}</p>
+                </TooltipContent>
+              </Tooltip>
             </div>
           </div>
         </div>
       </div>
     </Layout>
+    </TooltipProvider>
   );
 }

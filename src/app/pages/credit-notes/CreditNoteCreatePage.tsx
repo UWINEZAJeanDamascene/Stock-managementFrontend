@@ -43,8 +43,10 @@ interface CreditNoteLine {
   };
   productName: string;
   productCode: string;
-  quantity: number;
+  originalQty: number; // ADDED: Original invoice quantity
+  quantity: number; // Qty to credit (user enters this)
   unitPrice: number;
+  unitCost: number;
   taxRate: number;
   lineSubtotal: number;
   lineTax: number;
@@ -99,6 +101,14 @@ const TYPE_OPTIONS = [
   { value: 'cancelled_order', label: 'Cancelled Order' },
 ];
 
+// Helper to convert Decimal values
+const toNumber = (val: any): number => {
+  if (typeof val === 'object' && val?.$numberDecimal) {
+    return parseFloat(val.$numberDecimal);
+  }
+  return Number(val) || 0;
+};
+
 export default function CreditNoteCreatePage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -122,14 +132,21 @@ export default function CreditNoteCreatePage() {
 
   const fetchInvoices = useCallback(async () => {
     try {
-      const response = await invoicesApi.getAll({ status: 'confirmed', limit: 100 });
+      // Fetch invoices that can have credit notes: confirmed, partially_paid, fully_paid
+      const response = await invoicesApi.getAll({ 
+        status: 'confirmed,partially_paid,fully_paid', 
+        limit: 100 
+      });
       if (response.success && response.data) {
         const data = response.data as any;
         const invoiceData = Array.isArray(data) ? data : (data.invoices || []);
+        console.log(`[CreditNoteCreate] Fetched ${invoiceData.length} invoices`);
         setInvoices(invoiceData as Invoice[]);
+      } else {
+        console.error('[CreditNoteCreate] Failed to fetch invoices:', response);
       }
     } catch (error) {
-      console.error('Failed to fetch invoices:', error);
+      console.error('[CreditNoteCreate] Error fetching invoices:', error);
     }
   }, []);
 
@@ -159,14 +176,38 @@ export default function CreditNoteCreatePage() {
         setType(cn.type);
         setReason(cn.reason || '');
         setNotes(cn.notes || '');
-        setLines(cn.lines || []);
+        
+        // If credit note has lines, use them; otherwise populate from invoice
+        if (cn.lines && cn.lines.length > 0) {
+          setLines(cn.lines);
+        } else if (cn.invoice?._id) {
+          // Auto-populate lines from invoice
+          const invoice = invoices.find(inv => inv._id === cn.invoice?._id);
+          if (invoice && invoice.lines) {
+            const creditNoteLines: CreditNoteLine[] = invoice.lines.map((line: any) => ({
+              invoiceLineId: line._id || line.lineId,
+              product: line.product,
+              productName: line.productName || line.product?.name || '',
+              productCode: line.productCode || line.product?.code || '',
+              originalQty: line.quantity || 0, // ADDED: Store original invoice qty
+              quantity: 0,
+              unitPrice: toNumber(line.unitPrice) || 0, // FIXED: Convert Decimal to number
+              unitCost: toNumber(line.unitCost) || toNumber(line.product?.averageCost) || 0,
+              taxRate: toNumber(line.taxRate) || 0, // FIXED: Convert Decimal to number
+              lineSubtotal: 0,
+              lineTax: 0,
+              lineTotal: 0,
+            }));
+            setLines(creditNoteLines);
+          }
+        }
       }
     } catch (error) {
       console.error('Failed to fetch credit note:', error);
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, invoices]);
 
   useEffect(() => {
     fetchInvoices();
@@ -195,9 +236,11 @@ export default function CreditNoteCreatePage() {
       product: line.product,
       productName: line.productName || line.product?.name || '',
       productCode: line.productCode || line.product?.code || '',
-      quantity: 0, // Start with 0, user enters qty to return
-      unitPrice: line.unitPrice || 0,
-      taxRate: line.taxRate || 0,
+      originalQty: line.quantity || 0, // ADDED: Store original invoice qty
+      quantity: 0, // User enters qty to credit
+      unitPrice: toNumber(line.unitPrice) || 0, // FIXED: Convert Decimal to number
+      unitCost: toNumber(line.unitCost) || toNumber(line.product?.averageCost) || 0,
+      taxRate: toNumber(line.taxRate) || 0, // FIXED: Convert Decimal to number
       lineSubtotal: 0,
       lineTax: 0,
       lineTotal: 0,
@@ -211,15 +254,18 @@ export default function CreditNoteCreatePage() {
     const line = { ...updatedLines[index] };
     
     if (field === 'quantity') {
-      line.quantity = Math.max(0, parseFloat(value) || 0);
+      const enteredQty = Math.max(0, parseFloat(value) || 0);
+      // Validate: credited qty cannot exceed original invoice qty
+      const maxQty = toNumber(line.originalQty);
+      line.quantity = Math.min(enteredQty, maxQty);
     } else if (field === 'returnToWarehouse') {
       line.returnToWarehouse = value;
     }
     
-    // Recalculate totals
-    const quantity = line.quantity;
-    const unitPrice = line.unitPrice;
-    const taxRate = line.taxRate;
+    // Recalculate totals using toNumber for Decimal handling
+    const quantity = toNumber(line.quantity);
+    const unitPrice = toNumber(line.unitPrice);
+    const taxRate = toNumber(line.taxRate);
     
     line.lineSubtotal = quantity * unitPrice;
     line.lineTax = line.lineSubtotal * (taxRate / 100);
@@ -230,8 +276,8 @@ export default function CreditNoteCreatePage() {
   };
 
   const calculateTotals = () => {
-    const subtotal = lines.reduce((sum, line) => sum + (line.lineSubtotal || 0), 0);
-    const taxAmount = lines.reduce((sum, line) => sum + (line.lineTax || 0), 0);
+    const subtotal = lines.reduce((sum, line) => sum + toNumber(line.lineSubtotal), 0);
+    const taxAmount = lines.reduce((sum, line) => sum + toNumber(line.lineTax), 0);
     const totalAmount = subtotal + taxAmount;
     return { subtotal, taxAmount, totalAmount };
   };
@@ -261,7 +307,11 @@ export default function CreditNoteCreatePage() {
           productCode: line.productCode,
           quantity: line.quantity,
           unitPrice: line.unitPrice,
+          unitCost: line.unitCost,
           taxRate: line.taxRate,
+          lineSubtotal: line.lineSubtotal,
+          lineTax: line.lineTax,
+          lineTotal: line.lineTotal,
           returnToWarehouse: line.returnToWarehouse,
         })),
       };
@@ -437,9 +487,10 @@ export default function CreditNoteCreatePage() {
                       <TableHeader>
                         <TableRow>
                           <TableHead>{t('creditNotes.product', 'Product')}</TableHead>
+                          <TableHead className="text-right">{t('creditNotes.invoiceQty', 'Invoiced Qty')}</TableHead>
                           <TableHead className="text-right">{t('creditNotes.unitPrice', 'Unit Price')}</TableHead>
                           <TableHead className="text-right">{t('creditNotes.taxRate', 'Tax')}</TableHead>
-                          <TableHead className="text-right">{t('creditNotes.qtyToReturn', 'Qty to Return')}</TableHead>
+                          <TableHead className="text-right">{t('creditNotes.qtyToCredit', 'Qty to Credit')}</TableHead>
                           <TableHead>{t('creditNotes.returnToWarehouse', 'Return To')}</TableHead>
                           <TableHead className="text-right">{t('creditNotes.lineTotal', 'Total')}</TableHead>
                         </TableRow>
@@ -451,19 +502,24 @@ export default function CreditNoteCreatePage() {
                               <div className="font-medium">{line.productName}</div>
                               <div className="text-sm text-muted-foreground">{line.productCode}</div>
                             </TableCell>
+                            <TableCell className="text-right font-medium text-muted-foreground">
+                              {toNumber(line.originalQty)}
+                            </TableCell>
                             <TableCell className="text-right">
                               {formatCurrency(line.unitPrice)}
                             </TableCell>
                             <TableCell className="text-right">
-                              {line.taxRate}%
+                              {toNumber(line.taxRate)}%
                             </TableCell>
-                            <TableCell className="w-24">
+                            <TableCell className="w-28">
                               <Input
                                 type="number"
                                 min="0"
+                                max={toNumber(line.originalQty)}
                                 value={line.quantity}
                                 onChange={(e) => handleLineChange(index, 'quantity', e.target.value)}
                                 className="text-right"
+                                placeholder={`Max: ${toNumber(line.originalQty)}`}
                               />
                             </TableCell>
                             <TableCell>

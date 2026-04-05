@@ -306,10 +306,10 @@ export default function DashboardPage() {
                         </div>
                         <div className="min-w-0">
                           <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
-                            {entry.description || entry.referenceNo || 'Journal Entry'}
+                            {entry.description || entry.entryNumber || 'Journal Entry'}
                           </p>
                           <div className="flex items-center gap-2 text-xs text-slate-400">
-                            {entry.referenceNo && <span>{entry.referenceNo}</span>}
+                            {entry.entryNumber && <span>{entry.entryNumber}</span>}
                             {entry.sourceType && (
                               <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700">
                                 {getSourceTypeLabel(entry.sourceType)}

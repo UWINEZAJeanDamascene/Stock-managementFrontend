@@ -110,7 +110,11 @@ const COSTING_METHOD_VALUES = ['fifo', 'weighted', 'wac', 'avg'];
 const TRACKING_TYPE_VALUES = ['none', 'batch', 'serial'];
 const BARCODE_TYPE_VALUES = ['CODE128', 'EAN13', 'EAN8', 'UPC', 'CODE39', 'ITF14', 'QR', 'NONE'];
 
-const getBarcodeTypeLabel = (t: Function, value: string) => t(`products.barcodeTypes.${value}`) || value;
+const getBarcodeTypeLabel = (t: Function, value: string) => {
+  if (!value) return '';
+  // Try exact key, then lowercase key, then fallback to raw value
+  return t(`products.barcodeTypes.${value}`) || t(`products.barcodeTypes.${value.toLowerCase()}`) || value;
+};
 
 // Flatten nested category tree for dropdown display
 const flattenCategories = (cats: Category[], prefix = ''): { _id: string; label: string }[] => {

@@ -9,7 +9,8 @@ import {
   Loader2,
   Calculator,
   Plus,
-  Trash2
+  Trash2,
+  CheckCircle
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
@@ -263,6 +264,20 @@ export default function APPaymentCreatePage() {
       navigate('/ap-payments');
     } catch (error) {
       console.error('Failed to post payment:', error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveAndPost = async () => {
+    if (!id) return;
+    
+    setSaving(true);
+    try {
+      await apPaymentsApi.saveAndPost(id);
+      navigate('/ap-payments');
+    } catch (error) {
+      console.error('Failed to save and post payment:', error);
     } finally {
       setSaving(false);
     }
@@ -528,10 +543,16 @@ export default function APPaymentCreatePage() {
                       {saving ? t('common.saving', 'Saving...') : t('apPayment.saveDraft', 'Save Draft')}
                     </Button>
                     {isEdit && (
-                      <Button type="button" variant="default" onClick={handlePost} disabled={saving}>
-                        <Send className="mr-2 h-4 w-4" />
-                        {t('apPayment.postPayment', 'Post Payment')}
-                      </Button>
+                      <>
+                        <Button type="button" variant="default" onClick={handlePost} disabled={saving}>
+                          <Send className="mr-2 h-4 w-4" />
+                          {t('apPayment.postPayment', 'Post Payment')}
+                        </Button>
+                        <Button type="button" variant="secondary" onClick={handleSaveAndPost} disabled={saving}>
+                          <CheckCircle className="mr-2 h-4 w-4" />
+                          {t('apPayment.saveAndPost', 'Save and Post (No Journal)')}
+                        </Button>
+                      </>
                     )}
                   </div>
                 </CardContent>
