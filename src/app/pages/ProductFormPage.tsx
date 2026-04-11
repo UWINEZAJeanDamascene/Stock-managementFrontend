@@ -421,18 +421,24 @@ export default function ProductFormPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-6 px-4 max-w-5xl overflow-x-hidden">
-        {/* Page Header */}
-        <div className="flex items-center gap-4 mb-6">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/products')} className="dark:text-slate-200 dark:hover:bg-slate-800">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            {t('common.back') || 'Back'}
+      <div className="container mx-auto py-4 sm:py-6 px-3 sm:px-4 max-w-5xl overflow-x-hidden">
+        {/* Page Header - Responsive */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mb-6">
+          {/* Back Button - Full width on mobile, auto on desktop */}
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => navigate('/products')} 
+            className="dark:text-slate-200 dark:hover:bg-slate-800 self-start sm:self-auto -ml-2 sm:ml-0"
+          >
+            <ArrowLeft className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">{t('common.back') || 'Back'}</span>
           </Button>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white leading-tight">
               {isEditMode ? t('products.editProduct') || 'Edit Product' : t('products.newProduct') || 'New Product'}
             </h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
               {isEditMode ? t('products.editSubtitle') || 'Update product information' : t('products.createSubtitle') || 'Add a new product to your inventory'}
             </p>
           </div>

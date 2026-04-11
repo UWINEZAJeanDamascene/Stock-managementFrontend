@@ -192,26 +192,28 @@ export default function SalesDashboardPage() {
 
   return (
     <Layout>
-      <div className="p-6">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
+      <div className="p-4 sm:p-6">
+        {/* Header - Responsive: one row desktop, one column mobile */}
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 mb-6 sm:mb-8">
+          {/* Left: Title */}
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900 dark:text-white leading-tight">
               Sales Dashboard
             </h1>
-            <p className="text-slate-500 dark:text-slate-400 mt-1">
+            <p className="text-sm sm:text-base text-slate-500 dark:text-slate-400 mt-0.5">
               Revenue, collections, and AR overview
             </p>
           </div>
+          {/* Right: Refresh */}
           <Button
             variant="outline"
             size="sm"
             onClick={handleRefresh}
             disabled={refreshing || loading}
-            className="flex items-center gap-2"
+            className="flex items-center gap-1.5 h-8 px-2.5 sm:px-3 self-start sm:self-auto"
           >
-            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-            Refresh
+            <RefreshCw className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            <span className="text-xs sm:text-sm">Refresh</span>
           </Button>
         </div>
 

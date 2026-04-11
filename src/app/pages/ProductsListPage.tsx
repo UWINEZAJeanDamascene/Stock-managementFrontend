@@ -387,30 +387,34 @@ export default function ProductsListPage() {
   console.log('[ProductsListPage] Rendering: main content, products count:', products.length);
   return (
     <Layout>
-      <div className="container mx-auto py-6 px-4 max-w-7xl">
-        {/* Page Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-              {t('products.title') || 'Products'}
-            </h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-              {t('products.subtitle') || 'Manage your product inventory'}
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Button onClick={handleCheckLowStock} variant="outline" size="sm" disabled={actionLoading}>
-              <Bell className="h-4 w-4 mr-2" />
-              {t('products.checkLowStock') || 'Check Low Stock'}
-            </Button>
-            <Button onClick={handleExport} variant="outline" size="sm">
-              <Download className="h-4 w-4 mr-2" />
-              {t('common.export') || 'Export'}
-            </Button>
-            <Button onClick={() => navigate('/products/new')} size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              {t('products.addProduct') || 'New Product'}
-            </Button>
+      <div className="container mx-auto py-4 sm:py-6 px-3 sm:px-4 max-w-7xl">
+        {/* Page Header - Responsive */}
+        <div className="flex flex-col gap-3 mb-6">
+          {/* Title Row */}
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+            <div>
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
+                {t('products.title') || 'Products'}
+              </h1>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+                {t('products.subtitle') || 'Manage your product inventory'}
+              </p>
+            </div>
+            {/* Action Buttons - Icon only on mobile, text on sm+ */}
+            <div className="flex flex-wrap items-center gap-2">
+              <Button onClick={handleCheckLowStock} variant="outline" size="sm" disabled={actionLoading}>
+                <Bell className="h-4 w-4" />
+                <span className="ml-1.5 hidden sm:inline">{t('products.checkLowStock') || 'Check Low Stock'}</span>
+              </Button>
+              <Button onClick={handleExport} variant="outline" size="sm">
+                <Download className="h-4 w-4" />
+                <span className="ml-1.5 hidden sm:inline">{t('common.export') || 'Export'}</span>
+              </Button>
+              <Button onClick={() => navigate('/products/new')} size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                <Plus className="h-4 w-4" />
+                <span className="ml-1.5 hidden sm:inline">{t('products.addProduct') || 'New Product'}</span>
+              </Button>
+            </div>
           </div>
         </div>
 

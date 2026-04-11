@@ -74,6 +74,7 @@ export default function SalesOrderCreatePage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [quotations, setQuotations] = useState<Quotation[]>([]);
+  const [sendEmail, setSendEmail] = useState(false);
   
   const [formData, setFormData] = useState({
     client: '',
@@ -264,7 +265,7 @@ export default function SalesOrderCreatePage() {
         grandTotal,
       };
 
-      const response = await salesOrdersApi.create(payload);
+      const response = await salesOrdersApi.create(payload, sendEmail);
       
       if (response.success) {
         toast.success('Sales order created successfully');
@@ -511,6 +512,19 @@ export default function SalesOrderCreatePage() {
                     <span className="text-slate-900 dark:text-white">
                       {new Intl.NumberFormat('en-US', { style: 'currency', currency: formData.currencyCode || 'RWF' }).format(Number(grandTotal) || 0)}
                     </span>
+                  </div>
+
+                  <div className="flex items-center space-x-2 py-3">
+                    <input
+                      type="checkbox"
+                      id="sendEmail"
+                      checked={sendEmail}
+                      onChange={(e) => setSendEmail(e.target.checked)}
+                      className="h-4 w-4"
+                    />
+                    <Label htmlFor="sendEmail" className="cursor-pointer">
+                      Send email notification to customer
+                    </Label>
                   </div>
 
                   <Button 

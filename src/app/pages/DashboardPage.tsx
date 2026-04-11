@@ -155,71 +155,74 @@ export default function DashboardPage() {
 
   return (
     <Layout>
-      <div className="p-6 min-h-screen bg-slate-50 dark:bg-slate-900">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
-              Executive Dashboard
-            </h1>
-            <p className="text-slate-500 dark:text-slate-400 mt-1">
-              Financial overview for this month
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
+      <div className="p-4 sm:p-6 min-h-screen bg-slate-50 dark:bg-slate-900">
+        {/* Header - One row on desktop, one column on mobile */}
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-6 sm:mb-8">
+          {/* Left: Title + Time */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 flex-1 min-w-0">
+            <div>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900 dark:text-white leading-tight">
+                Executive Dashboard
+              </h1>
+              <p className="text-sm sm:text-base text-slate-500 dark:text-slate-400 mt-0.5">
+                Financial overview for this month
+              </p>
+            </div>
             {lastUpdated && (
-              <span className="text-xs text-slate-400 flex items-center gap-1">
+              <span className="text-xs text-slate-400 flex items-center gap-1 whitespace-nowrap sm:border-l sm:border-slate-300 sm:dark:border-slate-600 sm:pl-4">
                 <Clock className="h-3 w-3" />
-                Updated {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </span>
             )}
+          </div>
+          
+          {/* Right: Quick Actions + Refresh */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Quick Actions */}
+            <Button
+              size="sm"
+              className="bg-purple-600 hover:bg-purple-700 text-white"
+              onClick={() => window.location.href = '/invoices/new'}
+            >
+              <PlusCircle className="h-4 w-4" />
+              <span className="ml-1.5 hidden sm:inline">New Invoice</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.location.href = '/ar-receipts/new'}
+            >
+              <CreditCard className="h-4 w-4" />
+              <span className="ml-1.5 hidden sm:inline">Record Payment</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.location.href = '/dashboard/finance'}
+            >
+              <BarChart3 className="h-4 w-4" />
+              <span className="ml-1.5 hidden sm:inline">Reports</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.location.href = '/clients/new'}
+            >
+              <UserPlus className="h-4 w-4" />
+              <span className="ml-1.5 hidden sm:inline">Add Client</span>
+            </Button>
+            {/* Refresh Button - Last */}
             <Button
               variant="outline"
               size="sm"
               onClick={handleRefresh}
               disabled={refreshing || loading}
-              className="flex items-center gap-2"
+              className="flex items-center gap-1.5 h-8 px-2.5 sm:px-3"
             >
-              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-              Refresh
+              <RefreshCw className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${refreshing ? 'animate-spin' : ''}`} />
+              <span className="text-xs sm:text-sm">Refresh</span>
             </Button>
           </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="flex flex-wrap gap-2 mb-6">
-          <Button
-            size="sm"
-            className="bg-purple-600 hover:bg-purple-700 text-white"
-            onClick={() => window.location.href = '/invoices/new'}
-          >
-            <PlusCircle className="h-4 w-4 mr-1" />
-            New Invoice
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => window.location.href = '/ar-receipts/new'}
-          >
-            <CreditCard className="h-4 w-4 mr-1" />
-            Record Payment
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => window.location.href = '/dashboard/finance'}
-          >
-            <BarChart3 className="h-4 w-4 mr-1" />
-            Reports
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => window.location.href = '/clients/new'}
-          >
-            <UserPlus className="h-4 w-4 mr-1" />
-            Add Client
-          </Button>
         </div>
 
         {/* Error State */}

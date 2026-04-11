@@ -202,17 +202,18 @@ export default function AuditsListPage() {
   return (
     <Layout>
       <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-        <Box sx={{ p: 3 }} className="dark:text-white">
-          {/* Header */}
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Box sx={{ p: { xs: 2, sm: 3 } }} className="dark:text-white">
+          {/* Header - Responsive */}
+          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: { sm: 'space-between' }, alignItems: { xs: 'flex-start', sm: 'center' }, gap: 2, mb: 3 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <ClipboardListIcon size={28} className="dark:text-white" />
-              <Typography variant="h5" component="h1" className="dark:text-white">
+              <ClipboardListIcon size={24} className="dark:text-white flex-shrink-0" />
+              <Typography variant="h5" component="h1" className="dark:text-white text-xl sm:text-2xl">
                 {t('common.stockAudits.title')}
               </Typography>
             </Box>
             <Button
               variant="contained"
+              size="small"
               startIcon={<PlusIcon />}
               onClick={() => navigate('/stock-audits/new')}
             >

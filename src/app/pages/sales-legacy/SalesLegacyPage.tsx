@@ -72,6 +72,7 @@ export default function SalesLegacyPage() {
   const [walkInName, setWalkInName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [sendEmail, setSendEmail] = useState(false);
   const [showCart, setShowCart] = useState(false);
   const [bankAccountId, setBankAccountId] = useState<string>('');
   const [bankAccounts, setBankAccounts] = useState<Array<{_id: string; name: string; accountType: string}>>([]);
@@ -320,7 +321,7 @@ export default function SalesLegacyPage() {
         bankAccountId: (paymentMethod === 'bank_transfer' || paymentMethod === 'cheque' || paymentMethod === 'mobile_money') && bankAccountId ? bankAccountId : undefined
       };
       
-      const response = await salesLegacyApi.createDirectSale(requestData);
+      const response = await salesLegacyApi.createDirectSale(requestData, sendEmail);
       
       if (response.success) {
         toast.success('Sale completed successfully!');
@@ -666,6 +667,19 @@ export default function SalesLegacyPage() {
                   <span className={paymentAmount >= cartCalculations.grandTotal ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
                     {formatCurrency(Math.max(0, paymentAmount - cartCalculations.grandTotal))}
                   </span>
+                </div>
+
+                <div className="flex items-center space-x-2 mt-3">
+                  <input
+                    type="checkbox"
+                    id="sendEmailPOS"
+                    checked={sendEmail}
+                    onChange={(e) => setSendEmail(e.target.checked)}
+                    className="h-4 w-4"
+                  />
+                  <Label htmlFor="sendEmailPOS" className="cursor-pointer">
+                    Send receipt to customer
+                  </Label>
                 </div>
                 
                 <Button

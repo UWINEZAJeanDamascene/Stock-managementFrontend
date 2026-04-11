@@ -132,6 +132,7 @@ export default function PurchaseFormPage() {
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [sendEmail, setSendEmail] = useState(false);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
@@ -449,7 +450,7 @@ export default function PurchaseFormPage() {
       if (isEdit && id) {
         await purchasesApi.update(id, payload);
       } else {
-        await purchasesApi.create(payload);
+        await purchasesApi.create(payload, sendEmail);
       }
 
       navigate('/purchases');
@@ -824,7 +825,20 @@ export default function PurchaseFormPage() {
                   <span className="font-bold text-lg text-slate-900 dark:text-white">{formatCurrency(summary.grandTotal)}</span>
                 </div>
 
-                <div className="space-y-2 pt-4">
+                <div className="flex items-center space-x-2 py-2">
+                  <input
+                    type="checkbox"
+                    id="sendEmailPurchase"
+                    checked={sendEmail}
+                    onChange={(e) => setSendEmail(e.target.checked)}
+                    className="h-4 w-4"
+                  />
+                  <Label htmlFor="sendEmailPurchase" className="cursor-pointer text-sm">
+                    Send email to supplier
+                  </Label>
+                </div>
+
+                <div className="space-y-2 pt-2">
                   <Button className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-200" onClick={handleSave} disabled={saving}>
                     {saving ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />

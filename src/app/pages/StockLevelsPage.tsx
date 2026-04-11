@@ -263,18 +263,19 @@ export default function StockLevelsPage() {
 
   return (
     <Layout>
-      <Box sx={{ p: 3 }} className="min-h-screen bg-slate-50 dark:bg-slate-900">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+      <Box sx={{ p: { xs: 2, sm: 3 } }} className="min-h-screen bg-slate-50 dark:bg-slate-900">
+      {/* Header - Responsive */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
         <div className="flex items-center gap-3">
-          <InventoryIcon className="text-primary" style={{ fontSize: 32 }} />
-          <Typography variant="h5" component="h1" className="text-slate-900 dark:text-white">
+          <InventoryIcon className="text-primary flex-shrink-0" style={{ fontSize: 28 }} />
+          <Typography variant="h5" component="h1" className="text-slate-900 dark:text-white text-xl sm:text-2xl">
             {t('stockLevels.title', 'Stock Levels')}
           </Typography>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="outlined"
+            size="small"
             startIcon={<RefreshIcon />}
             onClick={handleRefresh}
             sx={{
@@ -286,6 +287,7 @@ export default function StockLevelsPage() {
           </Button>
           <Button
             variant="outlined"
+            size="small"
             startIcon={<DownloadIcon />}
             onClick={handleExport}
             sx={{

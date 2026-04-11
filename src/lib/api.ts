@@ -1397,12 +1397,12 @@ export interface PosProduct {
 
 export const salesLegacyApi = {
   // Create direct sale (invoice + payment in one)
-  createDirectSale: (data: SalesLegacyRequest) =>
+  createDirectSale: (data: SalesLegacyRequest, sendEmail?: boolean) =>
     request<{ success: boolean; message: string; data: unknown }>(
       "/sales-legacy/direct-sale",
       {
         method: "POST",
-        body: data,
+        body: { ...data, sendEmail },
       },
     ),
 
@@ -1911,10 +1911,10 @@ export const purchasesApi = {
   },
   getById: (id: string) =>
     request<{ success: boolean; data: unknown }>(`/purchases/${id}`),
-  create: (purchase: unknown) =>
+  create: (purchase: unknown, sendEmail?: boolean) =>
     request<{ success: boolean; data: unknown }>("/purchases", {
       method: "POST",
-      body: purchase,
+      body: { ...purchase, sendEmail },
     }),
   update: (id: string, purchase: unknown) =>
     request<{ success: boolean; data: unknown }>(`/purchases/${id}`, {
@@ -1925,9 +1925,10 @@ export const purchasesApi = {
     request<{ success: boolean; message: string }>(`/purchases/${id}`, {
       method: "DELETE",
     }),
-  receive: (id: string) =>
+  receive: (id: string, sendEmail?: boolean) =>
     request<{ success: boolean; data: unknown }>(`/purchases/${id}/receive`, {
       method: "PUT",
+      body: { sendEmail },
     }),
   recordPayment: (
     id: string,
@@ -1945,15 +1946,16 @@ export const purchasesApi = {
       useCapital?: boolean;
       capitalType?: "owner" | "share";
     },
+    sendEmail?: boolean,
   ) =>
     request<{ success: boolean; data: unknown }>(`/purchases/${id}/payment`, {
       method: "POST",
-      body: data,
+      body: { ...data, sendEmail },
     }),
-  cancel: (id: string, reason?: string) =>
+  cancel: (id: string, reason?: string, sendEmail?: boolean) =>
     request<{ success: boolean; data: unknown }>(`/purchases/${id}/cancel`, {
       method: "PUT",
-      body: { reason },
+      body: { reason, sendEmail },
     }),
   getPDF: (id: string) => {
     const token = localStorage.getItem("token");
@@ -1994,25 +1996,25 @@ export const purchaseOrdersApi = {
       grns?: unknown[];
       message?: string;
     }>(`/stock/advanced/purchase-orders/${id}`),
-  create: (po: unknown) =>
+  create: (po: unknown, sendEmail?: boolean) =>
     request<{ success: boolean; data: unknown }>(
       "/stock/advanced/purchase-orders",
-      { method: "POST", body: po },
+      { method: "POST", body: { ...po, sendEmail } },
     ),
   update: (id: string, po: unknown) =>
     request<{ success: boolean; data: unknown }>(
       `/stock/advanced/purchase-orders/${id}`,
       { method: "PUT", body: po },
     ),
-  approve: (id: string) =>
+  approve: (id: string, sendEmail?: boolean) =>
     request<{ success: boolean; data: unknown }>(
       `/stock/advanced/purchase-orders/${id}/approve`,
-      { method: "POST" },
+      { method: "POST", body: { sendEmail } },
     ),
-  cancel: (id: string) =>
+  cancel: (id: string, sendEmail?: boolean) =>
     request<{ success: boolean; data: unknown }>(
       `/stock/advanced/purchase-orders/${id}/cancel`,
-      { method: "POST" },
+      { method: "POST", body: { sendEmail } },
     ),
   recordPayment: (
     id: string,
@@ -2065,10 +2067,10 @@ export const grnApi = {
       method: "POST",
       body: data,
     }),
-  confirm: (id: string) =>
+  confirm: (id: string, sendEmail?: boolean) =>
     request<{ success: boolean; data: unknown }>(
       `/stock/advanced/grn/${id}/confirm`,
-      { method: "POST" },
+      { method: "POST", body: { sendEmail } },
     ),
   update: (id: string, data: {
     referenceNo?: string;
@@ -8917,10 +8919,10 @@ export const salesOrdersApi = {
   },
   getById: (id: string) =>
     request<{ success: boolean; data: unknown }>(`/sales-orders/${id}`),
-  create: (data: unknown) =>
+  create: (data: unknown, sendEmail?: boolean) =>
     request<{ success: boolean; data: unknown }>("/sales-orders", {
       method: "POST",
-      body: data,
+      body: { ...data, sendEmail },
     }),
   update: (id: string, data: unknown) =>
     request<{ success: boolean; data: unknown }>(`/sales-orders/${id}`, {
@@ -8931,15 +8933,15 @@ export const salesOrdersApi = {
     request<{ success: boolean; message: string }>(`/sales-orders/${id}`, {
       method: "DELETE",
     }),
-  confirm: (id: string) =>
+  confirm: (id: string, sendEmail?: boolean) =>
     request<{ success: boolean; data: unknown }>(
       `/sales-orders/${id}/confirm`,
-      { method: "POST" },
+      { method: "POST", body: { sendEmail } },
     ),
-  cancel: (id: string, reason?: string) =>
+  cancel: (id: string, reason?: string, sendEmail?: boolean) =>
     request<{ success: boolean; data: unknown }>(`/sales-orders/${id}/cancel`, {
       method: "POST",
-      body: { reason },
+      body: { reason, sendEmail },
     }),
   getWorkflow: (id: string) =>
     request<{ success: boolean; data: unknown }>(

@@ -70,7 +70,11 @@ interface Purchase {
     _id: string;
     name: string;
     code?: string;
-    contact?: string;
+    contact?: string | {
+      contactPerson?: string;
+      email?: string;
+      phone?: string;
+    };
     type?: string;
     taxId?: string;
   };
@@ -109,6 +113,7 @@ export default function PurchaseDetailPage() {
   const { id } = useParams();
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [sendEmail, setSendEmail] = useState(false);
   const [purchase, setPurchase] = useState<Purchase | null>(null);
 
   // Payment form state
@@ -161,7 +166,7 @@ export default function PurchaseDetailPage() {
     if (!id) return;
     setActionLoading(true);
     try {
-      await purchasesApi.receive(id);
+      await purchasesApi.receive(id, sendEmail);
       fetchPurchase();
     } catch (error) {
       console.error('Failed to receive purchase:', error);
@@ -174,7 +179,7 @@ export default function PurchaseDetailPage() {
     if (!id) return;
     setActionLoading(true);
     try {
-      await purchasesApi.cancel(id);
+      await purchasesApi.cancel(id, undefined, sendEmail);
       fetchPurchase();
     } catch (error) {
       console.error('Failed to cancel purchase:', error);
@@ -301,92 +306,102 @@ export default function PurchaseDetailPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-6 min-h-screen bg-slate-50 dark:bg-slate-900">
+      <div className="container mx-auto py-4 sm:py-6 px-3 sm:px-4 min-h-screen bg-slate-50 dark:bg-slate-900">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
-          <Button variant="ghost" onClick={() => navigate('/purchases')}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            {t('common.back', 'Back')}
+        <div className="flex items-center gap-2 mb-4 sm:mb-6">
+          <Button variant="ghost" size="sm" onClick={() => navigate('/purchases')} className="px-2">
+            <ArrowLeft className="h-4 w-4" />
+            <span className="hidden sm:inline ml-2">{t('common.back', 'Back')}</span>
           </Button>
         </div>
 
         {/* Document Header */}
-        <div className="bg-card dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6 mb-6">
-          <div className="flex justify-between items-start">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <FileText className="h-8 w-8 text-primary" />
-                <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{purchase.purchaseNumber || 'N/A'}</h1>
+        <div className="bg-card dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4 sm:p-6 mb-6">
+          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4">
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-6 w-6 sm:h-8 sm:w-8 text-primary flex-shrink-0" />
+                  <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-slate-900 dark:text-white break-all">{purchase.purchaseNumber || 'N/A'}</h1>
+                </div>
                 {getStatusBadge(purchase.status)}
               </div>
-              <div className="grid grid-cols-2 gap-4 mt-4 text-sm">
-                <div>
-                  <p className="text-muted-foreground dark:text-slate-400">
-                    {t('purchases.detail.supplier', 'Supplier')}
-                  </p>
-                  <p className="font-medium dark:text-slate-200">
-                    {typeof purchase.supplier?.name === 'string' ? purchase.supplier.name : purchase.supplierName || '-'}
-                  </p>
-                  {purchase.supplier?.contact && typeof purchase.supplier.contact === 'object' && purchase.supplier.contact.contactPerson && (
-                    <p className="text-muted-foreground dark:text-slate-400">{purchase.supplier.contact.contactPerson}</p>
-                  )}
-                  {purchase.supplier?.contact && typeof purchase.supplier.contact === 'string' && (
-                    <p className="text-muted-foreground dark:text-slate-400">{purchase.supplier.contact}</p>
-                  )}
-                  {purchase.supplier?.contact && typeof purchase.supplier.contact === 'object' && purchase.supplier.contact.email && (
-                    <p className="text-muted-foreground dark:text-slate-400">{purchase.supplier.contact.email}</p>
-                  )}
-                  {purchase.supplier?.contact && typeof purchase.supplier.contact === 'object' && purchase.supplier.contact.phone && (
-                    <p className="text-muted-foreground dark:text-slate-400">{purchase.supplier.contact.phone}</p>
-                  )}
-                  {purchase.supplierTin && (
-                    <p className="text-muted-foreground dark:text-slate-400">TIN: {purchase.supplierTin}</p>
-                  )}
-                  {purchase.supplierAddress && (
-                    <p className="text-muted-foreground dark:text-slate-400">{purchase.supplierAddress}</p>
-                  )}
-                </div>
-                <div>
-                  <p className="text-muted-foreground dark:text-slate-400">
-                    {t('purchases.detail.purchaseDate', 'Purchase Date')}
-                  </p>
-                  <p className="font-medium dark:text-slate-200">{formatDate(purchase.purchaseDate)}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground dark:text-slate-400">
-                    {t('purchases.detail.expectedDelivery', 'Expected Delivery')}
-                  </p>
-                  <p className="font-medium dark:text-slate-200">{formatDate(purchase.expectedDeliveryDate)}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground dark:text-slate-400">
-                    {t('purchases.detail.paymentTerms', 'Payment Terms')}
-                  </p>
-                  <p className="font-medium dark:text-slate-200">{formatPaymentMethod(purchase.paymentTerms || '')}</p>
-                </div>
-                {purchase.supplierInvoiceNumber && (
-                  <div>
-                    <p className="text-muted-foreground dark:text-slate-400">
-                      {t('purchases.detail.supplierInvoice', 'Supplier Invoice #')}
+              <div className="flex flex-col sm:flex-row gap-6 sm:gap-8 mt-4 text-sm">
+                {/* Left Column - Supplier Info */}
+                <div className="flex-1">
+                  <div className="mb-4">
+                    <p className="text-muted-foreground dark:text-slate-400 text-xs sm:text-sm">
+                      {t('purchases.detail.supplier', 'Supplier')}
                     </p>
-                    <p className="font-medium dark:text-slate-200">{purchase.supplierInvoiceNumber}</p>
+                    <p className="font-medium dark:text-slate-200">
+                      {typeof purchase.supplier?.name === 'string' ? purchase.supplier.name : purchase.supplierName || '-'}
+                    </p>
+                    {(() => {
+                      const contact = purchase.supplier?.contact;
+                      if (!contact) return null;
+                      if (typeof contact === 'string') {
+                        return <p className="text-muted-foreground dark:text-slate-400 text-xs">{contact}</p>;
+                      }
+                      return (
+                        <>
+                          {contact.contactPerson && <p className="text-muted-foreground dark:text-slate-400 text-xs">{contact.contactPerson}</p>}
+                          {contact.email && <p className="text-muted-foreground dark:text-slate-400 text-xs">{contact.email}</p>}
+                          {contact.phone && <p className="text-muted-foreground dark:text-slate-400 text-xs">{contact.phone}</p>}
+                        </>
+                      );
+                    })()}
+                    {purchase.supplierTin && (
+                      <p className="text-muted-foreground dark:text-slate-400 text-xs">TIN: {purchase.supplierTin}</p>
+                    )}
+                    {purchase.supplierAddress && (
+                      <p className="text-muted-foreground dark:text-slate-400 text-xs">{purchase.supplierAddress}</p>
+                    )}
                   </div>
-                )}
-                <div>
-                  <p className="text-muted-foreground dark:text-slate-400">
-                    {t('purchases.detail.currency', 'Currency')}
-                  </p>
-                  <p className="font-medium dark:text-slate-200">{purchase.currency}</p>
+                </div>
+                {/* Right Column - Purchase Details */}
+                <div className="flex-1">
+                  <div className="mb-4">
+                    <p className="text-muted-foreground dark:text-slate-400 text-xs sm:text-sm">
+                      {t('purchases.detail.purchaseDate', 'Purchase Date')}
+                    </p>
+                    <p className="font-medium dark:text-slate-200">{formatDate(purchase.purchaseDate)}</p>
+                  </div>
+                  <div className="mb-4">
+                    <p className="text-muted-foreground dark:text-slate-400 text-xs sm:text-sm">
+                      {t('purchases.detail.expectedDelivery', 'Expected Delivery')}
+                    </p>
+                    <p className="font-medium dark:text-slate-200">{formatDate(purchase.expectedDeliveryDate)}</p>
+                  </div>
+                  <div className="mb-4">
+                    <p className="text-muted-foreground dark:text-slate-400 text-xs sm:text-sm">
+                      {t('purchases.detail.paymentTerms', 'Payment Terms')}
+                    </p>
+                    <p className="font-medium dark:text-slate-200">{formatPaymentMethod(purchase.paymentTerms || '')}</p>
+                  </div>
+                  {purchase.supplierInvoiceNumber && (
+                    <div className="mb-4">
+                      <p className="text-muted-foreground dark:text-slate-400 text-xs sm:text-sm">
+                        {t('purchases.detail.supplierInvoice', 'Supplier Invoice #')}
+                      </p>
+                      <p className="font-medium dark:text-slate-200">{purchase.supplierInvoiceNumber}</p>
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-muted-foreground dark:text-slate-400 text-xs sm:text-sm">
+                      {t('purchases.detail.currency', 'Currency')}
+                    </p>
+                    <p className="font-medium dark:text-slate-200">{purchase.currency}</p>
+                  </div>
                 </div>
               </div>
             </div>
-            <div className="text-right">
-              <p className="text-muted-foreground text-sm dark:text-slate-400">
+            <div className="lg:text-right flex-shrink-0">
+              <p className="text-muted-foreground text-xs sm:text-sm dark:text-slate-400">
                 {t('purchases.detail.total', 'Grand Total')}
               </p>
-              <p className="text-2xl font-bold text-slate-900 dark:text-white">{formatCurrency(purchase.grandTotal)}</p>
+              <p className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">{formatCurrency(purchase.grandTotal)}</p>
               {parseFloat(purchase.balance) > 0 && (
-                <p className="text-sm text-red-600 dark:text-red-400">
+                <p className="text-xs sm:text-sm text-red-600 dark:text-red-400">
                   {t('purchases.detail.balance', 'Balance')}: {formatCurrency(purchase.balance)}
                 </p>
               )}
@@ -394,43 +409,60 @@ export default function PurchaseDetailPage() {
           </div>
 
           {/* Action Buttons */}
-          <div className="mt-6 pt-6 border-t dark:border-slate-600 flex gap-2 flex-wrap">
-            {purchase.status === 'draft' && (
+          <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t dark:border-slate-600">
+            <div className="flex items-center gap-2 mb-3">
+              <input
+                type="checkbox"
+                id="sendEmailPurchase"
+                checked={sendEmail}
+                onChange={(e) => setSendEmail(e.target.checked)}
+                className="h-4 w-4"
+              />
+              <Label htmlFor="sendEmailPurchase" className="cursor-pointer text-sm">
+                Send email notification to supplier
+              </Label>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {purchase.status === 'draft' && (
               <>
-                <Button onClick={handleReceive} disabled={actionLoading}>
+                <Button size="sm" onClick={handleReceive} disabled={actionLoading}>
                   {actionLoading ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="mr-1 h-4 w-4 animate-spin" />
                   ) : (
-                    <CheckCircle className="mr-2 h-4 w-4" />
+                    <CheckCircle className="mr-1 h-4 w-4" />
                   )}
-                  {t('purchases.detail.receive', 'Receive Stock')}
+                  <span className="hidden sm:inline">{t('purchases.detail.receive', 'Receive Stock')}</span>
+                  <span className="sm:hidden">{t('purchases.detail.receive', 'Receive')}</span>
                 </Button>
-                <Button variant="destructive" onClick={handleCancel} disabled={actionLoading}>
-                  <XCircle className="mr-2 h-4 w-4" />
-                  {t('purchases.detail.cancel', 'Cancel')}
+                <Button size="sm" variant="destructive" onClick={handleCancel} disabled={actionLoading}>
+                  <XCircle className="mr-1 h-4 w-4" />
+                  <span className="hidden sm:inline">{t('purchases.detail.cancel', 'Cancel')}</span>
+                  <span className="sm:hidden">{t('purchases.detail.cancel', 'Cancel')}</span>
                 </Button>
-                <Button variant="outline" onClick={() => navigate(`/purchases/${id}/edit`)}>
+                <Button size="sm" variant="outline" onClick={() => navigate(`/purchases/${id}/edit`)}>
                   {t('common.edit', 'Edit')}
                 </Button>
               </>
             )}
             {(purchase.status === 'received' || purchase.status === 'partial' || purchase.status === 'ordered') &&
               parseFloat(purchase.balance) > 0 && (
-                <Button onClick={handleShowPaymentForm} disabled={actionLoading}>
-                  <DollarSign className="mr-2 h-4 w-4" />
-                  {t('purchases.detail.recordPayment', 'Record Payment')}
+                <Button size="sm" onClick={handleShowPaymentForm} disabled={actionLoading}>
+                  <DollarSign className="mr-1 h-4 w-4" />
+                  <span className="hidden sm:inline">{t('purchases.detail.recordPayment', 'Record Payment')}</span>
+                  <span className="sm:hidden">{t('purchases.detail.recordPayment', 'Payment')}</span>
                 </Button>
               )}
+            </div>
           </div>
         </div>
 
         {/* Inline Payment Form */}
         {showPaymentForm && (
           <Card className="mb-6 dark:bg-slate-800">
-            <CardHeader>
-              <CardTitle className="text-slate-900 dark:text-white">{t('purchases.detail.recordPayment', 'Record Payment')}</CardTitle>
+            <CardHeader className="px-4 sm:px-6">
+              <CardTitle className="text-slate-900 dark:text-white text-base sm:text-lg">{t('purchases.detail.recordPayment', 'Record Payment')}</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 px-4 sm:px-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label className="text-slate-900 dark:text-white">{t('purchases.payment.amount', 'Amount')} *</Label>
@@ -495,16 +527,17 @@ export default function PurchaseDetailPage() {
                   rows={2}
                 />
               </div>
-              <div className="flex gap-2">
-                <Button onClick={handleRecordPayment} disabled={paymentLoading || !paymentAmount}>
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" onClick={handleRecordPayment} disabled={paymentLoading || !paymentAmount}>
                   {paymentLoading ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="mr-1 h-4 w-4 animate-spin" />
                   ) : (
-                    <DollarSign className="mr-2 h-4 w-4" />
+                    <DollarSign className="mr-1 h-4 w-4" />
                   )}
-                  {t('purchases.payment.submit', 'Submit Payment')}
+                  <span className="hidden sm:inline">{t('purchases.payment.submit', 'Submit Payment')}</span>
+                  <span className="sm:hidden">{t('purchases.payment.submit', 'Submit')}</span>
                 </Button>
-                <Button variant="outline" onClick={() => setShowPaymentForm(false)}>
+                <Button size="sm" variant="outline" onClick={() => setShowPaymentForm(false)}>
                   {t('common.cancel', 'Cancel')}
                 </Button>
               </div>
@@ -514,11 +547,11 @@ export default function PurchaseDetailPage() {
 
         {/* Tabs */}
         <Tabs defaultValue="details" className="w-full">
-          <TabsList className="dark:bg-slate-800">
-            <TabsTrigger value="details" className="dark:text-slate-200 dark:data-[state=active]:bg-slate-700">
+          <TabsList className="dark:bg-slate-800 w-full flex overflow-x-auto">
+            <TabsTrigger value="details" className="dark:text-slate-200 dark:data-[state=active]:bg-slate-700 flex-shrink-0">
               {t('purchases.detail.tabs.details', 'Items')}
             </TabsTrigger>
-            <TabsTrigger value="payments" className="dark:text-slate-200 dark:data-[state=active]:bg-slate-700">
+            <TabsTrigger value="payments" className="dark:text-slate-200 dark:data-[state=active]:bg-slate-700 flex-shrink-0">
               {t('purchases.detail.tabs.payments', 'Payments')}
               {purchase.payments.length > 0 && (
                 <Badge variant="secondary" className="ml-2">
@@ -530,48 +563,50 @@ export default function PurchaseDetailPage() {
 
           <TabsContent value="details" className="mt-4">
             <Card className="dark:bg-slate-800">
-              <CardHeader>
-                <CardTitle className="text-slate-900 dark:text-white">{t('purchases.detail.lineItems', 'Line Items')}</CardTitle>
+              <CardHeader className="px-4 sm:px-6">
+                <CardTitle className="text-slate-900 dark:text-white text-base sm:text-lg">{t('purchases.detail.lineItems', 'Line Items')}</CardTitle>
               </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow className="dark:bg-slate-700">
-                      <TableHead className="dark:text-white">{t('purchases.detail.product', 'Product')}</TableHead>
-                      <TableHead className="text-right dark:text-white">
-                        {t('purchases.detail.qty', 'Qty')}
-                      </TableHead>
-                      <TableHead className="text-right dark:text-white">
-                        {t('purchases.detail.unitCost', 'Unit Cost')}
-                      </TableHead>
-                      <TableHead className="text-right dark:text-white">
-                        {t('purchases.detail.tax', 'Tax')}
-                      </TableHead>
-                      <TableHead className="text-right dark:text-white">
-                        {t('purchases.detail.total', 'Total')}
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {purchase.items?.map((item, idx) => (
-                      <TableRow key={idx} className="dark:hover:bg-slate-700/50">
-                        <TableCell>
-                          <p className="font-medium dark:text-slate-200">{typeof item.product?.name === 'string' ? item.product.name : '-'}</p>
-                          <p className="text-sm text-muted-foreground dark:text-slate-400">{typeof item.product?.sku === 'string' ? item.product.sku : ''}</p>
-                        </TableCell>
-                        <TableCell className="text-right dark:text-slate-300">{item.quantity}</TableCell>
-                        <TableCell className="text-right dark:text-slate-300">{formatCurrency(item.unitCost)}</TableCell>
-                        <TableCell className="text-right dark:text-slate-300">{formatCurrency(item.taxAmount)}</TableCell>
-                        <TableCell className="text-right font-medium dark:text-slate-200">
-                          {formatCurrency(item.totalWithTax)}
-                        </TableCell>
+              <CardContent className="px-2 sm:px-6">
+                <div className="overflow-x-auto -mx-2 sm:-mx-6">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="dark:bg-slate-700">
+                        <TableHead className="dark:text-white whitespace-nowrap">{t('purchases.detail.product', 'Product')}</TableHead>
+                        <TableHead className="text-right dark:text-white whitespace-nowrap">
+                          {t('purchases.detail.qty', 'Qty')}
+                        </TableHead>
+                        <TableHead className="text-right dark:text-white whitespace-nowrap hidden sm:table-cell">
+                          {t('purchases.detail.unitCost', 'Unit Cost')}
+                        </TableHead>
+                        <TableHead className="text-right dark:text-white whitespace-nowrap hidden sm:table-cell">
+                          {t('purchases.detail.tax', 'Tax')}
+                        </TableHead>
+                        <TableHead className="text-right dark:text-white whitespace-nowrap">
+                          {t('purchases.detail.total', 'Total')}
+                        </TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {purchase.items?.map((item, idx) => (
+                        <TableRow key={idx} className="dark:hover:bg-slate-700/50">
+                          <TableCell className="min-w-[150px]">
+                            <p className="font-medium dark:text-slate-200 text-sm sm:text-base">{typeof item.product?.name === 'string' ? item.product.name : '-'}</p>
+                            <p className="text-xs sm:text-sm text-muted-foreground dark:text-slate-400">{typeof item.product?.sku === 'string' ? item.product.sku : ''}</p>
+                          </TableCell>
+                          <TableCell className="text-right dark:text-slate-300 whitespace-nowrap">{item.quantity}</TableCell>
+                          <TableCell className="text-right dark:text-slate-300 whitespace-nowrap hidden sm:table-cell">{formatCurrency(item.unitCost)}</TableCell>
+                          <TableCell className="text-right dark:text-slate-300 whitespace-nowrap hidden sm:table-cell">{formatCurrency(item.taxAmount)}</TableCell>
+                          <TableCell className="text-right font-medium dark:text-slate-200 whitespace-nowrap">
+                            {formatCurrency(item.totalWithTax)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
 
                 {/* Summary */}
-                <div className="mt-4 pt-4 border-t dark:border-slate-600 flex justify-end gap-8">
+                <div className="mt-4 pt-4 border-t dark:border-slate-600 flex flex-wrap justify-end gap-4 sm:gap-8">
                   <div className="text-right">
                     <p className="text-muted-foreground dark:text-slate-400">
                       {t('purchases.detail.subtotal', 'Subtotal')}
@@ -612,12 +647,12 @@ export default function PurchaseDetailPage() {
 
           <TabsContent value="payments" className="mt-4">
             <Card className="dark:bg-slate-800">
-              <CardHeader>
-                <CardTitle className="text-slate-900 dark:text-white">
+              <CardHeader className="px-4 sm:px-6">
+                <CardTitle className="text-slate-900 dark:text-white text-base sm:text-lg">
                   {t('purchases.detail.paymentHistory', 'Payment History')}
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="px-2 sm:px-6">
                 {!purchase.payments || purchase.payments.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground dark:text-slate-400">
                     <DollarSign className="mx-auto h-8 w-8 mb-2" />
@@ -626,36 +661,38 @@ export default function PurchaseDetailPage() {
                     </p>
                   </div>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="dark:bg-slate-700">
-                        <TableHead className="dark:text-white">{t('purchases.detail.paidDate', 'Date')}</TableHead>
-                        <TableHead className="dark:text-white">{t('purchases.detail.method', 'Method')}</TableHead>
-                        <TableHead className="dark:text-white">{t('purchases.detail.reference', 'Reference')}</TableHead>
-                        <TableHead className="text-right dark:text-white">
-                          {t('purchases.detail.amount', 'Amount')}
-                        </TableHead>
-                        <TableHead className="dark:text-white">{t('purchases.detail.recordedBy', 'Recorded By')}</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {purchase.payments.map((payment, idx) => (
-                        <TableRow key={idx} className="dark:hover:bg-slate-700/50">
-                          <TableCell className="dark:text-slate-300">{formatDate(payment.paidDate)}</TableCell>
-                          <TableCell className="dark:text-slate-300">{formatPaymentMethod(payment.paymentMethod)}</TableCell>
-                          <TableCell className="dark:text-slate-300">{payment.reference || '-'}</TableCell>
-                          <TableCell className="text-right font-medium dark:text-slate-200">
-                            {formatCurrency(payment.amount)}
-                          </TableCell>
-                          <TableCell className="dark:text-slate-300">{payment.recordedBy?.name || '-'}</TableCell>
+                  <div className="overflow-x-auto -mx-2 sm:-mx-6">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="dark:bg-slate-700">
+                          <TableHead className="dark:text-white whitespace-nowrap">{t('purchases.detail.paidDate', 'Date')}</TableHead>
+                          <TableHead className="dark:text-white whitespace-nowrap">{t('purchases.detail.method', 'Method')}</TableHead>
+                          <TableHead className="dark:text-white whitespace-nowrap hidden sm:table-cell">{t('purchases.detail.reference', 'Reference')}</TableHead>
+                          <TableHead className="text-right dark:text-white whitespace-nowrap">
+                            {t('purchases.detail.amount', 'Amount')}
+                          </TableHead>
+                          <TableHead className="dark:text-white whitespace-nowrap hidden md:table-cell">{t('purchases.detail.recordedBy', 'Recorded By')}</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {purchase.payments.map((payment, idx) => (
+                          <TableRow key={idx} className="dark:hover:bg-slate-700/50">
+                            <TableCell className="dark:text-slate-300 whitespace-nowrap">{formatDate(payment.paidDate)}</TableCell>
+                            <TableCell className="dark:text-slate-300 whitespace-nowrap">{formatPaymentMethod(payment.paymentMethod)}</TableCell>
+                            <TableCell className="dark:text-slate-300 whitespace-nowrap hidden sm:table-cell">{payment.reference || '-'}</TableCell>
+                            <TableCell className="text-right font-medium dark:text-slate-200 whitespace-nowrap">
+                              {formatCurrency(payment.amount)}
+                            </TableCell>
+                            <TableCell className="dark:text-slate-300 whitespace-nowrap hidden md:table-cell">{payment.recordedBy?.name || '-'}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 )}
 
                 {/* Payment Summary */}
-                <div className="mt-4 pt-4 border-t dark:border-slate-600 flex justify-end gap-8">
+                <div className="mt-4 pt-4 border-t dark:border-slate-600 flex flex-wrap justify-end gap-4 sm:gap-8">
                   <div className="text-right">
                     <p className="text-muted-foreground dark:text-slate-400">
                       {t('purchases.detail.totalPaid', 'Total Paid')}

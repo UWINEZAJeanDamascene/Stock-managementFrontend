@@ -90,6 +90,7 @@ export default function PurchaseOrderFormPage() {
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [sendEmail, setSendEmail] = useState(false);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -349,7 +350,12 @@ export default function PurchaseOrderFormPage() {
 
       // If submit for approval, call the approve endpoint separately
       if (submitForApproval && savedPoId) {
-        await purchaseOrdersApi.approve(savedPoId);
+        await purchaseOrdersApi.approve(savedPoId, sendEmail);
+      }
+
+      // If saving as draft with email option, send email (creates as approved)
+      if (!submitForApproval && sendEmail && savedPoId && !isEdit) {
+        await purchaseOrdersApi.approve(savedPoId, true);
       }
 
       navigate('/purchase-orders');
@@ -677,6 +683,18 @@ export default function PurchaseOrderFormPage() {
                 </div>
 
                 <div className="space-y-2 pt-4">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="sendEmail"
+                      checked={sendEmail}
+                      onChange={(e) => setSendEmail(e.target.checked)}
+                      className="h-4 w-4 rounded border-gray-300"
+                    />
+                    <Label htmlFor="sendEmail" className="text-sm text-muted-foreground dark:text-slate-400 cursor-pointer">
+                      {t('purchase.form.sendEmail', 'Send email notification to supplier')}
+                    </Label>
+                  </div>
                   <Button 
                     className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-200"
                     onClick={() => handleSave(false)}

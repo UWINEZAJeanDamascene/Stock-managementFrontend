@@ -296,27 +296,28 @@ export default function StockMovementsPage() {
   return (
     <Layout>
       <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-        <Box sx={{ p: 3 }} className="dark:text-white">
-          {/* Header */}
-          <div className="flex justify-between items-center mb-6">
+        <Box sx={{ p: { xs: 2, sm: 3 } }} className="dark:text-white">
+          {/* Header - Responsive */}
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
             <div className="flex items-center gap-3">
-              <SwapVertIcon className="text-primary" style={{ fontSize: 32 }} />
-              <Typography variant="h5" component="h1" className="dark:text-white">
+              <SwapVertIcon className="text-primary flex-shrink-0" style={{ fontSize: 28 }} />
+              <Typography variant="h5" component="h1" className="dark:text-white text-xl sm:text-2xl">
                 {t('stockMovements.title', 'Stock Movements')}
               </Typography>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Button
                 variant="contained"
+                size="small"
                 color="primary"
                 onClick={() => setShowAdjustmentDialog(true)}
                 startIcon={<AddIcon />}
-                sx={{ mr: 1 }}
               >
                 {t('stockMovements.adjustStock', 'Adjust Stock')}
               </Button>
               <Button
                 variant="outlined"
+                size="small"
                 startIcon={<DownloadIcon />}
                 onClick={handleExport}
                 sx={{

@@ -20,6 +20,7 @@ import { Button } from '@/app/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { Badge } from '@/app/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs';
+import { Label } from '@/app/components/ui/label';
 import { toast } from 'sonner';
 
 // Helper to convert MongoDB Decimal128 to number
@@ -97,6 +98,7 @@ export default function SalesOrderDetailPage() {
   const [loading, setLoading] = useState(true);
   const [order, setOrder] = useState<SalesOrder | null>(null);
   const [workflow, setWorkflow] = useState<any>(null);
+  const [sendEmail, setSendEmail] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -131,7 +133,7 @@ export default function SalesOrderDetailPage() {
     if (!confirm('Are you sure you want to confirm this sales order?')) return;
     
     try {
-      const response = await salesOrdersApi.confirm(id!);
+      const response = await salesOrdersApi.confirm(id!, sendEmail);
       if (response.success) {
         toast.success('Sales order confirmed successfully');
         fetchSalesOrder();
@@ -146,7 +148,7 @@ export default function SalesOrderDetailPage() {
     if (!confirm('Are you sure you want to cancel this sales order?')) return;
     
     try {
-      const response = await salesOrdersApi.cancel(id!, 'Cancelled by user');
+      const response = await salesOrdersApi.cancel(id!, 'Cancelled by user', sendEmail);
       if (response.success) {
         toast.success('Sales order cancelled successfully');
         fetchSalesOrder();
@@ -227,6 +229,18 @@ export default function SalesOrderDetailPage() {
                   <Edit className="h-4 w-4 mr-2" />
                   Edit
                 </Button>
+                <div className="flex items-center gap-2 border rounded px-3">
+                  <input
+                    type="checkbox"
+                    id="sendEmailSO"
+                    checked={sendEmail}
+                    onChange={(e) => setSendEmail(e.target.checked)}
+                    className="h-4 w-4"
+                  />
+                  <Label htmlFor="sendEmailSO" className="text-sm cursor-pointer">
+                    Email
+                  </Label>
+                </div>
                 <Button onClick={handleConfirm}>
                   <CheckCircle className="h-4 w-4 mr-2" />
                   Confirm

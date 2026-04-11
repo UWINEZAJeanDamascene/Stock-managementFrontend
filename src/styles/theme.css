@@ -124,6 +124,16 @@
 
   body {
     @apply bg-background text-foreground;
+    /* Prevent the browser (document) from scrolling independently of the app layout.
+       The app uses an internal scroll area (Layout.tsx) so the body should not scroll. */
+    overflow: hidden;
+  }
+
+  /* Ensure the root elements occupy full height so child elements using h-screen
+     and flex layout can correctly size to the viewport. This avoids double
+     scrollbars (document + app). */
+  html, body, #root {
+    height: 100%;
   }
 
   /**

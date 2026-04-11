@@ -233,21 +233,26 @@ export default function InvoicesListPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-6">
-        {/* Page Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold dark:text-gray-100">{t('invoice.title', 'Invoices')}</h1>
-            <p className="text-muted-foreground dark:text-gray-400">{t('invoice.subtitle', 'Manage customer invoices')}</p>
+      <div className="container mx-auto py-4 sm:py-6 px-3 sm:px-0">
+        {/* Page Header - Responsive */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+          <div className="flex items-center gap-3">
+            <FileText className="h-6 w-6 text-primary flex-shrink-0" />
+            <div>
+              <h1 className="text-xl sm:text-2xl font-bold dark:text-gray-100">{t('invoice.title', 'Invoices')}</h1>
+              <p className="text-muted-foreground dark:text-gray-400 text-sm mt-0.5">{t('invoice.subtitle', 'Manage customer invoices')}</p>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={handleExport}>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button variant="outline" size="sm" onClick={handleExport}>
               <Download className="mr-2 h-4 w-4" />
-              {t('common.export', 'Export')}
+              <span className="hidden sm:inline">{t('common.export', 'Export')}</span>
+              <span className="sm:hidden">{t('common.export', 'Export')}</span>
             </Button>
-            <Button onClick={() => navigate('/invoices/new')}>
+            <Button size="sm" onClick={() => navigate('/invoices/new')}>
               <Plus className="mr-2 h-4 w-4" />
-              {t('invoice.newInvoice', 'New Invoice')}
+              <span className="hidden sm:inline">{t('invoice.newInvoice', 'New Invoice')}</span>
+              <span className="sm:hidden">{t('invoice.newInvoice', 'New')}</span>
             </Button>
           </div>
         </div>

@@ -237,18 +237,19 @@ export default function TransfersListPage() {
   return (
     <Layout>
       <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-        <Box sx={{ p: 3 }}>
-          {/* Header */}
-          <div className="flex justify-between items-center mb-6">
+        <Box sx={{ p: { xs: 2, sm: 3 } }}>
+          {/* Header - Responsive */}
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
             <div className="flex items-center gap-3">
-              <TruckIcon className="text-primary" style={{ fontSize: 32 }} />
-              <Typography variant="h5" component="h1" sx={{ color: dark ? '#f1f5f9' : '#1e293b' }}>
+              <TruckIcon className="text-primary flex-shrink-0" style={{ fontSize: 28 }} />
+              <Typography variant="h5" component="h1" sx={{ color: dark ? '#f1f5f9' : '#1e293b' }} className="text-xl sm:text-2xl">
                 {t('transfers.title', 'Stock Transfers')}
               </Typography>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Button
                 variant="outlined"
+                size="small"
                 startIcon={<DownloadIcon />}
                 onClick={handleExport}
                 sx={{ borderColor: dark ? '#475569' : '#cbd5e1', color: dark ? '#e2e8f0' : '#475569' }}
@@ -257,6 +258,7 @@ export default function TransfersListPage() {
               </Button>
               <Button
                 variant="contained"
+                size="small"
                 startIcon={<PlusIcon />}
                 onClick={() => navigate('/stock-transfers/new')}
               >

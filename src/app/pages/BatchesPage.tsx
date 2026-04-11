@@ -221,14 +221,15 @@ export default function BatchesPage() {
   return (
     <Layout>
       <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-        <Box sx={{ p: 3 }} className="dark:text-white">
-          {/* Header */}
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-            <Typography variant="h5" component="h1" className="dark:text-white">
+        <Box sx={{ p: { xs: 2, sm: 3 } }} className="dark:text-white">
+          {/* Header - Responsive */}
+          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: { sm: 'space-between' }, alignItems: { xs: 'flex-start', sm: 'center' }, gap: 2, mb: 3 }}>
+            <Typography variant="h5" component="h1" className="dark:text-white text-xl sm:text-2xl">
               {t('common.batches.title') || 'Batches'}
             </Typography>
             <Button
               variant="outlined"
+              size="small"
               startIcon={<RefreshIcon />}
               onClick={fetchBatches}
               className="dark:border-slate-600 dark:text-white"

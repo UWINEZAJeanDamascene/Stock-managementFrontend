@@ -91,6 +91,7 @@ export default function GRNDetailPage() {
 
   const [loading, setLoading] = useState(true);
   const [confirming, setConfirming] = useState(false);
+  const [sendEmail, setSendEmail] = useState(false);
   const [grn, setGRN] = useState<GRNDetail | null>(null);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
 
@@ -127,7 +128,7 @@ export default function GRNDetailPage() {
     
     setConfirming(true);
     try {
-      await grnApi.confirm(id);
+      await grnApi.confirm(id, sendEmail);
       fetchGRN();
     } catch (error) {
       console.error('Failed to confirm GRN:', error);
@@ -449,6 +450,18 @@ export default function GRNDetailPage() {
               <Card className="dark:bg-slate-800">
                 <CardContent className="pt-6">
                   <div className="flex flex-col gap-2">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <input
+                        type="checkbox"
+                        id="sendEmailGRN"
+                        checked={sendEmail}
+                        onChange={(e) => setSendEmail(e.target.checked)}
+                        className="h-4 w-4 rounded border-gray-300"
+                      />
+                      <Label htmlFor="sendEmailGRN" className="text-sm text-muted-foreground cursor-pointer">
+                        {t('grn.sendEmail', 'Send email notification to supplier')}
+                      </Label>
+                    </div>
                     <Button 
                       onClick={handleConfirm}
                       disabled={confirming}
