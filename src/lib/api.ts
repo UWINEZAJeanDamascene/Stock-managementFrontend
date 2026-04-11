@@ -1,6 +1,6 @@
 const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
-  "https://stock-tenancy-system.onrender.com/api";
+  "https://stockmanagementbackend-ikuq.onrender.com/api";
 
 // Bank Account Types
 export interface BankAccount {
