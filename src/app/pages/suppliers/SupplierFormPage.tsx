@@ -182,13 +182,13 @@ export default function SupplierFormPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-6">
+      <div className="container mx-auto py-6 min-h-screen bg-slate-50 dark:bg-slate-900">
         <div className="flex items-center gap-4 mb-6">
           <Button variant="ghost" onClick={() => navigate('/suppliers')}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             {t('common.back', 'Back')}
           </Button>
-          <h1 className="text-2xl font-bold">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
             {isEditMode ? t('suppliers.editSupplier', 'Edit Supplier') : t('suppliers.addSupplier', 'Add Supplier')}
           </h1>
         </div>
@@ -197,27 +197,29 @@ export default function SupplierFormPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Main Fields */}
             <div className="lg:col-span-2 space-y-6">
-              <Card>
+              <Card className="dark:bg-slate-800">
                 <CardHeader>
-                  <CardTitle>{t('suppliers.basicInfo', 'Basic Information')}</CardTitle>
+                  <CardTitle className="text-slate-900 dark:text-white">{t('suppliers.basicInfo', 'Basic Information')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="name">{t('suppliers.name', 'Name')} *</Label>
+                      <Label htmlFor="name" className="text-slate-900 dark:text-white">{t('suppliers.name', 'Name')} *</Label>
                       <Input 
                         id="name"
                         value={formData.name}
                         onChange={(e) => handleChange('name', e.target.value)}
+                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                         required
                       />
                     </div>
                     <div>
-                      <Label htmlFor="code">{t('suppliers.code', 'Code')}</Label>
+                      <Label htmlFor="code" className="text-slate-900 dark:text-white">{t('suppliers.code', 'Code')}</Label>
                       <Input 
                         id="code"
                         value={formData.code}
                         onChange={(e) => handleChange('code', e.target.value)}
+                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                         placeholder={t('suppliers.autoGenerate', 'Auto-generate if empty')}
                       />
                     </div>
@@ -225,151 +227,164 @@ export default function SupplierFormPage() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="paymentTerms">{t('suppliers.paymentTerms', 'Payment Terms')}</Label>
+                      <Label htmlFor="paymentTerms" className="text-slate-900 dark:text-white">{t('suppliers.paymentTerms', 'Payment Terms')}</Label>
                       <Select 
                         value={formData.paymentTerms} 
                         onValueChange={(value) => handleChange('paymentTerms', value)}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="cash">Cash</SelectItem>
-                          <SelectItem value="credit_7">Credit 7 Days</SelectItem>
-                          <SelectItem value="credit_15">Credit 15 Days</SelectItem>
-                          <SelectItem value="credit_30">Credit 30 Days</SelectItem>
-                          <SelectItem value="credit_45">Credit 45 Days</SelectItem>
-                          <SelectItem value="credit_60">Credit 60 Days</SelectItem>
+                        <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                          <SelectItem value="cash" className="dark:text-slate-200">Cash</SelectItem>
+                          <SelectItem value="credit_7" className="dark:text-slate-200">Credit 7 Days</SelectItem>
+                          <SelectItem value="credit_15" className="dark:text-slate-200">Credit 15 Days</SelectItem>
+                          <SelectItem value="credit_30" className="dark:text-slate-200">Credit 30 Days</SelectItem>
+                          <SelectItem value="credit_45" className="dark:text-slate-200">Credit 45 Days</SelectItem>
+                          <SelectItem value="credit_60" className="dark:text-slate-200">Credit 60 Days</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     <div>
-                      <Label htmlFor="taxId">{t('suppliers.taxId', 'Tax ID')}</Label>
+                      <Label htmlFor="taxId" className="text-slate-900 dark:text-white">{t('suppliers.taxId', 'Tax ID')}</Label>
                       <Input 
                         id="taxId"
                         value={formData.taxId}
                         onChange={(e) => handleChange('taxId', e.target.value)}
+                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <Label htmlFor="region">{t('suppliers.region', 'Region')}</Label>
+                      <Label htmlFor="region" className="text-slate-900 dark:text-white">{t('suppliers.region', 'Region')}</Label>
                       <Input 
                         id="region"
                         value={formData.region}
                         onChange={(e) => handleChange('region', e.target.value)}
+                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                       />
                     </div>
                     <div>
-                      <Label htmlFor="currency">{t('suppliers.currency', 'Currency')}</Label>
+                      <Label htmlFor="currency" className="text-slate-900 dark:text-white">{t('suppliers.currency', 'Currency')}</Label>
                       <Input 
                         id="currency"
                         value={formData.currency}
                         onChange={(e) => handleChange('currency', e.target.value)}
+                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                         placeholder="USD"
                       />
                     </div>
                     <div>
-                      <Label htmlFor="leadTime">{t('suppliers.leadTime', 'Lead Time (days)')}</Label>
+                      <Label htmlFor="leadTime" className="text-slate-900 dark:text-white">{t('suppliers.leadTime', 'Lead Time (days)')}</Label>
                       <Input 
                         id="leadTime"
                         type="number"
                         min="0"
                         value={formData.leadTime}
                         onChange={(e) => handleChange('leadTime', parseInt(e.target.value) || 0)}
+                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                       />
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="dark:bg-slate-800">
                 <CardHeader>
-                  <CardTitle>{t('suppliers.contactInfo', 'Contact Information')}</CardTitle>
+                  <CardTitle className="text-slate-900 dark:text-white">{t('suppliers.contactInfo', 'Contact Information')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="contactPerson">{t('suppliers.contactPerson', 'Contact Person')}</Label>
+                      <Label htmlFor="contactPerson" className="text-slate-900 dark:text-white">{t('suppliers.contactPerson', 'Contact Person')}</Label>
                       <Input 
                         id="contactPerson"
                         value={formData.contact.contactPerson || ''}
                         onChange={(e) => handleChange('contact.contactPerson', e.target.value)}
+                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                       />
                     </div>
                     <div>
-                      <Label htmlFor="email">{t('suppliers.email', 'Email')}</Label>
+                      <Label htmlFor="email" className="text-slate-900 dark:text-white">{t('suppliers.email', 'Email')}</Label>
                       <Input 
                         id="email"
                         type="email"
                         value={formData.contact.email || ''}
                         onChange={(e) => handleChange('contact.email', e.target.value)}
+                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="phone">{t('suppliers.phone', 'Phone')}</Label>
+                      <Label htmlFor="phone" className="text-slate-900 dark:text-white">{t('suppliers.phone', 'Phone')}</Label>
                       <Input 
                         id="phone"
                         value={formData.contact.phone || ''}
                         onChange={(e) => handleChange('contact.phone', e.target.value)}
+                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                       />
                     </div>
                     <div>
-                      <Label htmlFor="website">{t('suppliers.website', 'Website')}</Label>
+                      <Label htmlFor="website" className="text-slate-900 dark:text-white">{t('suppliers.website', 'Website')}</Label>
                       <Input 
                         id="website"
                         value={formData.contact.website || ''}
                         onChange={(e) => handleChange('contact.website', e.target.value)}
+                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <Label htmlFor="address">{t('suppliers.address', 'Address')}</Label>
+                    <Label htmlFor="address" className="text-slate-900 dark:text-white">{t('suppliers.address', 'Address')}</Label>
                     <Textarea 
                       id="address"
                       value={formData.contact.address || ''}
                       onChange={(e) => handleChange('contact.address', e.target.value)}
                       rows={2}
+                      className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                     />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
-                      <Label htmlFor="city">{t('suppliers.city', 'City')}</Label>
+                      <Label htmlFor="city" className="text-slate-900 dark:text-white">{t('suppliers.city', 'City')}</Label>
                       <Input 
                         id="city"
                         value={formData.contact.city || ''}
                         onChange={(e) => handleChange('contact.city', e.target.value)}
+                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                       />
                     </div>
                     <div>
-                      <Label htmlFor="state">{t('suppliers.state', 'State/Region')}</Label>
+                      <Label htmlFor="state" className="text-slate-900 dark:text-white">{t('suppliers.state', 'State/Region')}</Label>
                       <Input 
                         id="state"
                         value={formData.contact.state || ''}
                         onChange={(e) => handleChange('contact.state', e.target.value)}
+                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                       />
                     </div>
                     <div>
-                      <Label htmlFor="zipCode">{t('suppliers.zipCode', 'Zip Code')}</Label>
+                      <Label htmlFor="zipCode" className="text-slate-900 dark:text-white">{t('suppliers.zipCode', 'Zip Code')}</Label>
                       <Input 
                         id="zipCode"
                         value={formData.contact.zipCode || ''}
                         onChange={(e) => handleChange('contact.zipCode', e.target.value)}
+                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                       />
                     </div>
                     <div>
-                      <Label htmlFor="country">{t('suppliers.country', 'Country')}</Label>
+                      <Label htmlFor="country" className="text-slate-900 dark:text-white">{t('suppliers.country', 'Country')}</Label>
                       <Input 
                         id="country"
                         value={formData.contact.country || ''}
                         onChange={(e) => handleChange('contact.country', e.target.value)}
+                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                       />
                     </div>
                   </div>
@@ -379,37 +394,39 @@ export default function SupplierFormPage() {
 
             {/* Sidebar */}
             <div className="space-y-6">
-              <Card>
+              <Card className="dark:bg-slate-800">
                 <CardHeader>
-                  <CardTitle>{t('suppliers.bankInfo', 'Banking Details')}</CardTitle>
+                  <CardTitle className="text-slate-900 dark:text-white">{t('suppliers.bankInfo', 'Banking Details')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <Label htmlFor="bankName">{t('suppliers.bankName', 'Bank Name')}</Label>
+                    <Label htmlFor="bankName" className="text-slate-900 dark:text-white">{t('suppliers.bankName', 'Bank Name')}</Label>
                     <Input 
                       id="bankName"
                       value={formData.bankName}
                       onChange={(e) => handleChange('bankName', e.target.value)}
+                      className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="bankAccount">{t('suppliers.bankAccount', 'Bank Account')}</Label>
+                    <Label htmlFor="bankAccount" className="text-slate-900 dark:text-white">{t('suppliers.bankAccount', 'Bank Account')}</Label>
                     <Input 
                       id="bankAccount"
                       value={formData.bankAccount}
                       onChange={(e) => handleChange('bankAccount', e.target.value)}
+                      className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                     />
                   </div>
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="dark:bg-slate-800">
                 <CardHeader>
-                  <CardTitle>{t('suppliers.additionalInfo', 'Additional Information')}</CardTitle>
+                  <CardTitle className="text-slate-900 dark:text-white">{t('suppliers.additionalInfo', 'Additional Information')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <Label htmlFor="minimumOrder">{t('suppliers.minimumOrder', 'Minimum Order Value')}</Label>
+                    <Label htmlFor="minimumOrder" className="text-slate-900 dark:text-white">{t('suppliers.minimumOrder', 'Minimum Order Value')}</Label>
                     <Input 
                       id="minimumOrder"
                       type="number"
@@ -417,22 +434,24 @@ export default function SupplierFormPage() {
                       step="0.01"
                       value={formData.minimumOrder}
                       onChange={(e) => handleChange('minimumOrder', parseFloat(e.target.value) || 0)}
+                      className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="notes">{t('suppliers.notes', 'Notes')}</Label>
+                    <Label htmlFor="notes" className="text-slate-900 dark:text-white">{t('suppliers.notes', 'Notes')}</Label>
                     <Textarea 
                       id="notes"
                       value={formData.notes}
                       onChange={(e) => handleChange('notes', e.target.value)}
                       rows={4}
+                      className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                     />
                   </div>
                 </CardContent>
               </Card>
 
               <div className="flex flex-col gap-2">
-                <Button type="submit" disabled={saving}>
+                <Button type="submit" disabled={saving} className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-200">
                   {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                   {t('common.save', 'Save')}
                 </Button>

@@ -128,7 +128,9 @@ export default function DeliveryNoteDetailPage() {
         toast.info('Creating invoice from delivery note...');
         console.log('No invoice linked, creating new invoice...');
         
-        const createResponse = await deliveryNotesApi.createInvoice(id!);
+        const createResponse = await deliveryNotesApi.createInvoice(id!, {
+          confirmDelivery: true
+        });
         console.log('Create invoice response:', createResponse);
         
         if (!createResponse.success) {
@@ -140,32 +142,31 @@ export default function DeliveryNoteDetailPage() {
         console.log('Created invoice ID:', invoiceId);
         
         if (!invoiceId) {
-          toast.error('Invoice created but no ID returned');
+          toast.success('Delivery note confirmed successfully');
+          fetchDeliveryNote();
           return;
         }
         
-        toast.success('Invoice created successfully');
-        
-        // Re-fetch delivery note to ensure we have latest data
-        console.log('Re-fetching delivery note after invoice creation...');
-        await fetchDeliveryNote();
-        
-        // Small delay for database consistency
-        await new Promise(resolve => setTimeout(resolve, 500));
-      }
-
-      // Step 3: Confirm the invoice
-      toast.info('Confirming invoice...');
-      console.log('Confirming invoice:', invoiceId);
-      
-      const confirmInvoiceResponse = await invoicesApi.confirm(invoiceId);
-      console.log('Confirm invoice response:', confirmInvoiceResponse);
-      
-      if (!confirmInvoiceResponse.success) {
-        toast.error((confirmInvoiceResponse as any).message || 'Failed to confirm invoice');
+        toast.success('Delivery note confirmed successfully');
+        fetchDeliveryNote();
         return;
       }
-      toast.success('Invoice confirmed');
+
+      // Step 3: If invoice exists but not confirmed, create and confirm
+      const invoiceStatus = (deliveryNote?.invoice as any)?.status;
+      if (invoiceStatus === 'draft') {
+        toast.info('Confirming invoice...');
+        console.log('Confirming invoice:', invoiceId);
+        
+        const confirmInvoiceResponse = await invoicesApi.confirm(invoiceId);
+        console.log('Confirm invoice response:', confirmInvoiceResponse);
+        
+        if (!confirmInvoiceResponse.success) {
+          toast.error((confirmInvoiceResponse as any).message || 'Failed to confirm invoice');
+          return;
+        }
+        toast.success('Invoice confirmed');
+      }
 
       // Step 4: Confirm the delivery note
       toast.info('Confirming delivery note...');
@@ -234,14 +235,14 @@ export default function DeliveryNoteDetailPage() {
 
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { className: string; icon: any }> = {
-      draft: { className: 'bg-gray-100 text-gray-800', icon: Clock },
-      confirmed: { className: 'bg-blue-100 text-blue-800', icon: CheckCircle },
-      dispatched: { className: 'bg-yellow-100 text-yellow-800', icon: Truck },
-      delivered: { className: 'bg-green-100 text-green-800', icon: CheckCircle },
-      cancelled: { className: 'bg-red-100 text-red-800', icon: XCircle },
+      draft: { className: 'bg-gray-100 text-gray-800 dark:bg-slate-700 dark:text-gray-200', icon: Clock },
+      confirmed: { className: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200', icon: CheckCircle },
+      dispatched: { className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200', icon: Truck },
+      delivered: { className: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200', icon: CheckCircle },
+      cancelled: { className: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200', icon: XCircle },
     };
     
-    const config = statusConfig[status] || { className: 'bg-gray-100', icon: Clock };
+    const config = statusConfig[status] || { className: 'bg-gray-100 dark:bg-slate-700 dark:text-gray-200', icon: Clock };
     const Icon = config.icon;
     
     return (
@@ -304,11 +305,11 @@ export default function DeliveryNoteDetailPage() {
               Back
             </Button>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">{deliveryNote.referenceNo}</h1>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{deliveryNote.referenceNo}</h1>
               <div className="flex items-center gap-2 mt-1">
                 {getStatusBadge(deliveryNote.status)}
-                <span className="text-gray-500">•</span>
-                <span className="text-gray-500">{formatDate(deliveryNote.deliveryDate)}</span>
+                <span className="text-gray-500 dark:text-gray-400">•</span>
+                <span className="text-gray-500 dark:text-gray-400">{formatDate(deliveryNote.deliveryDate)}</span>
               </div>
             </div>
           </div>
@@ -358,9 +359,9 @@ export default function DeliveryNoteDetailPage() {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Items */}
-            <Card>
+            <Card className="dark:bg-slate-800">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white">
                   <Package className="h-5 w-5" />
                   Items
                 </CardTitle>
@@ -368,26 +369,26 @@ export default function DeliveryNoteDetailPage() {
               <CardContent>
                 <div className="overflow-x-auto">
                   <table className="w-full">
-                    <thead className="bg-gray-50">
+                    <thead className="bg-gray-50 dark:bg-slate-700">
                       <tr>
-                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Product</th>
-                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Description</th>
-                        <th className="px-4 py-2 text-right text-sm font-medium text-gray-600">Qty</th>
-                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Unit</th>
+                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-600 dark:text-gray-300">Product</th>
+                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-600 dark:text-gray-300">Description</th>
+                        <th className="px-4 py-2 text-right text-sm font-medium text-gray-600 dark:text-gray-300">Qty</th>
+                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-600 dark:text-gray-300">Unit</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {deliveryNote.items?.map((item) => (
+                    <tbody className="divide-y divide-gray-200 dark:divide-slate-600">
+                        {deliveryNote.lines?.map((item) => (
                         <tr key={item._id}>
                           <td className="px-4 py-3">
                             <div>
-                              <div className="font-medium">{item.product?.name}</div>
-                              <div className="text-sm text-gray-500">{item.product?.sku}</div>
+                              <div className="font-medium dark:text-white">{item.product?.name}</div>
+                              <div className="text-sm text-gray-500 dark:text-gray-400">{item.product?.sku}</div>
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-gray-600">{item.description || '-'}</td>
-                          <td className="px-4 py-3 text-right font-medium">{toNumber(item.quantity)}</td>
-                          <td className="px-4 py-3 text-gray-600">{item.unit || 'pcs'}</td>
+                          <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{item.productName || '-'}</td>
+                          <td className="px-4 py-3 text-right font-medium dark:text-white">{toNumber(item.qtyToDeliver || item.deliveredQty || item.orderedQty || 0)}</td>
+                          <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{item.unit || 'pcs'}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -398,12 +399,12 @@ export default function DeliveryNoteDetailPage() {
 
             {/* Notes */}
             {deliveryNote.notes && (
-              <Card>
+              <Card className="dark:bg-slate-800">
                 <CardHeader>
-                  <CardTitle>Notes</CardTitle>
+                  <CardTitle className="dark:text-white">Notes</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-600 whitespace-pre-wrap">{deliveryNote.notes}</p>
+                  <p className="text-gray-600 dark:text-gray-300 whitespace-pre-wrap">{deliveryNote.notes}</p>
                 </CardContent>
               </Card>
             )}
@@ -412,37 +413,37 @@ export default function DeliveryNoteDetailPage() {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Client Info */}
-            <Card>
+            <Card className="dark:bg-slate-800">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white">
                   <User className="h-5 w-5" />
                   Client
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div>
-                  <div className="font-medium text-lg">{deliveryNote.client?.name}</div>
+                  <div className="font-medium text-lg dark:text-white">{deliveryNote.client?.name}</div>
                   {deliveryNote.client?.code && (
-                    <div className="text-sm text-gray-500">Code: {deliveryNote.client.code}</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">Code: {deliveryNote.client.code}</div>
                   )}
                 </div>
                 {deliveryNote.client?.contact && (
                   <>
                     <Separator />
                     {deliveryNote.client.contact.phone && (
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
                         <Phone className="h-4 w-4" />
                         {deliveryNote.client.contact.phone}
                       </div>
                     )}
                     {deliveryNote.client.contact.email && (
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
                         <Mail className="h-4 w-4" />
                         {deliveryNote.client.contact.email}
                       </div>
                     )}
                     {deliveryNote.client.contact.address && (
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
                         <MapPin className="h-4 w-4" />
                         {deliveryNote.client.contact.address}
                       </div>
@@ -453,9 +454,9 @@ export default function DeliveryNoteDetailPage() {
             </Card>
 
             {/* Delivery Info */}
-            <Card>
+            <Card className="dark:bg-slate-800">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white">
                   <Truck className="h-5 w-5" />
                   Delivery Details
                 </CardTitle>
@@ -463,43 +464,43 @@ export default function DeliveryNoteDetailPage() {
               <CardContent className="space-y-3">
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-gray-400" />
-                  <span className="text-sm text-gray-600">Date:</span>
-                  <span className="font-medium">{formatDate(deliveryNote.deliveryDate)}</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-300">Date:</span>
+                  <span className="font-medium dark:text-white">{formatDate(deliveryNote.deliveryDate)}</span>
                 </div>
                 {deliveryNote.carrier && (
                   <div className="flex items-center gap-2">
                     <Truck className="h-4 w-4 text-gray-400" />
-                    <span className="text-sm text-gray-600">Carrier:</span>
-                    <span className="font-medium">{deliveryNote.carrier}</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-300">Carrier:</span>
+                    <span className="font-medium dark:text-white">{deliveryNote.carrier}</span>
                   </div>
                 )}
                 {deliveryNote.trackingNumber && (
                   <div className="flex items-center gap-2">
                     <Package className="h-4 w-4 text-gray-400" />
-                    <span className="text-sm text-gray-600">Tracking:</span>
-                    <span className="font-medium">{deliveryNote.trackingNumber}</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-300">Tracking:</span>
+                    <span className="font-medium dark:text-white">{deliveryNote.trackingNumber}</span>
                   </div>
                 )}
                 {deliveryNote.deliveredBy && (
                   <div className="flex items-center gap-2">
                     <User className="h-4 w-4 text-gray-400" />
-                    <span className="text-sm text-gray-600">Delivered By:</span>
-                    <span className="font-medium">{deliveryNote.deliveredBy}</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-300">Delivered By:</span>
+                    <span className="font-medium dark:text-white">{deliveryNote.deliveredBy}</span>
                   </div>
                 )}
                 {deliveryNote.vehicle && (
                   <div className="flex items-center gap-2">
                     <Truck className="h-4 w-4 text-gray-400" />
-                    <span className="text-sm text-gray-600">Vehicle:</span>
-                    <span className="font-medium">{deliveryNote.vehicle}</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-300">Vehicle:</span>
+                    <span className="font-medium dark:text-white">{deliveryNote.vehicle}</span>
                   </div>
                 )}
                 {deliveryNote.deliveryAddress && (
                   <>
                     <Separator />
                     <div>
-                      <div className="text-sm text-gray-600 mb-1">Delivery Address:</div>
-                      <div className="text-sm">{deliveryNote.deliveryAddress}</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-300 mb-1">Delivery Address:</div>
+                      <div className="text-sm dark:text-gray-300">{deliveryNote.deliveryAddress}</div>
                     </div>
                   </>
                 )}
@@ -507,34 +508,34 @@ export default function DeliveryNoteDetailPage() {
             </Card>
 
             {/* Summary */}
-            <Card>
+            <Card className="dark:bg-slate-800">
               <CardHeader>
-                <CardTitle>Summary</CardTitle>
+                <CardTitle className="dark:text-white">Summary</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 {deliveryNote.quotation && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Quotation:</span>
-                    <span className="font-medium">{deliveryNote.quotation.referenceNo}</span>
+                    <span className="text-gray-600 dark:text-gray-300">Quotation:</span>
+                    <span className="font-medium dark:text-white">{deliveryNote.quotation.referenceNo}</span>
                   </div>
                 )}
                 {deliveryNote.salesOrder && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Sales Order:</span>
-                    <span className="font-medium">{deliveryNote.salesOrder.referenceNo}</span>
+                    <span className="text-gray-600 dark:text-gray-300">Sales Order:</span>
+                    <span className="font-medium dark:text-white">{deliveryNote.salesOrder.referenceNo}</span>
                   </div>
                 )}
                 <Separator />
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Items:</span>
-                  <span className="font-medium">{deliveryNote.items?.length || 0}</span>
+                  <span className="text-gray-600 dark:text-gray-300">Items:</span>
+                  <span className="font-medium dark:text-white">{deliveryNote.lines?.length || 0}</span>
                 </div>
                 <div className="flex justify-between text-lg font-bold">
-                  <span>Total:</span>
-                  <span>{formatCurrency(deliveryNote.grandTotal, deliveryNote.currencyCode)}</span>
+                  <span className="dark:text-white">Total:</span>
+                  <span className="dark:text-white">{formatCurrency(deliveryNote.grandTotal, deliveryNote.currencyCode)}</span>
                 </div>
                 <Separator />
-                <div className="text-xs text-gray-500">
+                <div className="text-xs text-gray-500 dark:text-gray-400">
                   <div>Created: {formatDate(deliveryNote.createdAt)}</div>
                   <div>Updated: {formatDate(deliveryNote.updatedAt)}</div>
                 </div>

@@ -208,9 +208,9 @@ export default function UsersPage() {
       <Layout>
         <div className="flex items-center justify-center py-16">
           <div className="text-center">
-            <Shield className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h2 className="text-xl font-semibold">Access Denied</h2>
-            <p className="text-muted-foreground mt-2">You need administrator privileges to manage users.</p>
+            <Shield className="h-12 w-12 mx-auto text-muted-foreground dark:text-slate-400 mb-4" />
+            <h2 className="text-xl font-semibold dark:text-white">Access Denied</h2>
+            <p className="text-muted-foreground dark:text-slate-400 mt-2">You need administrator privileges to manage users.</p>
           </div>
         </div>
       </Layout>
@@ -219,27 +219,27 @@ export default function UsersPage() {
 
   return (
     <Layout>
-      <div className="space-y-6 max-w-5xl mx-auto">
+      <div className="space-y-6 max-w-5xl mx-auto bg-gray-50 dark:bg-slate-900 min-h-screen p-3 md:p-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="outline" size="sm" onClick={() => navigate('/dashboard')}>
+            <Button variant="outline" size="sm" onClick={() => navigate('/dashboard')} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>
-              <h1 className="text-2xl font-bold flex items-center gap-2">
+              <h1 className="text-2xl font-bold flex items-center gap-2 dark:text-white">
                 <Users className="h-6 w-6" />
                 User Management
               </h1>
-              <p className="text-muted-foreground">Manage team members and their roles</p>
+              <p className="text-muted-foreground dark:text-slate-400">Manage team members and their roles</p>
             </div>
           </div>
           <div className="flex gap-2">
-            <Button onClick={() => setDrawerMode('invite')} variant="outline" className="gap-2">
+            <Button onClick={() => setDrawerMode('invite')} variant="outline" className="gap-2 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
               <Mail className="h-4 w-4" />
               Invite User
             </Button>
-            <Button onClick={() => setDrawerMode('create')} className="gap-2">
+            <Button onClick={() => setDrawerMode('create')} className="gap-2 dark:bg-primary dark:text-primary-foreground">
               <UserPlus className="h-4 w-4" />
               Create User
             </Button>
@@ -248,49 +248,49 @@ export default function UsersPage() {
 
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground dark:text-slate-400" />
           <Input
             placeholder="Search by name, email, or role..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            className="pl-10"
+            className="pl-10 bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
           />
         </div>
 
         {/* Users Table */}
-        <Card>
+        <Card className="dark:bg-slate-800">
           <CardContent className="p-0">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Joined</TableHead>
-                  <TableHead>Actions</TableHead>
+                <TableRow className="dark:border-slate-600 dark:bg-slate-700/50">
+                  <TableHead className="dark:text-slate-200">Name</TableHead>
+                  <TableHead className="dark:text-slate-200">Email</TableHead>
+                  <TableHead className="dark:text-slate-200">Role</TableHead>
+                  <TableHead className="dark:text-slate-200">Status</TableHead>
+                  <TableHead className="dark:text-slate-200">Joined</TableHead>
+                  <TableHead className="dark:text-slate-200">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground dark:text-slate-400">
                       <Loader2 className="h-5 w-5 animate-spin mx-auto" />
                     </TableCell>
                   </TableRow>
                 ) : filteredUsers.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground dark:text-slate-400">
                       No users found
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredUsers.map(user => (
-                    <TableRow key={user._id}>
-                      <TableCell className="font-medium">{user.name}</TableCell>
-                      <TableCell className="text-muted-foreground">{user.email}</TableCell>
+                    <TableRow key={user._id} className="dark:border-slate-600">
+                      <TableCell className="font-medium dark:text-white">{user.name}</TableCell>
+                      <TableCell className="text-muted-foreground dark:text-slate-400">{user.email}</TableCell>
                       <TableCell>
-                        <Badge variant="outline">{roleLabel(user.role)}</Badge>
+                        <Badge variant="outline" className="dark:border-slate-500 dark:text-slate-300">{roleLabel(user.role)}</Badge>
                       </TableCell>
                       <TableCell>
                         {user.isActive ? (
@@ -299,7 +299,7 @@ export default function UsersPage() {
                           <Badge className="bg-red-100/80 text-red-800 dark:bg-red-900/30 dark:text-red-400">Inactive</Badge>
                         )}
                       </TableCell>
-                      <TableCell className="text-muted-foreground text-sm">
+                      <TableCell className="text-muted-foreground dark:text-slate-400 text-sm">
                         {format(new Date(user.createdAt), 'dd MMM yyyy')}
                       </TableCell>
                       <TableCell>
@@ -307,7 +307,7 @@ export default function UsersPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8"
+                            className="h-8 w-8 dark:text-slate-300 dark:hover:bg-slate-700"
                             title="Change Role"
                             onClick={() => openChangeRole(user)}
                           >
@@ -316,7 +316,7 @@ export default function UsersPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8"
+                            className="h-8 w-8 dark:text-slate-300 dark:hover:bg-slate-700"
                             title="Reset Password"
                             onClick={() => handleResetPassword(user)}
                             disabled={actionLoading === 'reset'}
@@ -329,7 +329,7 @@ export default function UsersPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className={`h-8 w-8 ${user.isActive ? 'text-destructive hover:text-destructive' : 'text-green-600 hover:text-green-600'}`}
+                            className={`h-8 w-8 ${user.isActive ? 'text-destructive hover:text-destructive dark:text-red-400 dark:hover:text-red-300' : 'text-green-600 hover:text-green-600 dark:text-green-400 dark:hover:text-green-300'}`}
                             title={user.isActive ? 'Deactivate' : 'Activate'}
                             onClick={() => handleDeactivate(user)}
                           >
@@ -349,47 +349,49 @@ export default function UsersPage() {
         {drawerMode && (
           <>
             <div className="fixed inset-0 bg-black/50 z-40" onClick={closeDrawer} />
-            <div className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-background border-l z-50 shadow-xl flex flex-col">
+            <div className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-background dark:bg-slate-800 border-l dark:border-slate-600 z-50 shadow-xl flex flex-col">
 
               {/* ── Invite User Drawer ─────────────────────────────── */}
               {drawerMode === 'invite' && (
                 <>
-                  <div className="flex items-center justify-between p-6 border-b">
+                  <div className="flex items-center justify-between p-6 border-b dark:border-slate-600">
                     <div>
-                      <h2 className="text-lg font-semibold flex items-center gap-2">
+                      <h2 className="text-lg font-semibold flex items-center gap-2 dark:text-white">
                         <Mail className="h-5 w-5" />
                         Invite User
                       </h2>
-                      <p className="text-sm text-muted-foreground">Send an invitation to join your team</p>
+                      <p className="text-sm text-muted-foreground dark:text-slate-400">Send an invitation to join your team</p>
                     </div>
-                    <Button variant="ghost" size="sm" onClick={closeDrawer}>✕</Button>
+                    <Button variant="ghost" size="sm" onClick={closeDrawer} className="dark:text-slate-200">✕</Button>
                   </div>
                   <form onSubmit={handleInviteUser} className="flex-1 p-6 space-y-4">
                     <div className="space-y-2">
-                      <Label>Full Name *</Label>
+                      <Label className="dark:text-slate-200">Full Name *</Label>
                       <Input
                         value={inviteForm.name}
                         onChange={e => setInviteForm({ ...inviteForm, name: e.target.value })}
                         placeholder="John Doe"
                         required
+                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Email Address *</Label>
+                      <Label className="dark:text-slate-200">Email Address *</Label>
                       <Input
                         type="email"
                         value={inviteForm.email}
                         onChange={e => setInviteForm({ ...inviteForm, email: e.target.value })}
                         placeholder="john@company.com"
                         required
+                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Role</Label>
+                      <Label className="dark:text-slate-200">Role</Label>
                       <select
                         value={inviteForm.role}
                         onChange={e => setInviteForm({ ...inviteForm, role: e.target.value })}
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        className="flex h-10 w-full rounded-md border border-input bg-background dark:bg-slate-700 dark:text-white dark:border-slate-600 px-3 py-2 text-sm"
                       >
                         {ROLES.map(r => (
                           <option key={r.value} value={r.value}>{r.label}</option>
@@ -397,7 +399,7 @@ export default function UsersPage() {
                       </select>
                     </div>
                     <div className="pt-4">
-                      <Button type="submit" className="w-full gap-2" disabled={actionLoading === 'invite'}>
+                      <Button type="submit" className="w-full gap-2 dark:bg-primary dark:text-primary-foreground" disabled={actionLoading === 'invite'}>
                         {actionLoading === 'invite' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                         Send Invitation
                       </Button>
@@ -409,42 +411,44 @@ export default function UsersPage() {
               {/* ── Create User Drawer ─────────────────────────────── */}
               {drawerMode === 'create' && (
                 <>
-                  <div className="flex items-center justify-between p-6 border-b">
+                  <div className="flex items-center justify-between p-6 border-b dark:border-slate-600">
                     <div>
-                      <h2 className="text-lg font-semibold flex items-center gap-2">
+                      <h2 className="text-lg font-semibold flex items-center gap-2 dark:text-white">
                         <UserPlus className="h-5 w-5" />
                         Create User
                       </h2>
-                      <p className="text-sm text-muted-foreground">Set up credentials for a new team member</p>
+                      <p className="text-sm text-muted-foreground dark:text-slate-400">Set up credentials for a new team member</p>
                     </div>
-                    <Button variant="ghost" size="sm" onClick={closeDrawer}>✕</Button>
+                    <Button variant="ghost" size="sm" onClick={closeDrawer} className="dark:text-slate-200">✕</Button>
                   </div>
                   <form onSubmit={handleCreateUser} className="flex-1 p-6 space-y-4">
                     <div className="space-y-2">
-                      <Label>Full Name *</Label>
+                      <Label className="dark:text-slate-200">Full Name *</Label>
                       <Input
                         value={createForm.name}
                         onChange={e => setCreateForm({ ...createForm, name: e.target.value })}
                         placeholder="John Doe"
                         required
+                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Email Address *</Label>
+                      <Label className="dark:text-slate-200">Email Address *</Label>
                       <Input
                         type="email"
                         value={createForm.email}
                         onChange={e => setCreateForm({ ...createForm, email: e.target.value })}
                         placeholder="john@company.com"
                         required
+                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Role</Label>
+                      <Label className="dark:text-slate-200">Role</Label>
                       <select
                         value={createForm.role}
                         onChange={e => setCreateForm({ ...createForm, role: e.target.value })}
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        className="flex h-10 w-full rounded-md border border-input bg-background dark:bg-slate-700 dark:text-white dark:border-slate-600 px-3 py-2 text-sm"
                       >
                         {ROLES.map(r => (
                           <option key={r.value} value={r.value}>{r.label}</option>
@@ -452,18 +456,19 @@ export default function UsersPage() {
                       </select>
                     </div>
                     <div className="space-y-2">
-                      <Label className="flex items-center gap-1"><Lock className="h-3 w-3" /> Password</Label>
+                      <Label className="flex items-center gap-1 dark:text-slate-200"><Lock className="h-3 w-3" /> Password</Label>
                       <Input
                         type="password"
                         value={createForm.password}
                         onChange={e => setCreateForm({ ...createForm, password: e.target.value })}
                         placeholder="Leave blank to auto-generate"
+                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                       />
-                      <p className="text-xs text-muted-foreground">If left blank, a temporary password will be generated</p>
+                      <p className="text-xs text-muted-foreground dark:text-slate-400">If left blank, a temporary password will be generated</p>
                     </div>
                     {!generatedPassword && (
                       <div className="pt-4">
-                        <Button type="submit" className="w-full gap-2" disabled={actionLoading === 'create'}>
+                        <Button type="submit" className="w-full gap-2 dark:bg-primary dark:text-primary-foreground" disabled={actionLoading === 'create'}>
                           {actionLoading === 'create' ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
                           Create User
                         </Button>
@@ -472,19 +477,19 @@ export default function UsersPage() {
                     {generatedPassword && (
                       <div className="p-4 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800">
                         <div className="flex items-center gap-2 mb-2">
-                          <CheckCircle className="h-4 w-4 text-green-600" />
-                          <span className="text-sm font-medium">User created successfully</span>
+                          <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                          <span className="text-sm font-medium dark:text-white">User created successfully</span>
                         </div>
-                        <p className="text-xs text-muted-foreground mb-2">Temporary password (share securely):</p>
+                        <p className="text-xs text-muted-foreground dark:text-slate-400 mb-2">Temporary password (share securely):</p>
                         <div className="flex items-center gap-2">
-                          <code className="flex-1 bg-white dark:bg-slate-800 px-3 py-2 rounded border font-mono text-sm">
+                          <code className="flex-1 bg-white dark:bg-slate-800 px-3 py-2 rounded border font-mono text-sm dark:text-slate-200">
                             {generatedPassword}
                           </code>
-                          <Button variant="outline" size="icon" onClick={() => copyToClipboard(generatedPassword)}>
+                          <Button variant="outline" size="icon" onClick={() => copyToClipboard(generatedPassword)} className="dark:border-slate-600 dark:text-slate-200">
                             <Copy className="h-4 w-4" />
                           </Button>
                         </div>
-                        <Button variant="outline" className="w-full mt-3" onClick={closeDrawer}>Done</Button>
+                        <Button variant="outline" className="w-full mt-3 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700" onClick={closeDrawer}>Done</Button>
                       </div>
                     )}
                   </form>
@@ -494,34 +499,34 @@ export default function UsersPage() {
               {/* ── Change Role Drawer ─────────────────────────────── */}
               {drawerMode === 'role' && selectedUser && (
                 <>
-                  <div className="flex items-center justify-between p-6 border-b">
+                  <div className="flex items-center justify-between p-6 border-b dark:border-slate-600">
                     <div>
-                      <h2 className="text-lg font-semibold flex items-center gap-2">
+                      <h2 className="text-lg font-semibold flex items-center gap-2 dark:text-white">
                         <Shield className="h-5 w-5" />
                         Change Role
                       </h2>
-                      <p className="text-sm text-muted-foreground">{selectedUser.name}</p>
+                      <p className="text-sm text-muted-foreground dark:text-slate-400">{selectedUser.name}</p>
                     </div>
-                    <Button variant="ghost" size="sm" onClick={closeDrawer}>✕</Button>
+                    <Button variant="ghost" size="sm" onClick={closeDrawer} className="dark:text-slate-200">✕</Button>
                   </div>
                   <div className="flex-1 p-6 space-y-4">
                     <div className="space-y-2">
-                      <Label>Current Role</Label>
-                      <Badge variant="outline" className="text-sm">{roleLabel(selectedUser.role)}</Badge>
+                      <Label className="dark:text-slate-200">Current Role</Label>
+                      <Badge variant="outline" className="text-sm dark:border-slate-500 dark:text-slate-300">{roleLabel(selectedUser.role)}</Badge>
                     </div>
                     <div className="space-y-2">
-                      <Label>New Role</Label>
+                      <Label className="dark:text-slate-200">New Role</Label>
                       <select
                         value={newRole}
                         onChange={e => setNewRole(e.target.value)}
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        className="flex h-10 w-full rounded-md border border-input bg-background dark:bg-slate-700 dark:text-white dark:border-slate-600 px-3 py-2 text-sm"
                       >
                         {ROLES.map(r => (
                           <option key={r.value} value={r.value}>{r.label}</option>
                         ))}
                       </select>
                     </div>
-                    <Button onClick={handleChangeRole} className="w-full" disabled={actionLoading === 'role' || newRole === selectedUser.role}>
+                    <Button onClick={handleChangeRole} className="w-full dark:bg-primary dark:text-primary-foreground" disabled={actionLoading === 'role' || newRole === selectedUser.role}>
                       {actionLoading === 'role' ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
                       Update Role
                     </Button>
@@ -532,30 +537,30 @@ export default function UsersPage() {
               {/* ── Password Result Drawer ─────────────────────────── */}
               {drawerMode === 'password' && selectedUser && generatedPassword && (
                 <>
-                  <div className="flex items-center justify-between p-6 border-b">
+                  <div className="flex items-center justify-between p-6 border-b dark:border-slate-600">
                     <div>
-                      <h2 className="text-lg font-semibold flex items-center gap-2">
+                      <h2 className="text-lg font-semibold flex items-center gap-2 dark:text-white">
                         <Key className="h-5 w-5" />
                         Password Reset
                       </h2>
-                      <p className="text-sm text-muted-foreground">{selectedUser.name}</p>
+                      <p className="text-sm text-muted-foreground dark:text-slate-400">{selectedUser.name}</p>
                     </div>
-                    <Button variant="ghost" size="sm" onClick={closeDrawer}>✕</Button>
+                    <Button variant="ghost" size="sm" onClick={closeDrawer} className="dark:text-slate-200">✕</Button>
                   </div>
                   <div className="flex-1 p-6 space-y-4">
                     <div className="p-4 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800">
-                      <p className="text-sm font-medium mb-2">New temporary password:</p>
+                      <p className="text-sm font-medium mb-2 dark:text-white">New temporary password:</p>
                       <div className="flex items-center gap-2">
-                        <code className="flex-1 bg-white dark:bg-slate-800 px-3 py-2 rounded border font-mono text-sm">
+                        <code className="flex-1 bg-white dark:bg-slate-800 px-3 py-2 rounded border font-mono text-sm dark:text-slate-200">
                           {generatedPassword}
                         </code>
-                        <Button variant="outline" size="icon" onClick={() => copyToClipboard(generatedPassword)}>
+                        <Button variant="outline" size="icon" onClick={() => copyToClipboard(generatedPassword)} className="dark:border-slate-600 dark:text-slate-200">
                           <Copy className="h-4 w-4" />
                         </Button>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-2">Share this password with the user securely. They will be prompted to change it on first login.</p>
+                      <p className="text-xs text-muted-foreground dark:text-slate-400 mt-2">Share this password with the user securely. They will be prompted to change it on first login.</p>
                     </div>
-                    <Button variant="outline" className="w-full" onClick={closeDrawer}>Done</Button>
+                    <Button variant="outline" className="w-full dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700" onClick={closeDrawer}>Done</Button>
                   </div>
                 </>
               )}

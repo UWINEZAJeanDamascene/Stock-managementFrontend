@@ -14,6 +14,12 @@ import {
   RefreshCw,
   AlertCircle,
   FileText,
+  Clock,
+  Calendar,
+  PlusCircle,
+  CreditCard,
+  BarChart3,
+  UserPlus,
 } from 'lucide-react';
 
 function formatCurrency(value: number): string {
@@ -44,9 +50,10 @@ interface MetricCardProps {
   prefix?: string;
   colorClass: string;
   loading?: boolean;
+  alert?: boolean;
 }
 
-function MetricCard({ title, value, change, icon, prefix = '', colorClass, loading }: MetricCardProps) {
+function MetricCard({ title, value, change, icon, prefix = '', colorClass, loading, alert }: MetricCardProps) {
   if (loading) {
     return (
       <Card>
@@ -64,9 +71,10 @@ function MetricCard({ title, value, change, icon, prefix = '', colorClass, loadi
 
   const isPositive = change !== null && change >= 0;
   const isNeutral = change === null;
+  const isNegativeValue = value < 0;
 
   return (
-    <Card>
+    <Card className={alert && isNegativeValue ? 'border-red-300 dark:border-red-700' : ''}>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-sm font-medium text-slate-500 dark:text-slate-400">
           {title}
@@ -76,7 +84,7 @@ function MetricCard({ title, value, change, icon, prefix = '', colorClass, loadi
         </div>
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold text-slate-900 dark:text-white">
+        <div className={`text-2xl font-bold ${isNegativeValue ? 'text-red-600 dark:text-red-400' : 'text-slate-900 dark:text-white'}`}>
           {prefix}{formatCurrency(value)}
         </div>
         <div className="flex items-center gap-1 mt-1">
@@ -109,12 +117,14 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   const fetchDashboard = useCallback(async () => {
     try {
       setError(null);
       const result = await dashboardApi.getExecutive();
       setData(result);
+      setLastUpdated(new Date());
     } catch (err: any) {
       setError(err.message || 'Failed to load dashboard data');
     } finally {
@@ -140,12 +150,14 @@ export default function DashboardPage() {
   const metrics = data?.key_metrics;
   const ar = data?.accounts_receivable;
   const journalEntries = data?.recent_journal_entries || [];
+  const hasNegativeCash = (metrics?.cash_balance.current ?? 0) < 0;
+  const cashBalance = metrics?.cash_balance.current ?? 0;
 
   return (
     <Layout>
-      <div className="p-6">
+      <div className="p-6 min-h-screen bg-slate-50 dark:bg-slate-900">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
               Executive Dashboard
@@ -154,15 +166,59 @@ export default function DashboardPage() {
               Financial overview for this month
             </p>
           </div>
+          <div className="flex items-center gap-3">
+            {lastUpdated && (
+              <span className="text-xs text-slate-400 flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                Updated {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={refreshing || loading}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="flex flex-wrap gap-2 mb-6">
+          <Button
+            size="sm"
+            className="bg-purple-600 hover:bg-purple-700 text-white"
+            onClick={() => window.location.href = '/invoices/new'}
+          >
+            <PlusCircle className="h-4 w-4 mr-1" />
+            New Invoice
+          </Button>
           <Button
             variant="outline"
             size="sm"
-            onClick={handleRefresh}
-            disabled={refreshing || loading}
-            className="flex items-center gap-2"
+            onClick={() => window.location.href = '/ar-receipts/new'}
           >
-            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-            Refresh
+            <CreditCard className="h-4 w-4 mr-1" />
+            Record Payment
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.location.href = '/dashboard/finance'}
+          >
+            <BarChart3 className="h-4 w-4 mr-1" />
+            Reports
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.location.href = '/clients/new'}
+          >
+            <UserPlus className="h-4 w-4 mr-1" />
+            Add Client
           </Button>
         </div>
 
@@ -180,6 +236,43 @@ export default function DashboardPage() {
               >
                 Retry
               </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Cash Flow Alert - Only show when negative */}
+        {!loading && hasNegativeCash && (
+          <Card className="mb-6 border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20">
+            <CardContent className="py-4">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="font-semibold text-red-800 dark:text-red-200">
+                    Critical Cash Alert: Negative Balance of {formatCurrency(Math.abs(cashBalance))}
+                  </p>
+                  <p className="text-sm text-red-700 dark:text-red-300 mt-1">
+                    Immediate action required. Consider collecting outstanding receivables or securing additional funding.
+                  </p>
+                  <div className="flex gap-2 mt-3">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="border-red-300 text-red-700 hover:bg-red-100 dark:border-red-700 dark:text-red-300 dark:hover:bg-red-900/30"
+                      onClick={() => window.location.href = '/ar-receipts/new'}
+                    >
+                      Collect Receivables
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="border-red-300 text-red-700 hover:bg-red-100 dark:border-red-700 dark:text-red-300 dark:hover:bg-red-900/30"
+                      onClick={() => window.location.href = '/dashboard/finance'}
+                    >
+                      View Cash Flow
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         )}
@@ -217,6 +310,7 @@ export default function DashboardPage() {
             icon={<Wallet className="h-5 w-5 text-purple-600 dark:text-purple-400" />}
             colorClass="bg-purple-100 dark:bg-purple-900/30"
             loading={loading}
+            alert
           />
         </div>
 
@@ -236,7 +330,7 @@ export default function DashboardPage() {
                   <Skeleton className="h-16 w-full" />
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-5">
                   {/* Outstanding */}
                   <div className="flex items-center justify-between p-4 rounded-lg bg-slate-50 dark:bg-slate-800/50">
                     <div>
@@ -253,22 +347,48 @@ export default function DashboardPage() {
                     </div>
                   </div>
 
-                  {/* Overdue */}
-                  <div className="flex items-center justify-between p-4 rounded-lg bg-slate-50 dark:bg-slate-800/50">
-                    <div>
-                      <p className="text-sm text-slate-500 dark:text-slate-400">Overdue</p>
-                      <p className="text-xl font-bold text-red-600 dark:text-red-400">
-                        {formatCurrency(ar?.overdue_total ?? 0)}
-                      </p>
-                      <p className="text-xs text-slate-400 mt-1">
-                        {ar?.overdue_count ?? 0} invoice{ar?.overdue_count !== 1 ? 's' : ''}
-                        {ar?.overdue_pct_of_outstanding ? ` (${ar.overdue_pct_of_outstanding}% of outstanding)` : ''}
-                      </p>
+                  {/* AR Aging Visual */}
+                  <div>
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="text-slate-500 dark:text-slate-400">Collection Status</span>
+                      <span className="text-slate-600 dark:text-slate-300">
+                        {ar?.outstanding_total 
+                          ? `${(((ar.outstanding_total - (ar.overdue_total ?? 0)) / ar.outstanding_total) * 100).toFixed(0)}% Current`
+                          : 'N/A'}
+                      </span>
                     </div>
-                    <div className="p-3 rounded-lg bg-red-100 dark:bg-red-900/30">
-                      <AlertCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
+                    <div className="h-2 w-full rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                      <div 
+                        className="h-full rounded-full bg-green-500 transition-all duration-500"
+                        style={{ 
+                          width: `${ar?.outstanding_total ? ((ar.outstanding_total - (ar.overdue_total ?? 0)) / ar.outstanding_total * 100) : 0}%` 
+                        }}
+                      />
+                    </div>
+                    <div className="flex justify-between text-xs mt-2 text-slate-400">
+                      <span className="text-green-600 dark:text-green-400">
+                        Current: {formatCurrency((ar?.outstanding_total ?? 0) - (ar?.overdue_total ?? 0))}
+                      </span>
+                      <span className="text-red-500">
+                        Overdue: {formatCurrency(ar?.overdue_total ?? 0)}
+                      </span>
                     </div>
                   </div>
+
+                  {/* Overdue Alert */}
+                  {(ar?.overdue_total ?? 0) > 0 && (
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800">
+                      <div className="flex items-center gap-2">
+                        <AlertCircle className="h-4 w-4 text-red-500" />
+                        <span className="text-sm text-red-700 dark:text-red-300">
+                          {ar?.overdue_count ?? 0} invoice{ar?.overdue_count !== 1 ? 's' : ''} overdue
+                        </span>
+                      </div>
+                      <span className="text-sm font-medium text-red-600 dark:text-red-400">
+                        {ar?.overdue_pct_of_outstanding}%
+                      </span>
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>

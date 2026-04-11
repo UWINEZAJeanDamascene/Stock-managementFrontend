@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { purchasesApi, suppliersApi, productsApi } from '@/lib/api';
+import { purchasesApi, suppliersApi, productsApi, budgetsApi, warehousesApi } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
 import {
   ArrowLeft,
@@ -9,7 +9,6 @@ import {
   Trash2,
   Loader2,
   Calculator,
-  X,
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
@@ -39,6 +38,12 @@ interface Supplier {
   code?: string;
 }
 
+interface Warehouse {
+  _id: string;
+  name: string;
+  code?: string;
+}
+
 interface Product {
   _id: string;
   name: string;
@@ -46,6 +51,27 @@ interface Product {
   unit?: string;
   taxRate?: number;
   taxCode?: string;
+  trackingType?: 'none' | 'batch' | 'serial';
+  trackBatch?: boolean;
+  trackSerialNumbers?: boolean;
+  defaultWarehouse?: string | { _id: string; name: string };
+}
+
+interface BudgetLine {
+  _id: string;
+  account_id?: string | { _id: string; code: string; name: string; type: string };
+  account_name?: string;
+  account_code?: string;
+  budgeted_amount: number;
+  actual_amount: number;
+  remaining: number;
+}
+
+interface Budget {
+  _id: string;
+  name: string;
+  remaining?: number;
+  lines?: BudgetLine[];
 }
 
 interface PurchaseLine {
@@ -60,6 +86,16 @@ interface PurchaseLine {
   taxAmount: number;
   subtotal: number;
   totalWithTax: number;
+  warehouse?: string;
+  trackingType?: 'none' | 'batch' | 'serial';
+  batchNo?: string;
+  serialNumber?: string;
+  serialNumbers?: string[];
+  manufactureDate?: string;
+  expiryDate?: string;
+  budgetId?: string;
+  budget_line_id?: string;
+  accountId?: string;
 }
 
 interface PurchaseFormData {
@@ -71,6 +107,10 @@ interface PurchaseFormData {
   supplierInvoiceNumber: string;
   supplierInvoiceDate: string;
   notes: string;
+  warehouse?: string;
+  budgetId?: string;
+  budget_line_id?: string;
+  accountId?: string;
   items: PurchaseLine[];
 }
 
@@ -94,6 +134,9 @@ export default function PurchaseFormPage() {
   const [saving, setSaving] = useState(false);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+  const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [selectedBudgetLines, setSelectedBudgetLines] = useState<BudgetLine[]>([]);
 
   const [formData, setFormData] = useState<PurchaseFormData>({
     supplier: '',
@@ -104,12 +147,13 @@ export default function PurchaseFormPage() {
     supplierInvoiceNumber: '',
     supplierInvoiceDate: '',
     notes: '',
+    warehouse: '',
+    budgetId: '',
+    budget_line_id: '',
+    accountId: '',
     items: [],
   });
 
-  const [openDropdownIndex, setOpenDropdownIndex] = useState<number | null>(null);
-  const [selectedProductIndex, setSelectedProductIndex] = useState<number | null>(null);
-  const dropdownRefs = useRef<Record<number, HTMLDivElement | null>>({});
 
   const fetchSuppliers = useCallback(async () => {
     try {
@@ -133,6 +177,44 @@ export default function PurchaseFormPage() {
     }
   }, []);
 
+  const fetchWarehouses = useCallback(async () => {
+    try {
+      const response = await warehousesApi.getAll({ limit: 100 });
+      if (response.success && Array.isArray(response.data)) {
+        setWarehouses(response.data as Warehouse[]);
+      }
+    } catch (error) {
+      console.error('Failed to fetch warehouses:', error);
+    }
+  }, []);
+
+  const fetchBudgetLines = useCallback(async (budgetId: string) => {
+    if (!budgetId || budgetId === 'none') {
+      setSelectedBudgetLines([]);
+      return;
+    }
+    try {
+      const response = await budgetsApi.getLines(budgetId);
+      if (response.success && Array.isArray(response.data)) {
+        const lines = response.data.map((line: any) => ({
+          _id: line._id,
+          account_id: line.account_id,
+          account_name: line.account_id?.name || '',
+          account_code: line.account_id?.code || '',
+          budgeted_amount: line.budgeted_amount || 0,
+          actual_amount: line.actual_amount || 0,
+          remaining: (line.budgeted_amount || 0) - (line.actual_amount || 0),
+        }));
+        setSelectedBudgetLines(lines);
+      } else {
+        setSelectedBudgetLines([]);
+      }
+    } catch (error) {
+      console.error('Failed to fetch budget lines:', error);
+      setSelectedBudgetLines([]);
+    }
+  }, []);
+
   const fetchPurchase = useCallback(async () => {
     if (!id) return;
     setLoading(true);
@@ -149,6 +231,10 @@ export default function PurchaseFormPage() {
           supplierInvoiceNumber: p.supplierInvoiceNumber || '',
           supplierInvoiceDate: p.supplierInvoiceDate ? new Date(p.supplierInvoiceDate).toISOString().split('T')[0] : '',
           notes: p.notes || '',
+          warehouse: p.warehouse?._id || p.warehouse || '',
+          budgetId: p.budgetId || p.budget_id || '',
+          budget_line_id: p.budget_line_id || '',
+          accountId: p.accountId || p.account_id || '',
           items: p.items?.map((item: any) => ({
             product: item.product?._id || item.product,
             productName: item.product?.name || '',
@@ -161,20 +247,47 @@ export default function PurchaseFormPage() {
             taxAmount: parseFloat(item.taxAmount) || 0,
             subtotal: parseFloat(item.subtotal) || 0,
             totalWithTax: parseFloat(item.totalWithTax) || 0,
+            warehouse: item.warehouse?._id || item.warehouse || '',
+            trackingType: item.trackingType || 'none',
+            batchNo: item.batchNo || '',
+            serialNumber: item.serialNumber || '',
+            serialNumbers: item.serialNumbers || [],
+            manufactureDate: item.manufactureDate ? new Date(item.manufactureDate).toISOString().split('T')[0] : '',
+            expiryDate: item.expiryDate ? new Date(item.expiryDate).toISOString().split('T')[0] : '',
+            budgetId: item.budgetId || p.budgetId || '',
+            budget_line_id: item.budget_line_id || p.budget_line_id || '',
+            accountId: item.accountId || p.accountId || '',
           })) || [],
         });
+        // Fetch budget lines if editing a purchase with a budget
+        if (p.budgetId || p.budget_id) {
+          fetchBudgetLines(p.budgetId || p.budget_id);
+        }
       }
     } catch (error) {
       console.error('Failed to fetch purchase:', error);
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, fetchBudgetLines]);
+
+  const fetchBudgets = useCallback(async () => {
+    try {
+      const response = await budgetsApi.getAll({ status: 'approved', limit: 100 });
+      if (response.success && Array.isArray(response.data)) {
+        setBudgets(response.data as Budget[]);
+      }
+    } catch (error) {
+      console.error('Failed to fetch budgets:', error);
+    }
+  }, []);
 
   useEffect(() => {
     fetchSuppliers();
     fetchProducts();
-  }, [fetchSuppliers, fetchProducts]);
+    fetchWarehouses();
+    fetchBudgets();
+  }, [fetchSuppliers, fetchProducts, fetchWarehouses, fetchBudgets]);
 
   useEffect(() => {
     if (isEdit && id) {
@@ -209,13 +322,36 @@ export default function PurchaseFormPage() {
     if (product) {
       setFormData((prev) => {
         const newLines = [...prev.items];
+        // Determine tracking type from product
+        let trackingType: 'none' | 'batch' | 'serial' = 'none';
+        if (product.trackingType) {
+          trackingType = product.trackingType;
+        } else if (product.trackSerialNumbers) {
+          trackingType = 'serial';
+        } else if (product.trackBatch) {
+          trackingType = 'batch';
+        }
+
+        // Get default warehouse for product or use form warehouse
+        const defaultWarehouse = product.defaultWarehouse
+          ? (typeof product.defaultWarehouse === 'string' ? product.defaultWarehouse : product.defaultWarehouse._id)
+          : prev.warehouse;
+
         newLines[index] = {
           ...newLines[index],
           product: productId,
           productName: product.name,
           productSku: product.sku,
+          unitCost: (product as any).cost || (product as any).purchasePrice || 0,
           taxRate: product.taxRate || 0,
           taxCode: product.taxCode || 'A',
+          warehouse: defaultWarehouse,
+          trackingType,
+          batchNo: '',
+          serialNumber: '',
+          serialNumbers: [],
+          manufactureDate: '',
+          expiryDate: '',
         };
         const calculated = calculateLineTotals(newLines[index]);
         newLines[index].subtotal = calculated.subtotal;
@@ -224,8 +360,6 @@ export default function PurchaseFormPage() {
         return { ...prev, items: newLines };
       });
     }
-    setSelectedProductIndex(null);
-    setOpenDropdownIndex(null);
   };
 
   const addLine = () => {
@@ -245,6 +379,16 @@ export default function PurchaseFormPage() {
           taxAmount: 0,
           subtotal: 0,
           totalWithTax: 0,
+          warehouse: formData.warehouse || '',
+          trackingType: 'none',
+          batchNo: '',
+          serialNumber: '',
+          serialNumbers: [],
+          manufactureDate: '',
+          expiryDate: '',
+          budgetId: formData.budgetId || '',
+          budget_line_id: formData.budget_line_id || '',
+          accountId: formData.accountId || '',
         },
       ],
     });
@@ -286,6 +430,9 @@ export default function PurchaseFormPage() {
         supplierInvoiceNumber: formData.supplierInvoiceNumber || undefined,
         supplierInvoiceDate: formData.supplierInvoiceDate || undefined,
         notes: formData.notes || undefined,
+        budgetId: formData.budgetId || undefined,
+        budget_line_id: formData.budget_line_id || undefined,
+        accountId: formData.accountId || undefined,
         items: validLines.map((line) => ({
           product: line.product,
           quantity: line.quantity,
@@ -293,6 +440,9 @@ export default function PurchaseFormPage() {
           discount: line.discount,
           taxCode: line.taxCode,
           taxRate: line.taxRate,
+          budgetId: line.budgetId || formData.budgetId || undefined,
+          budget_line_id: line.budget_line_id || formData.budget_line_id || undefined,
+          accountId: line.accountId || formData.accountId || undefined,
         })),
       };
 
@@ -330,41 +480,42 @@ export default function PurchaseFormPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-6">
+      <div className="container mx-auto py-6 min-h-screen bg-slate-50 dark:bg-slate-900">
         <div className="flex items-center gap-4 mb-6">
-          <Button variant="ghost" onClick={() => navigate('/purchases')}>
+          <Button variant="outline" onClick={() => navigate('/purchases')}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             {t('common.back', 'Back')}
           </Button>
-          <h1 className="text-2xl font-bold">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
             {isEdit
               ? t('purchase.form.editTitle', 'Edit Purchase')
               : t('purchase.form.createTitle', 'New Purchase')}
           </h1>
         </div>
 
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Form */}
           <div className="lg:col-span-2 space-y-6">
             {/* Header Info */}
-            <Card>
+            <Card className="dark:bg-slate-800">
               <CardHeader>
-                <CardTitle>{t('purchase.form.header', 'Purchase Details')}</CardTitle>
+                <CardTitle className="text-slate-900 dark:text-white">{t('purchase.form.header', 'Purchase Details')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label>{t('purchase.form.supplier', 'Supplier')} *</Label>
+                    <Label className="text-slate-900 dark:text-white">{t('purchase.form.supplier', 'Supplier')} *</Label>
                     <Select
                       value={formData.supplier || undefined}
                       onValueChange={(value) => setFormData({ ...formData, supplier: value })}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600">
                         <SelectValue placeholder={t('purchase.form.selectSupplier', 'Select supplier')} />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
                         {suppliers.map((supplier) => (
-                          <SelectItem key={supplier._id} value={supplier._id}>
+                          <SelectItem key={supplier._id} value={supplier._id} className="dark:text-slate-200">
                             {supplier.name}
                           </SelectItem>
                         ))}
@@ -372,17 +523,17 @@ export default function PurchaseFormPage() {
                     </Select>
                   </div>
                   <div>
-                    <Label>{t('purchase.form.currency', 'Currency')}</Label>
+                    <Label className="text-slate-900 dark:text-white">{t('purchase.form.currency', 'Currency')}</Label>
                     <Select
                       value={formData.currency}
                       onValueChange={(value) => setFormData({ ...formData, currency: value })}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
                         {CURRENCIES.map((currency) => (
-                          <SelectItem key={currency} value={currency}>
+                          <SelectItem key={currency} value={currency} className="dark:text-slate-200">
                             {currency}
                           </SelectItem>
                         ))}
@@ -390,34 +541,55 @@ export default function PurchaseFormPage() {
                     </Select>
                   </div>
                   <div>
-                    <Label>{t('purchase.form.purchaseDate', 'Purchase Date')}</Label>
+                    <Label className="text-slate-900 dark:text-white">{t('purchase.form.purchaseDate', 'Purchase Date')}</Label>
                     <Input
                       type="date"
                       value={formData.purchaseDate}
                       onChange={(e) => setFormData({ ...formData, purchaseDate: e.target.value })}
+                      className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                     />
                   </div>
                   <div>
-                    <Label>{t('purchase.form.expectedDelivery', 'Expected Delivery')}</Label>
+                    <Label className="text-slate-900 dark:text-white">{t('purchase.form.expectedDelivery', 'Expected Delivery')}</Label>
                     <Input
                       type="date"
                       value={formData.expectedDeliveryDate}
                       onChange={(e) => setFormData({ ...formData, expectedDeliveryDate: e.target.value })}
+                      className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                     />
                   </div>
                   <div>
-                    <Label>{t('purchase.form.paymentTerms', 'Payment Terms')}</Label>
+                    <Label className="text-slate-900 dark:text-white">{t('purchase.form.paymentTerms', 'Payment Terms')}</Label>
                     <Select
                       value={formData.paymentTerms}
                       onValueChange={(value) => setFormData({ ...formData, paymentTerms: value })}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
                         {PAYMENT_TERMS.map((term) => (
-                          <SelectItem key={term.value} value={term.value}>
+                          <SelectItem key={term.value} value={term.value} className="dark:text-slate-200">
                             {term.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-slate-900 dark:text-white">{t('purchase.form.warehouse', 'Warehouse')}</Label>
+                    <Select
+                      value={formData.warehouse || 'none'}
+                      onValueChange={(value) => setFormData({ ...formData, warehouse: value === 'none' ? '' : value })}
+                    >
+                      <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                        <SelectItem value="none">{t('common.select', 'Select...')}</SelectItem>
+                        {warehouses.map((warehouse) => (
+                          <SelectItem key={warehouse._id} value={warehouse._id} className="dark:text-slate-200">
+                            {warehouse.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -441,6 +613,78 @@ export default function PurchaseFormPage() {
                     rows={3}
                   />
                 </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-slate-900 dark:text-white">Budget</Label>
+                    <Select
+                      value={formData.budgetId || undefined}
+                      onValueChange={(value) => {
+                        const newBudgetId = value === 'none' ? undefined : value;
+                        setFormData({ ...formData, budgetId: newBudgetId, budget_line_id: undefined, accountId: undefined });
+                        if (value && value !== 'none') {
+                          fetchBudgetLines(value);
+                        } else {
+                          setSelectedBudgetLines([]);
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600">
+                        <SelectValue placeholder="Select budget (optional)" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                        <SelectItem value="none" className="dark:text-slate-200">No Budget</SelectItem>
+                        {budgets.map((budget) => (
+                          <SelectItem key={budget._id} value={budget._id} className="dark:text-slate-200">
+                            {budget.name} (${(budget.remaining || 0).toLocaleString()} left)
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {selectedBudgetLines.length > 0 && (
+                    <div>
+                      <Label className="text-slate-900 dark:text-white">Budget Line (Account)</Label>
+                      <Select
+                        value={formData.budget_line_id || undefined}
+                        onValueChange={(value) => {
+                          const selectedLine = selectedBudgetLines.find(l => l._id === value);
+                          const accountId = selectedLine?.account_id 
+                            ? (typeof selectedLine.account_id === 'object' ? (selectedLine.account_id as any)._id : selectedLine.account_id)
+                            : undefined;
+                          setFormData({ 
+                            ...formData, 
+                            budget_line_id: value === 'none' ? undefined : value,
+                            accountId: value === 'none' ? undefined : accountId
+                          });
+                        }}
+                      >
+                        <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600">
+                          <SelectValue placeholder="Select budget line" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                          <SelectItem value="none" className="dark:text-slate-200">No Line</SelectItem>
+                          {selectedBudgetLines.map((line) => {
+                            const accountId = line.account_id 
+                              ? (typeof line.account_id === 'object' ? (line.account_id as any)._id : line.account_id)
+                              : '';
+                            const accountName = line.account_id && typeof line.account_id === 'object' 
+                              ? (line.account_id as any).name 
+                              : (line.account_name || '');
+                            const accountCode = line.account_id && typeof line.account_id === 'object' 
+                              ? (line.account_id as any).code 
+                              : (line.account_code || '');
+                            return (
+                              <SelectItem key={line._id} value={line._id} className="dark:text-slate-200">
+                                {accountName || accountCode || 'Unnamed'} (${(line.remaining || 0).toLocaleString()} left)
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
@@ -455,202 +699,98 @@ export default function PurchaseFormPage() {
               </CardHeader>
               <CardContent>
                 {formData.items.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
+                  <div className="text-center py-8 text-muted-foreground dark:text-slate-400">
                     <Calculator className="mx-auto h-8 w-8 mb-2" />
                     <p>{t('purchase.form.noLines', 'No line items. Click "Add Line" to add products.')}</p>
                   </div>
                 ) : (
                   <Table>
                     <TableHeader>
-                      <TableRow>
-                        <TableHead>{t('purchase.form.product', 'Product')}</TableHead>
-                        <TableHead>{t('purchase.form.qty', 'Qty')}</TableHead>
-                        <TableHead>{t('purchase.form.unitCost', 'Unit Cost')}</TableHead>
-                        <TableHead>{t('purchase.form.discount', 'Discount')}</TableHead>
-                        <TableHead>{t('purchase.form.taxRate', 'Tax %')}</TableHead>
-                        <TableHead>{t('purchase.form.tax', 'Tax')}</TableHead>
-                        <TableHead>{t('purchase.form.total', 'Total')}</TableHead>
+                      <TableRow className="dark:bg-slate-700">
+                        <TableHead style={{ width: 250 }} className="dark:text-white">{t('purchase.form.product', 'Product')}</TableHead>
+                        <TableHead className="dark:text-white">{t('purchase.form.qty', 'Qty')}</TableHead>
+                        <TableHead className="dark:text-white">{t('purchase.form.unitCost', 'Unit Cost')}</TableHead>
+                        <TableHead className="dark:text-white">{t('purchase.form.discount', 'Discount')}</TableHead>
+                        <TableHead className="dark:text-white">{t('purchase.form.taxRate', 'Tax %')}</TableHead>
+                        <TableHead className="dark:text-white">{t('purchase.form.tax', 'Tax')}</TableHead>
+                        <TableHead className="dark:text-white">{t('purchase.form.total', 'Total')}</TableHead>
                         <TableHead></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {formData.items.map((line, index) => {
-                        const search = (line.productName || '').toLowerCase();
-                        const filteredProducts = search
-                          ? products
-                              .filter(
-                                (p) =>
-                                  p.name.toLowerCase().includes(search) ||
-                                  p.sku.toLowerCase().includes(search)
-                              )
-                              .slice(0, 20)
-                          : products.slice(0, 20);
-                        const isOpen = openDropdownIndex === index;
-                        return (
-                          <TableRow key={index}>
-                            <TableCell>
-                              <div
-                                className="relative w-[220px]"
-                                ref={(el) => {
-                                  dropdownRefs.current[index] = el;
-                                }}
-                              >
-                                <input
-                                  type="text"
-                                  placeholder={t('purchase.form.selectProduct', 'Search product...')}
-                                  value={line.productName || ''}
-                                  onChange={(e) => {
-                                    setFormData((prev) => {
-                                      const newLines = [...prev.items];
-                                      newLines[index] = {
-                                        ...newLines[index],
-                                        productName: e.target.value,
-                                        product: '',
-                                      };
-                                      return { ...prev, items: newLines };
-                                    });
-                                    setOpenDropdownIndex(index);
-                                    setSelectedProductIndex(null);
-                                  }}
-                                  onFocus={() => setOpenDropdownIndex(index)}
-                                  onBlur={() => {
-                                    setTimeout(() => setOpenDropdownIndex(null), 150);
-                                  }}
-                                  onKeyDown={(e) => {
-                                    if (!isOpen) {
-                                      setOpenDropdownIndex(index);
-                                    }
-                                    if (e.key === 'ArrowDown') {
-                                      e.preventDefault();
-                                      setSelectedProductIndex((prev) =>
-                                        prev === null ? 0 : Math.min(prev + 1, filteredProducts.length - 1)
-                                      );
-                                    } else if (e.key === 'ArrowUp') {
-                                      e.preventDefault();
-                                      setSelectedProductIndex((prev) =>
-                                        prev === null ? 0 : Math.max(prev - 1, 0)
-                                      );
-                                    } else if (e.key === 'Enter') {
-                                      e.preventDefault();
-                                      if (selectedProductIndex !== null && filteredProducts[selectedProductIndex]) {
-                                        handleProductSelect(index, filteredProducts[selectedProductIndex]._id);
-                                        setOpenDropdownIndex(null);
-                                      }
-                                    } else if (e.key === 'Escape') {
-                                      setOpenDropdownIndex(null);
-                                    }
-                                  }}
-                                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 pr-8"
-                                />
-                                {line.productName && (
-                                  <button
-                                    type="button"
-                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                                    onMouseDown={(e) => {
-                                      e.preventDefault();
-                                      setFormData((prev) => {
-                                        const newLines = [...prev.items];
-                                        newLines[index] = {
-                                          ...newLines[index],
-                                          productName: '',
-                                          product: '',
-                                        };
-                                        return { ...prev, items: newLines };
-                                      });
-                                    }}
-                                  >
-                                    <X className="h-3 w-3" />
-                                  </button>
-                                )}
-                                {isOpen && (
-                                  <div className="absolute z-[100] mt-1 w-full max-h-[200px] overflow-y-auto rounded-md border bg-white shadow-lg">
-                                    {filteredProducts.length === 0 ? (
-                                      <div className="px-3 py-2 text-sm text-muted-foreground">
-                                        {t('purchase.form.noProductsFound', 'No products found')}
-                                      </div>
-                                    ) : (
-                                      filteredProducts.map((product, pIdx) => (
-                                        <div
-                                          key={product._id}
-                                          className={`px-3 py-2 text-sm cursor-pointer ${
-                                            pIdx === selectedProductIndex
-                                              ? 'bg-accent text-accent-foreground'
-                                              : 'hover:bg-accent hover:text-accent-foreground'
-                                          }`}
-                                          onMouseDown={(e) => {
-                                            e.preventDefault();
-                                            handleProductSelect(index, product._id);
-                                            setOpenDropdownIndex(null);
-                                          }}
-                                          onMouseEnter={() => setSelectedProductIndex(pIdx)}
-                                        >
-                                          <div className="font-medium">{product.name}</div>
-                                          <div className="text-xs text-muted-foreground">{product.sku}</div>
-                                        </div>
-                                      ))
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <Input
-                                type="number"
-                                min="0.0001"
-                                step="any"
-                                className="w-20"
-                                value={line.quantity}
-                                onChange={(e) =>
-                                  handleLineChange(index, 'quantity', parseFloat(e.target.value) || 0)
-                                }
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <Input
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                className="w-24"
-                                value={line.unitCost}
-                                onChange={(e) =>
-                                  handleLineChange(index, 'unitCost', parseFloat(e.target.value) || 0)
-                                }
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <Input
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                className="w-20"
-                                value={line.discount}
-                                onChange={(e) =>
-                                  handleLineChange(index, 'discount', parseFloat(e.target.value) || 0)
-                                }
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <Input
-                                type="number"
-                                min="0"
-                                max="100"
-                                className="w-16"
-                                value={line.taxRate}
-                                onChange={(e) =>
-                                  handleLineChange(index, 'taxRate', parseFloat(e.target.value) || 0)
-                                }
-                              />
-                            </TableCell>
-                            <TableCell className="text-right">{formatCurrency(line.taxAmount)}</TableCell>
-                            <TableCell className="font-medium">{formatCurrency(line.totalWithTax)}</TableCell>
-                            <TableCell>
-                              <Button variant="ghost" size="sm" onClick={() => removeLine(index)}>
-                                <Trash2 className="h-4 w-4 text-red-500" />
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
+                      {formData.items.map((line, index) => (
+                        <TableRow key={index} className="dark:hover:bg-slate-700/50">
+                          <TableCell>
+                            <Select value={line.product} onValueChange={(value) => handleProductSelect(index, value)}>
+                              <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600">
+                                <SelectValue placeholder={t('purchase.form.selectProduct', 'Select product...')} />
+                              </SelectTrigger>
+                              <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                                {products.map((product) => (
+                                  <SelectItem key={product._id} value={product._id} className="dark:text-slate-200">
+                                    {product.name} ({product.sku})
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              min="0.0001"
+                              step="any"
+                              className="w-20 bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
+                              value={line.quantity}
+                              onChange={(e) =>
+                                handleLineChange(index, 'quantity', parseFloat(e.target.value) || 0)
+                              }
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              className="w-24 bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
+                              value={line.unitCost}
+                              onChange={(e) =>
+                                handleLineChange(index, 'unitCost', parseFloat(e.target.value) || 0)
+                              }
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              className="w-20 bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
+                              value={line.discount}
+                              onChange={(e) =>
+                                handleLineChange(index, 'discount', parseFloat(e.target.value) || 0)
+                              }
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              min="0"
+                              max="100"
+                              className="w-16 bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
+                              value={line.taxRate}
+                              onChange={(e) =>
+                                handleLineChange(index, 'taxRate', parseFloat(e.target.value) || 0)
+                              }
+                            />
+                          </TableCell>
+                          <TableCell className="text-right dark:text-slate-300">{formatCurrency(line.taxAmount)}</TableCell>
+                          <TableCell className="font-medium dark:text-slate-200">{formatCurrency(line.totalWithTax)}</TableCell>
+                          <TableCell>
+                            <Button variant="ghost" size="sm" onClick={() => removeLine(index)}>
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
                     </TableBody>
                   </Table>
                 )}
@@ -660,32 +800,32 @@ export default function PurchaseFormPage() {
 
           {/* Summary Sidebar */}
           <div>
-            <Card className="sticky top-6">
+            <Card className="sticky top-6 dark:bg-slate-800">
               <CardHeader>
-                <CardTitle>{t('purchase.form.summary', 'Summary')}</CardTitle>
+                <CardTitle className="text-slate-900 dark:text-white">{t('purchase.form.summary', 'Summary')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">{t('purchase.form.subtotal', 'Subtotal')}</span>
-                  <span className="font-medium">{formatCurrency(summary.subtotal)}</span>
+                  <span className="text-muted-foreground dark:text-slate-400">{t('purchase.form.subtotal', 'Subtotal')}</span>
+                  <span className="font-medium dark:text-slate-200">{formatCurrency(summary.subtotal)}</span>
                 </div>
                 {summary.totalDiscount > 0 && (
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t('purchase.form.discount', 'Discount')}</span>
-                    <span className="font-medium">-{formatCurrency(summary.totalDiscount)}</span>
+                    <span className="text-muted-foreground dark:text-slate-400">{t('purchase.form.discount', 'Discount')}</span>
+                    <span className="font-medium dark:text-slate-200">-{formatCurrency(summary.totalDiscount)}</span>
                   </div>
                 )}
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">{t('purchase.form.tax', 'Tax')}</span>
-                  <span className="font-medium">{formatCurrency(summary.totalTax)}</span>
+                  <span className="text-muted-foreground dark:text-slate-400">{t('purchase.form.tax', 'Tax')}</span>
+                  <span className="font-medium dark:text-slate-200">{formatCurrency(summary.totalTax)}</span>
                 </div>
-                <div className="border-t pt-4 flex justify-between">
-                  <span className="font-bold">{t('purchase.form.total', 'Total')}</span>
-                  <span className="font-bold text-lg">{formatCurrency(summary.grandTotal)}</span>
+                <div className="border-t pt-4 dark:border-slate-600 flex justify-between">
+                  <span className="font-bold text-slate-900 dark:text-white">{t('purchase.form.total', 'Total')}</span>
+                  <span className="font-bold text-lg text-slate-900 dark:text-white">{formatCurrency(summary.grandTotal)}</span>
                 </div>
 
                 <div className="space-y-2 pt-4">
-                  <Button className="w-full" onClick={handleSave} disabled={saving}>
+                  <Button className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-200" onClick={handleSave} disabled={saving}>
                     {saving ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : (

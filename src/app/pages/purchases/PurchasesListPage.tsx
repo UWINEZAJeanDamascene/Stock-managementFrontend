@@ -201,10 +201,10 @@ export default function PurchasesListPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-6">
+      <div className="container mx-auto py-6 min-h-screen bg-slate-50 dark:bg-slate-900">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-2xl font-bold">
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
               {t('purchases.listTitle', 'Direct Purchases')}
             </h1>
             <p className="text-muted-foreground">
@@ -221,10 +221,10 @@ export default function PurchasesListPage() {
         </div>
 
         {/* Filters */}
-        <div className="bg-card rounded-lg border p-4 mb-6">
+        <div className="bg-card dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <label className="text-sm font-medium mb-1 block">
+              <label className="text-sm font-medium mb-1 block text-slate-900 dark:text-white">
                 {t('purchases.status', 'Status')}
               </label>
               <Select
@@ -233,38 +233,38 @@ export default function PurchasesListPage() {
                   setStatusFilter(v === 'all' ? '' : v)
                 }
               >
-                <SelectTrigger>
+                <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600">
                   <SelectValue
                     placeholder={t('purchases.allStatuses', 'All Statuses')}
                   />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">
+                <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                  <SelectItem value="all" className="dark:text-slate-200">
                     {t('purchases.allStatuses', 'All Statuses')}
                   </SelectItem>
-                  <SelectItem value="draft">
+                  <SelectItem value="draft" className="dark:text-slate-200">
                     {t('purchases.status.draft', 'Draft')}
                   </SelectItem>
-                  <SelectItem value="ordered">
+                  <SelectItem value="ordered" className="dark:text-slate-200">
                     {t('purchases.status.ordered', 'Ordered')}
                   </SelectItem>
-                  <SelectItem value="received">
+                  <SelectItem value="received" className="dark:text-slate-200">
                     {t('purchases.status.received', 'Received')}
                   </SelectItem>
-                  <SelectItem value="partial">
+                  <SelectItem value="partial" className="dark:text-slate-200">
                     {t('purchases.status.partial', 'Partial')}
                   </SelectItem>
-                  <SelectItem value="paid">
+                  <SelectItem value="paid" className="dark:text-slate-200">
                     {t('purchases.status.paid', 'Paid')}
                   </SelectItem>
-                  <SelectItem value="cancelled">
+                  <SelectItem value="cancelled" className="dark:text-slate-200">
                     {t('purchases.status.cancelled', 'Cancelled')}
                   </SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">
+              <label className="text-sm font-medium mb-1 block text-slate-900 dark:text-white">
                 {t('purchases.supplier', 'Supplier')}
               </label>
               <Select
@@ -273,17 +273,17 @@ export default function PurchasesListPage() {
                   setSupplierFilter(v === 'all' ? '' : v)
                 }
               >
-                <SelectTrigger>
+                <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600">
                   <SelectValue
                     placeholder={t('purchases.allSuppliers', 'All Suppliers')}
                   />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">
+                <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                  <SelectItem value="all" className="dark:text-slate-200">
                     {t('purchases.allSuppliers', 'All Suppliers')}
                   </SelectItem>
                   {suppliers.map((s) => (
-                    <SelectItem key={s._id} value={s._id}>
+                    <SelectItem key={s._id} value={s._id} className="dark:text-slate-200">
                       {s.name}
                     </SelectItem>
                   ))}
@@ -291,58 +291,60 @@ export default function PurchasesListPage() {
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">
+              <label className="text-sm font-medium mb-1 block text-slate-900 dark:text-white">
                 {t('purchases.dateFrom', 'Date From')}
               </label>
               <Input
                 type="date"
                 value={dateFrom}
                 onChange={(e) => setDateFrom(e.target.value)}
+                className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
               />
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">
+              <label className="text-sm font-medium mb-1 block text-slate-900 dark:text-white">
                 {t('purchases.dateTo', 'Date To')}
               </label>
               <Input
                 type="date"
                 value={dateTo}
                 onChange={(e) => setDateTo(e.target.value)}
+                className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
               />
             </div>
           </div>
         </div>
 
         {/* Table */}
-        <div className="bg-card rounded-lg border">
+        <div className="bg-card dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
           {loading ? (
             <div className="flex items-center justify-center p-8">
-              <Loader2 className="h-8 w-8 animate-spin" />
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : (
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>
+                <TableRow className="dark:bg-slate-700">
+                  <TableHead className="dark:text-white">
                     {t('purchases.purchaseNumber', 'Purchase #')}
                   </TableHead>
-                  <TableHead>
+                  <TableHead className="dark:text-white">
                     {t('purchases.supplier', 'Supplier')}
                   </TableHead>
-                  <TableHead>
+                  <TableHead className="dark:text-white">
                     {t('purchases.purchaseDate', 'Purchase Date')}
                   </TableHead>
-                  <TableHead>{t('purchases.status', 'Status')}</TableHead>
-                  <TableHead className="text-right">
+                  <TableHead className="dark:text-white">{t('purchases.status', 'Status')}</TableHead>
+                  <TableHead className="text-right dark:text-white">
                     {t('purchases.totalAmount', 'Total Amount')}
                   </TableHead>
-                  <TableHead className="text-right">
+                  <TableHead className="text-right dark:text-white">
                     {t('purchases.balance', 'Balance')}
                   </TableHead>
-                  <TableHead className="text-right">
+                  <TableHead className="text-right dark:text-white">
                     {t('purchases.items', 'Items')}
                   </TableHead>
-                  <TableHead className="text-right">
+                  <TableHead className="text-right dark:text-white">
                     {t('common.actions', 'Actions')}
                   </TableHead>
                 </TableRow>
@@ -352,26 +354,26 @@ export default function PurchasesListPage() {
                   <TableRow>
                     <TableCell
                       colSpan={8}
-                      className="text-center py-8 text-muted-foreground"
+                      className="text-center py-8 text-muted-foreground dark:text-slate-400"
                     >
                       {t('purchases.noPurchases', 'No purchases found')}
                     </TableCell>
                   </TableRow>
                 ) : (
                   purchaseList.map((p) => (
-                    <TableRow key={p._id}>
-                      <TableCell className="font-medium">
+                    <TableRow key={p._id} className="dark:hover:bg-slate-700/50">
+                      <TableCell className="font-medium dark:text-slate-200">
                         <FileText className="inline-block mr-2 h-4 w-4" />
                         {p.purchaseNumber || 'N/A'}
                       </TableCell>
-                      <TableCell>{p.supplier?.name || '-'}</TableCell>
-                      <TableCell>{formatDate(p.purchaseDate)}</TableCell>
+                      <TableCell className="dark:text-slate-300">{p.supplier?.name || '-'}</TableCell>
+                      <TableCell className="dark:text-slate-300">{formatDate(p.purchaseDate)}</TableCell>
                       <TableCell>{getStatusBadge(p.status)}</TableCell>
-                      <TableCell className="text-right font-medium">
+                      <TableCell className="text-right font-medium dark:text-slate-200">
                         {formatCurrency(p.grandTotal)}
                       </TableCell>
-                      <TableCell className="text-right">
-                        {formatCurrency(p.balance)}
+                      <TableCell className="text-right dark:text-slate-300">
+                        {formatCurrency(Number(p.grandTotal) - (p.payments?.reduce((sum, payment) => sum + (Number(payment.amount) || 0), 0) || 0))}
                       </TableCell>
                       <TableCell className="text-right">
                         {p.items?.length || 0}

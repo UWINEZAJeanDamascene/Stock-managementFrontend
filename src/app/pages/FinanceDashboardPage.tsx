@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Layout } from '../layout/Layout';
-import { dashboardApi, type FinanceDashboardData } from '@/lib/api';
+import { dashboardApi, type FinanceDashboardData, taxDashboardApi, type TaxDashboardData } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { Skeleton } from '@/app/components/ui/skeleton';
@@ -127,6 +127,7 @@ function formatSourceType(st: string): string {
 
 export default function FinanceDashboardPage() {
   const [data, setData] = useState<FinanceDashboardData | null>(null);
+  const [taxData, setTaxData] = useState<TaxDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -134,8 +135,14 @@ export default function FinanceDashboardPage() {
   const fetchDashboard = useCallback(async () => {
     try {
       setError(null);
-      const result = await dashboardApi.getFinance();
-      setData(result);
+      const [financeResult, taxResult] = await Promise.all([
+        dashboardApi.getFinance(),
+        taxDashboardApi.get({ year: new Date().getFullYear() })
+      ]);
+      setData(financeResult);
+      if (taxResult.success) {
+        setTaxData(taxResult.data);
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to load finance dashboard');
     } finally {
@@ -162,7 +169,6 @@ export default function FinanceDashboardPage() {
   const bankBalances = data?.bank_balances;
   const upcomingPayments = data?.upcoming_payments;
   const budgetVsActual = data?.budget_vs_actual;
-  const taxLiability = data?.tax_liability;
   const cashFlow = data?.cash_flow_30_days;
 
   // Cash flow bar chart data
@@ -247,8 +253,8 @@ export default function FinanceDashboardPage() {
           />
           <MetricCard
             title="Net VAT Payable"
-            value={`$${formatCurrency(summary?.net_vat_payable ?? 0)}`}
-            subtitle={`${taxLiability?.tax_accounts_configured ?? 0} tax accounts`}
+            value={`$${formatCurrency(taxData?.vat?.net ?? 0)}`}
+            subtitle={`${taxData?.vat?.invoiceCount ?? 0} invoices, ${taxData?.vat?.expenseCount ?? 0} expenses`}
             icon={<Receipt className="h-5 w-5 text-purple-600 dark:text-purple-400" />}
             colorClass="bg-purple-100 dark:bg-purple-900/30"
             loading={loading}
@@ -480,7 +486,7 @@ export default function FinanceDashboardPage() {
                     <div>
                       <p className="text-sm text-slate-500 dark:text-slate-400">Output VAT (Collected)</p>
                       <p className="text-xl font-bold text-slate-900 dark:text-white font-mono">
-                        ${formatCurrency(taxLiability?.output_vat ?? 0)}
+                        ${formatCurrency(taxData?.vat?.output ?? 0)}
                       </p>
                     </div>
                     <div className="p-3 rounded-lg bg-green-100 dark:bg-green-900/30">
@@ -493,7 +499,7 @@ export default function FinanceDashboardPage() {
                     <div>
                       <p className="text-sm text-slate-500 dark:text-slate-400">Input VAT (Paid)</p>
                       <p className="text-xl font-bold text-slate-900 dark:text-white font-mono">
-                        ${formatCurrency(taxLiability?.input_vat ?? 0)}
+                        ${formatCurrency(taxData?.vat?.input ?? 0)}
                       </p>
                     </div>
                     <div className="p-3 rounded-lg bg-red-100 dark:bg-red-900/30">
@@ -506,8 +512,13 @@ export default function FinanceDashboardPage() {
                     <div>
                       <p className="text-sm font-medium text-purple-700 dark:text-purple-300">Net VAT Payable</p>
                       <p className="text-2xl font-bold text-purple-900 dark:text-purple-100 font-mono">
-                        ${formatCurrency(taxLiability?.net_vat_payable ?? 0)}
+                        ${formatCurrency(taxData?.vat?.net ?? 0)}
                       </p>
+                      {taxData?.vat?.net !== 0 && (
+                        <p className="text-xs text-purple-600 dark:text-purple-400 mt-1">
+                          {taxData?.vat?.isPayable ? 'VAT Payable to RRA' : 'Refund Due from RRA'}
+                        </p>
+                      )}
                     </div>
                     <div className="p-3 rounded-lg bg-purple-100 dark:bg-purple-900/30">
                       <Receipt className="h-6 w-6 text-purple-600 dark:text-purple-400" />

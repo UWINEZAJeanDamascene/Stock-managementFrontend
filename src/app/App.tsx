@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router';
+import { useState } from 'react';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
@@ -48,6 +49,7 @@ import PurchaseOrderDetailPage from './pages/purchases/PurchaseOrderDetailPage';
 import GRNListPage from './pages/grn/GRNListPage';
 import GRNCreatePage from './pages/grn/GRNCreatePage';
 import GRNDetailPage from './pages/grn/GRNDetailPage';
+import GRNEditPage from './pages/grn/GRNEditPage';
 import PurchaseReturnsListPage from './pages/purchase-returns/PurchaseReturnsListPage';
 import PurchaseReturnCreatePage from './pages/purchase-returns/PurchaseReturnCreatePage';
 import PurchaseReturnDetailPage from './pages/purchase-returns/PurchaseReturnDetailPage';
@@ -59,6 +61,7 @@ import SupplierFormPage from './pages/suppliers/SupplierFormPage';
 import SupplierDetailPage from './pages/suppliers/SupplierDetailPage';
 import QuotationsListPage from './pages/quotations/QuotationsListPage';
 import QuotationFormPage from './pages/quotations/QuotationFormPage';
+import ClientQuotationViewPage from './pages/quotations/ClientQuotationViewPage';
 import InvoicesListPage from './pages/invoices/InvoicesListPage';
 import InvoiceFormPage from './pages/invoices/InvoiceFormPage';
 import InvoiceDetailPage from './pages/invoices/InvoiceDetailPage';
@@ -102,6 +105,7 @@ import LiabilityFormPage from './pages/liabilities/LiabilityFormPage';
 import BudgetsListPage from './pages/budgets/BudgetsListPage';
 import BudgetFormPage from './pages/budgets/BudgetFormPage';
 import BudgetDetailPage from './pages/budgets/BudgetDetailPage';
+import BudgetSettingsPage from './pages/budgets/BudgetSettingsPage';
 import ARAgingPage from './pages/ar/ARAgingPage';
 import ARReconciliationPage from './pages/ar/ARReconciliationPage';
 import ExpensesListPage from './pages/expenses/ExpensesListPage';
@@ -111,7 +115,6 @@ import PayrollListPage from './pages/payroll/PayrollListPage';
 import PayrollRunsListPage from './pages/payroll/PayrollRunsListPage';
 import PayrollDetailPage from './pages/payroll/PayrollDetailPage';
 import PayrollRunDetailPage from './pages/payroll/PayrollRunDetailPage';
-import TaxesPage from './pages/taxes/TaxesPage';
 import JournalEntriesPage from './pages/journal/JournalEntriesPage';
 import JournalEntryDetailPage from './pages/journal/JournalEntryDetailPage';
 import JournalEntryFormPage from './pages/journal/JournalEntryFormPage';
@@ -124,34 +127,27 @@ import FinancialRatiosPage from './pages/reports/FinancialRatiosPage';
 import AccountingPeriodsPage from './pages/settings/AccountingPeriodsPage';
 import CompanyProfilePage from './pages/settings/CompanyProfilePage';
 import RolesSettingsPage from './pages/settings/RolesSettingsPage';
-import { LanguageProvider } from '@/contexts/LanguageContext';
+import { LanguageProvider } from '../contexts/LanguageContext';
 import ChatBot from './components/ChatBot';
 import OfflineSyncBanner from './components/OfflineSyncBanner';
 import { Toaster } from 'sonner';
 
-// Wrapper component with logging to debug Products page issue
+// Wrapper for ProductsListPage
 function ProductsListPageWrapper() {
   const { isAuthenticated, loading } = useAuth();
-  console.log('[ProductsListPageWrapper] Rendering, isAuthenticated:', isAuthenticated, 'loading:', loading);
   
-  // Debug: show what's happening
   if (loading) {
     return <div style={{padding: 20, textAlign: 'center', background: '#fff'}}>
-      <div>🔄 Checking authentication...</div>
+      <div>Checking authentication...</div>
     </div>;
   }
   
   if (!isAuthenticated) {
-    console.log('[ProductsListPageWrapper] User not authenticated - showing message');
     return <div style={{padding: 20, textAlign: 'center', background: '#fff'}}>
-      <div>🔐 Please log in to view products</div>
-      <div style={{fontSize: 12, color: '#666', marginTop: 10}}>
-        (isAuthenticated={String(isAuthenticated)}, loading={String(loading)})
-      </div>
+      <div>Please log in to view products</div>
     </div>;
   }
   
-  console.log('[ProductsListPageWrapper] User authenticated, rendering ProductsListPage');
   try {
     return <ProductsListPage />;
   } catch (err) {
@@ -160,29 +156,22 @@ function ProductsListPageWrapper() {
   }
 }
 
-// Wrapper component with logging to debug ProductDetailPage issue
+// Wrapper for ProductDetailPage
 function ProductDetailPageWrapper() {
   const { isAuthenticated, loading } = useAuth();
-  console.log('[ProductDetailPageWrapper] Rendering, isAuthenticated:', isAuthenticated, 'loading:', loading);
   
-  // Debug: show what's happening
   if (loading) {
     return <div style={{padding: 20, textAlign: 'center', background: '#fff'}}>
-      <div>🔄 Checking authentication...</div>
+      <div>Checking authentication...</div>
     </div>;
   }
   
   if (!isAuthenticated) {
-    console.log('[ProductDetailPageWrapper] User not authenticated - showing message');
     return <div style={{padding: 20, textAlign: 'center', background: '#fff'}}>
-      <div>🔐 Please log in to view product details</div>
-      <div style={{fontSize: 12, color: '#666', marginTop: 10}}>
-        (isAuthenticated={String(isAuthenticated)}, loading={String(loading)})
-      </div>
+      <div>Please log in to view product details</div>
     </div>;
   }
   
-  console.log('[ProductDetailPageWrapper] User authenticated, rendering ProductDetailPage');
   try {
     return <ProductDetailPage />;
   } catch (err) {
@@ -191,29 +180,42 @@ function ProductDetailPageWrapper() {
   }
 }
 
-// Wrapper component with logging to debug GRNListPage issue
+// Wrapper for DashboardPage
+function DashboardPageWrapper() {
+  const { isAuthenticated, loading } = useAuth();
+  
+  if (loading) {
+    return <div style={{padding: 40, textAlign: 'center'}}>Loading...</div>;
+  }
+  
+  if (!isAuthenticated) {
+    return <div style={{padding: 40, textAlign: 'center'}}>Please log in</div>;
+  }
+  
+  try {
+    return <DashboardPage />;
+  } catch (err: any) {
+    console.error('[DashboardPageWrapper] Render error:', err);
+    return <div style={{padding: 40, color: 'red', textAlign: 'center'}}>Error: {err.message || String(err)}</div>;
+  }
+}
+
+// Wrapper for GRNListPage
 function GRNListPageWrapper() {
   const { isAuthenticated, loading } = useAuth();
-  console.log('[GRNListPageWrapper] Rendering, isAuthenticated:', isAuthenticated, 'loading:', loading);
   
-  // Debug: show what's happening
   if (loading) {
     return <div style={{padding: 20, textAlign: 'center', background: '#fff'}}>
-      <div>🔄 Checking authentication...</div>
+      <div>Checking authentication...</div>
     </div>;
   }
   
   if (!isAuthenticated) {
-    console.log('[GRNListPageWrapper] User not authenticated - showing message');
     return <div style={{padding: 20, textAlign: 'center', background: '#fff'}}>
-      <div>🔐 Please log in to view GRN</div>
-      <div style={{fontSize: 12, color: '#666', marginTop: 10}}>
-        (isAuthenticated={String(isAuthenticated)}, loading={String(loading)})
-      </div>
+      <div>Please log in to view GRN</div>
     </div>;
   }
   
-  console.log('[GRNListPageWrapper] User authenticated, rendering GRNListPage');
   try {
     return <GRNListPage />;
   } catch (err) {
@@ -222,6 +224,7 @@ function GRNListPageWrapper() {
   }
 }
 
+// TOP-LEVEL DEBUG - should always show in console
 function AppRoutes() {
   return (
     <>
@@ -236,7 +239,7 @@ function AppRoutes() {
         <Route path="/company" element={<CompanySelectorPage />} />
         
         {/* System routes - pages already have Layout component */}
-        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/dashboard" element={<DashboardPageWrapper />} />
         <Route path="/dashboard/inventory" element={<InventoryDashboardPage />} />
         <Route path="/dashboard/sales" element={<SalesDashboardPage />} />
         <Route path="/dashboard/purchases" element={<PurchaseDashboardPage />} />
@@ -279,6 +282,7 @@ function AppRoutes() {
         } />
         <Route path="/grn/new" element={<GRNCreatePage />} />
         <Route path="/grn/:id" element={<GRNDetailPage />} />
+        <Route path="/grn/:id/edit" element={<GRNEditPage />} />
         <Route path="/purchase-returns" element={<PurchaseReturnsListPage />} />
         <Route path="/purchase-returns/new" element={<PurchaseReturnCreatePage />} />
         <Route path="/purchase-returns/:id" element={<PurchaseReturnDetailPage />} />
@@ -294,6 +298,7 @@ function AppRoutes() {
         <Route path="/quotations/new" element={<QuotationFormPage />} />
         <Route path="/quotations/:id/edit" element={<QuotationFormPage />} />
         <Route path="/quotations/:id" element={<QuotationFormPage />} />
+        <Route path="/client/quotations/:id" element={<ClientQuotationViewPage />} />
         <Route path="/invoices" element={<InvoicesListPage />} />
         <Route path="/invoices/new" element={<InvoiceFormPage />} />
         <Route path="/invoices/:id/edit" element={<InvoiceFormPage />} />
@@ -529,6 +534,11 @@ function AppRoutes() {
             <BudgetFormPage />
           </ErrorBoundary>
         } />
+        <Route path="/budgets/settings" element={
+          <ErrorBoundary>
+            <BudgetSettingsPage />
+          </ErrorBoundary>
+        } />
         {/* Expenses */}
         <Route path="/expenses" element={
           <ErrorBoundary>
@@ -589,13 +599,6 @@ function AppRoutes() {
         <Route path="/payroll/:id/edit" element={
           <ErrorBoundary>
             <PayrollDetailPage />
-          </ErrorBoundary>
-        } />
-
-        {/* Taxes routes */}
-        <Route path="/taxes" element={
-          <ErrorBoundary>
-            <TaxesPage />
           </ErrorBoundary>
         } />
 
@@ -683,22 +686,13 @@ function AppRoutes() {
         } />
         
         {/* 404 fallback */}
-        <Route path="*" element={
-          <>
-            {console.log('[App] Wildcard route matched - 404 fallback showing HomePage')}
-            <HomePage />
-          </>
-        } />
+        <Route path="*" element={<HomePage />} />
       </Routes>
     </>
   );
 }
 
-console.log('[App] App component rendering');
-
 export default function App() {
-  console.log('[App] App function called');
-  
   return (
     <BrowserRouter>
       <ThemeProvider>

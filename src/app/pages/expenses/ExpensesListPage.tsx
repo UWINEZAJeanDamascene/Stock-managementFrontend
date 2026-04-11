@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router';
-import { expensesApi } from '@/lib/api';
+import { expensesApi, budgetsApi } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
 import {
   Plus,
@@ -85,6 +85,7 @@ interface Expense {
     name: string;
   } | null;
   receiptRef?: string;
+  notes?: string;
   isRecurring?: boolean;
   recurringFrequency?: string;
   createdBy?: {
@@ -137,10 +138,12 @@ export default function ExpensesListPage() {
     paid: true,
     isRecurring: false,
     recurringFrequency: 'monthly',
+    budgetId: '',
   });
 
   const [expenseAccounts, setExpenseAccounts] = useState<any[]>([]);
   const [bankAccounts, setBankAccounts] = useState<any[]>([]);
+  const [budgets, setBudgets] = useState<any[]>([]);
 
   const fetchExpenses = useCallback(async () => {
     setLoading(true);
@@ -197,11 +200,23 @@ export default function ExpensesListPage() {
     }
   }, []);
 
+  const fetchBudgets = useCallback(async () => {
+    try {
+      const response = await budgetsApi.getAll({ status: 'approved' });
+      if (response.success && response.data) {
+        setBudgets(response.data);
+      }
+    } catch (error) {
+      console.error('[ExpensesListPage] Failed to fetch budgets:', error);
+    }
+  }, []);
+
   useEffect(() => {
     fetchExpenses();
     fetchAccounts();
     fetchBankAccounts();
-  }, [fetchExpenses, fetchAccounts, fetchBankAccounts]);
+    fetchBudgets();
+  }, [fetchExpenses, fetchAccounts, fetchBankAccounts, fetchBudgets]);
 
   const handleCreateExpense = async () => {
     if (!newExpenseForm.description || newExpenseForm.amount <= 0) {
@@ -230,6 +245,7 @@ export default function ExpensesListPage() {
         paid: newExpenseForm.paid,
         isRecurring: newExpenseForm.isRecurring,
         recurringFrequency: newExpenseForm.recurringFrequency,
+        budget_id: newExpenseForm.budgetId || undefined,
       });
 
       if (response.success) {
@@ -249,6 +265,7 @@ export default function ExpensesListPage() {
           paid: true,
           isRecurring: false,
           recurringFrequency: 'monthly',
+          budgetId: '',
         });
         fetchExpenses();
       } else {
@@ -322,12 +339,12 @@ export default function ExpensesListPage() {
 
   const getStatusBadge = (status: string) => {
     const config: Record<string, { variant: string; className: string }> = {
-      pending: { variant: 'outline', className: 'bg-yellow-500 text-white' },
-      approved: { variant: 'default', className: 'bg-green-500' },
-      rejected: { variant: 'destructive', className: '' },
-      posted: { variant: 'default', className: 'bg-green-500' },
-      reversed: { variant: 'secondary', className: 'bg-orange-500 text-white' },
-      cancelled: { variant: 'outline', className: 'bg-gray-500 text-white' },
+      pending: { variant: 'outline', className: 'bg-yellow-500 text-white dark:bg-yellow-600' },
+      approved: { variant: 'default', className: 'bg-green-500 dark:bg-green-600' },
+      rejected: { variant: 'destructive', className: 'dark:bg-red-700' },
+      posted: { variant: 'default', className: 'bg-green-500 dark:bg-green-600' },
+      reversed: { variant: 'secondary', className: 'bg-orange-500 text-white dark:bg-orange-600' },
+      cancelled: { variant: 'outline', className: 'bg-gray-500 text-white dark:bg-gray-600' },
     };
     const { variant, className } = config[status] || config.posted;
     return <Badge variant={variant as any} className={className}>{status}</Badge>;
@@ -335,14 +352,14 @@ export default function ExpensesListPage() {
 
   const getPaymentMethodBadge = (method: string) => {
     const config: Record<string, { variant: string; className: string }> = {
-      bank: { variant: 'default', className: 'bg-blue-500' },
-      cash: { variant: 'secondary', className: 'bg-green-500' },
-      bank_transfer: { variant: 'outline', className: 'bg-blue-600' },
-      cheque: { variant: 'outline', className: 'bg-purple-500' },
-      mobile_money: { variant: 'outline', className: 'bg-yellow-500' },
-      credit_card: { variant: 'outline', className: 'bg-pink-500' },
-      petty_cash: { variant: 'outline', className: 'bg-orange-500' },
-      payable: { variant: 'outline', className: 'bg-gray-500' },
+      bank: { variant: 'default', className: 'bg-blue-500 dark:bg-blue-600' },
+      cash: { variant: 'secondary', className: 'bg-green-500 dark:bg-green-600' },
+      bank_transfer: { variant: 'outline', className: 'bg-blue-600 dark:bg-blue-700' },
+      cheque: { variant: 'outline', className: 'bg-purple-500 dark:bg-purple-600' },
+      mobile_money: { variant: 'outline', className: 'bg-yellow-500 dark:bg-yellow-600' },
+      credit_card: { variant: 'outline', className: 'bg-pink-500 dark:bg-pink-600' },
+      petty_cash: { variant: 'outline', className: 'bg-orange-500 dark:bg-orange-600' },
+      payable: { variant: 'outline', className: 'bg-gray-500 dark:bg-gray-600' },
     };
     const { variant, className } = config[method] || { variant: 'outline', className: '' };
     return <Badge variant={variant as any} className={className}>{method}</Badge>;
@@ -350,22 +367,22 @@ export default function ExpensesListPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-6">
+      <div className="container mx-auto py-6 bg-gray-50 dark:bg-slate-900 min-h-screen">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
-            <Receipt className="h-8 w-8 text-indigo-600" />
+            <Receipt className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
             <div>
-              <h1 className="text-3xl font-bold">Expenses</h1>
-              <p className="text-muted-foreground">Manage business expenses</p>
+              <h1 className="text-3xl font-bold dark:text-white">Expenses</h1>
+              <p className="text-muted-foreground dark:text-slate-400">Manage business expenses</p>
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={handleExport}>
+            <Button variant="outline" onClick={handleExport} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
               <Download className="mr-2 h-4 w-4" />
               Export
             </Button>
-            <Button onClick={() => setShowCreateDialog(true)}>
+            <Button onClick={() => setShowCreateDialog(true)} className="dark:bg-primary dark:text-primary-foreground">
               <Plus className="mr-2 h-4 w-4" />
               New Expense
             </Button>
@@ -376,52 +393,52 @@ export default function ExpensesListPage() {
         {/* We can also add a recurring expenses summary here if needed */}
 
         {/* Filters */}
-        <Card className="mb-6">
+        <Card className="mb-6 dark:bg-slate-800">
           <CardContent className="pt-4">
             <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
               <div className="relative col-span-2">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground dark:text-slate-400" />
                 <Input
                   placeholder="Search expenses..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 dark:bg-slate-700 dark:text-white dark:border-slate-600"
                 />
               </div>
               <Select
                 value={filters.type}
                 onValueChange={(value) => setFilters({ ...filters, type: value === 'all' ? '' : value })}
               >
-                <SelectTrigger>
+                <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
                   <SelectValue placeholder="Type" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="salaries_wages">Salaries & Wages</SelectItem>
-                  <SelectItem value="rent">Rent</SelectItem>
-                  <SelectItem value="utilities">Utilities</SelectItem>
-                  <SelectItem value="transport_delivery">Transport & Delivery</SelectItem>
-                  <SelectItem value="marketing_advertising">Marketing & Advertising</SelectItem>
-                  <SelectItem value="other_expense">Other Expense</SelectItem>
-                  <SelectItem value="interest_income">Interest Income</SelectItem>
-                  <SelectItem value="other_income">Other Income</SelectItem>
+                <SelectContent className="dark:bg-slate-800">
+                  <SelectItem value="all" className="dark:text-slate-200">All Types</SelectItem>
+                  <SelectItem value="salaries_wages" className="dark:text-slate-200">Salaries & Wages</SelectItem>
+                  <SelectItem value="rent" className="dark:text-slate-200">Rent</SelectItem>
+                  <SelectItem value="utilities" className="dark:text-slate-200">Utilities</SelectItem>
+                  <SelectItem value="transport_delivery" className="dark:text-slate-200">Transport & Delivery</SelectItem>
+                  <SelectItem value="marketing_advertising" className="dark:text-slate-200">Marketing & Advertising</SelectItem>
+                  <SelectItem value="other_expense" className="dark:text-slate-200">Other Expense</SelectItem>
+                  <SelectItem value="interest_income" className="dark:text-slate-200">Interest Income</SelectItem>
+                  <SelectItem value="other_income" className="dark:text-slate-200">Other Income</SelectItem>
                 </SelectContent>
               </Select>
               <Select
                 value={filters.status}
                 onValueChange={(value) => setFilters({ ...filters, status: value === 'all' ? '' : value })}
               >
-                <SelectTrigger>
+                <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="approved">Approved</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
-                  <SelectItem value="posted">Posted</SelectItem>
-                  <SelectItem value="reversed">Reversed</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                <SelectContent className="dark:bg-slate-800">
+                  <SelectItem value="all" className="dark:text-slate-200">All Statuses</SelectItem>
+                  <SelectItem value="pending" className="dark:text-slate-200">Pending</SelectItem>
+                  <SelectItem value="approved" className="dark:text-slate-200">Approved</SelectItem>
+                  <SelectItem value="rejected" className="dark:text-slate-200">Rejected</SelectItem>
+                  <SelectItem value="posted" className="dark:text-slate-200">Posted</SelectItem>
+                  <SelectItem value="reversed" className="dark:text-slate-200">Reversed</SelectItem>
+                  <SelectItem value="cancelled" className="dark:text-slate-200">Cancelled</SelectItem>
                 </SelectContent>
               </Select>
               <Input
@@ -429,16 +446,18 @@ export default function ExpensesListPage() {
                 placeholder="Start Date"
                 value={filters.startDate}
                 onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
+                className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
               />
               <Input
                 type="date"
                 placeholder="End Date"
                 value={filters.endDate}
                 onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
+                className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
               />
             </div>
             <div className="flex justify-end mt-4">
-              <Button variant="ghost" onClick={() => setFilters({ type: '', startDate: '', endDate: '', paymentMethod: '', status: '' })}>
+              <Button variant="ghost" onClick={() => setFilters({ type: '', startDate: '', endDate: '', paymentMethod: '', status: '' })} className="dark:text-slate-300 dark:hover:bg-slate-700">
                 <RefreshCw className="mr-2 h-4 w-4" />
                 Clear Filters
               </Button>
@@ -447,17 +466,17 @@ export default function ExpensesListPage() {
         </Card>
 
         {/* Expenses Table */}
-        <Card>
+        <Card className="dark:bg-slate-800">
           <CardContent className="p-0">
             {loading ? (
               <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin" />
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground dark:text-slate-400" />
               </div>
             ) : expenses.length === 0 ? (
               <div className="flex flex-col items-center py-12">
-                <AlertCircle className="h-12 w-12 mb-4 text-muted-foreground" />
-                <p className="text-muted-foreground">No expenses found</p>
-                <Button className="mt-4" onClick={() => setShowCreateDialog(true)}>
+                <AlertCircle className="h-12 w-12 mb-4 text-muted-foreground dark:text-slate-400" />
+                <p className="text-muted-foreground dark:text-slate-400">No expenses found</p>
+                <Button className="mt-4 dark:bg-primary dark:text-primary-foreground" onClick={() => setShowCreateDialog(true)}>
                   <Plus className="mr-2 h-4 w-4" />
                   Create First Expense
                 </Button>
@@ -466,40 +485,40 @@ export default function ExpensesListPage() {
               <>
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>Reference</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Description</TableHead>
-                      <TableHead>Account</TableHead>
-                      <TableHead>Method</TableHead>
-                      <TableHead className="text-right">Total</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                    <TableRow className="dark:bg-slate-700/50 dark:border-slate-600">
+                      <TableHead className="dark:text-slate-200">Reference</TableHead>
+                      <TableHead className="dark:text-slate-200">Date</TableHead>
+                      <TableHead className="dark:text-slate-200">Description</TableHead>
+                      <TableHead className="dark:text-slate-200">Account</TableHead>
+                      <TableHead className="dark:text-slate-200">Method</TableHead>
+                      <TableHead className="text-right dark:text-slate-200">Total</TableHead>
+                      <TableHead className="dark:text-slate-200">Status</TableHead>
+                      <TableHead className="text-right dark:text-slate-200">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {expenses.map((expense) => (
-                      <TableRow key={expense._id}>
-                        <TableCell className="font-medium">
+                      <TableRow key={expense._id} className="dark:border-slate-600">
+                        <TableCell className="font-medium dark:text-white">
                           <div className="flex items-center gap-2">
-                            {expense.isRecurring && <Repeat className="h-4 w-4 text-purple-500" />}
+                            {expense.isRecurring && <Repeat className="h-4 w-4 text-purple-500 dark:text-purple-400" />}
                             {expense.reference}
                           </div>
                         </TableCell>
-                        <TableCell>{formatDate(expense.date)}</TableCell>
-                        <TableCell>{expense.description}</TableCell>
-                        <TableCell>
+                        <TableCell className="dark:text-slate-300">{formatDate(expense.date)}</TableCell>
+                        <TableCell className="dark:text-slate-300">{expense.description}</TableCell>
+                        <TableCell className="dark:text-slate-300">
                           {expense.account ? (
                             <div>
-                              <div className="font-medium">{expense.account.code}</div>
-                              <div className="text-xs text-muted-foreground">{expense.account.name}</div>
+                              <div className="font-medium dark:text-white">{expense.account.code}</div>
+                              <div className="text-xs text-muted-foreground dark:text-slate-400">{expense.account.name}</div>
                             </div>
                           ) : (
                             '-'
                           )}
                         </TableCell>
-                        <TableCell>{getPaymentMethodBadge(expense.method)}</TableCell>
-                        <TableCell className="text-right font-medium">{formatCurrency(expense.totalAmount)}</TableCell>
+                        <TableCell className="dark:text-slate-300">{getPaymentMethodBadge(expense.method)}</TableCell>
+                        <TableCell className="text-right font-medium dark:text-white">{formatCurrency(expense.totalAmount)}</TableCell>
                         <TableCell>{getStatusBadge(expense.status)}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
@@ -507,6 +526,7 @@ export default function ExpensesListPage() {
                               variant="ghost"
                               size="icon"
                               onClick={() => navigate(`/expenses/${expense._id}`)}
+                              className="dark:text-slate-300 dark:hover:bg-slate-700"
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
@@ -516,6 +536,7 @@ export default function ExpensesListPage() {
                                   variant="ghost"
                                   size="icon"
                                   onClick={() => navigate(`/expenses/${expense._id}/edit`)}
+                                  className="dark:text-slate-300 dark:hover:bg-slate-700"
                                 >
                                   <Edit className="h-4 w-4" />
                                 </Button>
@@ -526,6 +547,7 @@ export default function ExpensesListPage() {
                                     setSelectedExpense(expense);
                                     setShowDeleteDialog(true);
                                   }}
+                                  className="dark:text-red-400 dark:hover:bg-slate-700"
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
@@ -539,8 +561,8 @@ export default function ExpensesListPage() {
                 </Table>
                 
                 {/* Pagination */}
-                <div className="flex items-center justify-between px-4 py-4 border-t">
-                  <div className="text-sm text-muted-foreground">
+                <div className="flex items-center justify-between px-4 py-4 border-t dark:border-slate-600">
+                  <div className="text-sm text-muted-foreground dark:text-slate-400">
                     Showing {((currentPage - 1) * limit) + 1} to {Math.min(currentPage * limit, totalCount)} of {totalCount} expenses
                   </div>
                   <div className="flex items-center gap-2">
@@ -549,10 +571,11 @@ export default function ExpensesListPage() {
                       size="sm"
                       onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                       disabled={currentPage === 1}
+                      className="dark:border-slate-600 dark:text-slate-200"
                     >
                       <ChevronLeft className="h-4 w-4" />
                     </Button>
-                    <div className="text-sm">
+                    <div className="text-sm dark:text-slate-300">
                       Page {currentPage} of {totalPages}
                     </div>
                     <Button
@@ -560,6 +583,7 @@ export default function ExpensesListPage() {
                       size="sm"
                       onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                       disabled={currentPage === totalPages}
+                      className="dark:border-slate-600 dark:text-slate-200"
                     >
                       <ChevronRight className="h-4 w-4" />
                     </Button>
@@ -589,54 +613,57 @@ export default function ExpensesListPage() {
 
         {/* Create Expense Dialog */}
         <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl dark:bg-slate-800">
             <DialogHeader>
-              <DialogTitle>Create New Expense</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="dark:text-white">Create New Expense</DialogTitle>
+              <DialogDescription className="dark:text-slate-400">
                 Record a new business expense. Fields marked with * are required.
               </DialogDescription>
             </DialogHeader>
             <div className="grid grid-cols-2 gap-4 py-4 max-h-[70vh] overflow-y-auto pr-2">
               <div className="space-y-2 col-span-2">
-                <Label>Description *</Label>
+                <Label className="dark:text-slate-200">Description *</Label>
                 <Input
                   placeholder="Enter expense description"
                   value={newExpenseForm.description}
                   onChange={(e) => setNewExpenseForm({ ...newExpenseForm, description: e.target.value })}
+                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                 />
               </div>
               <div className="space-y-2">
-                <Label>Amount (Net) *</Label>
+                <Label className="dark:text-slate-200">Amount (Net) *</Label>
                 <Input
                   type="number"
                   step="0.01"
                   placeholder="0.00"
                   value={newExpenseForm.amount || ''}
                   onChange={(e) => setNewExpenseForm({ ...newExpenseForm, amount: parseFloat(e.target.value) || 0 })}
+                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                 />
               </div>
               <div className="space-y-2">
-                <Label>Tax Amount</Label>
+                <Label className="dark:text-slate-200">Tax Amount</Label>
                 <Input
                   type="number"
                   step="0.01"
                   placeholder="0.00"
                   value={newExpenseForm.taxAmount || ''}
                   onChange={(e) => setNewExpenseForm({ ...newExpenseForm, taxAmount: parseFloat(e.target.value) || 0 })}
+                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                 />
               </div>
               <div className="space-y-2">
-                <Label>Expense Account *</Label>
+                <Label className="dark:text-slate-200">Expense Account *</Label>
                 <Select
                   value={newExpenseForm.expenseAccountId}
                   onValueChange={(value) => setNewExpenseForm({ ...newExpenseForm, expenseAccountId: value })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
                     <SelectValue placeholder="Select account" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="dark:bg-slate-800">
                     {expenseAccounts.map((account) => (
-                      <SelectItem key={account._id} value={account._id}>
+                      <SelectItem key={account._id} value={account._id} className="dark:text-slate-200">
                         {account.code} - {account.name}
                       </SelectItem>
                     ))}
@@ -644,38 +671,57 @@ export default function ExpensesListPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Payment Method *</Label>
+                <Label className="dark:text-slate-200">Budget (Optional)</Label>
                 <Select
-                  value={newExpenseForm.paymentMethod}
-                  onValueChange={(value) => setNewExpenseForm({ ...newExpenseForm, paymentMethod: value })}
+                  value={newExpenseForm.budgetId || "_none"}
+                  onValueChange={(value) => setNewExpenseForm({ ...newExpenseForm, budgetId: value === "_none" ? "" : value })}
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select method" />
+                  <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
+                    <SelectValue placeholder="Select budget for tracking" />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="bank">Bank</SelectItem>
-                    <SelectItem value="cash">Cash</SelectItem>
-                    <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                    <SelectItem value="cheque">Cheque</SelectItem>
-                    <SelectItem value="mobile_money">Mobile Money</SelectItem>
-                    <SelectItem value="credit_card">Credit Card</SelectItem>
-                    <SelectItem value="petty_cash">Petty Cash</SelectItem>
-                    <SelectItem value="payable">Payable</SelectItem>
+                  <SelectContent className="dark:bg-slate-800">
+                    <SelectItem value="_none" className="dark:text-slate-200">None</SelectItem>
+                    {budgets.map((budget) => (
+                      <SelectItem key={budget._id} value={budget._id} className="dark:text-slate-200">
+                        {budget.name} (${(budget.remaining || 0).toLocaleString()} left)
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Bank Account</Label>
+                <Label className="dark:text-slate-200">Payment Method *</Label>
+                <Select
+                  value={newExpenseForm.paymentMethod}
+                  onValueChange={(value) => setNewExpenseForm({ ...newExpenseForm, paymentMethod: value })}
+                >
+                  <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
+                    <SelectValue placeholder="Select method" />
+                  </SelectTrigger>
+                  <SelectContent className="dark:bg-slate-800">
+                    <SelectItem value="bank" className="dark:text-slate-200">Bank</SelectItem>
+                    <SelectItem value="cash" className="dark:text-slate-200">Cash</SelectItem>
+                    <SelectItem value="bank_transfer" className="dark:text-slate-200">Bank Transfer</SelectItem>
+                    <SelectItem value="cheque" className="dark:text-slate-200">Cheque</SelectItem>
+                    <SelectItem value="mobile_money" className="dark:text-slate-200">Mobile Money</SelectItem>
+                    <SelectItem value="credit_card" className="dark:text-slate-200">Credit Card</SelectItem>
+                    <SelectItem value="petty_cash" className="dark:text-slate-200">Petty Cash</SelectItem>
+                    <SelectItem value="payable" className="dark:text-slate-200">Payable</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="dark:text-slate-200">Bank Account</Label>
                 <Select
                   value={newExpenseForm.bankAccountId}
                   onValueChange={(value) => setNewExpenseForm({ ...newExpenseForm, bankAccountId: value })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
                     <SelectValue placeholder="Select bank account" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="dark:bg-slate-800">
                     {bankAccounts.map((account) => (
-                      <SelectItem key={account._id} value={account._id}>
+                      <SelectItem key={account._id} value={account._id} className="dark:text-slate-200">
                         {account.accountName} - {account.bankName}
                       </SelectItem>
                     ))}
@@ -683,91 +729,94 @@ export default function ExpensesListPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Expense Date *</Label>
+                <Label className="dark:text-slate-200">Expense Date *</Label>
                 <Input
                   type="date"
                   value={newExpenseForm.expenseDate}
                   onChange={(e) => setNewExpenseForm({ ...newExpenseForm, expenseDate: e.target.value })}
+                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                 />
               </div>
               <div className="space-y-2">
-                <Label>Type</Label>
+                <Label className="dark:text-slate-200">Type</Label>
                 <Select
                   value={newExpenseForm.type}
                   onValueChange={(value) => setNewExpenseForm({ ...newExpenseForm, type: value })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="salaries_wages">Salaries & Wages</SelectItem>
-                    <SelectItem value="rent">Rent</SelectItem>
-                    <SelectItem value="utilities">Utilities</SelectItem>
-                    <SelectItem value="transport_delivery">Transport & Delivery</SelectItem>
-                    <SelectItem value="marketing_advertising">Marketing & Advertising</SelectItem>
-                    <SelectItem value="other_expense">Other Expense</SelectItem>
-                    <SelectItem value="interest_income">Interest Income</SelectItem>
-                    <SelectItem value="other_income">Other Income</SelectItem>
+                  <SelectContent className="dark:bg-slate-800">
+                    <SelectItem value="salaries_wages" className="dark:text-slate-200">Salaries & Wages</SelectItem>
+                    <SelectItem value="rent" className="dark:text-slate-200">Rent</SelectItem>
+                    <SelectItem value="utilities" className="dark:text-slate-200">Utilities</SelectItem>
+                    <SelectItem value="transport_delivery" className="dark:text-slate-200">Transport & Delivery</SelectItem>
+                    <SelectItem value="marketing_advertising" className="dark:text-slate-200">Marketing & Advertising</SelectItem>
+                    <SelectItem value="other_expense" className="dark:text-slate-200">Other Expense</SelectItem>
+                    <SelectItem value="interest_income" className="dark:text-slate-200">Interest Income</SelectItem>
+                    <SelectItem value="other_income" className="dark:text-slate-200">Other Income</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2 col-span-2 border-t pt-4 mt-2">
+              <div className="space-y-2 col-span-2 border-t pt-4 mt-2 dark:border-slate-600">
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
                     id="isRecurring"
                     checked={newExpenseForm.isRecurring}
                     onChange={(e) => setNewExpenseForm({ ...newExpenseForm, isRecurring: e.target.checked })}
-                    className="w-4 h-4 rounded border-gray-300"
+                    className="w-4 h-4 rounded border-gray-300 dark:border-slate-500"
                   />
-                  <Label htmlFor="isRecurring" className="flex items-center gap-2 cursor-pointer">
-                    <Repeat className="h-4 w-4 text-purple-500" />
+                  <Label htmlFor="isRecurring" className="flex items-center gap-2 cursor-pointer dark:text-slate-200">
+                    <Repeat className="h-4 w-4 text-purple-500 dark:text-purple-400" />
                     Recurring Expense
                   </Label>
                 </div>
                 {newExpenseForm.isRecurring && (
                   <div className="ml-6 mt-2">
-                    <Label className="text-sm text-muted-foreground">Frequency</Label>
+                    <Label className="text-sm text-muted-foreground dark:text-slate-400">Frequency</Label>
                     <Select
                       value={newExpenseForm.recurringFrequency}
                       onValueChange={(value) => setNewExpenseForm({ ...newExpenseForm, recurringFrequency: value })}
                     >
-                      <SelectTrigger className="w-full mt-1">
+                      <SelectTrigger className="w-full mt-1 dark:bg-slate-700 dark:text-white dark:border-slate-600">
                         <SelectValue placeholder="Select frequency" />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="daily">Daily</SelectItem>
-                        <SelectItem value="weekly">Weekly</SelectItem>
-                        <SelectItem value="monthly">Monthly</SelectItem>
-                        <SelectItem value="quarterly">Quarterly</SelectItem>
-                        <SelectItem value="yearly">Yearly</SelectItem>
+                      <SelectContent className="dark:bg-slate-800">
+                        <SelectItem value="daily" className="dark:text-slate-200">Daily</SelectItem>
+                        <SelectItem value="weekly" className="dark:text-slate-200">Weekly</SelectItem>
+                        <SelectItem value="monthly" className="dark:text-slate-200">Monthly</SelectItem>
+                        <SelectItem value="quarterly" className="dark:text-slate-200">Quarterly</SelectItem>
+                        <SelectItem value="yearly" className="dark:text-slate-200">Yearly</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 )}
               </div>
               <div className="space-y-2">
-                <Label>Reference</Label>
+                <Label className="dark:text-slate-200">Reference</Label>
                 <Input
                   placeholder="Reference number"
                   value={newExpenseForm.reference}
                   onChange={(e) => setNewExpenseForm({ ...newExpenseForm, reference: e.target.value })}
+                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                 />
               </div>
               <div className="space-y-2 col-span-2">
-                <Label>Notes</Label>
+                <Label className="dark:text-slate-200">Notes</Label>
                 <Input
                   placeholder="Additional notes"
                   value={newExpenseForm.notes}
                   onChange={(e) => setNewExpenseForm({ ...newExpenseForm, notes: e.target.value })}
+                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                 />
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+              <Button variant="outline" onClick={() => setShowCreateDialog(false)} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
                 Cancel
               </Button>
-              <Button onClick={handleCreateExpense} disabled={submitting}>
+              <Button onClick={handleCreateExpense} disabled={submitting} className="dark:bg-primary dark:text-primary-foreground">
                 {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Create Expense
               </Button>
@@ -777,15 +826,15 @@ export default function ExpensesListPage() {
 
         {/* Delete Confirmation Dialog */}
         <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-          <DialogContent>
+          <DialogContent className="dark:bg-slate-800">
             <DialogHeader>
-              <DialogTitle>Cancel Expense</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="dark:text-white">Cancel Expense</DialogTitle>
+              <DialogDescription className="dark:text-slate-400">
                 Are you sure you want to cancel this expense? This action will reverse any associated journal entries.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+              <Button variant="outline" onClick={() => setShowDeleteDialog(false)} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
                 No, Keep It
               </Button>
               <Button variant="destructive" onClick={handleDeleteExpense} disabled={submitting}>

@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { profitLossApi, companyApi, PLStatement, PLSection } from '@/lib/api';
-import { Layout } from '../../layout/Layout';
+import { useState, useEffect } from "react";
+import { profitLossApi, companyApi, PLStatement, PLSection } from "@/lib/api";
+import { Layout } from "../../layout/Layout";
 import {
   Loader2,
   TrendingUp,
@@ -8,26 +8,38 @@ import {
   Printer,
   CalendarDays,
   ChevronDown,
-  ChevronRight
-} from 'lucide-react';
-import { Button } from '@/app/components/ui/button';
-import { Input } from '@/app/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/app/components/ui/card';
-import { Badge } from '@/app/components/ui/badge';
-import { Label } from '@/app/components/ui/label';
-import { toast } from 'sonner';
-import { format } from 'date-fns';
+  ChevronRight,
+} from "lucide-react";
+import { Button } from "@/app/components/ui/button";
+import { Input } from "@/app/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/app/components/ui/card";
+import { Badge } from "@/app/components/ui/badge";
+import { Label } from "@/app/components/ui/label";
+import { toast } from "sonner";
+import { format } from "date-fns";
 
 const fmt = (n: number | null) => {
-  if (n === null || n === undefined) return '-';
-  if (n === 0) return '-';
-  return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  if (n === null || n === undefined) return "-";
+  if (n === 0) return "-";
+  return n.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 };
 
 const fmtSigned = (n: number | null) => {
-  if (n === null || n === undefined) return '-';
+  if (n === null || n === undefined) return "-";
   const abs = Math.abs(n);
-  const formatted = abs.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const formatted = abs.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
   return n < 0 ? `(${formatted})` : formatted;
 };
 
@@ -40,7 +52,7 @@ function SectionRow({
   bold = false,
   indent = 0,
   isNegative = false,
-  className = ''
+  className = "",
 }: {
   label: string;
   current: number | string;
@@ -50,17 +62,32 @@ function SectionRow({
   isNegative?: boolean;
   className?: string;
 }) {
-  const currentStr = typeof current === 'number' ? fmt(current) : current;
-  const compStr = comparative !== undefined ? (typeof comparative === 'number' ? fmt(comparative) : comparative) : null;
+  const currentStr = typeof current === "number" ? fmt(current) : current;
+  const compStr =
+    comparative !== undefined
+      ? typeof comparative === "number"
+        ? fmt(comparative)
+        : comparative
+      : null;
   return (
     <div
-      className={`flex items-center py-1.5 text-sm ${bold ? 'font-semibold border-t border-b bg-muted/50' : ''} ${className}`}
+      className={`flex items-center py-1.5 text-sm ${bold ? "font-semibold border-t border-b bg-muted/50" : ""} ${className}`}
       style={{ paddingLeft: `${indent * 24}px` }}
     >
-      <span className={`flex-1 ${bold ? 'font-semibold' : ''} ${isNegative ? 'text-destructive' : ''}`}>{label}</span>
-      <span className={`w-36 text-right font-mono tabular-nums ${isNegative ? 'text-destructive' : ''}`}>{currentStr}</span>
+      <span
+        className={`flex-1 ${bold ? "font-semibold" : ""} ${isNegative ? "text-destructive" : ""}`}
+      >
+        {label}
+      </span>
+      <span
+        className={`w-36 text-right font-mono tabular-nums ${isNegative ? "text-destructive" : ""}`}
+      >
+        {currentStr}
+      </span>
       {compStr !== null && (
-        <span className="w-36 text-right font-mono tabular-nums text-muted-foreground">{compStr}</span>
+        <span className="w-36 text-right font-mono tabular-nums text-muted-foreground">
+          {compStr}
+        </span>
       )}
     </div>
   );
@@ -71,7 +98,7 @@ function ExpandableSection({
   current,
   comparative,
   showComparative: _showComparative,
-  defaultExpanded = false
+  defaultExpanded = false,
 }: {
   title: string;
   current: PLSection;
@@ -89,13 +116,19 @@ function ExpandableSection({
         onClick={() => setExpanded(!expanded)}
         className="flex items-center w-full py-2 text-sm font-medium text-foreground hover:bg-muted/50 rounded px-1"
       >
-        {expanded ? <ChevronDown className="h-4 w-4 mr-1 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 mr-1 text-muted-foreground" />}
+        {expanded ? (
+          <ChevronDown className="h-4 w-4 mr-1 text-muted-foreground" />
+        ) : (
+          <ChevronRight className="h-4 w-4 mr-1 text-muted-foreground" />
+        )}
         {title}
       </button>
       {expanded && (
         <div className="border-l-2 ml-2">
           {current.lines.map((line) => {
-            const compLine = comparative?.lines.find(l => l.account_code === line.account_code);
+            const compLine = comparative?.lines.find(
+              (l) => l.account_code === line.account_code,
+            );
             return (
               <SectionRow
                 key={line.account_code}
@@ -116,23 +149,21 @@ function ExpandableSection({
 export default function ProfitLossPage() {
   const [loading, setLoading] = useState(false);
   const [statement, setStatement] = useState<PLStatement | null>(null);
-  const [companyName, setCompanyName] = useState('');
+  const [companyName, setCompanyName] = useState("");
   const [startDate, setStartDate] = useState(
-    format(new Date(new Date().getFullYear(), 0, 1), 'yyyy-MM-dd')
+    format(new Date(new Date().getFullYear(), 0, 1), "yyyy-MM-dd"),
   );
-  const [endDate, setEndDate] = useState(
-    format(new Date(), 'yyyy-MM-dd')
-  );
+  const [endDate, setEndDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [showComparative, setShowComparative] = useState(false);
-  const [compStartDate, setCompStartDate] = useState('');
-  const [compEndDate, setCompEndDate] = useState('');
+  const [compStartDate, setCompStartDate] = useState("");
+  const [compEndDate, setCompEndDate] = useState("");
 
   const fetchCompany = async () => {
     try {
       const res = await companyApi.getMe();
       if (res && (res as any).data) {
         const company = (res as any).data;
-        setCompanyName(company.name || '');
+        setCompanyName(company.name || "");
       }
     } catch {
       // silent — company name is cosmetic
@@ -154,7 +185,7 @@ export default function ProfitLossPage() {
       const response = await profitLossApi.getStatement(params);
       setStatement(response);
     } catch (error: any) {
-      toast.error(error.message || 'Failed to generate P&L');
+      toast.error(error.message || "Failed to generate P&L");
     } finally {
       setLoading(false);
     }
@@ -180,7 +211,9 @@ export default function ProfitLossPage() {
               <TrendingUp className="h-8 w-8" />
               Profit &amp; Loss
             </h1>
-            <p className="text-muted-foreground mt-1">Statement of Profit or Loss and Other Comprehensive Income — IAS 1</p>
+            <p className="text-muted-foreground mt-1">
+              Statement of Profit or Loss and Other Comprehensive Income — IAS 1
+            </p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={handlePrint}>
@@ -196,14 +229,26 @@ export default function ProfitLossPage() {
             <div className="flex items-end gap-4 flex-wrap">
               <div className="space-y-2">
                 <Label>Start Date</Label>
-                <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
+                <Input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label>End Date</Label>
-                <Input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
+                <Input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
               </div>
               <Button onClick={fetchPL} disabled={loading}>
-                {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CalendarDays className="h-4 w-4 mr-2" />}
+                {loading ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <CalendarDays className="h-4 w-4 mr-2" />
+                )}
                 Generate
               </Button>
               <div className="flex items-center gap-2 ml-auto">
@@ -211,7 +256,7 @@ export default function ProfitLossPage() {
                   <input
                     type="checkbox"
                     checked={showComparative}
-                    onChange={e => setShowComparative(e.target.checked)}
+                    onChange={(e) => setShowComparative(e.target.checked)}
                     className="h-4 w-4 rounded border-slate-300"
                   />
                   Compare Period
@@ -222,11 +267,19 @@ export default function ProfitLossPage() {
               <div className="flex items-end gap-4 mt-4 pt-4 border-t">
                 <div className="space-y-2">
                   <Label>Compare Start</Label>
-                  <Input type="date" value={compStartDate} onChange={e => setCompStartDate(e.target.value)} />
+                  <Input
+                    type="date"
+                    value={compStartDate}
+                    onChange={(e) => setCompStartDate(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Compare End</Label>
-                  <Input type="date" value={compEndDate} onChange={e => setCompEndDate(e.target.value)} />
+                  <Input
+                    type="date"
+                    value={compEndDate}
+                    onChange={(e) => setCompEndDate(e.target.value)}
+                  />
                 </div>
               </div>
             )}
@@ -242,9 +295,12 @@ export default function ProfitLossPage() {
                   {companyName}
                 </CardDescription>
               )}
-              <CardTitle className="text-xl">Statement of Profit or Loss</CardTitle>
+              <CardTitle className="text-xl">
+                Statement of Profit or Loss
+              </CardTitle>
               <CardDescription>
-                For the period {format(new Date(startDate), 'dd MMM yyyy')} to {format(new Date(endDate), 'dd MMM yyyy')}
+                For the period {format(new Date(startDate), "dd MMM yyyy")} to{" "}
+                {format(new Date(endDate), "dd MMM yyyy")}
               </CardDescription>
               <CardDescription className="text-xs">
                 (Amounts in functional currency)
@@ -403,7 +459,9 @@ export default function ProfitLossPage() {
               <SectionRow
                 label="Operating Margin"
                 current={fmtPct(cur.operating_margin_pct)}
-                comparative={comp ? fmtPct(comp.operating_margin_pct) : undefined}
+                comparative={
+                  comp ? fmtPct(comp.operating_margin_pct) : undefined
+                }
                 className="text-muted-foreground"
               />
 
@@ -431,7 +489,27 @@ export default function ProfitLossPage() {
                 />
               )}
 
-              {/* ── 9. FINANCE COSTS ──────────────────────────────────── */}
+              {/* ── 9. FINANCE INCOME ─────────────────────────────────── */}
+              {cur.finance_income && cur.finance_income.lines.length > 0 && (
+                <>
+                  <div className="mt-3" />
+                  <ExpandableSection
+                    title="Finance Income"
+                    current={cur.finance_income}
+                    comparative={comp?.finance_income}
+                    showComparative={showComparative}
+                    defaultExpanded={false}
+                  />
+                  <SectionRow
+                    label="Total Finance Income"
+                    current={cur.finance_income.total}
+                    comparative={comp?.finance_income?.total}
+                    bold
+                  />
+                </>
+              )}
+
+              {/* ── 10. FINANCE COSTS ─────────────────────────────────── */}
               {cur.finance_costs.lines.length > 0 && (
                 <>
                   <div className="mt-3" />
@@ -452,7 +530,7 @@ export default function ProfitLossPage() {
                 </>
               )}
 
-              {/* ── 10. SHARE OF ASSOCIATES ───────────────────────────── */}
+              {/* ── 11. SHARE OF ASSOCIATES ───────────────────────────── */}
               {cur.share_of_associates !== 0 && (
                 <SectionRow
                   label="Share of Profit of Associates / JVs"
@@ -461,7 +539,7 @@ export default function ProfitLossPage() {
                 />
               )}
 
-              {/* ── 11. PROFIT BEFORE TAX ──────────────────────────────── */}
+              {/* ── 12. PROFIT BEFORE TAX ──────────────────────────────── */}
               <div className="mt-3" />
               <SectionRow
                 label="Profit Before Tax"
@@ -471,7 +549,7 @@ export default function ProfitLossPage() {
                 className="text-base"
               />
 
-              {/* ── 12. TAX EXPENSE ────────────────────────────────────── */}
+              {/* ── 13. TAX EXPENSE ────────────────────────────────────── */}
               <div className="mt-1" />
               {cur.tax.lines.length > 0 ? (
                 <>
@@ -501,7 +579,8 @@ export default function ProfitLossPage() {
               )}
               {cur.computed_tax && (
                 <div className="text-xs text-muted-foreground pl-1 py-0.5">
-                  Auto-computed at {(cur.corporate_tax_rate * 100).toFixed(0)}% of Profit Before Tax
+                  Auto-computed at {(cur.corporate_tax_rate * 100).toFixed(0)}%
+                  of Profit Before Tax
                 </div>
               )}
               <SectionRow
@@ -511,7 +590,7 @@ export default function ProfitLossPage() {
                 className="text-muted-foreground"
               />
 
-              {/* ── 13. PROFIT AFTER TAX (CONTINUING OPERATIONS) ──────── */}
+              {/* ── 14. PROFIT AFTER TAX (CONTINUING OPERATIONS) ──────── */}
               <div className="mt-3" />
               <SectionRow
                 label="Profit After Tax (Continuing Operations)"
@@ -520,7 +599,7 @@ export default function ProfitLossPage() {
                 bold
               />
 
-              {/* ── 14. DISCONTINUED OPERATIONS ───────────────────────── */}
+              {/* ── 15. DISCONTINUED OPERATIONS ───────────────────────── */}
               {cur.discontinued_operations.total !== 0 && (
                 <SectionRow
                   label="Profit/(Loss) from Discontinued Operations"
@@ -530,31 +609,43 @@ export default function ProfitLossPage() {
                 />
               )}
 
-              {/* ── 15. PROFIT FOR THE PERIOD ──────────────────────────── */}
+              {/* ── 16. PROFIT FOR THE PERIOD ──────────────────────────── */}
               <div className="mt-3 p-4 rounded-lg border-2 bg-muted/30">
                 <div className="flex items-center">
                   <span className="flex-1 text-lg font-bold">
-                    Profit for the Period {cur.is_profit ? '' : '(Loss)'}
+                    Profit for the Period {cur.is_profit ? "" : "(Loss)"}
                   </span>
-                  <span className={`w-36 text-right font-mono text-lg font-bold ${cur.profit_for_period >= 0 ? 'text-foreground' : 'text-destructive'}`}>
+                  <span
+                    className={`w-36 text-right font-mono text-lg font-bold ${cur.profit_for_period >= 0 ? "text-foreground" : "text-destructive"}`}
+                  >
                     {fmt(cur.profit_for_period)}
                   </span>
                   {comp && (
-                    <span className={`w-36 text-right font-mono text-lg font-bold ${comp.profit_for_period >= 0 ? 'text-foreground' : 'text-destructive'}`}>
+                    <span
+                      className={`w-36 text-right font-mono text-lg font-bold ${comp.profit_for_period >= 0 ? "text-foreground" : "text-destructive"}`}
+                    >
                       {fmt(comp.profit_for_period)}
                     </span>
                   )}
                 </div>
                 <div className="flex items-center mt-1">
-                  <span className="flex-1 text-sm text-muted-foreground">Net Margin</span>
-                  <span className="w-36 text-right text-sm text-muted-foreground">{fmtPct(cur.net_margin_pct)}</span>
-                  {comp && <span className="w-36 text-right text-sm text-muted-foreground">{fmtPct(comp.net_margin_pct)}</span>}
+                  <span className="flex-1 text-sm text-muted-foreground">
+                    Net Margin
+                  </span>
+                  <span className="w-36 text-right text-sm text-muted-foreground">
+                    {fmtPct(cur.net_margin_pct)}
+                  </span>
+                  {comp && (
+                    <span className="w-36 text-right text-sm text-muted-foreground">
+                      {fmtPct(comp.net_margin_pct)}
+                    </span>
+                  )}
                 </div>
               </div>
 
               {/* ═══ PART B: OTHER COMPREHENSIVE INCOME ═══════════════ */}
 
-              {/* ── 16. OTHER COMPREHENSIVE INCOME ────────────────────── */}
+              {/* ── 17. OTHER COMPREHENSIVE INCOME ────────────────────── */}
               <div className="mt-6 mb-2">
                 <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground border-b pb-1">
                   Other Comprehensive Income
@@ -577,32 +668,42 @@ export default function ProfitLossPage() {
                   />
                 </>
               ) : (
-                <SectionRow
-                  label="Total Other Comprehensive Income"
-                  current={cur.other_comprehensive_income.total}
-                  comparative={comp?.other_comprehensive_income.total}
-                  bold
-                />
+                <>
+                  <SectionRow
+                    label="Total Other Comprehensive Income"
+                    current={0}
+                    comparative={comp ? 0 : undefined}
+                    bold
+                  />
+                  <div className="text-xs text-muted-foreground pl-1 py-0.5 italic">
+                    No OCI items — revaluation surplus, FX translation and
+                    similar items will appear here when posted
+                  </div>
+                </>
               )}
 
-              {/* ── 17. TOTAL COMPREHENSIVE INCOME ─────────────────────── */}
+              {/* ── 18. TOTAL COMPREHENSIVE INCOME ─────────────────────── */}
               <div className="mt-3 p-4 rounded-lg border-2 bg-primary/5">
                 <div className="flex items-center">
                   <span className="flex-1 text-lg font-bold">
                     Total Comprehensive Income for the Period
                   </span>
-                  <span className={`w-36 text-right font-mono text-lg font-bold ${cur.total_comprehensive_income >= 0 ? 'text-foreground' : 'text-destructive'}`}>
+                  <span
+                    className={`w-36 text-right font-mono text-lg font-bold ${cur.total_comprehensive_income >= 0 ? "text-foreground" : "text-destructive"}`}
+                  >
                     {fmt(cur.total_comprehensive_income)}
                   </span>
                   {comp && (
-                    <span className={`w-36 text-right font-mono text-lg font-bold ${comp.total_comprehensive_income >= 0 ? 'text-foreground' : 'text-destructive'}`}>
+                    <span
+                      className={`w-36 text-right font-mono text-lg font-bold ${comp.total_comprehensive_income >= 0 ? "text-foreground" : "text-destructive"}`}
+                    >
                       {fmt(comp.total_comprehensive_income)}
                     </span>
                   )}
                 </div>
               </div>
 
-              {/* ── 18. ATTRIBUTION (GROUP REPORTING) ──────────────────── */}
+              {/* ── 19. ATTRIBUTION (GROUP REPORTING) ──────────────────── */}
               <div className="mt-4">
                 <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground border-b pb-1 mb-2">
                   Profit Attributable To
@@ -638,7 +739,7 @@ export default function ProfitLossPage() {
                 indent={1}
               />
 
-              {/* ── 19. EARNINGS PER SHARE ────────────────────────────── */}
+              {/* ── 20. EARNINGS PER SHARE ────────────────────────────── */}
               <div className="mt-4">
                 <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground border-b pb-1 mb-2">
                   Earnings Per Share
@@ -646,25 +747,47 @@ export default function ProfitLossPage() {
               </div>
               <SectionRow
                 label="Basic EPS"
-                current={cur.earnings_per_share.basic_eps !== null ? fmtSigned(cur.earnings_per_share.basic_eps) : 'N/A (no shares configured)'}
-                comparative={comp && comp.earnings_per_share.basic_eps !== null ? fmtSigned(comp.earnings_per_share.basic_eps) : undefined}
+                current={
+                  cur.earnings_per_share.basic_eps !== null
+                    ? fmtSigned(cur.earnings_per_share.basic_eps)
+                    : "N/A (no shares configured)"
+                }
+                comparative={
+                  comp && comp.earnings_per_share.basic_eps !== null
+                    ? fmtSigned(comp.earnings_per_share.basic_eps)
+                    : undefined
+                }
               />
               <SectionRow
                 label="Diluted EPS"
-                current={cur.earnings_per_share.diluted_eps !== null ? fmtSigned(cur.earnings_per_share.diluted_eps) : 'N/A (no shares configured)'}
-                comparative={comp && comp.earnings_per_share.diluted_eps !== null ? fmtSigned(comp.earnings_per_share.diluted_eps) : undefined}
+                current={
+                  cur.earnings_per_share.diluted_eps !== null
+                    ? fmtSigned(cur.earnings_per_share.diluted_eps)
+                    : "N/A (no shares configured)"
+                }
+                comparative={
+                  comp && comp.earnings_per_share.diluted_eps !== null
+                    ? fmtSigned(comp.earnings_per_share.diluted_eps)
+                    : undefined
+                }
               />
 
               {/* Variance indicator */}
               {comp && (
                 <div className="mt-4 flex items-center justify-center gap-2 text-sm">
                   {cur.net_profit >= comp.net_profit ? (
-                    <Badge variant="secondary" className="bg-green-100/80 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                      <TrendingUp className="h-3 w-3 mr-1" />
-                      +{fmt(cur.net_profit - comp.net_profit)} vs comparative
+                    <Badge
+                      variant="secondary"
+                      className="bg-green-100/80 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                    >
+                      <TrendingUp className="h-3 w-3 mr-1" />+
+                      {fmt(cur.net_profit - comp.net_profit)} vs comparative
                     </Badge>
                   ) : (
-                    <Badge variant="secondary" className="bg-red-100/80 text-red-800 dark:bg-red-900/30 dark:text-red-400">
+                    <Badge
+                      variant="secondary"
+                      className="bg-red-100/80 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                    >
                       <TrendingDown className="h-3 w-3 mr-1" />
                       {fmt(cur.net_profit - comp.net_profit)} vs comparative
                     </Badge>
@@ -675,7 +798,11 @@ export default function ProfitLossPage() {
               {/* Generated timestamp */}
               {statement?.generated_at && (
                 <p className="text-xs text-muted-foreground text-center mt-6">
-                  Generated {format(new Date(statement.generated_at), 'dd MMM yyyy HH:mm')}
+                  Generated{" "}
+                  {format(
+                    new Date(statement.generated_at),
+                    "dd MMM yyyy HH:mm",
+                  )}
                 </p>
               )}
             </CardContent>
@@ -686,7 +813,8 @@ export default function ProfitLossPage() {
         {!cur && !loading && (
           <Card>
             <CardContent className="py-16 text-center text-muted-foreground">
-              Select a date range and click Generate to view the P&amp;L statement.
+              Select a date range and click Generate to view the P&amp;L
+              statement.
             </CardContent>
           </Card>
         )}

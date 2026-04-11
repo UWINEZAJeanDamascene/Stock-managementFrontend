@@ -196,10 +196,10 @@ export default function PurchaseOrdersListPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-6">
+      <div className="container mx-auto py-6 min-h-screen bg-slate-50 dark:bg-slate-900">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-2xl font-bold">{t('purchase.orders.title', 'Purchase Orders')}</h1>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t('purchase.orders.title', 'Purchase Orders')}</h1>
             <p className="text-muted-foreground">{t('purchase.orders.description', 'Manage your purchase orders')}</p>
           </div>
           <div className="flex gap-2">
@@ -215,42 +215,43 @@ export default function PurchaseOrdersListPage() {
         </div>
 
         {/* Filters */}
-        <div className="bg-card rounded-lg border p-4 mb-6">
+        <div className="bg-card dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div>
-              <label className="text-sm font-medium mb-1 block">{t('purchase.orders.search', 'Search')}</label>
+              <label className="text-sm font-medium mb-1 block text-slate-900 dark:text-white">{t('purchase.orders.search', 'Search')}</label>
               <Input 
                 placeholder={t('purchase.orders.searchPlaceholder', 'Search by reference...')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
               />
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">{t('purchase.orders.status', 'Status')}</label>
+              <label className="text-sm font-medium mb-1 block text-slate-900 dark:text-white">{t('purchase.orders.status', 'Status')}</label>
               <Select value={statusFilter || 'all'} onValueChange={(value) => setStatusFilter(value === 'all' ? '' : value)}>
-                <SelectTrigger>
+                <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600">
                   <SelectValue placeholder={t('purchase.orders.allStatuses', 'All Statuses')} />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('purchase.orders.allStatuses', 'All Statuses')}</SelectItem>
-                  <SelectItem value="draft">{t('purchase.status.draft', 'Draft')}</SelectItem>
-                  <SelectItem value="approved">{t('purchase.status.approved', 'Approved')}</SelectItem>
-                  <SelectItem value="partially_received">{t('purchase.status.partially_received', 'Partially Received')}</SelectItem>
-                  <SelectItem value="fully_received">{t('purchase.status.fully_received', 'Fully Received')}</SelectItem>
-                  <SelectItem value="cancelled">{t('purchase.status.cancelled', 'Cancelled')}</SelectItem>
+                <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                  <SelectItem value="all" className="dark:text-slate-200">{t('purchase.orders.allStatuses', 'All Statuses')}</SelectItem>
+                  <SelectItem value="draft" className="dark:text-slate-200">{t('purchase.status.draft', 'Draft')}</SelectItem>
+                  <SelectItem value="approved" className="dark:text-slate-200">{t('purchase.status.approved', 'Approved')}</SelectItem>
+                  <SelectItem value="partially_received" className="dark:text-slate-200">{t('purchase.status.partially_received', 'Partially Received')}</SelectItem>
+                  <SelectItem value="fully_received" className="dark:text-slate-200">{t('purchase.status.fully_received', 'Fully Received')}</SelectItem>
+                  <SelectItem value="cancelled" className="dark:text-slate-200">{t('purchase.status.cancelled', 'Cancelled')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">{t('purchase.orders.supplier', 'Supplier')}</label>
+              <label className="text-sm font-medium mb-1 block text-slate-900 dark:text-white">{t('purchase.orders.supplier', 'Supplier')}</label>
               <Select value={supplierFilter || 'all'} onValueChange={(value) => setSupplierFilter(value === 'all' ? '' : value)}>
-                <SelectTrigger>
+                <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600">
                   <SelectValue placeholder={t('purchase.orders.allSuppliers', 'All Suppliers')} />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('purchase.orders.allSuppliers', 'All Suppliers')}</SelectItem>
+                <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                  <SelectItem value="all" className="dark:text-slate-200">{t('purchase.orders.allSuppliers', 'All Suppliers')}</SelectItem>
                   {suppliers.map((supplier) => (
-                    <SelectItem key={supplier._id} value={supplier._id}>
+                    <SelectItem key={supplier._id} value={supplier._id} className="dark:text-slate-200">
                       {supplier.name}
                     </SelectItem>
                   ))}
@@ -258,66 +259,68 @@ export default function PurchaseOrdersListPage() {
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">{t('purchase.orders.dateFrom', 'Date From')}</label>
+              <label className="text-sm font-medium mb-1 block text-slate-900 dark:text-white">{t('purchase.orders.dateFrom', 'Date From')}</label>
               <Input 
                 type="date" 
                 value={dateFrom}
                 onChange={(e) => setDateFrom(e.target.value)}
+                className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
               />
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">{t('purchase.orders.dateTo', 'Date To')}</label>
+              <label className="text-sm font-medium mb-1 block text-slate-900 dark:text-white">{t('purchase.orders.dateTo', 'Date To')}</label>
               <Input 
                 type="date" 
                 value={dateTo}
                 onChange={(e) => setDateTo(e.target.value)}
+                className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
               />
             </div>
           </div>
         </div>
 
         {/* Table */}
-        <div className="bg-card rounded-lg border">
+        <div className="bg-card dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
           {loading ? (
             <div className="flex items-center justify-center p-8">
-              <Loader2 className="h-8 w-8 animate-spin" />
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : (
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>{t('purchase.orders.reference', 'Reference')}</TableHead>
-                  <TableHead>{t('purchase.orders.supplier', 'Supplier')}</TableHead>
-                  <TableHead>{t('purchase.orders.orderDate', 'Order Date')}</TableHead>
-                  <TableHead>{t('purchase.orders.expectedDelivery', 'Expected Delivery')}</TableHead>
-                  <TableHead>{t('purchase.orders.status', 'Status')}</TableHead>
-                  <TableHead>{t('purchase.orders.totalAmount', 'Total Amount')}</TableHead>
-                  <TableHead>{t('purchase.orders.lines', 'Lines')}</TableHead>
-                  <TableHead className="text-right">{t('common.actions', 'Actions')}</TableHead>
+                <TableRow className="dark:bg-slate-700">
+                  <TableHead className="dark:text-white">{t('purchase.orders.reference', 'Reference')}</TableHead>
+                  <TableHead className="dark:text-white">{t('purchase.orders.supplier', 'Supplier')}</TableHead>
+                  <TableHead className="dark:text-white">{t('purchase.orders.orderDate', 'Order Date')}</TableHead>
+                  <TableHead className="dark:text-white">{t('purchase.orders.expectedDelivery', 'Expected Delivery')}</TableHead>
+                  <TableHead className="dark:text-white">{t('purchase.orders.status', 'Status')}</TableHead>
+                  <TableHead className="dark:text-white">{t('purchase.orders.totalAmount', 'Total Amount')}</TableHead>
+                  <TableHead className="dark:text-white">{t('purchase.orders.lines', 'Lines')}</TableHead>
+                  <TableHead className="text-right dark:text-white">{t('common.actions', 'Actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {poList.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground dark:text-slate-400">
                       {t('purchase.orders.noOrders', 'No purchase orders found')}
                     </TableCell>
                   </TableRow>
                 ) : (
                   poList.map((po) => (
-                    <TableRow key={po._id}>
-                      <TableCell className="font-medium">
+                    <TableRow key={po._id} className="dark:hover:bg-slate-700/50">
+                      <TableCell className="font-medium dark:text-slate-200">
                         <FileText className="inline-block mr-2 h-4 w-4" />
                         {po.referenceNo || 'N/A'}
                       </TableCell>
-                      <TableCell>{po.supplier?.name || '-'}</TableCell>
-                      <TableCell>{formatDate(po.orderDate)}</TableCell>
-                      <TableCell>{po.expectedDeliveryDate ? formatDate(po.expectedDeliveryDate) : '-'}</TableCell>
+                      <TableCell className="dark:text-slate-300">{po.supplier?.name || '-'}</TableCell>
+                      <TableCell className="dark:text-slate-300">{formatDate(po.orderDate)}</TableCell>
+                      <TableCell className="dark:text-slate-300">{po.expectedDeliveryDate ? formatDate(po.expectedDeliveryDate) : '-'}</TableCell>
                       <TableCell>{getStatusBadge(po.status)}</TableCell>
-                      <TableCell className="font-medium">
+                      <TableCell className="font-medium dark:text-slate-200">
                         {formatCurrency(po.totalAmount, po.currencyCode)}
                       </TableCell>
-                      <TableCell>{po.linesCount || 0}</TableCell>
+                      <TableCell className="dark:text-slate-300">{po.linesCount || 0}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           <Button 

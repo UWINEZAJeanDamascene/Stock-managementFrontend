@@ -202,8 +202,8 @@ export default function PickPackPackPage() {
             Back
           </Button>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Pack Items</h1>
-            <p className="text-gray-500">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Pack Items</h1>
+            <p className="text-gray-500 dark:text-gray-400">
               {pickPack.referenceNo} - {pickPack.client?.name}
             </p>
           </div>

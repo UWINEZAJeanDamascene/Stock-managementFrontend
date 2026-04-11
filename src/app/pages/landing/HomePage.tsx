@@ -1,11 +1,15 @@
 import { useEffect } from 'react';
 import { LandingNavbar } from './LandingNavbar';
 import { HeroSection } from './HeroSection';
-import { FeaturesSection } from './FeaturesSection';
+import { TrustBadgesSection } from './TrustBadgesSection';
+import { StatsBanner } from './StatsBanner';
+import { FeaturesSectionEnhanced } from './FeaturesSectionEnhanced';
 import { HowItWorksSection } from './HowItWorksSection';
 import { TestimonialSection } from './TestimonialSection';
 import { PricingSection } from './PricingSection';
-import { LandingFooter } from './LandingFooter';
+import { FAQSection } from './FAQSection';
+import { LandingFooterEnhanced } from './LandingFooterEnhanced';
+import { LiveChatWidget } from './LiveChatWidget';
 
 export default function HomePage() {
   useEffect(() => {
@@ -20,11 +24,15 @@ export default function HomePage() {
     <div className="min-h-screen bg-white dark:bg-slate-900">
       <LandingNavbar />
       <HeroSection />
-      <FeaturesSection />
+      <TrustBadgesSection />
+      <StatsBanner />
+      <FeaturesSectionEnhanced />
       <HowItWorksSection />
       <TestimonialSection />
       <PricingSection />
-      <LandingFooter />
+      <FAQSection />
+      <LandingFooterEnhanced />
+      <LiveChatWidget />
     </div>
   );
 }

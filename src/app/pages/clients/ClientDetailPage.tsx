@@ -229,7 +229,7 @@ export default function ClientDetailPage() {
     return (
       <Layout>
         <div className="flex items-center justify-center p-8">
-          <Loader2 className="h-8 w-8 animate-spin" />
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground dark:text-slate-400" />
         </div>
       </Layout>
     );
@@ -238,8 +238,8 @@ export default function ClientDetailPage() {
   if (!client) {
     return (
       <Layout>
-        <div className="container mx-auto py-6">
-          <p>Client not found</p>
+        <div className="container mx-auto py-6 min-h-screen bg-slate-50 dark:bg-slate-900">
+          <p className="text-muted-foreground dark:text-slate-400">Client not found</p>
         </div>
       </Layout>
     );
@@ -247,7 +247,7 @@ export default function ClientDetailPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-6">
+      <div className="container mx-auto py-6 min-h-screen bg-slate-50 dark:bg-slate-900">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
@@ -256,8 +256,8 @@ export default function ClientDetailPage() {
               {t('common.back', 'Back')}
             </Button>
             <div>
-              <h1 className="text-2xl font-bold">{client.name}</h1>
-              <p className="text-muted-foreground">{client.code}</p>
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{client.name}</h1>
+              <p className="text-muted-foreground dark:text-slate-400">{client.code}</p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -274,107 +274,107 @@ export default function ClientDetailPage() {
 
         {/* Client Info Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <Card>
+          <Card className="dark:bg-slate-800">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">{t('clients.outstandingBalance', 'Outstanding Balance')}</CardTitle>
+              <CardTitle className="text-sm font-medium text-slate-900 dark:text-white">{t('clients.outstandingBalance', 'Outstanding Balance')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(client.outstandingBalance || 0)}</div>
+              <div className="text-2xl font-bold dark:text-slate-200">{formatCurrency(client.outstandingBalance || 0)}</div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="dark:bg-slate-800">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">{t('clients.totalInvoiced', 'Total Invoiced')}</CardTitle>
+              <CardTitle className="text-sm font-medium text-slate-900 dark:text-white">{t('clients.totalInvoiced', 'Total Invoiced')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(invoiceSummary.totalAmount)}</div>
+              <div className="text-2xl font-bold dark:text-slate-200">{formatCurrency(invoiceSummary.totalAmount)}</div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="dark:bg-slate-800">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">{t('clients.totalPaid', 'Total Paid')}</CardTitle>
+              <CardTitle className="text-sm font-medium text-slate-900 dark:text-white">{t('clients.totalPaid', 'Total Paid')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(invoiceSummary.totalPaid)}</div>
+              <div className="text-2xl font-bold dark:text-slate-200">{formatCurrency(invoiceSummary.totalPaid)}</div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="dark:bg-slate-800">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">{t('clients.creditLimit', 'Credit Limit')}</CardTitle>
+              <CardTitle className="text-sm font-medium text-slate-900 dark:text-white">{t('clients.creditLimit', 'Credit Limit')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(client.creditLimit || 0)}</div>
+              <div className="text-2xl font-bold dark:text-slate-200">{formatCurrency(client.creditLimit || 0)}</div>
             </CardContent>
           </Card>
         </div>
 
         {/* Tabs */}
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList>
-            <TabsTrigger value="overview">{t('clients.tabs.overview', 'Overview')}</TabsTrigger>
-            <TabsTrigger value="quotations">{t('clients.tabs.quotations', 'Quotations')}</TabsTrigger>
-            <TabsTrigger value="invoices">{t('clients.tabs.invoices', 'Invoices')}</TabsTrigger>
-            <TabsTrigger value="receipts">{t('clients.tabs.receipts', 'Receipts')}</TabsTrigger>
-            <TabsTrigger value="creditNotes">{t('clients.tabs.creditNotes', 'Credit Notes')}</TabsTrigger>
+          <TabsList className="dark:bg-slate-700">
+            <TabsTrigger value="overview" className="dark:data-[state=active]:bg-slate-600 dark:data-[state=active]:text-white">{t('clients.tabs.overview', 'Overview')}</TabsTrigger>
+            <TabsTrigger value="quotations" className="dark:data-[state=active]:bg-slate-600 dark:data-[state=active]:text-white">{t('clients.tabs.quotations', 'Quotations')}</TabsTrigger>
+            <TabsTrigger value="invoices" className="dark:data-[state=active]:bg-slate-600 dark:data-[state=active]:text-white">{t('clients.tabs.invoices', 'Invoices')}</TabsTrigger>
+            <TabsTrigger value="receipts" className="dark:data-[state=active]:bg-slate-600 dark:data-[state=active]:text-white">{t('clients.tabs.receipts', 'Receipts')}</TabsTrigger>
+            <TabsTrigger value="creditNotes" className="dark:data-[state=active]:bg-slate-600 dark:data-[state=active]:text-white">{t('clients.tabs.creditNotes', 'Credit Notes')}</TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
           <TabsContent value="overview">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
+              <Card className="dark:bg-slate-800">
                 <CardHeader>
-                  <CardTitle>{t('clients.contactInfo', 'Contact Information')}</CardTitle>
+                  <CardTitle className="text-slate-900 dark:text-white">{t('clients.contactInfo', 'Contact Information')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t('clients.email', 'Email')}</span>
-                    <span>{client.contact?.email || '-'}</span>
+                    <span className="text-muted-foreground dark:text-slate-400">{t('clients.email', 'Email')}</span>
+                    <span className="dark:text-slate-200">{client.contact?.email || '-'}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t('clients.phone', 'Phone')}</span>
-                    <span>{client.contact?.phone || '-'}</span>
+                    <span className="text-muted-foreground dark:text-slate-400">{t('clients.phone', 'Phone')}</span>
+                    <span className="dark:text-slate-200">{client.contact?.phone || '-'}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t('clients.address', 'Address')}</span>
-                    <span>{client.contact?.address || '-'}</span>
+                    <span className="text-muted-foreground dark:text-slate-400">{t('clients.address', 'Address')}</span>
+                    <span className="dark:text-slate-200">{client.contact?.address || '-'}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t('clients.city', 'City')}</span>
-                    <span>{client.contact?.city || '-'}</span>
+                    <span className="text-muted-foreground dark:text-slate-400">{t('clients.city', 'City')}</span>
+                    <span className="dark:text-slate-200">{client.contact?.city || '-'}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t('clients.country', 'Country')}</span>
-                    <span>{client.contact?.country || '-'}</span>
+                    <span className="text-muted-foreground dark:text-slate-400">{t('clients.country', 'Country')}</span>
+                    <span className="dark:text-slate-200">{client.contact?.country || '-'}</span>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="dark:bg-slate-800">
                 <CardHeader>
-                  <CardTitle>{t('clients.accountInfo', 'Account Information')}</CardTitle>
+                  <CardTitle className="text-slate-900 dark:text-white">{t('clients.accountInfo', 'Account Information')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t('clients.type', 'Type')}</span>
-                    <span className="capitalize">{client.type}</span>
+                    <span className="text-muted-foreground dark:text-slate-400">{t('clients.type', 'Type')}</span>
+                    <span className="capitalize dark:text-slate-200">{client.type}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t('clients.paymentTerms', 'Payment Terms')}</span>
-                    <span>{getPaymentTermsLabel(client.paymentTerms)}</span>
+                    <span className="text-muted-foreground dark:text-slate-400">{t('clients.paymentTerms', 'Payment Terms')}</span>
+                    <span className="dark:text-slate-200">{getPaymentTermsLabel(client.paymentTerms)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t('clients.status', 'Status')}</span>
+                    <span className="text-muted-foreground dark:text-slate-400">{t('clients.status', 'Status')}</span>
                     <Badge variant={client.isActive ? 'default' : 'secondary'}>
                       {client.isActive ? t('common.active', 'Active') : t('common.inactive', 'Inactive')}
                     </Badge>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t('clients.lastPurchase', 'Last Purchase')}</span>
-                    <span>{formatDate(client.lastPurchaseDate)}</span>
+                    <span className="text-muted-foreground dark:text-slate-400">{t('clients.lastPurchase', 'Last Purchase')}</span>
+                    <span className="dark:text-slate-200">{formatDate(client.lastPurchaseDate)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t('clients.createdAt', 'Created')}</span>
-                    <span>{formatDate(client.createdAt)}</span>
+                    <span className="text-muted-foreground dark:text-slate-400">{t('clients.createdAt', 'Created')}</span>
+                    <span className="dark:text-slate-200">{formatDate(client.createdAt)}</span>
                   </div>
                 </CardContent>
               </Card>
@@ -383,35 +383,39 @@ export default function ClientDetailPage() {
 
           {/* Quotations Tab */}
           <TabsContent value="quotations">
-            <Card>
+            <Card className="dark:bg-slate-800">
               <CardHeader>
-                <CardTitle>{t('clients.quotations', 'Quotations')}</CardTitle>
+                <CardTitle className="text-slate-900 dark:text-white">{t('clients.quotations', 'Quotations')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>{t('clients.quotationNumber', 'Quotation #')}</TableHead>
-                      <TableHead>{t('clients.date', 'Date')}</TableHead>
-                      <TableHead>{t('clients.expiryDate', 'Expiry Date')}</TableHead>
-                      <TableHead className="text-right">{t('clients.total', 'Total')}</TableHead>
-                      <TableHead>{t('clients.status', 'Status')}</TableHead>
+                    <TableRow className="dark:bg-slate-700">
+                      <TableHead className="dark:text-white">{t('clients.quotationNumber', 'Quotation #')}</TableHead>
+                      <TableHead className="dark:text-white">{t('clients.date', 'Date')}</TableHead>
+                      <TableHead className="dark:text-white">{t('clients.expiryDate', 'Expiry Date')}</TableHead>
+                      <TableHead className="text-right dark:text-white">{t('clients.total', 'Total')}</TableHead>
+                      <TableHead className="dark:text-white">{t('clients.status', 'Status')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {quotations.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground dark:text-slate-400">
                           {t('clients.noQuotations', 'No quotations found')}
                         </TableCell>
                       </TableRow>
                     ) : (
                       quotations.map((quotation) => (
-                        <TableRow key={quotation._id}>
-                          <TableCell className="font-medium">{quotation.referenceNo || '-'}</TableCell>
-                          <TableCell>{formatDate(quotation.quotationDate)}</TableCell>
-                          <TableCell>{formatDate(quotation.expiryDate)}</TableCell>
-                          <TableCell className="text-right">{formatCurrency(quotation.totalAmount)}</TableCell>
+                        <TableRow 
+                          key={quotation._id}
+                          className="cursor-pointer hover:bg-muted/50 dark:hover:bg-slate-700/50"
+                          onClick={() => navigate(`/client/quotations/${quotation._id}`)}
+                        >
+                          <TableCell className="font-medium dark:text-slate-200">{quotation.referenceNo || '-'}</TableCell>
+                          <TableCell className="dark:text-slate-300">{formatDate(quotation.quotationDate)}</TableCell>
+                          <TableCell className="dark:text-slate-300">{formatDate(quotation.expiryDate)}</TableCell>
+                          <TableCell className="text-right dark:text-slate-200">{formatCurrency(quotation.totalAmount)}</TableCell>
                           <TableCell>{getStatusBadge(quotation.status)}</TableCell>
                         </TableRow>
                       ))
@@ -424,39 +428,39 @@ export default function ClientDetailPage() {
 
           {/* Invoices Tab */}
           <TabsContent value="invoices">
-            <Card>
+            <Card className="dark:bg-slate-800">
               <CardHeader>
-                <CardTitle>{t('clients.invoices', 'Invoices')}</CardTitle>
+                <CardTitle className="text-slate-900 dark:text-white">{t('clients.invoices', 'Invoices')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>{t('clients.invoiceNumber', 'Invoice #')}</TableHead>
-                      <TableHead>{t('clients.date', 'Date')}</TableHead>
-                      <TableHead>{t('clients.dueDate', 'Due Date')}</TableHead>
-                      <TableHead className="text-right">{t('clients.total', 'Total')}</TableHead>
-                      <TableHead className="text-right">{t('clients.paid', 'Paid')}</TableHead>
-                      <TableHead className="text-right">{t('clients.balance', 'Balance')}</TableHead>
-                      <TableHead>{t('clients.status', 'Status')}</TableHead>
+                    <TableRow className="dark:bg-slate-700">
+                      <TableHead className="dark:text-white">{t('clients.invoiceNumber', 'Invoice #')}</TableHead>
+                      <TableHead className="dark:text-white">{t('clients.date', 'Date')}</TableHead>
+                      <TableHead className="dark:text-white">{t('clients.dueDate', 'Due Date')}</TableHead>
+                      <TableHead className="text-right dark:text-white">{t('clients.total', 'Total')}</TableHead>
+                      <TableHead className="text-right dark:text-white">{t('clients.paid', 'Paid')}</TableHead>
+                      <TableHead className="text-right dark:text-white">{t('clients.balance', 'Balance')}</TableHead>
+                      <TableHead className="dark:text-white">{t('clients.status', 'Status')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {invoices.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground dark:text-slate-400">
                           {t('clients.noInvoices', 'No invoices found')}
                         </TableCell>
                       </TableRow>
                     ) : (
                       invoices.map((invoice) => (
-                        <TableRow key={invoice._id}>
-                          <TableCell className="font-medium">{invoice.referenceNo || '-'}</TableCell>
-                          <TableCell>{formatDate(invoice.invoiceDate)}</TableCell>
-                          <TableCell>{formatDate(invoice.dueDate)}</TableCell>
-                          <TableCell className="text-right">{formatCurrency(invoice.grandTotal)}</TableCell>
-                          <TableCell className="text-right">{formatCurrency(invoice.amountPaid)}</TableCell>
-                          <TableCell className="text-right">{formatCurrency(invoice.balance)}</TableCell>
+                        <TableRow key={invoice._id} className="dark:hover:bg-slate-700/50">
+                          <TableCell className="font-medium dark:text-slate-200">{invoice.referenceNo || '-'}</TableCell>
+                          <TableCell className="dark:text-slate-300">{formatDate(invoice.invoiceDate)}</TableCell>
+                          <TableCell className="dark:text-slate-300">{formatDate(invoice.dueDate)}</TableCell>
+                          <TableCell className="text-right dark:text-slate-200">{formatCurrency(invoice.grandTotal)}</TableCell>
+                          <TableCell className="text-right dark:text-slate-200">{formatCurrency(invoice.amountPaid)}</TableCell>
+                          <TableCell className="text-right dark:text-slate-200">{formatCurrency(invoice.balance)}</TableCell>
                           <TableCell>{getStatusBadge(invoice.status)}</TableCell>
                         </TableRow>
                       ))
@@ -469,35 +473,35 @@ export default function ClientDetailPage() {
 
           {/* Receipts Tab */}
           <TabsContent value="receipts">
-            <Card>
+            <Card className="dark:bg-slate-800">
               <CardHeader>
-                <CardTitle>{t('clients.receipts', 'Receipts')}</CardTitle>
+                <CardTitle className="text-slate-900 dark:text-white">{t('clients.receipts', 'Receipts')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>{t('clients.receiptNumber', 'Receipt #')}</TableHead>
-                      <TableHead>{t('clients.date', 'Date')}</TableHead>
-                      <TableHead className="text-right">{t('clients.amount', 'Amount')}</TableHead>
-                      <TableHead>{t('clients.paymentMethod', 'Payment Method')}</TableHead>
-                      <TableHead>{t('clients.status', 'Status')}</TableHead>
+                    <TableRow className="dark:bg-slate-700">
+                      <TableHead className="dark:text-white">{t('clients.receiptNumber', 'Receipt #')}</TableHead>
+                      <TableHead className="dark:text-white">{t('clients.date', 'Date')}</TableHead>
+                      <TableHead className="text-right dark:text-white">{t('clients.amount', 'Amount')}</TableHead>
+                      <TableHead className="dark:text-white">{t('clients.paymentMethod', 'Payment Method')}</TableHead>
+                      <TableHead className="dark:text-white">{t('clients.status', 'Status')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {receipts.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground dark:text-slate-400">
                           {t('clients.noReceipts', 'No receipts found')}
                         </TableCell>
                       </TableRow>
                     ) : (
                       receipts.map((receipt) => (
-                        <TableRow key={receipt._id}>
-                          <TableCell className="font-medium">{receipt.referenceNo || '-'}</TableCell>
-                          <TableCell>{formatDate(receipt.receiptDate)}</TableCell>
-                          <TableCell className="text-right">{formatCurrency(receipt.amount)}</TableCell>
-                          <TableCell>{receipt.paymentMethod || '-'}</TableCell>
+                        <TableRow key={receipt._id} className="dark:hover:bg-slate-700/50">
+                          <TableCell className="font-medium dark:text-slate-200">{receipt.referenceNo || '-'}</TableCell>
+                          <TableCell className="dark:text-slate-300">{formatDate(receipt.receiptDate)}</TableCell>
+                          <TableCell className="text-right dark:text-slate-200">{formatCurrency(receipt.amount)}</TableCell>
+                          <TableCell className="dark:text-slate-300">{receipt.paymentMethod || '-'}</TableCell>
                           <TableCell>{getStatusBadge(receipt.status)}</TableCell>
                         </TableRow>
                       ))
@@ -510,33 +514,33 @@ export default function ClientDetailPage() {
 
           {/* Credit Notes Tab */}
           <TabsContent value="creditNotes">
-            <Card>
+            <Card className="dark:bg-slate-800">
               <CardHeader>
-                <CardTitle>{t('clients.creditNotes', 'Credit Notes')}</CardTitle>
+                <CardTitle className="text-slate-900 dark:text-white">{t('clients.creditNotes', 'Credit Notes')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>{t('clients.creditNoteNumber', 'Credit Note #')}</TableHead>
-                      <TableHead>{t('clients.date', 'Date')}</TableHead>
-                      <TableHead className="text-right">{t('clients.amount', 'Amount')}</TableHead>
-                      <TableHead>{t('clients.status', 'Status')}</TableHead>
+                    <TableRow className="dark:bg-slate-700">
+                      <TableHead className="dark:text-white">{t('clients.creditNoteNumber', 'Credit Note #')}</TableHead>
+                      <TableHead className="dark:text-white">{t('clients.date', 'Date')}</TableHead>
+                      <TableHead className="text-right dark:text-white">{t('clients.amount', 'Amount')}</TableHead>
+                      <TableHead className="dark:text-white">{t('clients.status', 'Status')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {creditNotes.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={4} className="text-center py-8 text-muted-foreground dark:text-slate-400">
                           {t('clients.noCreditNotes', 'No credit notes found')}
                         </TableCell>
                       </TableRow>
                     ) : (
                       creditNotes.map((cn) => (
-                        <TableRow key={cn._id}>
-                          <TableCell className="font-medium">{cn.referenceNo || '-'}</TableCell>
-                          <TableCell>{formatDate(cn.creditNoteDate)}</TableCell>
-                          <TableCell className="text-right">{formatCurrency(cn.grandTotal)}</TableCell>
+                        <TableRow key={cn._id} className="dark:hover:bg-slate-700/50">
+                          <TableCell className="font-medium dark:text-slate-200">{cn.referenceNo || '-'}</TableCell>
+                          <TableCell className="dark:text-slate-300">{formatDate(cn.creditNoteDate)}</TableCell>
+                          <TableCell className="text-right dark:text-slate-200">{formatCurrency(cn.grandTotal)}</TableCell>
                           <TableCell>{getStatusBadge(cn.status)}</TableCell>
                         </TableRow>
                       ))

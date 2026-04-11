@@ -257,12 +257,12 @@ export default function CategoriesPage() {
             )}
             
             {isExpanded ? (
-              <FolderOpen className="h-5 w-5 text-yellow-500 flex-shrink-0" />
+              <FolderOpen className="h-5 w-5 text-yellow-500 dark:text-yellow-400 flex-shrink-0" />
             ) : (
-              <Folder className="h-5 w-5 text-yellow-500 flex-shrink-0" />
+              <Folder className="h-5 w-5 text-yellow-500 dark:text-yellow-400 flex-shrink-0" />
             )}
             
-            <span className="truncate font-medium">{category.name}</span>
+            <span className="truncate font-medium text-slate-900 dark:text-white">{category.name}</span>
             {category.description && (
               <span className="text-muted-foreground text-sm truncate hidden sm:inline">
                 - {category.description}
@@ -315,7 +315,7 @@ export default function CategoriesPage() {
     if (categories.length === 0) {
       return (
         <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-          <Folder className="h-12 w-12 mb-4 opacity-50" />
+          <Folder className="h-12 w-12 mb-4 opacity-50 text-slate-500 dark:text-slate-400" />
           <p>{t('pages.categories.noCategories')}</p>
           <Button 
             variant="outline" 
@@ -375,7 +375,7 @@ export default function CategoriesPage() {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">{t('pages.categories.title')}</h1>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">{t('pages.categories.title')}</h1>
           <p className="text-muted-foreground">{t('pages.categories.subtitle')}</p>
         </div>
         <Button onClick={() => handleAdd()}>
@@ -385,11 +385,11 @@ export default function CategoriesPage() {
       </div>
 
       {/* Categories Tree */}
-      <Card>
+      <Card className="dark:bg-slate-800">
         <CardHeader>
-          <CardTitle>{t('common.categories')}</CardTitle>
+          <CardTitle className="text-slate-900 dark:text-white">{t('common.categories')}</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="dark:bg-slate-800">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -406,14 +406,14 @@ export default function CategoriesPage() {
         onOpenChange={setDrawerOpen}
         direction="right"
       >
-        <DrawerContent className="max-w-md w-full">
+        <DrawerContent className="max-w-md w-full bg-white dark:bg-slate-800 border-l border-slate-200 dark:border-slate-700">
           <DrawerHeader>
-            <DrawerTitle>
+            <DrawerTitle className="text-slate-900 dark:text-white">
               {editingCategory 
                 ? t('pages.categories.editCategory') 
                 : t('pages.categories.addCategory')}
             </DrawerTitle>
-            <DrawerDescription>
+            <DrawerDescription className="text-slate-600 dark:text-slate-300">
               {editingCategory 
                 ? t('pages.categories.editCategoryDesc') || 'Edit the category details below.'
                 : t('pages.categories.addCategoryDesc') || 'Fill in the details below to create a new category.'}
@@ -423,34 +423,36 @@ export default function CategoriesPage() {
           <form onSubmit={handleSubmit}>
             <div className="px-4 py-4 space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">{t('pages.categories.categoryName')} *</Label>
+                <Label htmlFor="name" className="text-slate-900 dark:text-white">{t('pages.categories.categoryName')} *</Label>
                 <Input
                   id="name"
                   value={formData.name}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                   placeholder={t('pages.categories.categoryNamePlaceholder') || 'Enter category name'}
+                  className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                   required
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="description">{t('common.description')}</Label>
+                <Label htmlFor="description" className="text-slate-900 dark:text-white">{t('common.description')}</Label>
                 <Textarea
                   id="description"
                   value={formData.description}
                   onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                   placeholder={t('pages.categories.descriptionPlaceholder') || 'Enter description (optional)'}
                   rows={3}
+                  className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="parent">{t('pages.categories.parentCategory')}</Label>
+                <Label htmlFor="parent" className="text-slate-900 dark:text-white">{t('pages.categories.parentCategory')}</Label>
                 <select
                   id="parent"
                   value={formData.parent}
                   onChange={(e) => setFormData(prev => ({ ...prev, parent: e.target.value }))}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 bg-white dark:bg-slate-800 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                 >
                   <option value="">{t('pages.categories.noParent') || 'No parent (top level)'}</option>
                   {getParentOptions().map(option => (
@@ -463,12 +465,12 @@ export default function CategoriesPage() {
             </div>
             
             <DrawerFooter>
-              <Button type="submit" disabled={submitting}>
+              <Button type="submit" disabled={submitting} className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-200">
                 {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {editingCategory ? t('common.update') : t('common.create')}
               </Button>
               <DrawerClose asChild>
-                <Button variant="outline">{t('common.cancel')}</Button>
+                <Button variant="outline" className="border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white">{t('common.cancel')}</Button>
               </DrawerClose>
             </DrawerFooter>
           </form>
@@ -477,10 +479,10 @@ export default function CategoriesPage() {
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
           <AlertDialogHeader>
-            <AlertDialogTitle>{t('pages.categories.deleteCategory')}</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-slate-900 dark:text-white">{t('pages.categories.deleteCategory')}</AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-600 dark:text-slate-300">
               {deleteError ? (
                 <div className="flex items-center gap-2 text-destructive mt-2">
                   <AlertCircle className="h-4 w-4" />
@@ -495,7 +497,7 @@ export default function CategoriesPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleting} className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600">{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleConfirmDelete}
               disabled={deleting}

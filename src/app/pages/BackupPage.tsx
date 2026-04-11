@@ -205,64 +205,65 @@ export default function BackupPage() {
   if (loading) {
     return (
       <Layout>
-        <div className="p-6 text-foreground">Loading...</div>
+        <div className="p-6 text-foreground dark:text-white">Loading...</div>
       </Layout>
     );
   }
 
   return (
     <Layout>
-      <div className="p-3 md:p-6 space-y-6">
+      <div className="p-3 md:p-6 space-y-6 bg-gray-50 dark:bg-slate-900 min-h-screen">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Backup & Restore</h1>
-            <p className="text-muted-foreground">Manage your data backups and recovery options</p>
+            <h1 className="text-2xl font-bold text-foreground dark:text-white">Backup & Restore</h1>
+            <p className="text-muted-foreground dark:text-slate-400">Manage your data backups and recovery options</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setShowSettings(true)}>
+            <Button variant="outline" onClick={() => setShowSettings(true)} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
               <Shield className="w-4 h-4 mr-2" />
               Settings
             </Button>
             <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
               <DialogTrigger asChild>
-                <Button>
+                <Button className="dark:bg-primary dark:text-primary-foreground">
                   <Database className="w-4 h-4 mr-2" />
                   Create Backup
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="bg-white dark:bg-slate-800">
                 <DialogHeader>
-                  <DialogTitle>Create New Backup</DialogTitle>
-                  <DialogDescription>Create a new backup of your data</DialogDescription>
+                  <DialogTitle className="dark:text-white">Create New Backup</DialogTitle>
+                  <DialogDescription className="dark:text-slate-400">Create a new backup of your data</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">
-                    <Label>Backup Name (optional)</Label>
+                    <Label className="dark:text-slate-200">Backup Name (optional)</Label>
                     <Input 
                       value={newBackupName}
                       onChange={(e) => setNewBackupName(e.target.value)}
                       placeholder="My Backup"
+                      className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Storage Location</Label>
+                    <Label className="dark:text-slate-200">Storage Location</Label>
                     <Select value={newBackupLocation} onValueChange={setNewBackupLocation}>
-                      <SelectTrigger>
+                      <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="local">Local Storage</SelectItem>
-                        <SelectItem value="cloud">Cloud Storage</SelectItem>
-                        <SelectItem value="s3">Amazon S3</SelectItem>
-                        <SelectItem value="google-drive">Google Drive</SelectItem>
-                        <SelectItem value="dropbox">Dropbox</SelectItem>
+                      <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                        <SelectItem value="local" className="dark:text-slate-200">Local Storage</SelectItem>
+                        <SelectItem value="cloud" className="dark:text-slate-200">Cloud Storage</SelectItem>
+                        <SelectItem value="s3" className="dark:text-slate-200">Amazon S3</SelectItem>
+                        <SelectItem value="google-drive" className="dark:text-slate-200">Google Drive</SelectItem>
+                        <SelectItem value="dropbox" className="dark:text-slate-200">Dropbox</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
                 <DialogFooter className="flex-col sm:flex-row gap-2">
-                  <Button variant="outline" onClick={() => setShowCreateDialog(false)} className="w-full sm:w-auto">Cancel</Button>
+                  <Button variant="outline" onClick={() => setShowCreateDialog(false)} className="w-full sm:w-auto dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">Cancel</Button>
                   <Button onClick={handleCreateBackup} disabled={creating} className="w-full sm:w-auto">
                     {creating ? 'Creating...' : 'Create Backup'}
                   </Button>
@@ -274,48 +275,48 @@ export default function BackupPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
+          <Card className="dark:bg-slate-800">
             <CardHeader className="pb-2">
-              <CardDescription>Total Backups</CardDescription>
-              <CardTitle className="text-3xl">{stats?.totalBackups || 0}</CardTitle>
+              <CardDescription className="dark:text-slate-400">Total Backups</CardDescription>
+              <CardTitle className="text-3xl dark:text-white">{stats?.totalBackups || 0}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-sm text-muted-foreground">
+              <div className="text-sm text-muted-foreground dark:text-slate-400">
                 {stats?.completedBackups || 0} completed, {stats?.failedBackups || 0} failed
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="dark:bg-slate-800">
             <CardHeader className="pb-2">
-              <CardDescription>Total Size</CardDescription>
-              <CardTitle className="text-3xl">{stats?.formattedTotalSize || '0 B'}</CardTitle>
+              <CardDescription className="dark:text-slate-400">Total Size</CardDescription>
+              <CardTitle className="text-3xl dark:text-white">{stats?.formattedTotalSize || '0 B'}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-sm text-muted-foreground">
+              <div className="text-sm text-muted-foreground dark:text-slate-400">
                 Across all backups
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="dark:bg-slate-800">
             <CardHeader className="pb-2">
-              <CardDescription>Verified</CardDescription>
-              <CardTitle className="text-3xl text-green-500">{stats?.verifiedBackups || 0}</CardTitle>
+              <CardDescription className="dark:text-slate-400">Verified</CardDescription>
+              <CardTitle className="text-3xl text-green-500 dark:text-green-400">{stats?.verifiedBackups || 0}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-sm text-muted-foreground">
+              <div className="text-sm text-muted-foreground dark:text-slate-400">
                 Backups with integrity verified
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="dark:bg-slate-800">
             <CardHeader className="pb-2">
-              <CardDescription>Last Backup</CardDescription>
-              <CardTitle className="text-xl">
+              <CardDescription className="dark:text-slate-400">Last Backup</CardDescription>
+              <CardTitle className="text-xl dark:text-white">
                 {stats?.lastBackup ? formatDate(stats.lastBackup) : 'Never'}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-sm text-muted-foreground">
+              <div className="text-sm text-muted-foreground dark:text-slate-400">
                 {settings.enabled ? `Next: ${settings.frequency}` : 'Auto-backup disabled'}
               </div>
             </CardContent>
@@ -323,27 +324,27 @@ export default function BackupPage() {
         </div>
 
         {/* Storage Location Selector */}
-        <Card>
+        <Card className="dark:bg-slate-800">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 dark:text-white">
               <Cloud className="w-5 h-5" />
               Quick Backup
             </CardTitle>
-            <CardDescription>Select storage location and create a backup instantly</CardDescription>
+            <CardDescription className="dark:text-slate-400">Select storage location and create a backup instantly</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
               <div className="flex-1 w-full sm:w-auto">
-                <Label className="mb-2 block">Storage Location</Label>
+                <Label className="mb-2 block dark:text-slate-200">Storage Location</Label>
                 <Select value={newBackupLocation} onValueChange={setNewBackupLocation}>
-                  <SelectTrigger className="w-full sm:w-[200px]">
+                  <SelectTrigger className="w-full sm:w-[200px] bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600">
                     <SelectValue placeholder="Select storage" />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="local">💾 Local Storage</SelectItem>
-                    <SelectItem value="s3">☁️ Amazon S3</SelectItem>
-                    <SelectItem value="google-drive">📁 Google Drive</SelectItem>
-                    <SelectItem value="dropbox">📦 Dropbox</SelectItem>
+                  <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                    <SelectItem value="local" className="dark:text-slate-200">💾 Local Storage</SelectItem>
+                    <SelectItem value="s3" className="dark:text-slate-200">☁️ Amazon S3</SelectItem>
+                    <SelectItem value="google-drive" className="dark:text-slate-200">📁 Google Drive</SelectItem>
+                    <SelectItem value="dropbox" className="dark:text-slate-200">📦 Dropbox</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -360,7 +361,7 @@ export default function BackupPage() {
               </Button>
             </div>
             {newBackupLocation !== 'local' && (
-              <p className="text-sm text-yellow-600 mt-2">
+              <p className="text-sm text-yellow-600 dark:text-yellow-400 mt-2">
                 ⚠️ Configure cloud credentials in Settings before using cloud storage
               </p>
             )}
@@ -368,35 +369,35 @@ export default function BackupPage() {
         </Card>
 
         {/* Point-in-Time Recovery */}
-        <Card>
+        <Card className="dark:bg-slate-800">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 dark:text-white">
               <Calendar className="w-5 h-5" />
               Point-in-Time Recovery
             </CardTitle>
-            <CardDescription>Available recovery points for restoring data to a specific time</CardDescription>
+            <CardDescription className="dark:text-slate-400">Available recovery points for restoring data to a specific time</CardDescription>
           </CardHeader>
           <CardContent>
             {pointsInTime.length === 0 ? (
-              <p className="text-muted-foreground text-center py-4">No backup points available</p>
+              <p className="text-muted-foreground dark:text-slate-400 text-center py-4">No backup points available</p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {pointsInTime.slice(0, 6).map((point) => (
-                  <div key={point.id} className="border rounded-lg p-4 space-y-2">
+                  <div key={point.id} className="border rounded-lg p-4 space-y-2 dark:border-slate-600 dark:bg-slate-700/50">
                     <div className="flex items-center justify-between">
-                      <span className="font-medium">{point.name}</span>
-                      <Badge variant="outline">{formatFileSize(point.fileSize)}</Badge>
+                      <span className="font-medium dark:text-white">{point.name}</span>
+                      <Badge variant="outline" className="dark:border-slate-500 dark:text-slate-300">{formatFileSize(point.fileSize)}</Badge>
                     </div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-sm text-muted-foreground dark:text-slate-400">
                       {formatDate(point.timestamp)}
                     </div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-sm text-muted-foreground dark:text-slate-400">
                       {point.totalDocuments} documents
                     </div>
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      className="w-full mt-2"
+                      className="w-full mt-2 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
                       onClick={() => {
                         setSelectedBackup(backups.find(b => b._id === point.id) || null);
                         setShowRestoreDialog(true);
@@ -413,36 +414,36 @@ export default function BackupPage() {
         </Card>
 
         {/* Backup History */}
-        <Card>
+        <Card className="dark:bg-slate-800">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 dark:text-white">
               <HardDrive className="w-5 h-5" />
               Backup History
             </CardTitle>
-            <CardDescription>View and manage your existing backups</CardDescription>
+            <CardDescription className="dark:text-slate-400">View and manage your existing backups</CardDescription>
           </CardHeader>
           <CardContent>
             {backups.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">No backups found. Create your first backup!</p>
+              <p className="text-muted-foreground dark:text-slate-400 text-center py-8">No backups found. Create your first backup!</p>
             ) : (
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Size</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Verification</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                  <TableRow className="dark:border-slate-600">
+                    <TableHead className="dark:text-slate-300">Name</TableHead>
+                    <TableHead className="dark:text-slate-300">Type</TableHead>
+                    <TableHead className="dark:text-slate-300">Status</TableHead>
+                    <TableHead className="dark:text-slate-300">Size</TableHead>
+                    <TableHead className="dark:text-slate-300">Date</TableHead>
+                    <TableHead className="dark:text-slate-300">Verification</TableHead>
+                    <TableHead className="text-right dark:text-slate-300">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {backups.map((backup) => (
-                    <TableRow key={backup._id}>
-                      <TableCell className="font-medium">{backup.name}</TableCell>
+                    <TableRow key={backup._id} className="dark:border-slate-600">
+                      <TableCell className="font-medium dark:text-white">{backup.name}</TableCell>
                       <TableCell>
-                        <Badge variant="outline">
+                        <Badge variant="outline" className="dark:border-slate-500 dark:text-slate-300">
                           {backup.type === 'manual' && <HardDrive className="w-3 h-3 mr-1" />}
                           {backup.type === 'automated' && <RefreshCw className="w-3 h-3 mr-1" />}
                           {backup.type === 'scheduled' && <Clock className="w-3 h-3 mr-1" />}
@@ -450,11 +451,11 @@ export default function BackupPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>{getStatusBadge(backup.status)}</TableCell>
-                      <TableCell>{formatFileSize(backup.fileSize)}</TableCell>
-                      <TableCell>{formatDate(backup.createdAt)}</TableCell>
+                      <TableCell className="dark:text-slate-300">{formatFileSize(backup.fileSize)}</TableCell>
+                      <TableCell className="dark:text-slate-300">{formatDate(backup.createdAt)}</TableCell>
                       <TableCell>
                         {backup.verification?.verified ? (
-                          <Badge variant="default" className="bg-green-500">
+                          <Badge variant="default" className="bg-green-500 dark:bg-green-600">
                             <CheckCircle className="w-3 h-3 mr-1" />
                             Verified
                           </Badge>
@@ -464,7 +465,7 @@ export default function BackupPage() {
                             Corrupted
                           </Badge>
                         ) : (
-                          <Badge variant="secondary">Not verified</Badge>
+                          <Badge variant="secondary" className="dark:bg-slate-600 dark:text-slate-200">Not verified</Badge>
                         )}
                       </TableCell>
                       <TableCell className="text-right">
@@ -476,6 +477,7 @@ export default function BackupPage() {
                                 size="icon" 
                                 title="Verify"
                                 onClick={() => handleVerify(backup._id)}
+                                className="dark:text-slate-300 dark:hover:bg-slate-700"
                               >
                                 <Shield className="w-4 h-4" />
                               </Button>
@@ -487,6 +489,7 @@ export default function BackupPage() {
                                   setSelectedBackup(backup);
                                   setShowRestoreDialog(true);
                                 }}
+                                className="dark:text-slate-300 dark:hover:bg-slate-700"
                               >
                                 <RefreshCw className="w-4 h-4" />
                               </Button>
@@ -495,6 +498,7 @@ export default function BackupPage() {
                                 size="icon" 
                                 title="Download"
                                 onClick={() => handleDownload(backup._id)}
+                                className="dark:text-slate-300 dark:hover:bg-slate-700"
                               >
                                 <Download className="w-4 h-4" />
                               </Button>
@@ -505,7 +509,7 @@ export default function BackupPage() {
                             size="icon" 
                             title="Delete"
                             onClick={() => handleDelete(backup._id)}
-                            className="text-red-500 hover:text-red-700"
+                            className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -521,94 +525,97 @@ export default function BackupPage() {
 
         {/* Settings Dialog */}
         <Dialog open={showSettings} onOpenChange={setShowSettings}>
-          <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-800">
             <DialogHeader>
-              <DialogTitle>Backup Settings</DialogTitle>
-              <DialogDescription>Configure automated backup schedule and cloud storage credentials</DialogDescription>
+              <DialogTitle className="dark:text-white">Backup Settings</DialogTitle>
+              <DialogDescription className="dark:text-slate-400">Configure automated backup schedule and cloud storage credentials</DialogDescription>
             </DialogHeader>
             <div className="space-y-6 py-4">
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
-                    <Label className="text-foreground">Enable Automated Backups</Label>
-                    <p className="text-sm text-muted-foreground">Automatically backup your data on a schedule</p>
+                    <Label className="dark:text-slate-200">Enable Automated Backups</Label>
+                    <p className="text-sm text-muted-foreground dark:text-slate-400">Automatically backup your data on a schedule</p>
                   </div>
                   <Switch
                     checked={settings.enabled}
                     onCheckedChange={(checked) => setSettings({ ...settings, enabled: checked })}
+                    className="dark:bg-slate-700"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-foreground">Backup Frequency</Label>
+                  <Label className="dark:text-slate-200">Backup Frequency</Label>
                   <Select 
                     value={settings.frequency} 
                     onValueChange={(value: any) => setSettings({ ...settings, frequency: value })}
                     disabled={!settings.enabled}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="hourly">Every Hour</SelectItem>
-                      <SelectItem value="daily">Daily</SelectItem>
-                      <SelectItem value="weekly">Weekly</SelectItem>
-                      <SelectItem value="monthly">Monthly</SelectItem>
+                    <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                      <SelectItem value="hourly" className="dark:text-slate-200">Every Hour</SelectItem>
+                      <SelectItem value="daily" className="dark:text-slate-200">Daily</SelectItem>
+                      <SelectItem value="weekly" className="dark:text-slate-200">Weekly</SelectItem>
+                      <SelectItem value="monthly" className="dark:text-slate-200">Monthly</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-foreground">Default Storage Location</Label>
+                  <Label className="dark:text-slate-200">Default Storage Location</Label>
                   <Select 
                     value={settings.storageLocation} 
                     onValueChange={(value: any) => setSettings({ ...settings, storageLocation: value })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="local">💾 Local Storage</SelectItem>
-                      <SelectItem value="s3">☁️ Amazon S3</SelectItem>
-                      <SelectItem value="google-drive">📁 Google Drive</SelectItem>
-                      <SelectItem value="dropbox">📦 Dropbox</SelectItem>
+                    <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                      <SelectItem value="local" className="dark:text-slate-200">💾 Local Storage</SelectItem>
+                      <SelectItem value="s3" className="dark:text-slate-200">☁️ Amazon S3</SelectItem>
+                      <SelectItem value="google-drive" className="dark:text-slate-200">📁 Google Drive</SelectItem>
+                      <SelectItem value="dropbox" className="dark:text-slate-200">📦 Dropbox</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-foreground">Retention Period (days)</Label>
+                  <Label className="dark:text-slate-200">Retention Period (days)</Label>
                   <Input 
                     type="number"
                     value={settings.retention}
                     onChange={(e) => setSettings({ ...settings, retention: parseInt(e.target.value) })}
                     min={1}
                     max={365}
+                    className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                   />
-                  <p className="text-sm text-muted-foreground">Auto-delete backups older than this</p>
+                  <p className="text-sm text-muted-foreground dark:text-slate-400">Auto-delete backups older than this</p>
                 </div>
 
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
-                    <Label className="text-foreground">Auto-Verify Backups</Label>
-                    <p className="text-sm text-muted-foreground">Automatically verify integrity after backup</p>
+                    <Label className="dark:text-slate-200">Auto-Verify Backups</Label>
+                    <p className="text-sm text-muted-foreground dark:text-slate-400">Automatically verify integrity after backup</p>
                   </div>
                   <Switch
                     checked={settings.autoVerify}
                     onCheckedChange={(checked) => setSettings({ ...settings, autoVerify: checked })}
+                    className="dark:bg-slate-700"
                   />
                 </div>
 
                 {/* Cloud Credentials Configuration - Always visible */}
-                <div className="border-t pt-4 space-y-4">
-                  <h4 className="font-medium flex items-center gap-2">
+                <div className="border-t pt-4 space-y-4 dark:border-slate-600">
+                  <h4 className="font-medium flex items-center gap-2 dark:text-white">
                     <Cloud className="w-4 h-4" />
                     Cloud Storage Credentials
                   </h4>
-                  <p className="text-sm text-muted-foreground">Configure credentials for cloud backup storage</p>
+                  <p className="text-sm text-muted-foreground dark:text-slate-400">Configure credentials for cloud backup storage</p>
                   
                   <div className="grid grid-cols-1 gap-4">
                     <div className="space-y-2">
-                      <Label>Cloud Provider</Label>
+                      <Label className="dark:text-slate-200">Cloud Provider</Label>
                       <Select 
                         value={settings.cloudConfig?.provider || 'local'} 
                         onValueChange={(value: any) => setSettings({ 
@@ -620,20 +627,20 @@ export default function BackupPage() {
                           }
                         })}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="local">Local (No cloud)</SelectItem>
-                          <SelectItem value="aws">Amazon S3</SelectItem>
-                          <SelectItem value="gcp">Google Cloud Storage</SelectItem>
-                          <SelectItem value="azure">Microsoft Azure</SelectItem>
+                        <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                          <SelectItem value="local" className="dark:text-slate-200">Local (No cloud)</SelectItem>
+                          <SelectItem value="aws" className="dark:text-slate-200">Amazon S3</SelectItem>
+                          <SelectItem value="gcp" className="dark:text-slate-200">Google Cloud Storage</SelectItem>
+                          <SelectItem value="azure" className="dark:text-slate-200">Microsoft Azure</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     
                     <div className="space-y-2">
-                      <Label>Bucket/Container Name</Label>
+                      <Label className="dark:text-slate-200">Bucket/Container Name</Label>
                       <Input 
                         value={settings.cloudConfig?.bucket || ''}
                         onChange={(e) => setSettings({ 
@@ -645,11 +652,12 @@ export default function BackupPage() {
                           }
                         })}
                         placeholder="my-backup-bucket"
+                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                       />
                     </div>
                     
                     <div className="space-y-2">
-                      <Label>Region</Label>
+                      <Label className="dark:text-slate-200">Region</Label>
                       <Input 
                         value={settings.cloudConfig?.region || ''}
                         onChange={(e) => setSettings({ 
@@ -661,13 +669,14 @@ export default function BackupPage() {
                           }
                         })}
                         placeholder="us-east-1"
+                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                       />
                     </div>
                   </div>
                 </div>
               </div>
             <DialogFooter className="flex-col sm:flex-row gap-2">
-              <Button variant="outline" onClick={() => setShowSettings(false)} className="w-full sm:w-auto">Cancel</Button>
+              <Button variant="outline" onClick={() => setShowSettings(false)} className="w-full sm:w-auto dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">Cancel</Button>
               <Button onClick={handleSaveSettings} disabled={savingSettings} className="w-full sm:w-auto">
                 {savingSettings ? 'Saving...' : 'Save Settings'}
               </Button>
@@ -677,13 +686,13 @@ export default function BackupPage() {
 
         {/* Restore Confirmation Dialog */}
         <Dialog open={showRestoreDialog} onOpenChange={setShowRestoreDialog}>
-          <DialogContent>
+          <DialogContent className="bg-white dark:bg-slate-800">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
+              <DialogTitle className="flex items-center gap-2 dark:text-white">
                 <AlertTriangle className="w-5 h-5 text-yellow-500" />
                 Confirm Restore
               </DialogTitle>
-              <DialogDescription>
+              <DialogDescription className="dark:text-slate-400">
                 Are you sure you want to restore from this backup? This will replace all current data with the backup data.
               </DialogDescription>
             </DialogHeader>
@@ -697,13 +706,13 @@ export default function BackupPage() {
                     <strong>Collections:</strong> {selectedBackup.collections?.length || 0}
                   </p>
                 </div>
-                <p className="text-sm text-muted-foreground mt-4">
+                <p className="text-sm text-muted-foreground dark:text-slate-400 mt-4">
                   This action cannot be undone. We recommend creating a backup of your current data before proceeding.
                 </p>
               </div>
             )}
             <DialogFooter className="flex-col sm:flex-row gap-2">
-              <Button variant="outline" onClick={() => setShowRestoreDialog(false)} className="w-full sm:w-auto">Cancel</Button>
+              <Button variant="outline" onClick={() => setShowRestoreDialog(false)} className="w-full sm:w-auto dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">Cancel</Button>
               <Button 
                 variant="destructive"
                 onClick={() => selectedBackup && handleRestore(selectedBackup._id)}

@@ -199,7 +199,7 @@ export default function GRNDetailPage() {
     return (
       <Layout>
         <div className="flex items-center justify-center p-8">
-          <Loader2 className="h-8 w-8 animate-spin" />
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground dark:text-slate-400" />
         </div>
       </Layout>
     );
@@ -208,9 +208,9 @@ export default function GRNDetailPage() {
   if (!grn) {
     return (
       <Layout>
-        <div className="container mx-auto py-6">
+        <div className="container mx-auto py-6 min-h-screen bg-slate-50 dark:bg-slate-900">
           <div className="text-center">
-            <p className="text-muted-foreground">GRN not found</p>
+            <p className="text-muted-foreground dark:text-slate-400">GRN not found</p>
             <Button variant="link" onClick={() => navigate('/grn')}>
               {t('common.back', 'Back to GRN List')}
             </Button>
@@ -222,14 +222,14 @@ export default function GRNDetailPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-6">
+      <div className="container mx-auto py-6 min-h-screen bg-slate-50 dark:bg-slate-900">
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
           <Button variant="ghost" onClick={() => navigate('/grn')}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             {t('common.back', 'Back')}
           </Button>
-          <h1 className="text-2xl font-bold">{grn.referenceNo}</h1>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{grn.referenceNo}</h1>
           {getStatusBadge(grn.status)}
         </div>
 
@@ -237,34 +237,34 @@ export default function GRNDetailPage() {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Document Header */}
-            <Card>
+            <Card className="dark:bg-slate-800">
               <CardContent className="pt-6">
                 <div className="grid grid-cols-2 gap-6">
                   <div>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-2">
+                    <h3 className="text-sm font-medium text-muted-foreground dark:text-slate-400 mb-2">
                       {t('grn.supplier', 'Supplier')}
                     </h3>
-                    <div className="font-medium">{grn.supplier?.name || 'N/A'}</div>
+                    <div className="font-medium dark:text-slate-200">{grn.supplier?.name || 'N/A'}</div>
                     {grn.supplier?.code && (
-                      <div className="text-sm text-muted-foreground">{grn.supplier.code}</div>
+                      <div className="text-sm text-muted-foreground dark:text-slate-400">{grn.supplier.code}</div>
                     )}
                     {grn.supplier?.contact?.address && (
-                      <div className="text-sm text-muted-foreground mt-1">{grn.supplier.contact.address}</div>
+                      <div className="text-sm text-muted-foreground dark:text-slate-400 mt-1">{grn.supplier.contact.address}</div>
                     )}
                     {grn.supplier?.contact?.email && (
-                      <div className="text-sm text-muted-foreground">{grn.supplier.contact.email}</div>
+                      <div className="text-sm text-muted-foreground dark:text-slate-400">{grn.supplier.contact.email}</div>
                     )}
                     {grn.supplier?.contact?.phone && (
-                      <div className="text-sm text-muted-foreground">{grn.supplier.contact.phone}</div>
+                      <div className="text-sm text-muted-foreground dark:text-slate-400">{grn.supplier.contact.phone}</div>
                     )}
                   </div>
                   <div>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-2">
+                    <h3 className="text-sm font-medium text-muted-foreground dark:text-slate-400 mb-2">
                       {t('grn.warehouse', 'Warehouse')}
                     </h3>
-                    <div className="font-medium">{grn.warehouse?.name || 'N/A'}</div>
+                    <div className="font-medium dark:text-slate-200">{grn.warehouse?.name || 'N/A'}</div>
                     {grn.warehouse?.code && (
-                      <div className="text-sm text-muted-foreground">{grn.warehouse.code}</div>
+                      <div className="text-sm text-muted-foreground dark:text-slate-400">{grn.warehouse.code}</div>
                     )}
                   </div>
                 </div>
@@ -272,32 +272,32 @@ export default function GRNDetailPage() {
             </Card>
 
             {/* Line Items */}
-            <Card>
+            <Card className="dark:bg-slate-800">
               <CardHeader>
-                <CardTitle>{t('grn.lineItems', 'Line Items')}</CardTitle>
+                <CardTitle className="text-slate-900 dark:text-white">{t('grn.lineItems', 'Line Items')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>{t('grn.product', 'Product')}</TableHead>
-                      <TableHead className="text-right">{t('grn.qtyReceived', 'Qty Received')}</TableHead>
-                      <TableHead className="text-right">{t('grn.unitCost', 'Unit Cost')}</TableHead>
-                      <TableHead className="text-right">{t('grn.taxRate', 'Tax %')}</TableHead>
-                      <TableHead className="text-right">{t('grn.lineTotal', 'Total')}</TableHead>
+                    <TableRow className="dark:bg-slate-700">
+                      <TableHead className="dark:text-white">{t('grn.product', 'Product')}</TableHead>
+                      <TableHead className="text-right dark:text-white">{t('grn.qtyReceived', 'Qty Received')}</TableHead>
+                      <TableHead className="text-right dark:text-white">{t('grn.unitCost', 'Unit Cost')}</TableHead>
+                      <TableHead className="text-right dark:text-white">{t('grn.taxRate', 'Tax %')}</TableHead>
+                      <TableHead className="text-right dark:text-white">{t('grn.lineTotal', 'Total')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {grn.lines?.map((line, index) => (
-                      <TableRow key={index}>
+                      <TableRow key={index} className="dark:hover:bg-slate-700/50">
                         <TableCell>
-                          <div className="font-medium">{line.product.name}</div>
-                          <div className="text-sm text-muted-foreground">{line.product.sku}</div>
+                          <div className="font-medium dark:text-slate-200">{line.product.name}</div>
+                          <div className="text-sm text-muted-foreground dark:text-slate-400">{line.product.sku}</div>
                         </TableCell>
-                        <TableCell className="text-right">{line.qtyReceived}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(line.unitCost)}</TableCell>
-                        <TableCell className="text-right">{line.taxRate}%</TableCell>
-                        <TableCell className="text-right font-medium">
+                        <TableCell className="text-right dark:text-slate-300">{line.qtyReceived}</TableCell>
+                        <TableCell className="text-right dark:text-slate-300">{formatCurrency(line.unitCost)}</TableCell>
+                        <TableCell className="text-right dark:text-slate-300">{line.taxRate}%</TableCell>
+                        <TableCell className="text-right font-medium dark:text-slate-200">
                           {formatCurrency((Number(line.qtyReceived) || 0) * (Number(line.unitCost) || 0))}
                         </TableCell>
                       </TableRow>
@@ -309,33 +309,33 @@ export default function GRNDetailPage() {
 
             {/* Tabs */}
             <Tabs defaultValue="details" className="w-full">
-              <TabsList>
-                <TabsTrigger value="details">{t('grn.tabs.details', 'Details')}</TabsTrigger>
-                <TabsTrigger value="history">{t('grn.tabs.history', 'History')}</TabsTrigger>
+              <TabsList className="dark:bg-slate-700">
+                <TabsTrigger value="details" className="dark:data-[state=active]:bg-slate-600 dark:data-[state=active]:text-white">{t('grn.tabs.details', 'Details')}</TabsTrigger>
+                <TabsTrigger value="history" className="dark:data-[state=active]:bg-slate-600 dark:data-[state=active]:text-white">{t('grn.tabs.history', 'History')}</TabsTrigger>
               </TabsList>
               
               <TabsContent value="details">
-                <Card>
+                <Card className="dark:bg-slate-800">
                   <CardContent className="pt-6">
                     <div className="grid grid-cols-2 gap-6">
                       <div>
-                        <h3 className="text-sm font-medium text-muted-foreground mb-2">
+                        <h3 className="text-sm font-medium text-muted-foreground dark:text-slate-400 mb-2">
                           {t('grn.purchaseOrder', 'Purchase Order')}
                         </h3>
-                        <div className="font-medium">
+                        <div className="font-medium dark:text-slate-200">
                           {grn.purchaseOrder?.referenceNo || '-'}
                         </div>
                         {grn.purchaseOrder?.orderDate && (
-                          <div className="text-sm text-muted-foreground">
+                          <div className="text-sm text-muted-foreground dark:text-slate-400">
                             Order Date: {formatDate(grn.purchaseOrder.orderDate)}
                           </div>
                         )}
                       </div>
                       <div>
-                        <h3 className="text-sm font-medium text-muted-foreground mb-2">
+                        <h3 className="text-sm font-medium text-muted-foreground dark:text-slate-400 mb-2">
                           {t('grn.supplierInvoice', 'Supplier Invoice')}
                         </h3>
-                        <div className="font-medium">
+                        <div className="font-medium dark:text-slate-200">
                           {grn.supplierInvoiceNo || '-'}
                         </div>
                       </div>
@@ -345,7 +345,7 @@ export default function GRNDetailPage() {
               </TabsContent>
               
               <TabsContent value="history">
-                <Card>
+                <Card className="dark:bg-slate-800">
                   <CardContent className="pt-6">
                     <div className="space-y-4">
                       {history.map((entry, index) => (
@@ -353,21 +353,21 @@ export default function GRNDetailPage() {
                           <div className="flex flex-col items-center">
                             <div className="w-2 h-2 bg-primary rounded-full" />
                             {index < history.length - 1 && (
-                              <div className="w-0.5 h-full bg-border mt-2" />
+                              <div className="w-0.5 h-full bg-border dark:bg-slate-600 mt-2" />
                             )}
                           </div>
                           <div className="pb-4">
-                            <div className="font-medium">{entry.action}</div>
-                            <div className="text-sm text-muted-foreground">
+                            <div className="font-medium dark:text-slate-200">{entry.action}</div>
+                            <div className="text-sm text-muted-foreground dark:text-slate-400">
                               {formatDate(entry.timestamp)}
                             </div>
                             {entry.user && (
-                              <div className="text-sm text-muted-foreground">
+                              <div className="text-sm text-muted-foreground dark:text-slate-400">
                                 By: {entry.user}
                               </div>
                             )}
                             {entry.details && (
-                              <div className="text-sm mt-1">{entry.details}</div>
+                              <div className="text-sm mt-1 dark:text-slate-300">{entry.details}</div>
                             )}
                           </div>
                         </div>
@@ -382,61 +382,61 @@ export default function GRNDetailPage() {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Summary */}
-            <Card>
+            <Card className="dark:bg-slate-800">
               <CardHeader>
-                <CardTitle>{t('grn.summary', 'Summary')}</CardTitle>
+                <CardTitle className="text-slate-900 dark:text-white">{t('grn.summary', 'Summary')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t('grn.subtotal', 'Subtotal')}</span>
-                    <span className="font-medium">{formatCurrency(calculateSubtotal())}</span>
+                    <span className="text-muted-foreground dark:text-slate-400">{t('grn.subtotal', 'Subtotal')}</span>
+                    <span className="font-medium dark:text-slate-200">{formatCurrency(calculateSubtotal())}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t('grn.tax', 'Tax')}</span>
-                    <span className="font-medium">{formatCurrency(calculateTax())}</span>
+                    <span className="text-muted-foreground dark:text-slate-400">{t('grn.tax', 'Tax')}</span>
+                    <span className="font-medium dark:text-slate-200">{formatCurrency(calculateTax())}</span>
                   </div>
-                  <div className="flex justify-between text-lg font-bold pt-2 border-t">
-                    <span>{t('grn.total', 'Total')}</span>
-                    <span>{formatCurrency(calculateTotal())}</span>
+                  <div className="flex justify-between text-lg font-bold pt-2 border-t dark:border-slate-600">
+                    <span className="text-slate-900 dark:text-white">{t('grn.total', 'Total')}</span>
+                    <span className="text-slate-900 dark:text-white">{formatCurrency(calculateTotal())}</span>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             {/* Dates */}
-            <Card>
+            <Card className="dark:bg-slate-800">
               <CardHeader>
-                <CardTitle>{t('grn.dates', 'Dates')}</CardTitle>
+                <CardTitle className="text-slate-900 dark:text-white">{t('grn.dates', 'Dates')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <Calendar className="h-4 w-4 text-muted-foreground dark:text-slate-400" />
                     <div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-sm text-muted-foreground dark:text-slate-400">
                         {t('grn.receivedDate', 'Received Date')}
                       </div>
-                      <div className="font-medium">{formatDate(grn.receivedDate)}</div>
+                      <div className="font-medium dark:text-slate-200">{formatDate(grn.receivedDate)}</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    <FileText className="h-4 w-4 text-muted-foreground dark:text-slate-400" />
                     <div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-sm text-muted-foreground dark:text-slate-400">
                         {t('grn.createdAt', 'Created')}
                       </div>
-                      <div className="font-medium">{formatDate(grn.createdAt)}</div>
+                      <div className="font-medium dark:text-slate-200">{formatDate(grn.createdAt)}</div>
                     </div>
                   </div>
                   {grn.confirmedAt && (
                     <div className="flex items-center gap-2">
                       <CheckCircle className="h-4 w-4 text-green-500" />
                       <div>
-                        <div className="text-sm text-muted-foreground">
+                        <div className="text-sm text-muted-foreground dark:text-slate-400">
                           {t('grn.confirmedAt', 'Confirmed')}
                         </div>
-                        <div className="font-medium">{formatDate(grn.confirmedAt)}</div>
+                        <div className="font-medium dark:text-slate-200">{formatDate(grn.confirmedAt)}</div>
                       </div>
                     </div>
                   )}
@@ -446,7 +446,7 @@ export default function GRNDetailPage() {
 
             {/* Actions */}
             {grn.status === 'draft' && (
-              <Card>
+              <Card className="dark:bg-slate-800">
                 <CardContent className="pt-6">
                   <div className="flex flex-col gap-2">
                     <Button 

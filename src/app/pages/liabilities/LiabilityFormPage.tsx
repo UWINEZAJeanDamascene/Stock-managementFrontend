@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { loansApi, Liability, journalEntriesApi, ChartOfAccounts, PaymentScheduleResponse } from '@/lib/api';
+import { loansApi, Liability, journalEntriesApi, ChartOfAccounts, PaymentScheduleResponse, bankAccountsApi } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -25,7 +25,8 @@ import {
   Hash,
   FileText,
   Calculator,
-  TrendingDown
+  TrendingDown,
+  Landmark
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { 
@@ -46,7 +47,9 @@ export default function LiabilityFormPage() {
   const [loading, setLoading] = useState(isEditMode);
   const [submitting, setSubmitting] = useState(false);
   const [accounts, setAccounts] = useState<ChartOfAccounts[]>([]);
+  const [liabilityAccounts, setLiabilityAccounts] = useState<ChartOfAccounts[]>([]);
   const [expenseAccounts, setExpenseAccounts] = useState<ChartOfAccounts[]>([]);
+  const [bankAccounts, setBankAccounts] = useState<any[]>([]);
   const [accountsLoading, setAccountsLoading] = useState(true);
   const [calculatingSchedule, setCalculatingSchedule] = useState(false);
   const [paymentSchedule, setPaymentSchedule] = useState<PaymentScheduleResponse['schedule'] | null>(null);
@@ -63,6 +66,7 @@ export default function LiabilityFormPage() {
     endDate: '',
     liabilityAccountId: '',
     interestExpenseAccountId: '',
+    bankAccountId: '',
     purpose: '',
     durationMonths: 12,
     interestMethod: 'simple',
@@ -121,14 +125,25 @@ export default function LiabilityFormPage() {
 
   const fetchAccounts = async () => {
     try {
-      // Fetch all accounts including inactive (for liability account selection)
-      const response: any = await journalEntriesApi.getAccounts({ includeInactive: true });
-      if (response.success) {
-        const allAccounts = response.data || [];
-        // Show all accounts for liability and expense selection
-        // This ensures users can select any valid account
+      // Fetch accounts and bank accounts in parallel
+      const [accountsResponse, bankResponse] = await Promise.all([
+        journalEntriesApi.getAccounts({ includeInactive: true }),
+        bankAccountsApi.getAll()
+      ]);
+
+      if (accountsResponse.success) {
+        const allAccounts = accountsResponse.data || [];
+        // Filter liability accounts (type = liability)
+        const liabilityAccs = allAccounts.filter((acc: ChartOfAccounts) => acc.type === 'liability');
+        // Filter expense accounts (type = expense)
+        const expenseAccs = allAccounts.filter((acc: ChartOfAccounts) => acc.type === 'expense');
         setAccounts(allAccounts);
-        setExpenseAccounts(allAccounts);
+        setLiabilityAccounts(liabilityAccs);
+        setExpenseAccounts(expenseAccs);
+      }
+
+      if (bankResponse.success) {
+        setBankAccounts(bankResponse.data || []);
       }
     } catch (error) {
       console.error('[LiabilityFormPage] Failed to fetch accounts:', error);
@@ -154,6 +169,7 @@ export default function LiabilityFormPage() {
           endDate: liability.endDate ? liability.endDate.split('T')[0] : '',
           liabilityAccountId: (liability as any).liabilityAccountId?._id || (liability as any).liabilityAccountId || '',
           interestExpenseAccountId: (liability as any).interestExpenseAccountId?._id || (liability as any).interestExpenseAccountId || '',
+          bankAccountId: (liability as any).bankAccountId?._id || (liability as any).bankAccountId || '',
           purpose: (liability as any).purpose || '',
           durationMonths: (liability as any).durationMonths || 12,
           interestMethod: (liability as any).interestMethod || 'simple',
@@ -206,6 +222,7 @@ export default function LiabilityFormPage() {
         endDate: formData.endDate || undefined,
         liabilityAccountId: formData.liabilityAccountId,
         interestExpenseAccountId: formData.interestExpenseAccountId || undefined,
+        bankAccountId: formData.bankAccountId || undefined,
         purpose: formData.purpose,
         durationMonths: formData.durationMonths,
         paymentTerms: formData.paymentTerms,
@@ -246,10 +263,10 @@ export default function LiabilityFormPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-6 px-4 max-w-5xl">
+      <div className="container mx-auto py-6 px-4 max-w-5xl bg-gray-50 dark:bg-slate-900 min-h-screen p-6">
         {/* Page Header */}
         <div className="flex items-center gap-4 mb-6">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/liabilities')}>
+          <Button variant="ghost" size="sm" onClick={() => navigate('/liabilities')} className="dark:text-slate-200">
             <ArrowLeft className="h-4 w-4 mr-2" />
             {t('common.back') || 'Back'}
           </Button>
@@ -266,48 +283,50 @@ export default function LiabilityFormPage() {
         <form onSubmit={handleSubmit}>
           <div className="grid gap-6">
             {/* Basic Information */}
-            <Card>
+            <Card className="dark:bg-slate-800">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 dark:text-white">
                   <FileText className="h-5 w-5" />
                   {t('liabilities.title')}
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="dark:text-slate-400">
                   Basic liability information
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="loanNumber">{t('liabilities.reference')}</Label>
+                  <Label htmlFor="loanNumber" className="dark:text-slate-200">{t('liabilities.reference')}</Label>
                   <Input 
                     id="loanNumber"
                     value={formData.loanNumber}
                     onChange={(e) => handleChange('loanNumber', e.target.value)}
                     placeholder="Auto-generated if empty"
+                    className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="name">{t('liabilities.name')} *</Label>
+                  <Label htmlFor="name" className="dark:text-slate-200">{t('liabilities.name')} *</Label>
                   <Input 
                     id="name"
                     value={formData.name}
                     onChange={(e) => handleChange('name', e.target.value)}
                     placeholder="Bank Loan"
                     required
+                    className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="loanType">{t('liabilities.type')} *</Label>
+                  <Label htmlFor="loanType" className="dark:text-slate-200">{t('liabilities.type')} *</Label>
                   <Select 
                     value={formData.loanType} 
                     onValueChange={(value) => handleChange('loanType', value)}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="dark:bg-slate-800">
                       <SelectItem value="loan">{t('liabilities.types.loan')}</SelectItem>
                       <SelectItem value="short-term">Short-term</SelectItem>
                       <SelectItem value="long-term">Long-term</SelectItem>
@@ -319,51 +338,53 @@ export default function LiabilityFormPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="lenderName">{t('liabilities.lender')} *</Label>
+                  <Label htmlFor="lenderName" className="dark:text-slate-200">{t('liabilities.lender')} *</Label>
                   <Input 
                     id="lenderName"
                     value={formData.lenderName}
                     onChange={(e) => handleChange('lenderName', e.target.value)}
                     placeholder="Bank Name"
                     required
+                    className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="lenderContact">{t('liabilities.lenderContact')}</Label>
+                  <Label htmlFor="lenderContact" className="dark:text-slate-200">{t('liabilities.lenderContact')}</Label>
                   <Input 
                     id="lenderContact"
                     value={formData.lenderContact}
                     onChange={(e) => handleChange('lenderContact', e.target.value)}
                     placeholder="Contact person or phone"
+                    className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                   />
                 </div>
               </CardContent>
             </Card>
 
             {/* Financial Details */}
-            <Card>
+            <Card className="dark:bg-slate-800">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 dark:text-white">
                   <Wallet className="h-5 w-5" />
                   Financial Details
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="dark:text-slate-400">
                   Loan amount and interest information
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="liabilityAccountId">Liability Account *</Label>
+                  <Label htmlFor="liabilityAccountId" className="dark:text-slate-200">Liability Account *</Label>
                   <Select 
                     value={formData.liabilityAccountId} 
                     onValueChange={(value) => handleChange('liabilityAccountId', value)}
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select account" />
+                    <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
+                      <SelectValue placeholder="Select liability account" />
                     </SelectTrigger>
-                    <SelectContent>
-                      {accounts.map((account) => (
+                    <SelectContent className="dark:bg-slate-800">
+                      {liabilityAccounts.map((account) => (
                         <SelectItem key={account._id || account.code} value={account._id || account.code}>
                           {account.code} - {account.name}
                         </SelectItem>
@@ -373,7 +394,29 @@ export default function LiabilityFormPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="originalAmount">{t('liabilities.principal')} *</Label>
+                  <Label htmlFor="bankAccountId" className="dark:text-slate-200">Deposit to Bank Account</Label>
+                  <Select 
+                    value={formData.bankAccountId} 
+                    onValueChange={(value) => handleChange('bankAccountId', value)}
+                  >
+                    <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
+                      <SelectValue placeholder="Select bank account" />
+                    </SelectTrigger>
+                    <SelectContent className="dark:bg-slate-800">
+                      {bankAccounts.map((account) => (
+                        <SelectItem key={account._id} value={account._id}>
+                          {account.name}
+                          {account.cachedBalance !== undefined
+                            ? ` (Balance: ${Number(account.cachedBalance).toLocaleString()})`
+                            : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="originalAmount" className="dark:text-slate-200">{t('liabilities.principal')} *</Label>
                   <Input 
                     id="originalAmount"
                     type="number"
@@ -383,11 +426,12 @@ export default function LiabilityFormPage() {
                     onChange={(e) => handleChange('originalAmount', parseFloat(e.target.value) || 0)}
                     placeholder="10000"
                     required
+                    className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="interestRate">{t('liabilities.interestRate')} (%)</Label>
+                  <Label htmlFor="interestRate" className="dark:text-slate-200">{t('liabilities.interestRate')} (%)</Label>
                   <Input 
                     id="interestRate"
                     type="number"
@@ -396,19 +440,20 @@ export default function LiabilityFormPage() {
                     value={formData.interestRate}
                     onChange={(e) => handleChange('interestRate', parseFloat(e.target.value) || 0)}
                     placeholder="5.5"
+                    className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="interestExpenseAccountId">Interest Expense Account</Label>
+                  <Label htmlFor="interestExpenseAccountId" className="dark:text-slate-200">Interest Expense Account</Label>
                   <Select 
                     value={formData.interestExpenseAccountId} 
                     onValueChange={(value) => handleChange('interestExpenseAccountId', value)}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
                       <SelectValue placeholder="Select expense account" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="dark:bg-slate-800">
                       {expenseAccounts.map((account) => (
                         <SelectItem key={account._id || account.code} value={account._id || ''}>
                           {account.code} - {account.name}
@@ -419,7 +464,7 @@ export default function LiabilityFormPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="durationMonths">Duration (months)</Label>
+                  <Label htmlFor="durationMonths" className="dark:text-slate-200">Duration (months)</Label>
                   <Input 
                     id="durationMonths"
                     type="number"
@@ -427,54 +472,57 @@ export default function LiabilityFormPage() {
                     value={formData.durationMonths}
                     onChange={(e) => handleChange('durationMonths', parseInt(e.target.value) || 12)}
                     placeholder="12"
+                    className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                   />
                 </div>
               </CardContent>
             </Card>
 
             {/* Dates */}
-            <Card>
+            <Card className="dark:bg-slate-800">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 dark:text-white">
                   <Calendar className="h-5 w-5" />
                   Dates
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="dark:text-slate-400">
                   Start and end dates for the liability
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="startDate">Start Date *</Label>
+                  <Label htmlFor="startDate" className="dark:text-slate-200">Start Date *</Label>
                   <Input 
                     id="startDate"
                     type="date"
                     value={formData.startDate}
                     onChange={(e) => handleChange('startDate', e.target.value)}
                     required
+                    className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="endDate">End Date</Label>
+                  <Label htmlFor="endDate" className="dark:text-slate-200">End Date</Label>
                   <Input 
                     id="endDate"
                     type="date"
                     value={formData.endDate}
                     onChange={(e) => handleChange('endDate', e.target.value)}
+                    className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="paymentTerms">{t('liabilities.paymentTerms')}</Label>
+                  <Label htmlFor="paymentTerms" className="dark:text-slate-200">{t('liabilities.paymentTerms')}</Label>
                   <Select 
                     value={formData.paymentTerms} 
                     onValueChange={(value) => handleChange('paymentTerms', value)}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
                       <SelectValue placeholder="Select payment terms" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="dark:bg-slate-800">
                       <SelectItem value="monthly">{t('liabilities.paymentTermOptions.monthly')}</SelectItem>
                       <SelectItem value="quarterly">{t('liabilities.paymentTermOptions.quarterly')}</SelectItem>
                       <SelectItem value="annually">{t('liabilities.paymentTermOptions.annually')}</SelectItem>
@@ -484,22 +532,24 @@ export default function LiabilityFormPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="collateral">{t('liabilities.collateral')}</Label>
+                  <Label htmlFor="collateral" className="dark:text-slate-200">{t('liabilities.collateral')}</Label>
                   <Input 
                     id="collateral"
                     value={formData.collateral}
                     onChange={(e) => handleChange('collateral', e.target.value)}
                     placeholder="Collateral description"
+                    className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                   />
                 </div>
 
                 <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="purpose">Purpose</Label>
+                  <Label htmlFor="purpose" className="dark:text-slate-200">Purpose</Label>
                   <Input 
                     id="purpose"
                     value={formData.purpose}
                     onChange={(e) => handleChange('purpose', e.target.value)}
                     placeholder="Purpose of the loan"
+                    className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                   />
                 </div>
               </CardContent>
@@ -507,33 +557,33 @@ export default function LiabilityFormPage() {
 
             {/* Payment Schedule Preview */}
             {!isEditMode && paymentSchedule && (
-              <Card className="border-primary/20 bg-primary/5">
+              <Card className="border-primary/20 bg-primary/5 dark:bg-primary/10 dark:border-primary/30">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Calculator className="h-5 w-5 text-primary" />
+                  <CardTitle className="flex items-center gap-2 dark:text-white">
+                    <Calculator className="h-5 w-5 text-primary dark:text-primary" />
                     Payment Schedule Preview
                   </CardTitle>
-                  <CardDescription>
+                  <CardDescription className="dark:text-slate-400">
                     Based on your loan parameters (updated automatically)
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="grid gap-4 md:grid-cols-3 mb-4">
-                    <div className="p-4 bg-background rounded-lg border">
-                      <div className="text-sm text-muted-foreground">Monthly Payment</div>
-                      <div className="text-2xl font-bold text-primary">
+                    <div className="p-4 bg-background rounded-lg border dark:bg-slate-700 dark:border-slate-600">
+                      <div className="text-sm text-muted-foreground dark:text-slate-400">Monthly Payment</div>
+                      <div className="text-2xl font-bold text-primary dark:text-primary">
                         {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(paymentSchedule.monthlyPayment)}
                       </div>
                     </div>
-                    <div className="p-4 bg-background rounded-lg border">
-                      <div className="text-sm text-muted-foreground">Total Payment</div>
-                      <div className="text-2xl font-bold">
+                    <div className="p-4 bg-background rounded-lg border dark:bg-slate-700 dark:border-slate-600">
+                      <div className="text-sm text-muted-foreground dark:text-slate-400">Total Payment</div>
+                      <div className="text-2xl font-bold dark:text-white">
                         {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(paymentSchedule.totalPayment)}
                       </div>
                     </div>
-                    <div className="p-4 bg-background rounded-lg border">
-                      <div className="text-sm text-muted-foreground">Total Interest</div>
-                      <div className="text-2xl font-bold text-destructive">
+                    <div className="p-4 bg-background rounded-lg border dark:bg-slate-700 dark:border-slate-600">
+                      <div className="text-sm text-muted-foreground dark:text-slate-400">Total Interest</div>
+                      <div className="text-2xl font-bold text-destructive dark:text-red-400">
                         {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(paymentSchedule.totalInterest)}
                       </div>
                     </div>
@@ -541,20 +591,20 @@ export default function LiabilityFormPage() {
                   
                   {/* Interest Method */}
                   <div className="space-y-2">
-                    <Label htmlFor="interestMethod">Interest Calculation Method</Label>
+                    <Label htmlFor="interestMethod" className="dark:text-slate-200">Interest Calculation Method</Label>
                     <Select 
                       value={formData.interestMethod} 
                       onValueChange={(value) => handleChange('interestMethod', value)}
                     >
-                      <SelectTrigger className="w-full md:w-[300px]">
+                      <SelectTrigger className="w-full md:w-[300px] dark:bg-slate-700 dark:text-white dark:border-slate-600">
                         <SelectValue placeholder="Select method" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="dark:bg-slate-800">
                         <SelectItem value="simple">Simple Interest</SelectItem>
                         <SelectItem value="compound">Compound (Amortized)</SelectItem>
                       </SelectContent>
                     </Select>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-muted-foreground dark:text-slate-400">
                       {formData.interestMethod === 'simple' 
                         ? 'Interest calculated on original principal. Best for short-term loans.'
                         : 'Interest calculated on remaining balance. Standard for mortgages and long-term loans.'}
@@ -565,30 +615,30 @@ export default function LiabilityFormPage() {
                   <div className="mt-4 overflow-x-auto">
                     <Table>
                       <TableHeader>
-                        <TableRow>
-                          <TableHead>#</TableHead>
-                          <TableHead>Date</TableHead>
-                          <TableHead>Principal</TableHead>
-                          <TableHead>Interest</TableHead>
-                          <TableHead>Payment</TableHead>
-                          <TableHead>Balance</TableHead>
+                        <TableRow className="dark:bg-slate-700/50 dark:border-slate-600">
+                          <TableHead className="dark:text-slate-200">#</TableHead>
+                          <TableHead className="dark:text-slate-200">Date</TableHead>
+                          <TableHead className="dark:text-slate-200">Principal</TableHead>
+                          <TableHead className="dark:text-slate-200">Interest</TableHead>
+                          <TableHead className="dark:text-slate-200">Payment</TableHead>
+                          <TableHead className="dark:text-slate-200">Balance</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {paymentSchedule.schedule.slice(0, 6).map((payment) => (
-                          <TableRow key={payment.paymentNumber}>
-                            <TableCell>{payment.paymentNumber}</TableCell>
-                            <TableCell>{payment.paymentDate}</TableCell>
-                            <TableCell>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(payment.principalPortion)}</TableCell>
-                            <TableCell>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(payment.interestPortion)}</TableCell>
-                            <TableCell className="font-medium">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(payment.totalPayment)}</TableCell>
-                            <TableCell>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(payment.remainingBalance)}</TableCell>
+                          <TableRow key={payment.paymentNumber} className="dark:border-slate-600">
+                            <TableCell className="dark:text-slate-300">{payment.paymentNumber}</TableCell>
+                            <TableCell className="dark:text-slate-300">{payment.paymentDate}</TableCell>
+                            <TableCell className="dark:text-slate-300">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(payment.principalPortion)}</TableCell>
+                            <TableCell className="dark:text-slate-300">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(payment.interestPortion)}</TableCell>
+                            <TableCell className="font-medium dark:text-white">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(payment.totalPayment)}</TableCell>
+                            <TableCell className="dark:text-slate-300">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(payment.remainingBalance)}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
                     </Table>
                     {paymentSchedule.schedule.length > 6 && (
-                      <p className="text-sm text-muted-foreground mt-2">
+                      <p className="text-sm text-muted-foreground mt-2 dark:text-slate-400">
                         ...and {paymentSchedule.schedule.length - 6} more payments
                       </p>
                     )}
@@ -599,9 +649,9 @@ export default function LiabilityFormPage() {
 
             {/* Loading state for schedule calculation */}
             {!isEditMode && calculatingSchedule && formData.originalAmount > 0 && (
-              <Card>
+              <Card className="dark:bg-slate-800">
                 <CardContent className="py-8 flex items-center justify-center">
-                  <div className="flex items-center gap-2 text-muted-foreground">
+                  <div className="flex items-center gap-2 text-muted-foreground dark:text-slate-400">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     <span>Calculating payment schedule...</span>
                   </div>
@@ -611,10 +661,10 @@ export default function LiabilityFormPage() {
 
             {/* Action Buttons */}
             <div className="flex items-center justify-end gap-4 pt-4">
-              <Button type="button" variant="outline" onClick={() => navigate('/liabilities')}>
+              <Button type="button" variant="outline" onClick={() => navigate('/liabilities')} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
                 {t('common.cancel')}
               </Button>
-              <Button type="submit" disabled={submitting}>
+              <Button type="submit" disabled={submitting} className="dark:bg-primary dark:text-primary-foreground">
                 {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 <Save className="mr-2 h-4 w-4" />
                 {t('common.save')}

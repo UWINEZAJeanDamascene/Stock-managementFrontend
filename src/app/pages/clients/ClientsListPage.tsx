@@ -174,11 +174,11 @@ export default function ClientsListPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-6">
+      <div className="container mx-auto py-6 min-h-screen bg-slate-50 dark:bg-slate-900">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-2xl font-bold">{t('clients.title', 'Clients')}</h1>
-            <p className="text-muted-foreground">{t('clients.description', 'Manage your clients')}</p>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t('clients.title', 'Clients')}</h1>
+            <p className="text-muted-foreground dark:text-slate-400">{t('clients.description', 'Manage your clients')}</p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => navigate('/bulk-data')}>
@@ -193,15 +193,15 @@ export default function ClientsListPage() {
         </div>
 
         {/* Search Bar */}
-        <div className="bg-card rounded-lg border p-4 mb-6">
+        <div className="bg-card dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4 mb-6">
           <form onSubmit={handleSearch} className="flex gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground dark:text-slate-400" />
               <Input 
                 placeholder={t('clients.searchPlaceholder', 'Search by name or email...')}
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                className="pl-10"
+                className="pl-10 bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
               />
             </div>
             <Button type="submit" variant="secondary">
@@ -211,44 +211,44 @@ export default function ClientsListPage() {
         </div>
 
         {/* Table */}
-        <div className="bg-card rounded-lg border">
+        <div className="bg-card dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
           {loading ? (
             <div className="flex items-center justify-center p-8">
-              <Loader2 className="h-8 w-8 animate-spin" />
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground dark:text-slate-400" />
             </div>
           ) : (
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>{t('clients.name', 'Name')}</TableHead>
-                  <TableHead>{t('clients.email', 'Email')}</TableHead>
-                  <TableHead>{t('clients.phone', 'Phone')}</TableHead>
-                  <TableHead>{t('clients.outstandingBalance', 'Outstanding Balance')}</TableHead>
-                  <TableHead>{t('clients.overdueAmount', 'Overdue Amount')}</TableHead>
-                  <TableHead>{t('clients.status', 'Status')}</TableHead>
-                  <TableHead className="text-right">{t('common.actions', 'Actions')}</TableHead>
+                <TableRow className="dark:bg-slate-700">
+                  <TableHead className="dark:text-white">{t('clients.name', 'Name')}</TableHead>
+                  <TableHead className="dark:text-white">{t('clients.email', 'Email')}</TableHead>
+                  <TableHead className="dark:text-white">{t('clients.phone', 'Phone')}</TableHead>
+                  <TableHead className="dark:text-white">{t('clients.outstandingBalance', 'Outstanding Balance')}</TableHead>
+                  <TableHead className="dark:text-white">{t('clients.overdueAmount', 'Overdue Amount')}</TableHead>
+                  <TableHead className="dark:text-white">{t('clients.status', 'Status')}</TableHead>
+                  <TableHead className="text-right dark:text-white">{t('common.actions', 'Actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {clients.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground dark:text-slate-400">
                       {t('clients.noClients', 'No clients found')}
                     </TableCell>
                   </TableRow>
                 ) : (
                   clients.map((client) => (
-                    <TableRow key={client._id}>
-                      <TableCell className="font-medium">
+                    <TableRow key={client._id} className="dark:hover:bg-slate-700/50">
+                      <TableCell className="font-medium dark:text-slate-200">
                         <div>{client.name}</div>
-                        <div className="text-xs text-muted-foreground">{client.code}</div>
+                        <div className="text-xs text-muted-foreground dark:text-slate-400">{client.code}</div>
                       </TableCell>
-                      <TableCell>{client.contact?.email || '-'}</TableCell>
-                      <TableCell>{client.contact?.phone || '-'}</TableCell>
-                      <TableCell className="font-medium">
+                      <TableCell className="dark:text-slate-300">{client.contact?.email || '-'}</TableCell>
+                      <TableCell className="dark:text-slate-300">{client.contact?.phone || '-'}</TableCell>
+                      <TableCell className="font-medium dark:text-slate-200">
                         {formatCurrency(client.totalOutstanding || client.outstandingBalance)}
                       </TableCell>
-                      <TableCell className="font-medium">
+                      <TableCell className="font-medium dark:text-slate-200">
                         {formatCurrency(client.overdueAmount || 0)}
                       </TableCell>
                       <TableCell>
@@ -288,7 +288,7 @@ export default function ClientsListPage() {
                             onClick={() => handleToggleStatus(client._id)}
                             title={client.isActive ? t('common.deactivate', 'Deactivate') : t('common.activate', 'Activate')}
                           >
-                            {client.isActive ? <UserX className="h-4 w-4 text-destructive" /> : <UserCheck className="h-4 w-4 text-green-600" />}
+                            {client.isActive ? <UserX className="h-4 w-4 text-destructive" /> : <UserCheck className="h-4 w-4 text-green-600 dark:text-green-400" />}
                           </Button>
                           <Button 
                             variant="ghost" 
@@ -342,10 +342,10 @@ export default function ClientsListPage() {
         {/* Delete Confirmation Dialog */}
         {deleteTarget && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-            <div className="bg-background rounded-lg border p-6 max-w-md w-full mx-4">
-              <h3 className="text-lg font-semibold mb-2">{t('common.confirmDelete', 'Confirm Delete')}</h3>
-              <p className="text-muted-foreground mb-4">
-                {t('clients.deleteConfirm', 'Are you sure you want to delete')} <strong>{deleteTarget.name}</strong>? {t('common.cannotUndo', 'This action cannot be undone.')}
+            <div className="bg-background dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6 max-w-md w-full mx-4">
+              <h3 className="text-lg font-semibold mb-2 text-slate-900 dark:text-white">{t('common.confirmDelete', 'Confirm Delete')}</h3>
+              <p className="text-muted-foreground dark:text-slate-400 mb-4">
+                {t('clients.deleteConfirm', 'Are you sure you want to delete')} <strong className="text-slate-900 dark:text-white">{deleteTarget.name}</strong>? {t('common.cannotUndo', 'This action cannot be undone.')}
               </p>
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={deleting}>

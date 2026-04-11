@@ -156,13 +156,13 @@ export default function JournalEntriesPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'posted':
-        return <Badge className="bg-green-100 text-green-700">Posted</Badge>;
+        return <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">Posted</Badge>;
       case 'draft':
-        return <Badge className="bg-yellow-100 text-yellow-700">Draft</Badge>;
+        return <Badge className="bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">Draft</Badge>;
       case 'voided':
-        return <Badge className="bg-red-100 text-red-700">Voided</Badge>;
+        return <Badge className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">Voided</Badge>;
       case 'reversed':
-        return <Badge className="bg-gray-100 text-gray-700">Reversed</Badge>;
+        return <Badge className="bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">Reversed</Badge>;
       default:
         return <Badge>{status}</Badge>;
     }
@@ -174,30 +174,30 @@ export default function JournalEntriesPage() {
 
   return (
     <Layout>
-      <div className="space-y-6">
+      <div className="space-y-6 bg-gray-50 dark:bg-slate-900 min-h-screen p-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-              <BookOpen className="h-8 w-8" />
+            <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2 dark:text-white">
+              <BookOpen className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
               Journal Entries
             </h1>
-            <p className="text-muted-foreground mt-1">
+            <p className="text-muted-foreground mt-1 dark:text-slate-400">
               View and manage all journal entries
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => navigate('/journal/trial-balance')}>
+            <Button variant="outline" onClick={() => navigate('/journal/trial-balance')} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
               Trial Balance
             </Button>
-            <Button variant="outline" onClick={() => navigate('/journal/general-ledger')}>
+            <Button variant="outline" onClick={() => navigate('/journal/general-ledger')} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
               General Ledger
             </Button>
-            <Button variant="outline" onClick={handleExport}>
+            <Button variant="outline" onClick={handleExport} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
               <Download className="h-4 w-4 mr-2" />
               Export CSV
             </Button>
-            <Button onClick={() => navigate('/journal/new')}>
+            <Button onClick={() => navigate('/journal/new')} className="dark:bg-primary dark:text-primary-foreground">
               <Plus className="h-4 w-4 mr-2" />
               New Entry
             </Button>
@@ -205,7 +205,7 @@ export default function JournalEntriesPage() {
         </div>
 
         {/* Filters */}
-        <Card>
+        <Card className="dark:bg-slate-800">
           <CardContent className="pt-6">
             <form onSubmit={handleSearch} className="grid grid-cols-6 gap-4">
               <div className="col-span-2">
@@ -215,36 +215,36 @@ export default function JournalEntriesPage() {
                     placeholder="Search by entry #, description..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 dark:bg-slate-700 dark:text-white dark:border-slate-600"
                   />
                 </div>
               </div>
               <Select value={sourceTypeFilter} onValueChange={setSourceTypeFilter}>
-                <SelectTrigger><SelectValue placeholder="Source" /></SelectTrigger>
-                <SelectContent>
+                <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600"><SelectValue placeholder="Source" /></SelectTrigger>
+                <SelectContent className="dark:bg-slate-800">
                   {SOURCE_TYPES.map(st => (
-                    <SelectItem key={st.value} value={st.value}>{st.label}</SelectItem>
+                    <SelectItem key={st.value} value={st.value} className="dark:text-slate-200">{st.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger><SelectValue placeholder="Status" /></SelectTrigger>
-                <SelectContent>
+                <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600"><SelectValue placeholder="Status" /></SelectTrigger>
+                <SelectContent className="dark:bg-slate-800">
                   {STATUS_OPTIONS.map(s => (
-                    <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                    <SelectItem key={s.value} value={s.value} className="dark:text-slate-200">{s.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} placeholder="Start date" />
-              <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} placeholder="End date" />
+              <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} placeholder="Start date" className="dark:bg-slate-700 dark:text-white dark:border-slate-600" />
+              <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} placeholder="End date" className="dark:bg-slate-700 dark:text-white dark:border-slate-600" />
             </form>
           </CardContent>
         </Card>
 
         {/* Entries Table */}
-        <Card>
+        <Card className="dark:bg-slate-800">
           <CardHeader>
-            <CardTitle className="flex items-center justify-between">
+            <CardTitle className="flex items-center justify-between dark:text-white">
               <span>Entries ({total})</span>
               {loading && <Loader2 className="h-4 w-4 animate-spin" />}
             </CardTitle>
@@ -255,44 +255,44 @@ export default function JournalEntriesPage() {
                 <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
               </div>
             ) : entries.length === 0 ? (
-              <div className="text-center py-12 text-slate-500">
-                <FileText className="h-12 w-12 mx-auto mb-4 text-slate-300" />
+              <div className="text-center py-12 text-slate-500 dark:text-slate-400">
+                <FileText className="h-12 w-12 mx-auto mb-4 text-slate-300 dark:text-slate-600" />
                 <p>No journal entries found</p>
               </div>
             ) : (
               <>
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>Entry #</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Description</TableHead>
-                      <TableHead>Source</TableHead>
-                      <TableHead className="text-right">Debit</TableHead>
-                      <TableHead className="text-right">Credit</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                    <TableRow className="dark:bg-slate-700/50 dark:border-slate-600">
+                      <TableHead className="dark:text-slate-200">Entry #</TableHead>
+                      <TableHead className="dark:text-slate-200">Date</TableHead>
+                      <TableHead className="dark:text-slate-200">Description</TableHead>
+                      <TableHead className="dark:text-slate-200">Source</TableHead>
+                      <TableHead className="text-right dark:text-slate-200">Debit</TableHead>
+                      <TableHead className="text-right dark:text-slate-200">Credit</TableHead>
+                      <TableHead className="dark:text-slate-200">Status</TableHead>
+                      <TableHead className="text-right dark:text-slate-200">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {entries.map((entry) => (
-                      <TableRow key={entry._id}>
-                        <TableCell className="font-mono font-medium">
+                      <TableRow key={entry._id} className="dark:border-slate-600">
+                        <TableCell className="font-mono font-medium dark:text-white">
                           {entry.entryNumber}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="dark:text-slate-300">
                           {format(new Date(entry.date), 'dd MMM yyyy')}
                         </TableCell>
-                        <TableCell className="max-w-xs truncate">
+                        <TableCell className="max-w-xs truncate dark:text-slate-300">
                           {entry.description}
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline">{(entry as any).sourceType || 'manual'}</Badge>
+                          <Badge variant="outline" className="dark:text-slate-200">{(entry as any).sourceType || 'manual'}</Badge>
                         </TableCell>
-                        <TableCell className="text-right font-mono">
+                        <TableCell className="text-right font-mono dark:text-slate-300">
                           {formatAmount(entry.totalDebit)}
                         </TableCell>
-                        <TableCell className="text-right font-mono">
+                        <TableCell className="text-right font-mono dark:text-slate-300">
                           {formatAmount(entry.totalCredit)}
                         </TableCell>
                         <TableCell>
@@ -304,6 +304,7 @@ export default function JournalEntriesPage() {
                               variant="ghost"
                               size="sm"
                               onClick={() => navigate(`/journal/${entry._id}`)}
+                              className="dark:text-slate-300 dark:hover:bg-slate-700"
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
@@ -313,8 +314,9 @@ export default function JournalEntriesPage() {
                                 size="sm"
                                 onClick={() => navigate(`/journal/${entry._id}`)}
                                 title="Post entry"
+                                className="dark:text-green-400 dark:hover:bg-slate-700"
                               >
-                                <CheckCircle className="h-4 w-4 text-green-600" />
+                                <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
                               </Button>
                             )}
                             {entry.status === 'posted' && (
@@ -326,8 +328,9 @@ export default function JournalEntriesPage() {
                                   setVoidDialogOpen(true);
                                 }}
                                 title="Void entry"
+                                className="dark:text-red-400 dark:hover:bg-slate-700"
                               >
-                                <XCircle className="h-4 w-4 text-red-600" />
+                                <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
                               </Button>
                             )}
                           </div>
@@ -339,7 +342,7 @@ export default function JournalEntriesPage() {
 
                 {/* Pagination */}
                 <div className="flex items-center justify-between pt-4">
-                  <p className="text-sm text-slate-500">
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
                     Showing {((page - 1) * limit) + 1} to {Math.min(page * limit, total)} of {total} entries
                   </p>
                   <div className="flex items-center gap-2">
@@ -348,15 +351,17 @@ export default function JournalEntriesPage() {
                       size="sm"
                       disabled={page <= 1}
                       onClick={() => setPage(p => p - 1)}
+                      className="dark:border-slate-600 dark:text-slate-200"
                     >
                       <ChevronLeft className="h-4 w-4" />
                     </Button>
-                    <span className="text-sm">Page {page} of {totalPages}</span>
+                    <span className="text-sm dark:text-slate-300">Page {page} of {totalPages}</span>
                     <Button
                       variant="outline"
                       size="sm"
                       disabled={page >= totalPages}
                       onClick={() => setPage(p => p + 1)}
+                      className="dark:border-slate-600 dark:text-slate-200"
                     >
                       <ChevronRight className="h-4 w-4" />
                     </Button>
@@ -369,16 +374,16 @@ export default function JournalEntriesPage() {
 
         {/* Void Dialog */}
         <Dialog open={voidDialogOpen} onOpenChange={setVoidDialogOpen}>
-          <DialogContent>
+          <DialogContent className="dark:bg-slate-800">
             <DialogHeader>
-              <DialogTitle>Void Journal Entry</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="dark:text-white">Void Journal Entry</DialogTitle>
+              <DialogDescription className="dark:text-slate-400">
                 Are you sure you want to void entry {voidingEntry?.entryNumber}?
                 This will reverse all account balance adjustments.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setVoidDialogOpen(false)}>Cancel</Button>
+              <Button variant="outline" onClick={() => setVoidDialogOpen(false)} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">Cancel</Button>
               <Button variant="destructive" onClick={handleVoid} disabled={voiding}>
                 {voiding ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <XCircle className="h-4 w-4 mr-2" />}
                 Void Entry

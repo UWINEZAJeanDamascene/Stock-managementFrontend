@@ -11,7 +11,9 @@ import {
   FileText,
   Calendar,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Pencil,
+  Trash2
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
@@ -161,6 +163,24 @@ export default function GRNListPage() {
     }
   };
 
+  const handleEdit = (id: string) => {
+    navigate(`/grn/${id}/edit`);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this GRN? This action cannot be undone.')) {
+      return;
+    }
+    
+    try {
+      await grnApi.delete(id);
+      fetchGRNs();
+    } catch (error) {
+      console.error('Failed to delete GRN:', error);
+      alert('Failed to delete GRN. It may have already been confirmed.');
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { variant: 'default' | 'secondary' | 'outline' | 'destructive'; label: string }> = {
       draft: { variant: 'secondary', label: t('grn.status.draft', 'Draft') },
@@ -201,10 +221,10 @@ export default function GRNListPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-6">
+      <div className="container mx-auto py-6 min-h-screen bg-slate-50 dark:bg-slate-900">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-2xl font-bold">{t('grn.title', 'Goods Received Notes')}</h1>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t('grn.title', 'Goods Received Notes')}</h1>
             <p className="text-muted-foreground">{t('grn.description', 'Manage your GRNs')}</p>
           </div>
           <Button onClick={() => navigate('/grn/new')}>
@@ -214,31 +234,31 @@ export default function GRNListPage() {
         </div>
 
         {/* Filters */}
-        <div className="bg-card rounded-lg border p-4 mb-6">
+        <div className="bg-card dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <label className="text-sm font-medium mb-1 block">{t('grn.status', 'Status')}</label>
+              <label className="text-sm font-medium mb-1 block text-slate-900 dark:text-white">{t('grn.status', 'Status')}</label>
               <Select value={statusFilter} onValueChange={(val) => setStatusFilter(val)}>
-                <SelectTrigger>
+                <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600">
                   <SelectValue placeholder={t('grn.allStatuses', 'All Statuses')} />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('grn.allStatuses', 'All Statuses')}</SelectItem>
-                  <SelectItem value="draft">{t('grn.status.draft', 'Draft')}</SelectItem>
-                  <SelectItem value="confirmed">{t('grn.status.confirmed', 'Confirmed')}</SelectItem>
+                <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                  <SelectItem value="all" className="dark:text-slate-200">{t('grn.allStatuses', 'All Statuses')}</SelectItem>
+                  <SelectItem value="draft" className="dark:text-slate-200">{t('grn.status.draft', 'Draft')}</SelectItem>
+                  <SelectItem value="confirmed" className="dark:text-slate-200">{t('grn.status.confirmed', 'Confirmed')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">{t('grn.supplier', 'Supplier')}</label>
+              <label className="text-sm font-medium mb-1 block text-slate-900 dark:text-white">{t('grn.supplier', 'Supplier')}</label>
               <Select value={supplierFilter} onValueChange={(val) => setSupplierFilter(val)}>
-                <SelectTrigger>
+                <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600">
                   <SelectValue placeholder={t('grn.allSuppliers', 'All Suppliers')} />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('grn.allSuppliers', 'All Suppliers')}</SelectItem>
+                <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                  <SelectItem value="all" className="dark:text-slate-200">{t('grn.allSuppliers', 'All Suppliers')}</SelectItem>
                   {suppliers.map((supplier) => (
-                    <SelectItem key={supplier._id} value={supplier._id}>
+                    <SelectItem key={supplier._id} value={supplier._id} className="dark:text-slate-200">
                       {supplier.name}
                     </SelectItem>
                   ))}
@@ -246,63 +266,65 @@ export default function GRNListPage() {
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">{t('grn.dateFrom', 'Date From')}</label>
+              <label className="text-sm font-medium mb-1 block text-slate-900 dark:text-white">{t('grn.dateFrom', 'Date From')}</label>
               <Input 
                 type="date" 
                 value={dateFrom}
                 onChange={(e) => setDateFrom(e.target.value)}
+                className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
               />
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">{t('grn.dateTo', 'Date To')}</label>
+              <label className="text-sm font-medium mb-1 block text-slate-900 dark:text-white">{t('grn.dateTo', 'Date To')}</label>
               <Input 
                 type="date" 
                 value={dateTo}
                 onChange={(e) => setDateTo(e.target.value)}
+                className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
               />
             </div>
           </div>
         </div>
 
         {/* Table */}
-        <div className="bg-card rounded-lg border">
+        <div className="bg-card dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
           {loading ? (
             <div className="flex items-center justify-center p-8">
-              <Loader2 className="h-8 w-8 animate-spin" />
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : (
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>{t('grn.reference', 'Reference')}</TableHead>
-                  <TableHead>{t('grn.poReference', 'PO Reference')}</TableHead>
-                  <TableHead>{t('grn.supplier', 'Supplier')}</TableHead>
-                  <TableHead>{t('grn.receivedDate', 'Received Date')}</TableHead>
-                  <TableHead>{t('grn.status', 'Status')}</TableHead>
-                  <TableHead>{t('grn.totalAmount', 'Total Amount')}</TableHead>
-                  <TableHead>{t('grn.paymentStatus', 'Payment Status')}</TableHead>
-                  <TableHead className="text-right">{t('common.actions', 'Actions')}</TableHead>
+                <TableRow className="dark:bg-slate-700">
+                  <TableHead className="dark:text-white">{t('grn.reference', 'Reference')}</TableHead>
+                  <TableHead className="dark:text-white">{t('grn.poReference', 'PO Reference')}</TableHead>
+                  <TableHead className="dark:text-white">{t('grn.supplier', 'Supplier')}</TableHead>
+                  <TableHead className="dark:text-white">{t('grn.receivedDate', 'Received Date')}</TableHead>
+                  <TableHead className="dark:text-white">{t('grn.status', 'Status')}</TableHead>
+                  <TableHead className="dark:text-white">{t('grn.totalAmount', 'Total Amount')}</TableHead>
+                  <TableHead className="dark:text-white">{t('grn.paymentStatus', 'Payment Status')}</TableHead>
+                  <TableHead className="text-right dark:text-white">{t('common.actions', 'Actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {grnList.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground dark:text-slate-400">
                       {t('grn.noGRNs', 'No GRNs found')}
                     </TableCell>
                   </TableRow>
                 ) : (
                   grnList.map((grn) => (
-                    <TableRow key={grn._id}>
-                      <TableCell className="font-medium">
+                    <TableRow key={grn._id} className="dark:hover:bg-slate-700/50">
+                      <TableCell className="font-medium dark:text-slate-200">
                         <FileText className="inline-block mr-2 h-4 w-4" />
                         {grn.referenceNo || 'N/A'}
                       </TableCell>
-                      <TableCell>{grn.purchaseOrder?.referenceNo || '-'}</TableCell>
-                      <TableCell>{grn.supplier?.name || '-'}</TableCell>
-                      <TableCell>{formatDate(grn.receivedDate)}</TableCell>
+                      <TableCell className="dark:text-slate-300">{grn.purchaseOrder?.referenceNo || '-'}</TableCell>
+                      <TableCell className="dark:text-slate-300">{grn.supplier?.name || '-'}</TableCell>
+                      <TableCell className="dark:text-slate-300">{formatDate(grn.receivedDate)}</TableCell>
                       <TableCell>{getStatusBadge(grn.status)}</TableCell>
-                      <TableCell className="font-medium">
+                      <TableCell className="font-medium dark:text-slate-200">
                         {formatCurrency(grn.totalAmount)}
                       </TableCell>
                       <TableCell>{getPaymentStatusBadge(grn.paymentStatus)}</TableCell>
@@ -316,13 +338,29 @@ export default function GRNListPage() {
                             <Eye className="h-4 w-4" />
                           </Button>
                           {grn.status === 'draft' && (
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => handleConfirm(grn._id)}
-                            >
-                              <CheckCircle className="h-4 w-4 text-green-500" />
-                            </Button>
+                            <>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => handleEdit(grn._id)}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => handleDelete(grn._id)}
+                              >
+                                <Trash2 className="h-4 w-4 text-red-500" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => handleConfirm(grn._id)}
+                              >
+                                <CheckCircle className="h-4 w-4 text-green-500" />
+                              </Button>
+                            </>
                           )}
                         </div>
                       </TableCell>

@@ -130,10 +130,10 @@ export default function SuppliersListPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-6">
+      <div className="container mx-auto py-6 min-h-screen bg-slate-50 dark:bg-slate-900">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-2xl font-bold">{t('suppliers.title', 'Suppliers')}</h1>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t('suppliers.title', 'Suppliers')}</h1>
             <p className="text-muted-foreground">{t('suppliers.subtitle', 'Manage supplier relationships')}</p>
           </div>
           <Button onClick={() => navigate('/suppliers/new')}>
@@ -143,7 +143,7 @@ export default function SuppliersListPage() {
         </div>
 
         {/* Filters */}
-        <div className="bg-card rounded-lg border p-4 mb-6">
+        <div className="bg-card dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4 mb-6">
           <form onSubmit={handleSearch} className="flex gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -151,13 +151,13 @@ export default function SuppliersListPage() {
                 placeholder={t('suppliers.searchPlaceholder', 'Search by name, code, or email...')}
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                className="pl-10"
+                className="pl-10 bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
               />
             </div>
             <select
               value={statusFilter}
               onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-              className="px-3 py-2 border rounded-md"
+              className="px-3 py-2 border rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
             >
               <option value="">{t('suppliers.allStatus', 'All Status')}</option>
               <option value="true">{t('common.active', 'Active')}</option>
@@ -170,50 +170,50 @@ export default function SuppliersListPage() {
         </div>
 
         {/* Table */}
-        <div className="bg-card rounded-lg border">
+        <div className="bg-card dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
           {loading ? (
             <div className="flex items-center justify-center p-8">
-              <Loader2 className="h-8 w-8 animate-spin" />
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : (
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>{t('suppliers.code', 'Code')}</TableHead>
-                  <TableHead>{t('suppliers.name', 'Name')}</TableHead>
-                  <TableHead>{t('suppliers.contact', 'Contact')}</TableHead>
-                  <TableHead>{t('suppliers.paymentTerms', 'Payment Terms')}</TableHead>
-                  <TableHead className="text-right">{t('suppliers.totalPurchases', 'Total Purchases')}</TableHead>
-                  <TableHead>{t('suppliers.status', 'Status')}</TableHead>
-                  <TableHead className="text-right">{t('common.actions', 'Actions')}</TableHead>
+                <TableRow className="dark:bg-slate-700">
+                  <TableHead className="dark:text-white">{t('suppliers.code', 'Code')}</TableHead>
+                  <TableHead className="dark:text-white">{t('suppliers.name', 'Name')}</TableHead>
+                  <TableHead className="dark:text-white">{t('suppliers.contact', 'Contact')}</TableHead>
+                  <TableHead className="dark:text-white">{t('suppliers.paymentTerms', 'Payment Terms')}</TableHead>
+                  <TableHead className="text-right dark:text-white">{t('suppliers.totalPurchases', 'Total Purchases')}</TableHead>
+                  <TableHead className="dark:text-white">{t('suppliers.status', 'Status')}</TableHead>
+                  <TableHead className="text-right dark:text-white">{t('common.actions', 'Actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {suppliers.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground dark:text-slate-400">
                       {t('suppliers.noSuppliers', 'No suppliers found')}
                     </TableCell>
                   </TableRow>
                 ) : (
                   suppliers.map((supplier) => (
-                    <TableRow key={supplier._id}>
-                      <TableCell className="font-mono text-sm">{supplier.code}</TableCell>
-                      <TableCell className="font-medium">{supplier.name}</TableCell>
-                      <TableCell>
+                    <TableRow key={supplier._id} className="dark:hover:bg-slate-700/50">
+                      <TableCell className="font-mono text-sm dark:text-slate-200">{supplier.code}</TableCell>
+                      <TableCell className="font-medium dark:text-slate-200">{supplier.name}</TableCell>
+                      <TableCell className="dark:text-slate-300">
                         <div className="text-sm">
-                          {supplier.contact?.contactPerson && <div>{supplier.contact.contactPerson}</div>}
-                          {supplier.contact?.email && <div className="text-muted-foreground">{supplier.contact.email}</div>}
-                          {supplier.contact?.phone && <div className="text-muted-foreground">{supplier.contact.phone}</div>}
+                          {supplier.contact?.contactPerson && <div className="dark:text-slate-200">{supplier.contact.contactPerson}</div>}
+                          {supplier.contact?.email && <div className="text-muted-foreground dark:text-slate-400">{supplier.contact.email}</div>}
+                          {supplier.contact?.phone && <div className="text-muted-foreground dark:text-slate-400">{supplier.contact.phone}</div>}
                           {!supplier.contact?.email && !supplier.contact?.phone && !supplier.contact?.contactPerson && '-'}
                         </div>
                       </TableCell>
-                      <TableCell>{getPaymentTermsLabel(supplier.paymentTerms)}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(supplier.totalPurchases)}</TableCell>
+                      <TableCell className="dark:text-slate-300">{getPaymentTermsLabel(supplier.paymentTerms)}</TableCell>
+                      <TableCell className="text-right dark:text-slate-200">{formatCurrency(supplier.totalPurchases)}</TableCell>
                       <TableCell>
                         <Badge 
                           variant={supplier.isActive ? 'default' : 'secondary'}
-                          className={supplier.isActive ? 'bg-green-500' : ''}
+                          className={supplier.isActive ? 'bg-green-500 dark:bg-green-600' : ''}
                           style={{ cursor: 'pointer' }}
                           onClick={() => handleToggleStatus(supplier._id)}
                         >

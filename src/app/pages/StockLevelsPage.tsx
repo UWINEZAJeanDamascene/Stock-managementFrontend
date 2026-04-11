@@ -7,7 +7,6 @@ import {
   TableContainer, 
   TableHead, 
   TableRow,
-  Paper,
   Box,
   TextField,
   MenuItem,
@@ -24,33 +23,36 @@ import {
   CircularProgress
 } from '@mui/material';
 import { 
+  Refresh as RefreshIcon,
   Search as SearchIcon,
   Download as DownloadIcon,
   Inventory as InventoryIcon,
   Warning as WarningIcon,
   TrendingUp as TrendingUpIcon
 } from '@mui/icons-material';
-import { stockApi } from '@/lib/api';
+import { productsApi } from '@/lib/api';
 import { Layout } from '../layout/Layout';
 
-interface StockLevel {
+interface ProductStock {
   _id: string;
-  product: string;
-  productId: string;
-  productName: string;
-  productSku: string;
-  warehouse: string;
-  warehouseId: string;
-  warehouseName: string;
-  quantity: number;
-  availableQuantity: number;
+  sku: string;
+  name: string;
+  category?: {
+    _id: string;
+    name: string;
+  };
+  unit: string;
+  currentStock: number;
   reservedQuantity: number;
-  unitCost: number;
-  totalCost: number;
-  batchNumber?: string;
-  expiryDate?: string;
-  status: string;
-  lastMovement?: string;
+  availableQuantity: number;
+  averageCost: number;
+  totalValue: number;
+  lowStockThreshold: number;
+  defaultWarehouse?: {
+    _id: string;
+    name: string;
+  };
+  isActive: boolean;
 }
 
 interface Warehouse {
@@ -67,21 +69,28 @@ interface PaginationInfo {
 
 export default function StockLevelsPage() {
   const { t } = useTranslation();
-  const [stockLevels, setStockLevels] = useState<StockLevel[]>([]);
+  const [products, setProducts] = useState<ProductStock[]>([]);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [pagination, setPagination] = useState<PaginationInfo>({
-    total: 0,
-    page: 1,
-    limit: 50,
-    pages: 0
-  });
+  
+  const isDark = () => document.documentElement.classList.contains('dark');
+  const [dark, setDark] = useState(isDark());
+  
+  useEffect(() => {
+    const observer = new MutationObserver(() => setDark(isDark()));
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
+  
+  // Pagination
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(50);
+  const [total, setTotal] = useState(0);
   
   // Filters
   const [search, setSearch] = useState('');
-  const [warehouseFilter, setWarehouseFilter] = useState('');
-  const [lowStockFilter, setLowStockFilter] = useState(false);
+  const [stockStatusFilter, setStockStatusFilter] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
   // Debounce search
@@ -92,47 +101,78 @@ export default function StockLevelsPage() {
     return () => clearTimeout(timer);
   }, [search]);
 
-  // Fetch stock levels
+  // Fetch stock data from products API (aggregated stock levels)
   const fetchStockLevels = async () => {
     setLoading(true);
     setError(null);
-    console.log('[StockLevels] Fetching with params:', {
-      warehouse: warehouseFilter || undefined,
-      lowStock: lowStockFilter || undefined,
-      search: debouncedSearch || undefined,
-      page: pagination.page,
-      limit: pagination.limit
-    });
+    
     try {
-      const response = await stockApi.getLevels({
-        warehouse: warehouseFilter || undefined,
-        lowStock: lowStockFilter || undefined,
-        search: debouncedSearch || undefined,
-        page: pagination.page,
-        limit: pagination.limit
-      });
+      const params: any = {
+        page: page + 1,
+        limit: rowsPerPage,
+        isArchived: false,
+      };
+
+      if (debouncedSearch) {
+        params.search = debouncedSearch;
+      }
+
+      if (stockStatusFilter) {
+        params.status = stockStatusFilter;
+      }
+
+      console.log('[StockLevels] Fetching products with params:', params);
+      
+      const response = await productsApi.getAll(params);
       
       console.log('[StockLevels] API Response:', response);
       
       if (response && response.success) {
-        setStockLevels(response.data as StockLevel[]);
-        if (response.warehouses) {
-          setWarehouses(response.warehouses as Warehouse[]);
+        const productData = (response.data as any[]) || [];
+        
+        // Transform product data to stock format
+        const stockData: ProductStock[] = productData.map((product: any) => {
+          const currentStock = typeof product.currentStock === 'string' 
+            ? parseFloat(product.currentStock) 
+            : (product.currentStock || 0);
+          
+          const avgCost = typeof product.averageCost === 'string' 
+            ? parseFloat(product.averageCost) 
+            : (product.averageCost || 0);
+
+          const costPrice = typeof product.costPrice === 'string'
+            ? parseFloat(product.costPrice)
+            : (product.costPrice || 0);
+
+          const effectiveCost = avgCost > 0 ? avgCost : costPrice;
+          
+          return {
+            _id: product._id,
+            sku: product.sku,
+            name: product.name,
+            category: product.category,
+            unit: product.unit || 'pcs',
+            currentStock: currentStock,
+            reservedQuantity: product.reservedQuantity || 0,
+            availableQuantity: currentStock - (product.reservedQuantity || 0),
+            averageCost: effectiveCost,
+            totalValue: currentStock * effectiveCost,
+            lowStockThreshold: product.lowStockThreshold || 10,
+            defaultWarehouse: product.defaultWarehouse,
+            isActive: product.isActive !== false,
+          };
+        });
+
+        setProducts(stockData);
+        
+        if (response.pagination && typeof response.pagination === 'object') {
+          const pg = response.pagination as Record<string, any>;
+          setTotal(pg.total || productData.length);
+        } else {
+          setTotal(productData.length);
         }
-        if (response.pagination) {
-          setPagination(prev => ({
-            ...prev,
-            ...response.pagination as PaginationInfo
-          }));
-        }
-      } else if (response) {
-        console.error('[StockLevels] API error response:', response);
-        // Use type assertion since response structure may vary
-        const errMsg = (response as { message?: string }).message;
-        setError(errMsg || 'Failed to fetch stock levels');
       } else {
-        console.error('[StockLevels] No response from API');
-        setError('No response from server');
+        setError('Failed to fetch stock levels');
       }
     } catch (err) {
       console.error('[StockLevels] Error:', err);
@@ -144,26 +184,27 @@ export default function StockLevelsPage() {
 
   useEffect(() => {
     fetchStockLevels();
-  }, [pagination.page, warehouseFilter, lowStockFilter, debouncedSearch]);
+  }, [page, rowsPerPage, debouncedSearch, stockStatusFilter]);
 
   const handlePageChange = (_: React.MouseEvent<HTMLButtonElement> | null, newPage: number) => {
-    setPagination(prev => ({ ...prev, page: newPage + 1 }));
+    setPage(newPage);
   };
 
   const handleRowsPerPageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setPagination(prev => ({ 
-      ...prev, 
-      limit: parseInt(event.target.value, 10),
-      page: 1 
-    }));
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  const handleRefresh = () => {
+    fetchStockLevels();
   };
 
   const handleExport = () => {
-    // Export to CSV
     const headers = [
       'Product Code',
       'Product Name',
-      'Warehouse',
+      'Category',
+      'Unit',
       'Qty On Hand',
       'Qty Reserved',
       'Qty Available',
@@ -172,16 +213,17 @@ export default function StockLevelsPage() {
       'Status'
     ];
     
-    const rows = stockLevels.map(item => [
-      item.productSku,
-      item.productName,
-      item.warehouseName,
-      item.quantity,
+    const rows = products.map(item => [
+      item.sku,
+      item.name,
+      item.category?.name || '-',
+      item.unit,
+      item.currentStock,
       item.reservedQuantity,
       item.availableQuantity,
-      item.unitCost,
-      item.totalCost,
-      item.status
+      item.averageCost.toFixed(2),
+      item.totalValue.toFixed(2),
+      getStockStatus(item).label
     ]);
     
     const csvContent = [
@@ -198,15 +240,10 @@ export default function StockLevelsPage() {
     URL.revokeObjectURL(url);
   };
 
-  const getStatusChip = (status: string) => {
-    const statusColors: Record<string, 'success' | 'warning' | 'error' | 'default'> = {
-      active: 'success',
-      partially_used: 'warning',
-      exhausted: 'error',
-      expired: 'error',
-      quarantined: 'default'
-    };
-    return <Chip label={status} color={statusColors[status] || 'default'} size="small" />;
+  const getStockStatus = (product: ProductStock) => {
+    if (product.currentStock === 0) return { label: 'Out of Stock', color: 'error' as const };
+    if (product.currentStock <= product.lowStockThreshold) return { label: 'Low Stock', color: 'warning' as const };
+    return { label: 'In Stock', color: 'success' as const };
   };
 
   const formatCurrency = (value: number) => {
@@ -216,58 +253,89 @@ export default function StockLevelsPage() {
     }).format(value);
   };
 
-  const totalValue = stockLevels.reduce((sum, item) => sum + item.totalCost, 0);
-  const lowStockCount = stockLevels.filter(item => item.availableQuantity < item.quantity * 0.2).length;
+  // Calculate totals
+  const totalValue = products.reduce((sum, item) => sum + item.totalValue, 0);
+  const totalQuantity = products.reduce((sum, item) => sum + item.currentStock, 0);
+  const lowStockCount = products.filter(item => 
+    item.currentStock > 0 && item.currentStock <= item.lowStockThreshold
+  ).length;
+  const outOfStockCount = products.filter(item => item.currentStock === 0).length;
 
   return (
     <Layout>
-      <Box sx={{ p: 3 }}>
+      <Box sx={{ p: 3 }} className="min-h-screen bg-slate-50 dark:bg-slate-900">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-3">
           <InventoryIcon className="text-primary" style={{ fontSize: 32 }} />
-          <Typography variant="h5" component="h1">
+          <Typography variant="h5" component="h1" className="text-slate-900 dark:text-white">
             {t('stockLevels.title', 'Stock Levels')}
           </Typography>
         </div>
-        <Button
-          variant="outlined"
-          startIcon={<DownloadIcon />}
-          onClick={handleExport}
-        >
-          {t('common.export', 'Export')}
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outlined"
+            startIcon={<RefreshIcon />}
+            onClick={handleRefresh}
+            sx={{
+              borderColor: dark ? '#475569' : '#cbd5e1',
+              color: dark ? '#e2e8f0' : '#475569',
+            }}
+          >
+            {t('common.refresh', 'Refresh')}
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<DownloadIcon />}
+            onClick={handleExport}
+            sx={{
+              borderColor: dark ? '#475569' : '#cbd5e1',
+              color: dark ? '#e2e8f0' : '#475569',
+            }}
+          >
+            {t('common.export', 'Export')}
+          </Button>
+        </div>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <Paper className="p-4 flex items-center gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-4 flex items-center gap-4 border border-slate-200 dark:border-slate-700">
           <InventoryIcon color="primary" />
           <div>
-            <Typography variant="body2" color="text.secondary">
-              {t('stockLevels.totalBatches', 'Total Batches')}
+            <Typography variant="body2" className="text-slate-500 dark:text-slate-400">
+              {t('stockLevels.totalProducts', 'Total Products')}
             </Typography>
-            <Typography variant="h6">{pagination.total}</Typography>
+            <Typography variant="h6" className="text-slate-900 dark:text-white">{total}</Typography>
           </div>
-        </Paper>
-        <Paper className="p-4 flex items-center gap-4">
-          <WarningIcon color="warning" />
-          <div>
-            <Typography variant="body2" color="text.secondary">
-              {t('stockLevels.lowStock', 'Low Stock Items')}
-            </Typography>
-            <Typography variant="h6">{lowStockCount}</Typography>
-          </div>
-        </Paper>
-        <Paper className="p-4 flex items-center gap-4">
+        </div>
+        <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-4 flex items-center gap-4 border border-slate-200 dark:border-slate-700">
           <TrendingUpIcon color="success" />
           <div>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" className="text-slate-500 dark:text-slate-400">
+              {t('stockLevels.totalQuantity', 'Total Quantity')}
+            </Typography>
+            <Typography variant="h6" className="text-slate-900 dark:text-white">{totalQuantity.toLocaleString()}</Typography>
+          </div>
+        </div>
+        <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-4 flex items-center gap-4 border border-slate-200 dark:border-slate-700">
+          <WarningIcon color="warning" />
+          <div>
+            <Typography variant="body2" className="text-slate-500 dark:text-slate-400">
+              {t('stockLevels.lowStock', 'Low Stock')}
+            </Typography>
+            <Typography variant="h6" className="text-slate-900 dark:text-white">{lowStockCount}</Typography>
+          </div>
+        </div>
+        <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-4 flex items-center gap-4 border border-slate-200 dark:border-slate-700">
+          <TrendingUpIcon color="success" />
+          <div>
+            <Typography variant="body2" className="text-slate-500 dark:text-slate-400">
               {t('stockLevels.totalValue', 'Total Value')}
             </Typography>
-            <Typography variant="h6">{formatCurrency(totalValue)}</Typography>
+            <Typography variant="h6" className="text-slate-900 dark:text-white">{formatCurrency(totalValue)}</Typography>
           </div>
-        </Paper>
+        </div>
       </div>
 
       {/* Error Alert */}
@@ -278,44 +346,65 @@ export default function StockLevelsPage() {
       )}
 
       {/* Filters */}
-      <Paper className="p-4 mb-4">
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-4 mb-4 border border-slate-200 dark:border-slate-700">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
           <TextField
             fullWidth
             size="small"
-            placeholder={t('stockLevels.searchPlaceholder', 'Search product, SKU, or warehouse...')}
+            placeholder={t('stockLevels.searchPlaceholder', 'Search product or SKU...')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            sx={{
+              '& .MuiInputBase-root': {
+                backgroundColor: dark ? '#1e293b' : 'white',
+                color: dark ? '#e2e8f0' : '#1e293b',
+              },
+              '& .MuiOutlinedInput-notchedOutline': {
+                borderColor: dark ? '#334155' : '#cbd5e1',
+              },
+              '&:hover .MuiOutlinedInput-notchedOutline': {
+                borderColor: dark ? '#475569' : '#94a3b8',
+              },
+              '& input::placeholder': {
+                color: dark ? '#94a3b8' : '#64748b',
+              },
+            }}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <SearchIcon />
+                  <SearchIcon className="text-slate-400" />
                 </InputAdornment>
               ),
             }}
           />
-          <FormControl fullWidth size="small">
-            <InputLabel>{t('stockLevels.warehouse', 'Warehouse')}</InputLabel>
+          <FormControl fullWidth size="small" sx={{
+            '& .MuiInputBase-root': {
+              backgroundColor: dark ? '#1e293b' : 'white',
+              color: dark ? '#e2e8f0' : '#1e293b',
+            },
+            '& .MuiInputLabel-root': {
+              color: dark ? '#cbd5e1' : '#475569',
+            },
+            '& .MuiOutlinedInput-notchedOutline': {
+              borderColor: dark ? '#334155' : '#cbd5e1',
+            },
+            '&:hover .MuiOutlinedInput-notchedOutline': {
+              borderColor: dark ? '#475569' : '#94a3b8',
+            },
+          }}>
+            <InputLabel>{t('stockLevels.stockStatus', 'Stock Status')}</InputLabel>
             <Select
-              value={warehouseFilter}
-              label={t('stockLevels.warehouse', 'Warehouse')}
-              onChange={(e) => setWarehouseFilter(e.target.value)}
+              value={stockStatusFilter}
+              label={t('stockLevels.stockStatus', 'Stock Status')}
+              onChange={(e) => setStockStatusFilter(e.target.value)}
+              sx={{
+                color: dark ? '#e2e8f0' : '#1e293b',
+              }}
             >
               <MenuItem value="">{t('common.all', 'All')}</MenuItem>
-              {warehouses.map(wh => (
-                <MenuItem key={wh._id} value={wh._id}>{wh.name}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <FormControl fullWidth size="small">
-            <InputLabel>{t('stockLevels.status', 'Status')}</InputLabel>
-            <Select
-              value={lowStockFilter ? 'low' : 'all'}
-              label={t('stockLevels.status', 'Status')}
-              onChange={(e) => setLowStockFilter(e.target.value === 'low')}
-            >
-              <MenuItem value="all">{t('common.all', 'All')}</MenuItem>
-              <MenuItem value="low">{t('stockLevels.lowStock', 'Low Stock')}</MenuItem>
+              <MenuItem value="in_stock">{t('stockLevels.inStock', 'In Stock')}</MenuItem>
+              <MenuItem value="low_stock">{t('stockLevels.lowStock', 'Low Stock')}</MenuItem>
+              <MenuItem value="out_of_stock">{t('stockLevels.outOfStock', 'Out of Stock')}</MenuItem>
             </Select>
           </FormControl>
           <Button 
@@ -323,91 +412,118 @@ export default function StockLevelsPage() {
             variant="outlined" 
             onClick={() => {
               setSearch('');
-              setWarehouseFilter('');
-              setLowStockFilter(false);
+              setStockStatusFilter('');
+              setPage(0);
+            }}
+            sx={{
+              borderColor: dark ? '#475569' : '#cbd5e1',
+              color: dark ? '#e2e8f0' : '#475569',
             }}
           >
             {t('common.clear', 'Clear')}
           </Button>
         </div>
-      </Paper>
+      </div>
 
       {/* Table */}
-      <Paper>
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow border border-slate-200 dark:border-slate-700 overflow-hidden">
         <TableContainer>
           <Table>
             <TableHead>
-              <TableRow>
-                <TableCell>{t('stockLevels.productCode', 'Product Code')}</TableCell>
-                <TableCell>{t('stockLevels.productName', 'Product Name')}</TableCell>
-                <TableCell>{t('stockLevels.warehouse', 'Warehouse')}</TableCell>
-                <TableCell align="right">{t('stockLevels.qtyOnHand', 'Qty On Hand')}</TableCell>
-                <TableCell align="right">{t('stockLevels.qtyReserved', 'Qty Reserved')}</TableCell>
-                <TableCell align="right">{t('stockLevels.qtyAvailable', 'Qty Available')}</TableCell>
-                <TableCell align="right">{t('stockLevels.avgCost', 'Avg Cost')}</TableCell>
-                <TableCell align="right">{t('stockLevels.totalValue', 'Total Value')}</TableCell>
-                <TableCell>{t('stockLevels.status', 'Status')}</TableCell>
-                <TableCell>{t('stockLevels.lastMovement', 'Last Movement')}</TableCell>
+              <TableRow sx={{ backgroundColor: dark ? '#1e293b' : '#f1f5f9' }}>
+                <TableCell sx={{ color: dark ? '#f1f5f9' : '#1e293b', fontWeight: 600 }}>{t('stockLevels.productCode', 'Product Code')}</TableCell>
+                <TableCell sx={{ color: dark ? '#f1f5f9' : '#1e293b', fontWeight: 600 }}>{t('stockLevels.productName', 'Product Name')}</TableCell>
+                <TableCell sx={{ color: dark ? '#f1f5f9' : '#1e293b', fontWeight: 600 }}>{t('stockLevels.category', 'Category')}</TableCell>
+                <TableCell align="right" sx={{ color: dark ? '#f1f5f9' : '#1e293b', fontWeight: 600 }}>{t('stockLevels.qtyOnHand', 'Qty On Hand')}</TableCell>
+                <TableCell align="right" sx={{ color: dark ? '#f1f5f9' : '#1e293b', fontWeight: 600 }}>{t('stockLevels.qtyReserved', 'Qty Reserved')}</TableCell>
+                <TableCell align="right" sx={{ color: dark ? '#f1f5f9' : '#1e293b', fontWeight: 600 }}>{t('stockLevels.qtyAvailable', 'Qty Available')}</TableCell>
+                <TableCell align="right" sx={{ color: dark ? '#f1f5f9' : '#1e293b', fontWeight: 600 }}>{t('stockLevels.avgCost', 'Avg Cost')}</TableCell>
+                <TableCell align="right" sx={{ color: dark ? '#f1f5f9' : '#1e293b', fontWeight: 600 }}>{t('stockLevels.totalValue', 'Total Value')}</TableCell>
+                <TableCell sx={{ color: dark ? '#f1f5f9' : '#1e293b', fontWeight: 600 }}>{t('stockLevels.status', 'Status')}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={10} align="center" sx={{ py: 4 }}>
+                  <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
                     <CircularProgress />
                   </TableCell>
                 </TableRow>
-              ) : stockLevels.length === 0 ? (
+              ) : products.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={10} align="center" sx={{ py: 4 }}>
+                  <TableCell colSpan={9} align="center" sx={{ py: 4 }} className="text-slate-500 dark:text-slate-400">
                     {t('stockLevels.noData', 'No stock levels found')}
                   </TableCell>
                 </TableRow>
               ) : (
-                stockLevels.map((item) => (
-                  <TableRow 
-                    key={item._id}
-                    hover
-                    sx={{ cursor: 'pointer' }}
-                  >
-                    <TableCell>{item.productSku}</TableCell>
-                    <TableCell>{item.productName}</TableCell>
-                    <TableCell>{item.warehouseName}</TableCell>
-                    <TableCell align="right">{item.quantity.toLocaleString()}</TableCell>
-                    <TableCell align="right">{item.reservedQuantity.toLocaleString()}</TableCell>
-                    <TableCell 
-                      align="right"
-                      style={{ 
-                        color: item.availableQuantity < item.quantity * 0.2 ? '#d32f2f' : 'inherit',
-                        fontWeight: item.availableQuantity < item.quantity * 0.2 ? 'bold' : 'normal'
-                      }}
+                products.map((item) => {
+                  const status = getStockStatus(item);
+                  return (
+                    <TableRow 
+                      key={item._id}
+                      hover
+                      sx={{ cursor: 'pointer' }}
+                      className="hover:bg-slate-50 dark:hover:bg-slate-700/50"
                     >
-                      {item.availableQuantity.toLocaleString()}
-                    </TableCell>
-                    <TableCell align="right">{formatCurrency(item.unitCost)}</TableCell>
-                    <TableCell align="right">{formatCurrency(item.totalCost)}</TableCell>
-                    <TableCell>{getStatusChip(item.status)}</TableCell>
-                    <TableCell>
-                      {item.lastMovement 
-                        ? new Date(item.lastMovement).toLocaleDateString() 
-                        : '-'}
-                    </TableCell>
-                  </TableRow>
-                ))
+                      <TableCell sx={{ color: 'inherit' }}>{item.sku}</TableCell>
+                      <TableCell sx={{ color: 'inherit' }}>
+                        <div className="font-medium">{item.name}</div>
+                        {item.category && (
+                          <div className="text-xs text-slate-500 dark:text-slate-400">{item.category.name}</div>
+                        )}
+                      </TableCell>
+                      <TableCell sx={{ color: 'inherit' }}>{item.category?.name || '-'}</TableCell>
+                      <TableCell align="right" sx={{ color: 'inherit' }}>{item.currentStock.toLocaleString()}</TableCell>
+                      <TableCell align="right" sx={{ color: 'inherit' }}>{item.reservedQuantity.toLocaleString()}</TableCell>
+                      <TableCell 
+                        align="right"
+                        sx={{ 
+                          color: item.availableQuantity <= item.lowStockThreshold && item.availableQuantity > 0 ? '#ed6c02' : 
+                                 item.availableQuantity === 0 ? '#d32f2f' : 'inherit',
+                          fontWeight: item.availableQuantity <= item.lowStockThreshold ? 'bold' : 'normal'
+                        }}
+                      >
+                        {item.availableQuantity.toLocaleString()}
+                      </TableCell>
+                      <TableCell align="right" sx={{ color: 'inherit' }}>{formatCurrency(item.averageCost)}</TableCell>
+                      <TableCell align="right" sx={{ color: 'inherit' }}>{formatCurrency(item.totalValue)}</TableCell>
+                      <TableCell>
+                        <Chip 
+                          label={status.label} 
+                          color={status.color} 
+                          size="small" 
+                          variant={item.currentStock === 0 ? 'filled' : 'outlined'}
+                          className="dark:border-slate-500"
+                        />
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>
         </TableContainer>
         <TablePagination
           component="div"
-          count={pagination.total}
-          page={pagination.page - 1}
+          count={total}
+          page={page}
           onPageChange={handlePageChange}
-          rowsPerPage={pagination.limit}
+          rowsPerPage={rowsPerPage}
           onRowsPerPageChange={handleRowsPerPageChange}
           rowsPerPageOptions={[10, 25, 50, 100]}
+          sx={{
+            borderTop: `1px solid ${dark ? '#334155' : '#cbd5e1'}`,
+            backgroundColor: dark ? '#1e293b' : 'white',
+            color: dark ? '#e2e8f0' : '#1e293b',
+            '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
+              color: 'inherit',
+            },
+            '& .MuiSelect-select, & .MuiInputBase-input': {
+              color: 'inherit',
+            },
+          }}
         />
-      </Paper>
+      </div>
     </Box>
     </Layout>
   );

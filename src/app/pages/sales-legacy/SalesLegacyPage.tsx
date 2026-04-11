@@ -27,7 +27,7 @@ import {
   Calculator,
   X
 } from 'lucide-react';
-import { salesLegacyApi, clientsApi, warehouseApi, PosProduct } from '@/lib/api';
+import { salesLegacyApi, clientsApi, warehouseApi, PosProduct, bankAccountsApi } from '@/lib/api';
 import { useTranslation } from 'react-i18next';
 
 interface CartItem extends PosProduct {
@@ -65,7 +65,7 @@ export default function SalesLegacyPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedClientId, setSelectedClientId] = useState<string>('walk-in');
   const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>('');
-  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'bank_transfer' | 'mobile_money'>('cash');
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'bank_transfer' | 'mobile_money' | 'cheque'>('cash');
   const [paymentAmount, setPaymentAmount] = useState<number>(0);
   const [paymentReference, setPaymentReference] = useState('');
   const [notes, setNotes] = useState('');
@@ -73,12 +73,26 @@ export default function SalesLegacyPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCart, setShowCart] = useState(false);
+  const [bankAccountId, setBankAccountId] = useState<string>('');
+  const [bankAccounts, setBankAccounts] = useState<Array<{_id: string; name: string; accountType: string}>>([]);
   
   // Load initial data
   useEffect(() => {
     loadWarehouses();
     loadClients();
+    loadBankAccounts();
   }, []);
+  
+  const loadBankAccounts = async () => {
+    try {
+      const response = await bankAccountsApi.getAll({ isActive: true });
+      if (response.success && Array.isArray(response.data)) {
+        setBankAccounts(response.data as Array<{_id: string; name: string; accountType: string}>);
+      }
+    } catch (error) {
+      console.error('Failed to load bank accounts:', error);
+    }
+  };
   
   // Load products when warehouse selected or search changes
   useEffect(() => {
@@ -302,7 +316,8 @@ export default function SalesLegacyPage() {
         paymentMethod,
         paymentAmount,
         paymentReference,
-        notes
+        notes,
+        bankAccountId: (paymentMethod === 'bank_transfer' || paymentMethod === 'cheque' || paymentMethod === 'mobile_money') && bankAccountId ? bankAccountId : undefined
       };
       
       const response = await salesLegacyApi.createDirectSale(requestData);
@@ -334,12 +349,12 @@ export default function SalesLegacyPage() {
   
   return (
     <Layout>
-      <div className="container mx-auto py-6">
+      <div className="container mx-auto py-6 min-h-screen bg-slate-50 dark:bg-slate-900">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold">{t('salesLegacy.title', 'Direct Sale / POS')}</h1>
-            <p className="text-muted-foreground">{t('salesLegacy.subtitle', 'Quick cash sale - Invoice and payment in one step')}</p>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t('salesLegacy.title', 'Direct Sale / POS')}</h1>
+            <p className="text-muted-foreground dark:text-slate-400">{t('salesLegacy.subtitle', 'Quick cash sale - Invoice and payment in one step')}</p>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={() => navigate('/invoices')}>
@@ -353,29 +368,29 @@ export default function SalesLegacyPage() {
           {/* Left Column - Products */}
           <div className="lg:col-span-2 space-y-4">
             {/* Warehouse Selection */}
-            <Card>
+            <Card className="dark:bg-slate-800">
               <CardContent className="pt-6">
                 <div className="flex gap-4 items-end">
                   <div className="flex-1">
-                    <label className="text-sm font-medium mb-2 block">Warehouse</label>
+                    <label className="text-sm font-medium mb-2 block text-slate-900 dark:text-white">Warehouse</label>
                     <Select value={selectedWarehouseId} onValueChange={setSelectedWarehouseId}>
-                      <SelectTrigger>
+                      <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600">
                         <SelectValue placeholder="Select warehouse" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
                         {warehouses.map(w => (
-                          <SelectItem key={w._id} value={w._id}>{w.name} ({w.code})</SelectItem>
+                          <SelectItem key={w._id} value={w._id} className="dark:text-slate-200">{w.name} ({w.code})</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="flex-1 relative">
-                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground dark:text-slate-400" />
                     <Input
                       placeholder="Search products..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-9"
+                      className="pl-9 bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                     />
                   </div>
                 </div>
@@ -383,9 +398,9 @@ export default function SalesLegacyPage() {
             </Card>
             
             {/* Products Grid */}
-            <Card>
+            <Card className="dark:bg-slate-800">
               <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
+                <CardTitle className="text-lg flex items-center gap-2 text-slate-900 dark:text-white">
                   <Package className="h-5 w-5" />
                   Products
                 </CardTitle>
@@ -393,10 +408,10 @@ export default function SalesLegacyPage() {
               <CardContent>
                 {isLoading ? (
                   <div className="flex items-center justify-center p-8">
-                    <Loader2 className="h-8 w-8 animate-spin" />
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground dark:text-slate-400" />
                   </div>
                 ) : products.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
+                  <div className="text-center py-8 text-muted-foreground dark:text-slate-400">
                     No products found. Select a warehouse and search.
                   </div>
                 ) : (
@@ -404,16 +419,16 @@ export default function SalesLegacyPage() {
                     {products.map(product => (
                       <div
                         key={product._id}
-                        className={`border rounded-lg p-4 cursor-pointer transition-all hover:shadow-md ${
-                          !product.isAvailable ? 'opacity-50 cursor-not-allowed' : 'hover:border-primary'
+                        className={`border rounded-lg p-4 cursor-pointer transition-all hover:shadow-md dark:border-slate-600 ${
+                          !product.isAvailable ? 'opacity-50 cursor-not-allowed' : 'hover:border-primary dark:hover:border-slate-400'
                         }`}
                         onClick={() => product.isAvailable && addToCart(product)}
                       >
-                        <div className="font-medium truncate">{product.name}</div>
-                        <div className="text-sm text-muted-foreground">{product.sku}</div>
+                        <div className="font-medium truncate dark:text-slate-200">{product.name}</div>
+                        <div className="text-sm text-muted-foreground dark:text-slate-400">{product.sku}</div>
                         <div className="flex justify-between items-center mt-2">
-                          <span className="font-semibold">{formatCurrency(product.sellingPrice)}</span>
-                          <span className={`text-xs ${toNumber(product.currentStock) > 10 ? 'text-green-600' : toNumber(product.currentStock) > 0 ? 'text-yellow-600' : 'text-red-600'}`}>
+                          <span className="font-semibold dark:text-slate-200">{formatCurrency(product.sellingPrice)}</span>
+                          <span className={`text-xs ${toNumber(product.currentStock) > 10 ? 'text-green-600 dark:text-green-400' : toNumber(product.currentStock) > 0 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400'}`}>
                             Stock: {toNumber(product.currentStock)}
                           </span>
                         </div>
@@ -428,24 +443,24 @@ export default function SalesLegacyPage() {
           {/* Right Column - Cart & Checkout */}
           <div className="space-y-4">
             {/* Cart */}
-            <Card>
+            <Card className="dark:bg-slate-800">
               <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
+                <CardTitle className="text-lg flex items-center gap-2 text-slate-900 dark:text-white">
                   <ShoppingCart className="h-5 w-5" />
                   Cart ({cart.length} items)
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {cart.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
+                  <div className="text-center py-8 text-muted-foreground dark:text-slate-400">
                     Cart is empty. Click products to add.
                   </div>
                 ) : (
                   <div className="space-y-4 max-h-96 overflow-y-auto">
                     {cart.map(item => (
-                      <div key={item._id} className="border rounded-lg p-3 space-y-2">
+                      <div key={item._id} className="border rounded-lg p-3 space-y-2 dark:border-slate-600">
                         <div className="flex justify-between items-start">
-                          <div className="font-medium truncate flex-1">{item.name}</div>
+                          <div className="font-medium truncate flex-1 dark:text-slate-200">{item.name}</div>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -460,16 +475,16 @@ export default function SalesLegacyPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="h-7 w-7 p-0"
+                            className="h-7 w-7 p-0 dark:border-slate-600 dark:text-slate-200"
                             onClick={() => updateQuantity(item._id, -1)}
                           >
                             <Minus className="h-3 w-3" />
                           </Button>
-                          <span className="w-8 text-center font-medium">{item.cartQuantity}</span>
+                          <span className="w-8 text-center font-medium dark:text-slate-200">{item.cartQuantity}</span>
                           <Button
                             variant="outline"
                             size="sm"
-                            className="h-7 w-7 p-0"
+                            className="h-7 w-7 p-0 dark:border-slate-600 dark:text-slate-200"
                             onClick={() => updateQuantity(item._id, 1)}
                           >
                             <Plus className="h-3 w-3" />
@@ -478,28 +493,28 @@ export default function SalesLegacyPage() {
                         
                         <div className="grid grid-cols-2 gap-2">
                           <div>
-                            <label className="text-xs text-muted-foreground">Price</label>
+                            <label className="text-xs text-muted-foreground dark:text-slate-400">Price</label>
                             <Input
                               type="number"
                               value={toNumber(item.cartUnitPrice)}
                               onChange={(e) => updatePrice(item._id, parseFloat(e.target.value) || 0)}
-                              className="h-8 text-sm"
+                              className="h-8 text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                             />
                           </div>
                           <div>
-                            <label className="text-xs text-muted-foreground">Disc %</label>
+                            <label className="text-xs text-muted-foreground dark:text-slate-400">Disc %</label>
                             <Input
                               type="number"
                               value={toNumber(item.cartDiscountPct)}
                               onChange={(e) => updateDiscount(item._id, parseFloat(e.target.value) || 0)}
-                              className="h-8 text-sm"
+                              className="h-8 text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                               min={0}
                               max={100}
                             />
                           </div>
                         </div>
                         
-                        <div className="text-right font-semibold text-sm">
+                        <div className="text-right font-semibold text-sm dark:text-slate-200">
                           {formatCurrency(
                             toNumber(item.cartQuantity) * toNumber(item.cartUnitPrice) * (1 - toNumber(item.cartDiscountPct) / 100) * (1 + toNumber(item.taxRate) / 100)
                           )}
@@ -523,22 +538,22 @@ export default function SalesLegacyPage() {
             </Card>
             
             {/* Customer */}
-            <Card>
+            <Card className="dark:bg-slate-800">
               <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
+                <CardTitle className="text-lg flex items-center gap-2 text-slate-900 dark:text-white">
                   <User className="h-5 w-5" />
                   Customer
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <Select value={selectedClientId} onValueChange={setSelectedClientId}>
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600">
                     <SelectValue placeholder="Select customer (or walk-in)" />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="walk-in">Walk-in Customer</SelectItem>
+                  <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                    <SelectItem value="walk-in" className="dark:text-slate-200">Walk-in Customer</SelectItem>
                     {clients.map(c => (
-                      <SelectItem key={c._id} value={c._id}>{c.name} ({c.code})</SelectItem>
+                      <SelectItem key={c._id} value={c._id} className="dark:text-slate-200">{c.name} ({c.code})</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -548,47 +563,66 @@ export default function SalesLegacyPage() {
                     placeholder="Walk-in customer name (optional)"
                     value={walkInName}
                     onChange={(e) => setWalkInName(e.target.value)}
+                    className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                   />
                 )}
               </CardContent>
             </Card>
             
             {/* Payment */}
-            <Card>
+            <Card className="dark:bg-slate-800">
               <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
+                <CardTitle className="text-lg flex items-center gap-2 text-slate-900 dark:text-white">
                   <CreditCard className="h-5 w-5" />
                   Payment
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <Select value={paymentMethod} onValueChange={(v: any) => setPaymentMethod(v)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600">
                     <SelectValue placeholder="Payment method" />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="cash">
+                  <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                    <SelectItem value="cash" className="dark:text-slate-200">
                       <span className="flex items-center gap-2">
                         <Banknote className="h-4 w-4" /> Cash
                       </span>
                     </SelectItem>
-                    <SelectItem value="card">
+                    <SelectItem value="card" className="dark:text-slate-200">
                       <span className="flex items-center gap-2">
                         <CreditCard className="h-4 w-4" /> Card
                       </span>
                     </SelectItem>
-                    <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                    <SelectItem value="mobile_money">Mobile Money</SelectItem>
+                    <SelectItem value="bank_transfer" className="dark:text-slate-200">Bank Transfer</SelectItem>
+                    <SelectItem value="mobile_money" className="dark:text-slate-200">Mobile Money</SelectItem>
                   </SelectContent>
                 </Select>
+
+                {(paymentMethod === 'bank_transfer' || paymentMethod === 'cheque' || paymentMethod === 'mobile_money') && (
+                  <div>
+                    <label className="text-sm font-medium mb-2 block text-slate-900 dark:text-white">Bank Account</label>
+                    <Select value={bankAccountId} onValueChange={setBankAccountId}>
+                      <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600">
+                        <SelectValue placeholder="Select bank account" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                        {bankAccounts.map((acc) => (
+                          <SelectItem key={acc._id} value={acc._id} className="dark:text-slate-200">
+                            {acc.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
                 
                 <div>
-                  <label className="text-sm font-medium mb-2 block">Amount Received</label>
+                  <label className="text-sm font-medium mb-2 block text-slate-900 dark:text-white">Amount Received</label>
                   <Input
                     type="number"
                     value={paymentAmount}
                     onChange={(e) => setPaymentAmount(parseFloat(e.target.value) || 0)}
-                    className="text-lg font-semibold"
+                    className="text-lg font-semibold bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                   />
                 </div>
                 
@@ -596,38 +630,40 @@ export default function SalesLegacyPage() {
                   placeholder="Payment reference (optional)"
                   value={paymentReference}
                   onChange={(e) => setPaymentReference(e.target.value)}
+                  className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                 />
                 
                 <Input
                   placeholder="Notes (optional)"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
+                  className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                 />
               </CardContent>
             </Card>
             
             {/* Summary & Submit */}
-            <Card className="bg-primary/5">
+            <Card className="bg-primary/5 dark:bg-slate-800">
               <CardContent className="pt-6 space-y-2">
-                <div className="flex justify-between">
+                <div className="flex justify-between dark:text-slate-200">
                   <span>Subtotal:</span>
                   <span>{formatCurrency(cartCalculations.subtotal)}</span>
                 </div>
-                <div className="flex justify-between text-green-600">
+                <div className="flex justify-between text-green-600 dark:text-green-400">
                   <span>Discount:</span>
                   <span>-{formatCurrency(cartCalculations.totalDiscount)}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between dark:text-slate-200">
                   <span>Tax:</span>
                   <span>{formatCurrency(cartCalculations.totalTax)}</span>
                 </div>
-                <div className="flex justify-between text-lg font-bold pt-2 border-t">
-                  <span>Grand Total:</span>
-                  <span>{formatCurrency(cartCalculations.grandTotal)}</span>
+                <div className="flex justify-between text-lg font-bold pt-2 border-t dark:border-slate-600">
+                  <span className="text-slate-900 dark:text-white">Grand Total:</span>
+                  <span className="text-slate-900 dark:text-white">{formatCurrency(cartCalculations.grandTotal)}</span>
                 </div>
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between text-sm dark:text-slate-200">
                   <span>Change Due:</span>
-                  <span className={paymentAmount >= cartCalculations.grandTotal ? 'text-green-600' : 'text-red-600'}>
+                  <span className={paymentAmount >= cartCalculations.grandTotal ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
                     {formatCurrency(Math.max(0, paymentAmount - cartCalculations.grandTotal))}
                   </span>
                 </div>

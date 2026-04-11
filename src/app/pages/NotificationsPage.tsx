@@ -21,26 +21,26 @@ import {
 import { cn } from '../components/ui/utils';
 
 const typeConfig: Record<string, { icon: React.ElementType; color: string; label: string }> = {
-  out_of_stock: { icon: AlertOctagon, color: 'text-red-500', label: 'Out of Stock' },
-  low_stock: { icon: AlertTriangle, color: 'text-amber-500', label: 'Low Stock' },
-  stock_received: { icon: Package, color: 'text-green-500', label: 'Stock Received' },
-  invoice_created: { icon: FileText, color: 'text-blue-500', label: 'Invoice Created' },
-  payment_received: { icon: FileText, color: 'text-green-500', label: 'Payment Received' },
-  payment_overdue: { icon: AlertTriangle, color: 'text-red-500', label: 'Payment Overdue' },
-  invoice_sent: { icon: FileText, color: 'text-purple-500', label: 'Invoice Sent' },
-  quotation_created: { icon: FileText, color: 'text-blue-500', label: 'Quotation Created' },
-  quotation_approved: { icon: Check, color: 'text-green-500', label: 'Quotation Approved' },
-  quotation_expired: { icon: Clock, color: 'text-amber-500', label: 'Quotation Expired' },
-  user_created: { icon: Bell, color: 'text-blue-500', label: 'User Created' },
-  company_approved: { icon: Check, color: 'text-green-500', label: 'Company Approved' },
-  password_changed: { icon: Bell, color: 'text-green-500', label: 'Password Changed' },
-  failed_login: { icon: AlertTriangle, color: 'text-red-500', label: 'Failed Login' },
-  backup_success: { icon: Check, color: 'text-green-500', label: 'Backup Success' },
-  backup_failed: { icon: AlertOctagon, color: 'text-red-500', label: 'Backup Failed' },
-  invoice_generated: { icon: RefreshCw, color: 'text-blue-500', label: 'Invoice Generated' },
-  recurring_paused: { icon: AlertTriangle, color: 'text-amber-500', label: 'Recurring Paused' },
-  system: { icon: Bell, color: 'text-gray-500', label: 'System' },
-  alert: { icon: AlertCircle, color: 'text-red-500', label: 'Alert' }
+  out_of_stock: { icon: AlertOctagon, color: 'text-red-500 dark:text-red-400', label: 'Out of Stock' },
+  low_stock: { icon: AlertTriangle, color: 'text-amber-500 dark:text-amber-400', label: 'Low Stock' },
+  stock_received: { icon: Package, color: 'text-green-500 dark:text-green-400', label: 'Stock Received' },
+  invoice_created: { icon: FileText, color: 'text-blue-500 dark:text-blue-400', label: 'Invoice Created' },
+  payment_received: { icon: FileText, color: 'text-green-500 dark:text-green-400', label: 'Payment Received' },
+  payment_overdue: { icon: AlertTriangle, color: 'text-red-500 dark:text-red-400', label: 'Payment Overdue' },
+  invoice_sent: { icon: FileText, color: 'text-purple-500 dark:text-purple-400', label: 'Invoice Sent' },
+  quotation_created: { icon: FileText, color: 'text-blue-500 dark:text-blue-400', label: 'Quotation Created' },
+  quotation_approved: { icon: Check, color: 'text-green-500 dark:text-green-400', label: 'Quotation Approved' },
+  quotation_expired: { icon: Clock, color: 'text-amber-500 dark:text-amber-400', label: 'Quotation Expired' },
+  user_created: { icon: Bell, color: 'text-blue-500 dark:text-blue-400', label: 'User Created' },
+  company_approved: { icon: Check, color: 'text-green-500 dark:text-green-400', label: 'Company Approved' },
+  password_changed: { icon: Bell, color: 'text-green-500 dark:text-green-400', label: 'Password Changed' },
+  failed_login: { icon: AlertTriangle, color: 'text-red-500 dark:text-red-400', label: 'Failed Login' },
+  backup_success: { icon: Check, color: 'text-green-500 dark:text-green-400', label: 'Backup Success' },
+  backup_failed: { icon: AlertOctagon, color: 'text-red-500 dark:text-red-400', label: 'Backup Failed' },
+  invoice_generated: { icon: RefreshCw, color: 'text-blue-500 dark:text-blue-400', label: 'Invoice Generated' },
+  recurring_paused: { icon: AlertTriangle, color: 'text-amber-500 dark:text-amber-400', label: 'Recurring Paused' },
+  system: { icon: Bell, color: 'text-gray-500 dark:text-gray-400', label: 'System' },
+  alert: { icon: AlertCircle, color: 'text-red-500 dark:text-red-400', label: 'Alert' }
 };
 
 const severityColors: Record<string, string> = {
@@ -154,20 +154,20 @@ export default function NotificationsPage() {
 
   return (
     <Layout>
-      <div className="p-3 md:p-6 space-y-6">
+      <div className="p-3 md:p-6 space-y-6 bg-gray-50 dark:bg-slate-900 min-h-screen">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Notifications</h1>
-            <p className="text-muted-foreground">View and manage your system notifications</p>
+            <h1 className="text-2xl font-bold text-foreground dark:text-white">Notifications</h1>
+            <p className="text-muted-foreground dark:text-slate-400">View and manage your system notifications</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={fetchNotifications} disabled={loading}>
+            <Button variant="outline" onClick={fetchNotifications} disabled={loading} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
               <RefreshCw className={cn("w-4 h-4 mr-2", loading && "animate-spin")} />
               Refresh
             </Button>
             {stats.unread > 0 && (
-              <Button variant="outline" onClick={handleMarkAllAsRead}>
+              <Button variant="outline" onClick={handleMarkAllAsRead} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
                 <CheckCheck className="w-4 h-4 mr-2" />
                 Mark all read
               </Button>
@@ -177,51 +177,49 @@ export default function NotificationsPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card>
+          <Card className="dark:bg-slate-800">
             <CardHeader className="pb-2">
-              <CardDescription>Total</CardDescription>
-              <CardTitle className="text-3xl">{stats.total}</CardTitle>
+              <CardDescription className="dark:text-slate-400">Total</CardDescription>
+              <CardTitle className="text-3xl dark:text-white">{stats.total}</CardTitle>
             </CardHeader>
             <CardContent>
-              <Bell className="w-4 h-4 text-muted-foreground" />
+              <Bell className="w-4 h-4 text-muted-foreground dark:text-slate-400" />
             </CardContent>
           </Card>
-          <Card>
+          <Card className="dark:bg-slate-800">
             <CardHeader className="pb-2">
-              <CardDescription>Unread</CardDescription>
-              <CardTitle className="text-3xl text-blue-500">{stats.unread}</CardTitle>
+              <CardDescription className="dark:text-slate-400">Unread</CardDescription>
+              <CardTitle className="text-3xl text-blue-500 dark:text-blue-400">{stats.unread}</CardTitle>
             </CardHeader>
             <CardContent>
-              <AlertCircle className="w-4 h-4 text-blue-500" />
+              <AlertCircle className="w-4 h-4 text-blue-500 dark:text-blue-400" />
             </CardContent>
           </Card>
-          <Card>
+          <Card className="dark:bg-slate-800">
             <CardHeader className="pb-2">
-              <CardDescription>Critical</CardDescription>
-              <CardTitle className="text-3xl text-red-500">{stats.critical}</CardTitle>
+              <CardDescription className="dark:text-slate-400">Critical</CardDescription>
+              <CardTitle className="text-3xl text-red-500 dark:text-red-400">{stats.critical}</CardTitle>
             </CardHeader>
             <CardContent>
-              <AlertOctagon className="w-4 h-4 text-red-500" />
+              <AlertOctagon className="w-4 h-4 text-red-500 dark:text-red-400" />
             </CardContent>
           </Card>
-          <Card>
+          <Card className="dark:bg-slate-800">
             <CardHeader className="pb-2">
-              <CardDescription>Warnings</CardDescription>
-              <CardTitle className="text-3xl text-amber-500">{stats.warning}</CardTitle>
+              <CardDescription className="dark:text-slate-400">Warnings</CardDescription>
+              <CardTitle className="text-3xl text-amber-500 dark:text-amber-400">{stats.warning}</CardTitle>
             </CardHeader>
             <CardContent>
-              <AlertTriangle className="w-4 h-4 text-amber-500" />
+              <AlertTriangle className="w-4 h-4 text-amber-500 dark:text-amber-400" />
             </CardContent>
           </Card>
         </div>
 
         {/* Filter Tabs */}
         <Tabs value={filter} onValueChange={(v) => setFilter(v as 'all' | 'unread')}>
-          <TabsList>
-            <TabsTrigger value="all">
-              All Notifications
-            </TabsTrigger>
-            <TabsTrigger value="unread" className="relative">
+          <TabsList className="dark:bg-slate-800">
+            <TabsTrigger value="all" className="dark:text-slate-200 dark:data-[state=active]:bg-slate-700">All Notifications</TabsTrigger>
+            <TabsTrigger value="unread" className="relative dark:text-slate-200 dark:data-[state=active]:bg-slate-700">
               Unread
               {stats.unread > 0 && (
                 <span className="ml-2 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">
@@ -233,29 +231,29 @@ export default function NotificationsPage() {
         </Tabs>
 
         {/* Notifications List */}
-        <Card>
+        <Card className="dark:bg-slate-800">
           <CardContent className="p-0">
             {loading ? (
-              <div className="p-8 text-center text-muted-foreground">
+              <div className="p-8 text-center text-muted-foreground dark:text-slate-400">
                 <RefreshCw className="w-6 h-6 mx-auto animate-spin" />
                 <p className="mt-2">Loading notifications...</p>
               </div>
             ) : notifications.length === 0 ? (
-              <div className="p-8 text-center text-muted-foreground">
+              <div className="p-8 text-center text-muted-foreground dark:text-slate-400">
                 <Bell className="w-8 h-8 mx-auto opacity-50" />
                 <p className="mt-2">No notifications yet</p>
               </div>
             ) : (
-              <div className="divide-y">
+              <div className="divide-y dark:divide-slate-600">
                 {notifications.map((notification) => {
-                  const config = typeConfig[notification.type] || { icon: Bell, color: 'text-gray-500', label: notification.type };
+                  const config = typeConfig[notification.type] || { icon: Bell, color: 'text-gray-500 dark:text-gray-400', label: notification.type };
                   const Icon = config.icon;
                   
                   return (
                     <div
                       key={notification._id}
                       className={cn(
-                        "flex items-start gap-4 p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors",
+                        "flex items-start gap-4 p-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors",
                         !notification.isRead && "bg-blue-50/50 dark:bg-blue-900/20"
                       )}
                     >
@@ -264,7 +262,7 @@ export default function NotificationsPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <p className={cn("font-medium", !notification.isRead && "text-foreground")}>
+                          <p className={cn("font-medium dark:text-slate-200", !notification.isRead && "text-foreground dark:text-white")}>
                             {notification.title}
                           </p>
                           {notification.severity && (
@@ -273,14 +271,14 @@ export default function NotificationsPage() {
                             </Badge>
                           )}
                         </div>
-                        <p className="text-sm text-muted-foreground mt-1">
+                        <p className="text-sm text-muted-foreground dark:text-slate-400 mt-1">
                           {notification.message}
                         </p>
                         <div className="flex items-center gap-4 mt-2">
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-xs text-muted-foreground dark:text-slate-400">
                             {formatDate(notification.createdAt)}
                           </span>
-                          <Badge variant="outline" className="text-xs">
+                          <Badge variant="outline" className="text-xs dark:border-slate-500 dark:text-slate-300">
                             {config.label}
                           </Badge>
                         </div>
@@ -290,7 +288,7 @@ export default function NotificationsPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8"
+                            className="h-8 w-8 dark:text-slate-300 dark:hover:bg-slate-700"
                             onClick={() => handleMarkAsRead(notification._id)}
                             title="Mark as read"
                           >
@@ -300,7 +298,7 @@ export default function NotificationsPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-red-500 hover:text-red-600"
+                          className="h-8 w-8 text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
                           onClick={() => handleDelete(notification._id)}
                           title="Delete"
                         >

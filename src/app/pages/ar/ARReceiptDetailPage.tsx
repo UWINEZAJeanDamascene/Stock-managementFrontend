@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router';
-import { arReceiptsApi } from '@/lib/api';
-import { Layout } from '@/app/layout/Layout';
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router";
+import { arReceiptsApi } from "@/lib/api";
+import { Layout } from "@/app/layout/Layout";
 import {
   ArrowLeft,
   Printer,
@@ -18,14 +18,19 @@ import {
   Receipt,
   AlertCircle,
   RefreshCw,
-  Edit
-} from 'lucide-react';
-import { Button } from '@/app/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
-import { Badge } from '@/app/components/ui/badge';
-import { Separator } from '@/app/components/ui/separator';
-import { useToast } from '@/hooks/use-toast';
-import { useTranslation } from 'react-i18next';
+  Edit,
+} from "lucide-react";
+import { Button } from "@/app/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/app/components/ui/card";
+import { Badge } from "@/app/components/ui/badge";
+import { Separator } from "@/app/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 import {
   Table,
   TableBody,
@@ -33,7 +38,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/app/components/ui/table';
+} from "@/app/components/ui/table";
 
 interface ARReceiptDetail {
   _id: string;
@@ -54,7 +59,7 @@ interface ARReceiptDetail {
   currencyCode: string;
   reference?: string;
   notes?: string;
-  status: 'draft' | 'posted' | 'reversed';
+  status: "draft" | "posted" | "reversed";
   postedAt?: string;
   postedBy?: {
     name: string;
@@ -108,15 +113,18 @@ export default function ARReceiptDetailPage() {
           ...receiptData,
           receiptNumber: receiptData.referenceNo,
           allocations: response.allocations || [],
-          unallocatedAmount: response.data.unallocatedAmount || '0',
+          unallocatedAmount: response.data.unallocatedAmount || "0",
         });
       }
     } catch (error) {
-      console.error('Failed to fetch receipt:', error);
+      console.error("Failed to fetch receipt:", error);
       toast({
-        title: t('common.error'),
-        description: t('arReceipt.fetchError', 'Failed to fetch receipt details'),
-        variant: 'destructive'
+        title: t("common.error"),
+        description: t(
+          "arReceipt.fetchError",
+          "Failed to fetch receipt details",
+        ),
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -129,16 +137,19 @@ export default function ARReceiptDetailPage() {
     try {
       await arReceiptsApi.post(id);
       toast({
-        title: t('common.success'),
-        description: t('arReceipt.postSuccess', 'Receipt posted successfully')
+        title: t("common.success"),
+        description: t(
+          "arReceipt.postSuccess",
+          "Receipt recorded successfully",
+        ),
       });
       fetchReceipt();
     } catch (error) {
-      console.error('Failed to post receipt:', error);
+      console.error("Failed to post receipt:", error);
       toast({
-        title: t('common.error'),
-        description: t('arReceipt.postError', 'Failed to post receipt'),
-        variant: 'destructive'
+        title: t("common.error"),
+        description: t("arReceipt.postError", "Failed to post receipt"),
+        variant: "destructive",
       });
     } finally {
       setPosting(false);
@@ -147,22 +158,27 @@ export default function ARReceiptDetailPage() {
 
   const handleReverse = async () => {
     if (!id || reversing) return;
-    const reason = window.prompt(t('arReceipt.enterReversalReason', 'Enter reversal reason:'));
+    const reason = window.prompt(
+      t("arReceipt.enterReversalReason", "Enter reversal reason:"),
+    );
     if (!reason) return;
     setReversing(true);
     try {
       await arReceiptsApi.reverse(id, reason);
       toast({
-        title: t('common.success'),
-        description: t('arReceipt.reverseSuccess', 'Receipt reversed successfully')
+        title: t("common.success"),
+        description: t(
+          "arReceipt.reverseSuccess",
+          "Receipt reversed successfully",
+        ),
       });
       fetchReceipt();
     } catch (error) {
-      console.error('Failed to reverse receipt:', error);
+      console.error("Failed to reverse receipt:", error);
       toast({
-        title: t('common.error'),
-        description: t('arReceipt.reverseError', 'Failed to reverse receipt'),
-        variant: 'destructive'
+        title: t("common.error"),
+        description: t("arReceipt.reverseError", "Failed to reverse receipt"),
+        variant: "destructive",
       });
     } finally {
       setReversing(false);
@@ -171,25 +187,28 @@ export default function ARReceiptDetailPage() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'draft':
+      case "draft":
         return (
           <Badge variant="outline" className="flex items-center gap-1">
             <Clock className="h-3 w-3" />
-            {t('arReceipt.status.draft', 'Draft')}
+            {t("arReceipt.status.draft", "Draft")}
           </Badge>
         );
-      case 'posted':
+      case "posted":
         return (
-          <Badge variant="default" className="flex items-center gap-1 bg-green-600">
+          <Badge
+            variant="default"
+            className="flex items-center gap-1 bg-green-600"
+          >
             <CheckCircle className="h-3 w-3" />
-            {t('arReceipt.status.posted', 'Posted')}
+            {t("arReceipt.status.posted", "Posted")}
           </Badge>
         );
-      case 'reversed':
+      case "reversed":
         return (
           <Badge variant="destructive" className="flex items-center gap-1">
             <XCircle className="h-3 w-3" />
-            {t('arReceipt.status.reversed', 'Reversed')}
+            {t("arReceipt.status.reversed", "Reversed")}
           </Badge>
         );
       default:
@@ -199,25 +218,28 @@ export default function ARReceiptDetailPage() {
 
   const getPaymentMethodLabel = (method: string) => {
     const methods: Record<string, string> = {
-      bank_transfer: t('arReceipt.paymentMethods.bank_transfer', 'Bank Transfer'),
-      cash: t('arReceipt.paymentMethods.cash', 'Cash'),
-      cheque: t('arReceipt.paymentMethods.cheque', 'Cheque'),
-      card: t('arReceipt.paymentMethods.card', 'Card'),
-      other: t('arReceipt.paymentMethods.other', 'Other'),
+      bank_transfer: t(
+        "arReceipt.paymentMethods.bank_transfer",
+        "Bank Transfer",
+      ),
+      cash: t("arReceipt.paymentMethods.cash", "Cash"),
+      cheque: t("arReceipt.paymentMethods.cheque", "Cheque"),
+      card: t("arReceipt.paymentMethods.card", "Card"),
+      other: t("arReceipt.paymentMethods.other", "Other"),
     };
     return methods[method] || method;
   };
 
   const formatCurrency = (amount: string | number, currency: string) => {
-    const num = typeof amount === 'string' ? parseFloat(amount) : amount;
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
+    const num = typeof amount === "string" ? parseFloat(amount) : amount;
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
       currency: currency,
     }).format(num);
   };
 
   const formatDate = (date: string) => {
-    if (!date) return '-';
+    if (!date) return "-";
     return new Date(date).toLocaleDateString();
   };
 
@@ -237,10 +259,12 @@ export default function ARReceiptDetailPage() {
         <div className="container mx-auto py-6">
           <div className="flex flex-col items-center justify-center h-64 gap-4">
             <AlertCircle className="h-12 w-12 text-muted-foreground" />
-            <p className="text-muted-foreground">{t('arReceipt.notFound', 'Receipt not found')}</p>
-            <Button onClick={() => navigate('/ar-receipts')}>
+            <p className="text-muted-foreground">
+              {t("arReceipt.notFound", "Receipt not found")}
+            </p>
+            <Button onClick={() => navigate("/ar-receipts")}>
               <ArrowLeft className="mr-2 h-4 w-4" />
-              {t('common.back', 'Back to Receipts')}
+              {t("common.back", "Back to Receipts")}
             </Button>
           </div>
         </div>
@@ -254,29 +278,30 @@ export default function ARReceiptDetailPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={() => navigate('/ar-receipts')}>
+            <Button variant="ghost" onClick={() => navigate("/ar-receipts")}>
               <ArrowLeft className="mr-2 h-4 w-4" />
-              {t('common.back', 'Back')}
+              {t("common.back", "Back")}
             </Button>
             <div>
               <h1 className="text-2xl font-bold">
-                {t('arReceipt.receiptDetails', 'Receipt Details')}
+                {t("arReceipt.receiptDetails", "Receipt Details")}
               </h1>
-              <p className="text-muted-foreground">
-                {receipt.receiptNumber}
-              </p>
+              <p className="text-muted-foreground">{receipt.receiptNumber}</p>
             </div>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => window.print()}>
               <Printer className="mr-2 h-4 w-4" />
-              {t('common.print', 'Print')}
+              {t("common.print", "Print")}
             </Button>
-            {receipt.status === 'draft' && (
+            {receipt.status === "draft" && (
               <>
-                <Button variant="outline" onClick={() => navigate(`/ar-receipts/${receipt._id}/edit`)}>
+                <Button
+                  variant="outline"
+                  onClick={() => navigate(`/ar-receipts/${receipt._id}/edit`)}
+                >
                   <Edit className="mr-2 h-4 w-4" />
-                  {t('common.edit', 'Edit')}
+                  {t("common.edit", "Edit")}
                 </Button>
                 <Button onClick={handlePost} disabled={posting}>
                   {posting ? (
@@ -284,18 +309,26 @@ export default function ARReceiptDetailPage() {
                   ) : (
                     <CheckCircle className="mr-2 h-4 w-4" />
                   )}
-                  {posting ? t('arReceipt.posting', 'Posting...') : t('arReceipt.post', 'Post Receipt')}
+                  {posting
+                    ? t("arReceipt.posting", "Recording...")
+                    : t("arReceipt.post", "Record Receipt")}
                 </Button>
               </>
             )}
-            {receipt.status === 'posted' && (
-              <Button variant="destructive" onClick={handleReverse} disabled={reversing}>
+            {receipt.status === "posted" && (
+              <Button
+                variant="destructive"
+                onClick={handleReverse}
+                disabled={reversing}
+              >
                 {reversing ? (
                   <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
                   <XCircle className="mr-2 h-4 w-4" />
                 )}
-                {reversing ? t('arReceipt.reversing', 'Reversing...') : t('arReceipt.reverse', 'Reverse')}
+                {reversing
+                  ? t("arReceipt.reversing", "Reversing...")
+                  : t("arReceipt.reverse", "Reverse")}
               </Button>
             )}
           </div>
@@ -308,7 +341,7 @@ export default function ARReceiptDetailPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Receipt className="h-5 w-5" />
-                  {t('arReceipt.receiptInfo', 'Receipt Information')}
+                  {t("arReceipt.receiptInfo", "Receipt Information")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -322,31 +355,47 @@ export default function ARReceiptDetailPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-sm text-muted-foreground">{t('arReceipt.client', 'Client')}</label>
+                    <label className="text-sm text-muted-foreground">
+                      {t("arReceipt.client", "Client")}
+                    </label>
                     <div className="flex items-center gap-2">
                       <Building2 className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">{receipt.client?.name}</span>
+                      <span className="font-medium">
+                        {receipt.client?.name}
+                      </span>
                     </div>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-sm text-muted-foreground">{t('arReceipt.receiptDate', 'Receipt Date')}</label>
+                    <label className="text-sm text-muted-foreground">
+                      {t("arReceipt.receiptDate", "Receipt Date")}
+                    </label>
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">{formatDate(receipt.receiptDate)}</span>
+                      <span className="font-medium">
+                        {formatDate(receipt.receiptDate)}
+                      </span>
                     </div>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-sm text-muted-foreground">{t('arReceipt.paymentMethod', 'Payment Method')}</label>
+                    <label className="text-sm text-muted-foreground">
+                      {t("arReceipt.paymentMethod", "Payment Method")}
+                    </label>
                     <div className="flex items-center gap-2">
                       <CreditCard className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">{getPaymentMethodLabel(receipt.paymentMethod)}</span>
+                      <span className="font-medium">
+                        {getPaymentMethodLabel(receipt.paymentMethod)}
+                      </span>
                     </div>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-sm text-muted-foreground">{t('arReceipt.bankAccount', 'Bank Account')}</label>
+                    <label className="text-sm text-muted-foreground">
+                      {t("arReceipt.bankAccount", "Bank Account")}
+                    </label>
                     <div className="flex items-center gap-2">
                       <Building2 className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">{receipt.bankAccount?.name || '-'}</span>
+                      <span className="font-medium">
+                        {receipt.bankAccount?.name || "-"}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -355,15 +404,22 @@ export default function ARReceiptDetailPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-sm text-muted-foreground">{t('arReceipt.amountReceived', 'Amount Received')}</label>
+                    <label className="text-sm text-muted-foreground">
+                      {t("arReceipt.amountReceived", "Amount Received")}
+                    </label>
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-lg">
-                        {formatCurrency(receipt.amountReceived, receipt.currencyCode)}
+                        {formatCurrency(
+                          receipt.amountReceived,
+                          receipt.currencyCode,
+                        )}
                       </span>
                     </div>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-sm text-muted-foreground">{t('arReceipt.currency', 'Currency')}</label>
+                    <label className="text-sm text-muted-foreground">
+                      {t("arReceipt.currency", "Currency")}
+                    </label>
                     <span className="font-medium">{receipt.currencyCode}</span>
                   </div>
                 </div>
@@ -372,7 +428,9 @@ export default function ARReceiptDetailPage() {
                   <>
                     <Separator />
                     <div className="space-y-1">
-                      <label className="text-sm text-muted-foreground">{t('arReceipt.reference', 'Reference')}</label>
+                      <label className="text-sm text-muted-foreground">
+                        {t("arReceipt.reference", "Reference")}
+                      </label>
                       <div className="flex items-center gap-2">
                         <FileText className="h-4 w-4 text-muted-foreground" />
                         <span className="font-medium">{receipt.reference}</span>
@@ -385,8 +443,12 @@ export default function ARReceiptDetailPage() {
                   <>
                     <Separator />
                     <div className="space-y-1">
-                      <label className="text-sm text-muted-foreground">{t('arReceipt.notes', 'Notes')}</label>
-                      <p className="text-sm bg-muted p-3 rounded-md">{receipt.notes}</p>
+                      <label className="text-sm text-muted-foreground">
+                        {t("arReceipt.notes", "Notes")}
+                      </label>
+                      <p className="text-sm bg-muted p-3 rounded-md">
+                        {receipt.notes}
+                      </p>
                     </div>
                   </>
                 )}
@@ -397,25 +459,38 @@ export default function ARReceiptDetailPage() {
             {receipt.allocations.length > 0 && (
               <Card>
                 <CardHeader>
-                  <CardTitle>{t('arReceipt.allocations', 'Invoice Allocations')}</CardTitle>
+                  <CardTitle>
+                    {t("arReceipt.allocations", "Invoice Allocations")}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>{t('arReceipt.invoice', 'Invoice')}</TableHead>
-                        <TableHead className="text-right">{t('arReceipt.amountAllocated', 'Amount Allocated')}</TableHead>
+                        <TableHead>
+                          {t("arReceipt.invoice", "Invoice")}
+                        </TableHead>
+                        <TableHead className="text-right">
+                          {t("arReceipt.amountAllocated", "Amount Allocated")}
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {receipt.allocations.map((alloc) => (
                         <TableRow key={alloc._id}>
                           <TableCell>
-                            <div className="font-medium">{alloc.invoice?.invoiceNumber}</div>
-                            <div className="text-sm text-muted-foreground">{alloc.invoice?.referenceNo}</div>
+                            <div className="font-medium">
+                              {alloc.invoice?.invoiceNumber}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {alloc.invoice?.referenceNo}
+                            </div>
                           </TableCell>
                           <TableCell className="text-right">
-                            {formatCurrency(alloc.amountAllocated, receipt.currencyCode)}
+                            {formatCurrency(
+                              alloc.amountAllocated,
+                              receipt.currencyCode,
+                            )}
                           </TableCell>
                         </TableRow>
                       ))}
@@ -430,26 +505,45 @@ export default function ARReceiptDetailPage() {
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>{t('arReceipt.summary', 'Summary')}</CardTitle>
+                <CardTitle>{t("arReceipt.summary", "Summary")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">{t('arReceipt.amountReceived', 'Amount Received')}</span>
-                  <span className="font-medium">{formatCurrency(receipt.amountReceived, receipt.currencyCode)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">{t('arReceipt.totalAllocated', 'Total Allocated')}</span>
+                  <span className="text-muted-foreground">
+                    {t("arReceipt.amountReceived", "Amount Received")}
+                  </span>
                   <span className="font-medium">
                     {formatCurrency(
-                      receipt.allocations.reduce((sum, a) => sum + parseFloat(a.amountAllocated), 0),
-                      receipt.currencyCode
+                      receipt.amountReceived,
+                      receipt.currencyCode,
+                    )}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">
+                    {t("arReceipt.totalAllocated", "Total Allocated")}
+                  </span>
+                  <span className="font-medium">
+                    {formatCurrency(
+                      receipt.allocations.reduce(
+                        (sum, a) => sum + parseFloat(a.amountAllocated),
+                        0,
+                      ),
+                      receipt.currencyCode,
                     )}
                   </span>
                 </div>
                 <div className="flex justify-between pt-2 border-t">
-                  <span className="text-muted-foreground">{t('arReceipt.unallocated', 'Unallocated')}</span>
-                  <span className={`font-bold ${parseFloat(receipt.unallocatedAmount) !== 0 ? 'text-amber-600' : 'text-green-600'}`}>
-                    {formatCurrency(receipt.unallocatedAmount, receipt.currencyCode)}
+                  <span className="text-muted-foreground">
+                    {t("arReceipt.unallocated", "Unallocated")}
+                  </span>
+                  <span
+                    className={`font-bold ${parseFloat(receipt.unallocatedAmount) !== 0 ? "text-amber-600" : "text-green-600"}`}
+                  >
+                    {formatCurrency(
+                      receipt.unallocatedAmount,
+                      receipt.currencyCode,
+                    )}
                   </span>
                 </div>
               </CardContent>
@@ -458,17 +552,23 @@ export default function ARReceiptDetailPage() {
             {/* Audit Info */}
             <Card>
               <CardHeader>
-                <CardTitle>{t('common.auditInfo', 'Audit Information')}</CardTitle>
+                <CardTitle>
+                  {t("common.auditInfo", "Audit Information")}
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 text-sm">
                 {receipt.postedAt && (
                   <div className="flex items-center gap-2">
                     <CheckCircle className="h-4 w-4 text-green-600" />
                     <span>
-                      {t('arReceipt.postedOn', 'Posted on {{date}} by {{user}}', {
-                        date: formatDate(receipt.postedAt),
-                        user: receipt.postedBy?.name || '-'
-                      })}
+                      {t(
+                        "arReceipt.postedOn",
+                        "Posted on {{date}} by {{user}}",
+                        {
+                          date: formatDate(receipt.postedAt),
+                          user: receipt.postedBy?.name || "-",
+                        },
+                      )}
                     </span>
                   </div>
                 )}
@@ -476,22 +576,29 @@ export default function ARReceiptDetailPage() {
                   <div className="flex items-center gap-2">
                     <XCircle className="h-4 w-4 text-red-600" />
                     <span>
-                      {t('arReceipt.reversedOn', 'Reversed on {{date}} by {{user}}', {
-                        date: formatDate(receipt.reversedAt),
-                        user: receipt.reversedBy?.name || '-'
-                      })}
+                      {t(
+                        "arReceipt.reversedOn",
+                        "Reversed on {{date}} by {{user}}",
+                        {
+                          date: formatDate(receipt.reversedAt),
+                          user: receipt.reversedBy?.name || "-",
+                        },
+                      )}
                     </span>
                   </div>
                 )}
                 {receipt.reversalReason && (
                   <div className="bg-muted p-2 rounded">
-                    <span className="text-muted-foreground">{t('arReceipt.reversalReason', 'Reason')}: </span>
+                    <span className="text-muted-foreground">
+                      {t("arReceipt.reversalReason", "Reason")}:{" "}
+                    </span>
                     {receipt.reversalReason}
                   </div>
                 )}
                 <Separator />
                 <div className="text-muted-foreground">
-                  {t('common.createdAt', 'Created')}: {formatDate(receipt.createdAt)}
+                  {t("common.createdAt", "Created")}:{" "}
+                  {formatDate(receipt.createdAt)}
                 </div>
               </CardContent>
             </Card>
@@ -500,16 +607,22 @@ export default function ARReceiptDetailPage() {
             {receipt.journalEntry && (
               <Card>
                 <CardHeader>
-                  <CardTitle>{t('arReceipt.journalEntry', 'Journal Entry')}</CardTitle>
+                  <CardTitle>
+                    {t("arReceipt.journalEntry", "Journal Entry")}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <Button
                     variant="outline"
                     className="w-full"
-                    onClick={() => navigate(`/journal/${receipt.journalEntry?._id}`)}
+                    onClick={() =>
+                      navigate(`/journal/${receipt.journalEntry?._id}`)
+                    }
                   >
                     <FileText className="mr-2 h-4 w-4" />
-                    {t('arReceipt.viewJournalEntry', 'View {{entryNumber}}', { entryNumber: receipt.journalEntry.entryNumber })}
+                    {t("arReceipt.viewJournalEntry", "View {{entryNumber}}", {
+                      entryNumber: receipt.journalEntry.entryNumber,
+                    })}
                   </Button>
                 </CardContent>
               </Card>

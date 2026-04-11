@@ -155,7 +155,7 @@ export default function ClientFormPage() {
     return (
       <Layout>
         <div className="flex items-center justify-center p-8">
-          <Loader2 className="h-8 w-8 animate-spin" />
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground dark:text-slate-400" />
         </div>
       </Layout>
     );
@@ -163,13 +163,13 @@ export default function ClientFormPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-6">
+      <div className="container mx-auto py-6 min-h-screen bg-slate-50 dark:bg-slate-900">
         <div className="flex items-center gap-4 mb-6">
           <Button variant="ghost" onClick={() => navigate('/clients')}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             {t('common.back', 'Back')}
           </Button>
-          <h1 className="text-2xl font-bold">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
             {isEditMode ? t('clients.editClient', 'Edit Client') : t('clients.addClient', 'Add Client')}
           </h1>
         </div>
@@ -178,64 +178,66 @@ export default function ClientFormPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Main Fields */}
             <div className="lg:col-span-2 space-y-6">
-              <Card>
+              <Card className="dark:bg-slate-800">
                 <CardHeader>
-                  <CardTitle>{t('clients.basicInfo', 'Basic Information')}</CardTitle>
+                  <CardTitle className="text-slate-900 dark:text-white">{t('clients.basicInfo', 'Basic Information')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="name">{t('clients.name', 'Name')} *</Label>
+                      <Label htmlFor="name" className="text-slate-900 dark:text-white">{t('clients.name', 'Name')} *</Label>
                       <Input 
                         id="name"
                         value={formData.name}
                         onChange={(e) => handleChange('name', e.target.value)}
                         required
+                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                       />
                     </div>
                     <div>
-                      <Label htmlFor="code">{t('clients.code', 'Code')}</Label>
+                      <Label htmlFor="code" className="text-slate-900 dark:text-white">{t('clients.code', 'Code')}</Label>
                       <Input 
                         id="code"
                         value={formData.code || ''}
                         onChange={(e) => handleChange('code', e.target.value)}
                         placeholder={t('clients.autoGenerate', 'Auto-generate if empty')}
+                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="type">{t('clients.type', 'Type')}</Label>
+                      <Label htmlFor="type" className="text-slate-900 dark:text-white">{t('clients.type', 'Type')}</Label>
                       <Select 
                         value={formData.type} 
                         onValueChange={(value: 'individual' | 'company') => handleChange('type', value)}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="individual">{t('clients.individual', 'Individual')}</SelectItem>
-                          <SelectItem value="company">{t('clients.company', 'Company')}</SelectItem>
+                        <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                          <SelectItem value="individual" className="dark:text-slate-200">{t('clients.individual', 'Individual')}</SelectItem>
+                          <SelectItem value="company" className="dark:text-slate-200">{t('clients.company', 'Company')}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     <div>
-                      <Label htmlFor="paymentTerms">{t('clients.paymentTerms', 'Payment Terms')}</Label>
+                      <Label htmlFor="paymentTerms" className="text-slate-900 dark:text-white">{t('clients.paymentTerms', 'Payment Terms')}</Label>
                       <Select 
                         value={formData.paymentTerms} 
                         onValueChange={(value) => handleChange('paymentTerms', value)}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="cash">{t('clients.paymentTermsCash', 'Cash')}</SelectItem>
-                          <SelectItem value="credit_7">{t('clients.paymentTermsCredit7', 'Credit 7 Days')}</SelectItem>
-                          <SelectItem value="credit_15">{t('clients.paymentTermsCredit15', 'Credit 15 Days')}</SelectItem>
-                          <SelectItem value="credit_30">{t('clients.paymentTermsCredit30', 'Credit 30 Days')}</SelectItem>
-                          <SelectItem value="credit_45">{t('clients.paymentTermsCredit45', 'Credit 45 Days')}</SelectItem>
-                          <SelectItem value="credit_60">{t('clients.paymentTermsCredit60', 'Credit 60 Days')}</SelectItem>
+                        <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                          <SelectItem value="cash" className="dark:text-slate-200">{t('clients.paymentTermsCash', 'Cash')}</SelectItem>
+                          <SelectItem value="credit_7" className="dark:text-slate-200">{t('clients.paymentTermsCredit7', 'Credit 7 Days')}</SelectItem>
+                          <SelectItem value="credit_15" className="dark:text-slate-200">{t('clients.paymentTermsCredit15', 'Credit 15 Days')}</SelectItem>
+                          <SelectItem value="credit_30" className="dark:text-slate-200">{t('clients.paymentTermsCredit30', 'Credit 30 Days')}</SelectItem>
+                          <SelectItem value="credit_45" className="dark:text-slate-200">{t('clients.paymentTermsCredit45', 'Credit 45 Days')}</SelectItem>
+                          <SelectItem value="credit_60" className="dark:text-slate-200">{t('clients.paymentTermsCredit60', 'Credit 60 Days')}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -243,64 +245,70 @@ export default function ClientFormPage() {
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="dark:bg-slate-800">
                 <CardHeader>
-                  <CardTitle>{t('clients.contactInfo', 'Contact Information')}</CardTitle>
+                  <CardTitle className="text-slate-900 dark:text-white">{t('clients.contactInfo', 'Contact Information')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="email">{t('clients.email', 'Email')}</Label>
+                      <Label htmlFor="email" className="text-slate-900 dark:text-white">{t('clients.email', 'Email')}</Label>
                       <Input 
                         id="email"
                         type="email"
                         value={formData.contact.email || ''}
                         onChange={(e) => handleChange('contact.email', e.target.value)}
+                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                       />
                     </div>
                     <div>
-                      <Label htmlFor="phone">{t('clients.phone', 'Phone')}</Label>
+                      <Label htmlFor="phone" className="text-slate-900 dark:text-white">{t('clients.phone', 'Phone')}</Label>
                       <Input 
                         id="phone"
                         value={formData.contact.phone || ''}
                         onChange={(e) => handleChange('contact.phone', e.target.value)}
+                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <Label htmlFor="address">{t('clients.address', 'Address')}</Label>
+                    <Label htmlFor="address" className="text-slate-900 dark:text-white">{t('clients.address', 'Address')}</Label>
                     <Textarea 
                       id="address"
                       value={formData.contact.address || ''}
                       onChange={(e) => handleChange('contact.address', e.target.value)}
                       rows={2}
+                      className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                     />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <Label htmlFor="city">{t('clients.city', 'City')}</Label>
+                      <Label htmlFor="city" className="text-slate-900 dark:text-white">{t('clients.city', 'City')}</Label>
                       <Input 
                         id="city"
                         value={formData.contact.city || ''}
                         onChange={(e) => handleChange('contact.city', e.target.value)}
+                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                       />
                     </div>
                     <div>
-                      <Label htmlFor="state">{t('clients.state', 'State/Region')}</Label>
+                      <Label htmlFor="state" className="text-slate-900 dark:text-white">{t('clients.state', 'State/Region')}</Label>
                       <Input 
                         id="state"
                         value={formData.contact.state || ''}
                         onChange={(e) => handleChange('contact.state', e.target.value)}
+                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                       />
                     </div>
                     <div>
-                      <Label htmlFor="country">{t('clients.country', 'Country')}</Label>
+                      <Label htmlFor="country" className="text-slate-900 dark:text-white">{t('clients.country', 'Country')}</Label>
                       <Input 
                         id="country"
                         value={formData.contact.country || ''}
                         onChange={(e) => handleChange('contact.country', e.target.value)}
+                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                       />
                     </div>
                   </div>
@@ -310,13 +318,13 @@ export default function ClientFormPage() {
 
             {/* Sidebar */}
             <div className="space-y-6">
-              <Card>
+              <Card className="dark:bg-slate-800">
                 <CardHeader>
-                  <CardTitle>{t('clients.additionalInfo', 'Additional Information')}</CardTitle>
+                  <CardTitle className="text-slate-900 dark:text-white">{t('clients.additionalInfo', 'Additional Information')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <Label htmlFor="creditLimit">{t('clients.creditLimit', 'Credit Limit')}</Label>
+                    <Label htmlFor="creditLimit" className="text-slate-900 dark:text-white">{t('clients.creditLimit', 'Credit Limit')}</Label>
                     <Input 
                       id="creditLimit"
                       type="number"
@@ -324,15 +332,17 @@ export default function ClientFormPage() {
                       step="0.01"
                       value={formData.creditLimit}
                       onChange={(e) => handleChange('creditLimit', parseFloat(e.target.value) || 0)}
+                      className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="notes">{t('clients.notes', 'Notes')}</Label>
+                    <Label htmlFor="notes" className="text-slate-900 dark:text-white">{t('clients.notes', 'Notes')}</Label>
                     <Textarea 
                       id="notes"
                       value={formData.notes || ''}
                       onChange={(e) => handleChange('notes', e.target.value)}
                       rows={4}
+                      className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                     />
                   </div>
                 </CardContent>

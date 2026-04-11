@@ -97,19 +97,19 @@ const STATUS_OPTIONS = [
 ];
 
 const PRIORITY_COLORS: Record<string, string> = {
-  low: 'bg-gray-100 text-gray-800',
-  medium: 'bg-blue-100 text-blue-800',
-  high: 'bg-orange-100 text-orange-800',
-  urgent: 'bg-red-100 text-red-800',
+  low: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300',
+  medium: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+  high: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
+  urgent: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  draft: 'bg-gray-100 text-gray-800',
-  picking: 'bg-yellow-100 text-yellow-800',
-  picked: 'bg-blue-100 text-blue-800',
-  packed: 'bg-purple-100 text-purple-800',
-  ready_for_delivery: 'bg-green-100 text-green-800',
-  cancelled: 'bg-red-100 text-red-800',
+  draft: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300',
+  picking: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+  picked: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+  packed: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
+  ready_for_delivery: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+  cancelled: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
 };
 
 export default function PickPacksListPage() {
@@ -243,8 +243,8 @@ export default function PickPacksListPage() {
       <div className="container mx-auto p-6">
         <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Pick & Pack</h1>
-            <p className="text-gray-500 mt-1">Manage picking and packing tasks</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Pick & Pack</h1>
+            <p className="text-gray-500 dark:text-gray-400 mt-1">Manage picking and packing tasks</p>
           </div>
           <Button onClick={() => navigate('/pick-packs/create')} className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
@@ -258,7 +258,7 @@ export default function PickPacksListPage() {
             <div className="flex flex-col lg:flex-row gap-4">
               <div className="flex-1">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                   <Input
                     placeholder="Search by reference or sales order..."
                     value={search}
@@ -321,22 +321,22 @@ export default function PickPacksListPage() {
                       <TableRow key={task._id}>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <Package className="h-4 w-4 text-gray-400" />
-                            <span className="font-medium">{task.referenceNo}</span>
+                            <Package className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+                            <span className="font-medium dark:text-gray-100">{task.referenceNo}</span>
                           </div>
                         </TableCell>
                         <TableCell>
                           <div className="text-sm">
-                            <div className="font-medium">{task.salesOrder?.referenceNo}</div>
+                            <div className="font-medium dark:text-gray-100">{task.salesOrder?.referenceNo}</div>
                           </div>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <User className="h-4 w-4 text-gray-400" />
-                            <span>{task.client?.name || '-'}</span>
+                            <User className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+                            <span className="dark:text-gray-100">{task.client?.name || '-'}</span>
                           </div>
                         </TableCell>
-                        <TableCell>{task.warehouse?.name || '-'}</TableCell>
+                        <TableCell className="dark:text-gray-100">{task.warehouse?.name || '-'}</TableCell>
                         <TableCell>
                           <Badge className={`${STATUS_COLORS[task.status]} capitalize`}>
                             {task.status.replace(/_/g, ' ')}
@@ -349,8 +349,8 @@ export default function PickPacksListPage() {
                         </TableCell>
                         <TableCell>
                           <div className="w-full max-w-[120px]">
-                            <div className="text-xs text-gray-500 mb-1">{progress.text}</div>
-                            <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">{progress.text}</div>
+                            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                               <div
                                 className="bg-blue-600 h-2 rounded-full"
                                 style={{ width: `${progress.percent}%` }}
@@ -442,7 +442,7 @@ export default function PickPacksListPage() {
         {/* Pagination */}
         {!loading && pickPacks.length > 0 && (
           <div className="mt-4 flex items-center justify-between">
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               Showing {pickPacks.length} of {pagination.total} tasks
             </p>
             <div className="flex gap-2">

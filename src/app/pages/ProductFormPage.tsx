@@ -421,10 +421,10 @@ export default function ProductFormPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-6 px-4 max-w-5xl">
+      <div className="container mx-auto py-6 px-4 max-w-5xl overflow-x-hidden">
         {/* Page Header */}
         <div className="flex items-center gap-4 mb-6">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/products')}>
+          <Button variant="ghost" size="sm" onClick={() => navigate('/products')} className="dark:text-slate-200 dark:hover:bg-slate-800">
             <ArrowLeft className="h-4 w-4 mr-2" />
             {t('common.back') || 'Back'}
           </Button>
@@ -438,33 +438,34 @@ export default function ProductFormPage() {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="overflow-x-hidden">
           <div className="grid gap-6">
             {/* Basic Information */}
-            <Card>
+            <Card className="dark:bg-slate-800 dark:border-slate-700">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 dark:text-white">
                   <Package className="h-5 w-5" />
                   {t('products.basicInfo') || 'Basic Information'}
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="dark:text-slate-400">
                   {t('products.basicInfoDesc') || 'Core product details'}
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="name">{t('products.productName') || 'Product Name'} *</Label>
+                  <Label htmlFor="name" className="dark:text-slate-200">{t('products.productName') || 'Product Name'} *</Label>
                   <Input
                     id="name"
                     value={formData.name}
                     onChange={(e) => handleChange('name', e.target.value)}
                     placeholder={t('products.namePlaceholder') || 'Enter product name'}
                     required
+                    className="dark:bg-slate-700 dark:text-white dark:border-slate-600 dark:placeholder:text-slate-400"
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="sku">{t('products.sku') || 'SKU'} *</Label>
+                  <Label htmlFor="sku" className="dark:text-slate-200">{t('products.sku') || 'SKU'} *</Label>
                   <Input
                     id="sku"
                     value={formData.sku}
@@ -474,6 +475,7 @@ export default function ProductFormPage() {
                     }}
                     placeholder={t('products.skuPlaceholder') || 'e.g., PRD-001'}
                     required
+                    className="dark:bg-slate-700 dark:text-white dark:border-slate-600 dark:placeholder:text-slate-400"
                   />
                   {skuWarning && (
                     <p className="text-xs text-amber-600 dark:text-amber-400">{skuWarning}</p>
@@ -481,78 +483,79 @@ export default function ProductFormPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="barcode">{t('products.barcode') || 'Barcode'}</Label>
+                  <Label htmlFor="barcode" className="dark:text-slate-200">{t('products.barcode') || 'Barcode'}</Label>
                   <Input
                     id="barcode"
                     value={formData.barcode}
                     onChange={(e) => handleChange('barcode', e.target.value)}
                     placeholder={t('products.barcodePlaceholder') || 'Scan or enter barcode'}
+                    className="dark:bg-slate-700 dark:text-white dark:border-slate-600 dark:placeholder:text-slate-400"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="barcodeType">{t('products.barcodeType') || 'Barcode Type'}</Label>
+                  <Label htmlFor="barcodeType" className="dark:text-slate-200">{t('products.barcodeType') || 'Barcode Type'}</Label>
                   <Select 
                     value={formData.barcodeType} 
                     onValueChange={(value) => handleChange('barcodeType', value)}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="dark:bg-slate-800">
                       {BARCODE_TYPE_VALUES.map((type) => (
-                        <SelectItem key={type} value={type}>{getBarcodeTypeLabel(t, type)}</SelectItem>
+                        <SelectItem key={type} value={type} className="dark:text-slate-200">{getBarcodeTypeLabel(t, type)}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="category">{t('products.category') || 'Category'} *</Label>
+                  <Label htmlFor="category" className="dark:text-slate-200">{t('products.category') || 'Category'} *</Label>
                   <Select 
                     value={formData.category} 
                     onValueChange={(value) => handleChange('category', value)}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
                       <SelectValue placeholder={t('products.selectCategory') || 'Select category'} />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="dark:bg-slate-800">
                       {flatCategories.map((cat) => (
-                        <SelectItem key={cat._id} value={cat._id}>{cat.label}</SelectItem>
+                        <SelectItem key={cat._id} value={cat._id} className="dark:text-slate-200">{cat.label}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="unit">{t('products.unit') || 'Unit of Measure'} *</Label>
+                  <Label htmlFor="unit" className="dark:text-slate-200">{t('products.unit') || 'Unit of Measure'} *</Label>
                   <Select 
                     value={formData.unit} 
                     onValueChange={(value) => handleChange('unit', value)}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="dark:bg-slate-800">
                       {UNIT_OPTIONS.map((unit) => (
-                        <SelectItem key={unit} value={unit}>{getUnitLabel(t, unit)}</SelectItem>
+                        <SelectItem key={unit} value={unit} className="dark:text-slate-200">{getUnitLabel(t, unit)}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="supplier">{t('products.supplier') || 'Supplier'}</Label>
+                  <Label htmlFor="supplier" className="dark:text-slate-200">{t('products.supplier') || 'Supplier'}</Label>
                   <Select 
                     value={formData.supplier} 
                     onValueChange={(value) => handleChange('supplier', value)}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
                       <SelectValue placeholder={t('products.selectSupplier') || 'Select supplier'} />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="dark:bg-slate-800">
                       {suppliers.map((sup) => (
-                        <SelectItem key={sup._id} value={sup._id}>{sup.name} ({sup.code})</SelectItem>
+                        <SelectItem key={sup._id} value={sup._id} className="dark:text-slate-200">{sup.name} ({sup.code})</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -561,12 +564,12 @@ export default function ProductFormPage() {
                 <div className="space-y-2">
                   <TooltipProvider>
                     <div className="flex items-center gap-2">
-                      <Label htmlFor="preferredSupplier">{t('products.preferredSupplier') || 'Preferred Supplier'}</Label>
+                      <Label htmlFor="preferredSupplier" className="dark:text-slate-200">{t('products.preferredSupplier') || 'Preferred Supplier'}</Label>
                       <Tooltip>
                         <TooltipTrigger><HelpCircle className="h-4 w-4 text-slate-400" /></TooltipTrigger>
-                        <TooltipContent className="max-w-xs">
-                          <p className="font-semibold">Preferred Supplier</p>
-                          <p className="text-sm mt-1">The preferred supplier for reordering this product. This supplier will be suggested when creating purchase orders.</p>
+                        <TooltipContent className="max-w-xs dark:bg-slate-800 dark:border-slate-700">
+                          <p className="font-semibold dark:text-white">Preferred Supplier</p>
+                          <p className="text-sm mt-1 dark:text-slate-300">Set a default supplier for purchase orders. You can still select other suppliers when creating orders.</p>
                         </TooltipContent>
                       </Tooltip>
                     </div>
@@ -574,12 +577,12 @@ export default function ProductFormPage() {
                       value={formData.preferredSupplier} 
                       onValueChange={(value) => handleChange('preferredSupplier', value)}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
                         <SelectValue placeholder={t('products.selectPreferredSupplier') || 'Select preferred supplier'} />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="dark:bg-slate-800">
                         {suppliers.map((sup) => (
-                          <SelectItem key={sup._id} value={sup._id}>{sup.name} ({sup.code})</SelectItem>
+                          <SelectItem key={sup._id} value={sup._id} className="dark:text-slate-200">{sup.name} ({sup.code})</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -587,32 +590,33 @@ export default function ProductFormPage() {
                 </div>
 
                 <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="description">{t('products.description') || 'Description'}</Label>
+                  <Label htmlFor="description" className="dark:text-slate-200">{t('products.description') || 'Description'}</Label>
                   <Textarea
                     id="description"
                     value={formData.description}
                     onChange={(e) => handleChange('description', e.target.value)}
                     placeholder={t('products.descriptionPlaceholder') || 'Enter product description'}
                     rows={3}
+                    className="dark:bg-slate-700 dark:text-white dark:border-slate-600 dark:placeholder:text-slate-400"
                   />
                 </div>
               </CardContent>
             </Card>
 
             {/* Pricing */}
-            <Card>
+            <Card className="dark:bg-slate-800 dark:border-slate-700">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 dark:text-white">
                   <DollarSign className="h-5 w-5" />
                   {t('products.pricing') || 'Pricing'}
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="dark:text-slate-400">
                   {t('products.pricingDesc') || 'Cost and selling price configuration'}
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="costPrice">{t('products.costPrice') || 'Cost Price'}</Label>
+                  <Label htmlFor="costPrice" className="dark:text-slate-200">{t('products.costPrice') || 'Cost Price'}</Label>
                   <Input
                     id="costPrice"
                     type="number"
@@ -620,11 +624,12 @@ export default function ProductFormPage() {
                     min="0"
                     value={formData.costPrice}
                     onChange={(e) => handleChange('costPrice', e.target.value)}
+                    className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="sellingPrice">{t('products.sellingPrice') || 'Selling Price'}</Label>
+                  <Label htmlFor="sellingPrice" className="dark:text-slate-200">{t('products.sellingPrice') || 'Selling Price'}</Label>
                   <Input
                     id="sellingPrice"
                     type="number"
@@ -632,28 +637,29 @@ export default function ProductFormPage() {
                     min="0"
                     value={formData.sellingPrice}
                     onChange={(e) => handleChange('sellingPrice', e.target.value)}
+                    className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="taxCode">{t('products.taxCode') || 'Tax Code'}</Label>
+                  <Label htmlFor="taxCode" className="dark:text-slate-200">{t('products.taxCode') || 'Tax Code'}</Label>
                   <Select 
                     value={formData.taxCode} 
                     onValueChange={(value) => handleChange('taxCode', value)}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="dark:bg-slate-800">
                       {TAX_CODE_VALUES.map((code) => (
-                        <SelectItem key={code} value={code}>{getTaxCodeLabel(t, code)}</SelectItem>
+                        <SelectItem key={code} value={code} className="dark:text-slate-200">{getTaxCodeLabel(t, code)}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="taxRate">{t('products.taxRate') || 'Tax Rate (%)'}</Label>
+                  <Label htmlFor="taxRate" className="dark:text-slate-200">{t('products.taxRate') || 'Tax Rate (%)'}</Label>
                   <Input
                     id="taxRate"
                     type="number"
@@ -662,19 +668,20 @@ export default function ProductFormPage() {
                     max="100"
                     value={formData.taxRate}
                     onChange={(e) => handleChange('taxRate', e.target.value)}
+                    className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                   />
                 </div>
               </CardContent>
             </Card>
 
             {/* Accounting */}
-            <Card>
+            <Card className="dark:bg-slate-800 dark:border-slate-700">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 dark:text-white">
                   <Settings className="h-5 w-5" />
                   {t('products.accounting') || 'Accounting'}
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="dark:text-slate-400">
                   {t('products.accountingDesc') || 'Map product to inventory, COGS, and revenue accounts for accurate financial tracking'}
                 </CardDescription>
               </CardHeader>
@@ -682,12 +689,12 @@ export default function ProductFormPage() {
                 <TooltipProvider>
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <Label htmlFor="inventory_account_id">{t('products.inventoryAccount') || 'Inventory Account'}</Label>
+                      <Label htmlFor="inventory_account_id" className="dark:text-slate-200">{t('products.inventoryAccount') || 'Inventory Account'}</Label>
                       <Tooltip>
                         <TooltipTrigger><HelpCircle className="h-4 w-4 text-slate-400" /></TooltipTrigger>
-                        <TooltipContent className="max-w-xs">
-                          <p className="font-semibold">Inventory Account (Asset)</p>
-                          <p className="text-sm mt-1">This account tracks the value of inventory on hand. When stock is purchased, the inventory value increases here. Typically a current asset account (e.g., 1400 - Inventory).</p>
+                        <TooltipContent className="max-w-xs dark:bg-slate-800 dark:border-slate-700">
+                          <p className="font-semibold dark:text-white">Inventory Account (Asset)</p>
+                          <p className="text-sm mt-1 dark:text-slate-300">This account tracks the value of inventory on hand. When stock is purchased, the inventory value increases here. Typically a current asset account (e.g., 1400 - Inventory).</p>
                         </TooltipContent>
                       </Tooltip>
                     </div>
@@ -695,12 +702,12 @@ export default function ProductFormPage() {
                       value={formData.inventory_account_id} 
                       onValueChange={(value) => handleChange('inventory_account_id', value)}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
                         <SelectValue placeholder={t('products.selectAccount') || 'Select account'} />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="dark:bg-slate-800">
                         {(accounts || []).filter(a => a.type === 'asset').map((account) => (
-                          <SelectItem key={account.code} value={account.code}>{account.code} - {account.name}</SelectItem>
+                          <SelectItem key={account.code} value={account.code} className="dark:text-slate-200">{account.code} - {account.name}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -708,12 +715,12 @@ export default function ProductFormPage() {
 
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <Label htmlFor="cogs_account_id">{t('products.cogsAccount') || 'COGS Account'}</Label>
+                      <Label htmlFor="cogs_account_id" className="dark:text-slate-200">{t('products.cogsAccount') || 'COGS Account'}</Label>
                       <Tooltip>
                         <TooltipTrigger><HelpCircle className="h-4 w-4 text-slate-400" /></TooltipTrigger>
-                        <TooltipContent className="max-w-xs">
-                          <p className="font-semibold">Cost of Goods Sold (Expense)</p>
-                          <p className="text-sm mt-1">This account tracks the cost of products sold. When inventory is sold, the cost is moved from Inventory to COGS. Typically an expense account (e.g., 5000 - Cost of Sales).</p>
+                        <TooltipContent className="max-w-xs dark:bg-slate-800 dark:border-slate-700">
+                          <p className="font-semibold dark:text-white">Cost of Goods Sold (Expense)</p>
+                          <p className="text-sm mt-1 dark:text-slate-300">This account tracks the cost of products sold. When inventory is sold, the cost is moved from Inventory to COGS. Typically an expense account (e.g., 5000 - Cost of Sales).</p>
                         </TooltipContent>
                       </Tooltip>
                     </div>
@@ -721,12 +728,12 @@ export default function ProductFormPage() {
                       value={formData.cogs_account_id} 
                       onValueChange={(value) => handleChange('cogs_account_id', value)}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
                         <SelectValue placeholder={t('products.selectAccount') || 'Select account'} />
                       </SelectTrigger>
-                      <SelectContent>
-                        {(accounts || []).filter(a => a.type === 'expense').map((account) => (
-                          <SelectItem key={account.code} value={account.code}>{account.code} - {account.name}</SelectItem>
+                      <SelectContent className="dark:bg-slate-800">
+                        {(accounts || []).filter(a => a.type === 'cogs').map((account) => (
+                          <SelectItem key={account.code} value={account.code} className="dark:text-slate-200">{account.code} - {account.name}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -734,12 +741,12 @@ export default function ProductFormPage() {
 
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <Label htmlFor="revenue_account_id">{t('products.revenueAccount') || 'Revenue Account'}</Label>
+                      <Label htmlFor="revenue_account_id" className="dark:text-slate-200">{t('products.revenueAccount') || 'Revenue Account'}</Label>
                       <Tooltip>
                         <TooltipTrigger><HelpCircle className="h-4 w-4 text-slate-400" /></TooltipTrigger>
-                        <TooltipContent className="max-w-xs">
-                          <p className="font-semibold">Sales/Revenue Account (Income)</p>
-                          <p className="text-sm mt-1">This account records the revenue from product sales. When a product is sold, the sales amount is recorded here. Typically an income/revenue account (e.g., 4000 - Sales Revenue).</p>
+                        <TooltipContent className="max-w-xs dark:bg-slate-800 dark:border-slate-700">
+                          <p className="font-semibold dark:text-white">Sales/Revenue Account (Income)</p>
+                          <p className="text-sm mt-1 dark:text-slate-300">This account records the revenue from product sales. When a product is sold, the sales amount is recorded here. Typically an income/revenue account (e.g., 4000 - Sales Revenue).</p>
                         </TooltipContent>
                       </Tooltip>
                     </div>
@@ -747,12 +754,12 @@ export default function ProductFormPage() {
                       value={formData.revenue_account_id} 
                       onValueChange={(value) => handleChange('revenue_account_id', value)}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
                         <SelectValue placeholder={t('products.selectAccount') || 'Select account'} />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="dark:bg-slate-800">
                         {(accounts || []).filter(a => a.type === 'revenue').map((account) => (
-                          <SelectItem key={account.code} value={account.code}>{account.code} - {account.name}</SelectItem>
+                          <SelectItem key={account.code} value={account.code} className="dark:text-slate-200">{account.code} - {account.name}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -762,13 +769,13 @@ export default function ProductFormPage() {
             </Card>
 
             {/* Inventory */}
-            <Card>
+            <Card className="dark:bg-slate-800 dark:border-slate-700">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 dark:text-white">
                   <Warehouse className="h-5 w-5" />
                   {t('products.inventory') || 'Inventory'}
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="dark:text-slate-400">
                   {t('products.inventoryDesc') || 'Stock and inventory settings'}
                 </CardDescription>
               </CardHeader>
@@ -776,7 +783,7 @@ export default function ProductFormPage() {
                 <div className="space-y-2">
                   <TooltipProvider>
                     <div className="flex items-center gap-2">
-                      <Label htmlFor="costingMethod">{t('products.costingMethod') || 'Costing Method'}</Label>
+                      <Label htmlFor="costingMethod" className="dark:text-slate-200">{t('products.costingMethod') || 'Costing Method'}</Label>
                       {costingMethodLocked && (
                         <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800">
                           {t('products.locked') || 'Locked'}
@@ -784,18 +791,18 @@ export default function ProductFormPage() {
                       )}
                       <Tooltip>
                         <TooltipTrigger><HelpCircle className="h-4 w-4 text-slate-400" /></TooltipTrigger>
-                        <TooltipContent className="max-w-xs">
-                          <p className="font-semibold">Inventory Costing Method</p>
+                        <TooltipContent className="max-w-xs dark:bg-slate-800 dark:border-slate-700">
+                          <p className="font-semibold dark:text-white">Inventory Costing Method</p>
                           {costingMethodLocked ? (
-                            <p className="text-sm mt-1 text-amber-600">This setting is locked because the product already has stock movements. Changing it would cause data inconsistency.</p>
+                            <p className="text-sm mt-1 text-amber-600 dark:text-amber-400">This setting is locked because the product already has stock movements. Changing it would cause data inconsistency.</p>
                           ) : (
                             <>
-                              <p className="text-sm mt-1">Determines how inventory costs are calculated:</p>
-                              <ul className="text-sm mt-1 list-disc pl-4">
-                                <li><strong>FIFO</strong> - First In, First Out (oldest inventory sold first)</li>
-                                <li><strong>WAC</strong> - Weighted Average Cost</li>
-                                <li><strong>AVG</strong> - Average Cost</li>
-                                <li><strong>Weighted</strong> - Weighted average</li>
+                              <p className="text-sm mt-1 dark:text-slate-300">Determines how inventory costs are calculated:</p>
+                              <ul className="text-sm mt-1 list-disc pl-4 dark:text-slate-300">
+                                <li><strong className="dark:text-white">FIFO</strong> - First In, First Out (oldest inventory sold first)</li>
+                                <li><strong className="dark:text-white">WAC</strong> - Weighted Average Cost</li>
+                                <li><strong className="dark:text-white">AVG</strong> - Average Cost</li>
+                                <li><strong className="dark:text-white">Weighted</strong> - Weighted average</li>
                               </ul>
                             </>
                           )}
@@ -807,12 +814,12 @@ export default function ProductFormPage() {
                       onValueChange={(value) => handleChange('costingMethod', value)}
                       disabled={costingMethodLocked}
                     >
-                      <SelectTrigger className={costingMethodLocked ? 'opacity-60 cursor-not-allowed' : ''}>
+                      <SelectTrigger className={`${costingMethodLocked ? 'opacity-60 cursor-not-allowed' : ''} dark:bg-slate-700 dark:text-white dark:border-slate-600`}>
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="dark:bg-slate-800">
                         {COSTING_METHOD_VALUES.map((method) => (
-                          <SelectItem key={method} value={method}>{getCostingMethodLabel(t, method)}</SelectItem>
+                          <SelectItem key={method} value={method} className="dark:text-slate-200">{getCostingMethodLabel(t, method)}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -827,16 +834,16 @@ export default function ProductFormPage() {
                 <div className="space-y-2">
                   <TooltipProvider>
                     <div className="flex items-center gap-2">
-                      <Label htmlFor="trackingType">{t('products.trackingType') || 'Tracking Type'}</Label>
+                      <Label htmlFor="trackingType" className="dark:text-slate-200">{t('products.trackingType') || 'Tracking Type'}</Label>
                       <Tooltip>
                         <TooltipTrigger><HelpCircle className="h-4 w-4 text-slate-400" /></TooltipTrigger>
-                        <TooltipContent className="max-w-xs">
-                          <p className="font-semibold">Inventory Tracking</p>
-                          <p className="text-sm mt-1">Choose how to track individual items:</p>
-                          <ul className="text-sm mt-1 list-disc pl-4">
-                            <li><strong>None</strong> - Simple tracking (qty only)</li>
-                            <li><strong>Batch</strong> - Track by batch/lot numbers</li>
-                            <li><strong>Serial</strong> - Track each unit individually</li>
+                        <TooltipContent className="max-w-xs dark:bg-slate-800 dark:border-slate-700">
+                          <p className="font-semibold dark:text-white">Inventory Tracking</p>
+                          <p className="text-sm mt-1 dark:text-slate-300">Choose how to track individual items:</p>
+                          <ul className="text-sm mt-1 list-disc pl-4 dark:text-slate-300">
+                            <li><strong className="dark:text-white">None</strong> - Simple tracking (qty only)</li>
+                            <li><strong className="dark:text-white">Batch</strong> - Track by batch/lot numbers</li>
+                            <li><strong className="dark:text-white">Serial</strong> - Track each unit individually</li>
                           </ul>
                         </TooltipContent>
                       </Tooltip>
@@ -845,12 +852,12 @@ export default function ProductFormPage() {
                       value={formData.trackingType} 
                       onValueChange={(value) => handleChange('trackingType', value)}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="dark:bg-slate-800">
                         {TRACKING_TYPE_VALUES.map((type) => (
-                          <SelectItem key={type} value={type}>{getTrackingTypeLabel(t, type)}</SelectItem>
+                          <SelectItem key={type} value={type} className="dark:text-slate-200">{getTrackingTypeLabel(t, type)}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -861,12 +868,12 @@ export default function ProductFormPage() {
                   <TooltipProvider>
                     <div className="space-y-0.5">
                       <div className="flex items-center gap-2">
-                        <Label htmlFor="isStockable">{t('products.isStockable') || 'Track Inventory'}</Label>
+                        <Label htmlFor="isStockable" className="dark:text-slate-200">{t('products.isStockable') || 'Track Inventory'}</Label>
                         <Tooltip>
                           <TooltipTrigger><HelpCircle className="h-4 w-4 text-slate-400" /></TooltipTrigger>
-                          <TooltipContent className="max-w-xs">
-                            <p className="font-semibold">Track Inventory</p>
-                            <p className="text-sm mt-1">Enable to track stock levels for this product. Disable for services or non-inventory items.</p>
+                          <TooltipContent className="max-w-xs dark:bg-slate-800 dark:border-slate-700">
+                            <p className="font-semibold dark:text-white">Track Inventory</p>
+                            <p className="text-sm mt-1 dark:text-slate-300">Enable to track stock levels for this product. Disable for services or non-inventory items.</p>
                           </TooltipContent>
                         </Tooltip>
                       </div>
@@ -885,12 +892,12 @@ export default function ProductFormPage() {
                 <div className="space-y-2">
                   <TooltipProvider>
                     <div className="flex items-center gap-2">
-                      <Label htmlFor="reorderPoint">{t('products.reorderPoint') || 'Reorder Point'}</Label>
+                      <Label htmlFor="reorderPoint" className="dark:text-slate-200">{t('products.reorderPoint') || 'Reorder Point'}</Label>
                       <Tooltip>
                         <TooltipTrigger><HelpCircle className="h-4 w-4 text-slate-400" /></TooltipTrigger>
-                        <TooltipContent className="max-w-xs">
-                          <p className="font-semibold">Reorder Point</p>
-                          <p className="text-sm mt-1">Stock level that triggers a reorder suggestion. When stock reaches or falls below this level, the system will suggest reordering. Usually set slightly above the low stock threshold.</p>
+                        <TooltipContent className="max-w-xs dark:bg-slate-800 dark:border-slate-700">
+                          <p className="font-semibold dark:text-white">Reorder Point</p>
+                          <p className="text-sm mt-1 dark:text-slate-300">Stock level that triggers a reorder suggestion. When stock reaches or falls below this level, the system will suggest reordering. Usually set slightly above the low stock threshold.</p>
                         </TooltipContent>
                       </Tooltip>
                     </div>
@@ -901,6 +908,7 @@ export default function ProductFormPage() {
                       value={formData.reorderPoint}
                       onChange={(e) => handleChange('reorderPoint', e.target.value)}
                       disabled={!formData.isStockable}
+                      className="dark:bg-slate-700 dark:text-white dark:border-slate-600 dark:disabled:bg-slate-800 dark:disabled:text-slate-500"
                     />
                   </TooltipProvider>
                 </div>
@@ -908,12 +916,12 @@ export default function ProductFormPage() {
                 <div className="space-y-2">
                   <TooltipProvider>
                     <div className="flex items-center gap-2">
-                      <Label htmlFor="reorderQuantity">{t('products.reorderQuantity') || 'Reorder Quantity'}</Label>
+                      <Label htmlFor="reorderQuantity" className="dark:text-slate-200">{t('products.reorderQuantity') || 'Reorder Quantity'}</Label>
                       <Tooltip>
                         <TooltipTrigger><HelpCircle className="h-4 w-4 text-slate-400" /></TooltipTrigger>
-                        <TooltipContent className="max-w-xs">
-                          <p className="font-semibold">Reorder Quantity</p>
-                          <p className="text-sm mt-1">Suggested quantity to order when stock reaches the reorder point. This is the default quantity that will appear in purchase suggestions.</p>
+                        <TooltipContent className="max-w-xs dark:bg-slate-800 dark:border-slate-700">
+                          <p className="font-semibold dark:text-white">Reorder Quantity</p>
+                          <p className="text-sm mt-1 dark:text-slate-300">Suggested quantity to order when stock reaches the reorder point. This is the default quantity that will appear in purchase suggestions.</p>
                         </TooltipContent>
                       </Tooltip>
                     </div>
@@ -924,6 +932,7 @@ export default function ProductFormPage() {
                       value={formData.reorderQuantity}
                       onChange={(e) => handleChange('reorderQuantity', e.target.value)}
                       disabled={!formData.isStockable}
+                      className="dark:bg-slate-700 dark:text-white dark:border-slate-600 dark:disabled:bg-slate-800 dark:disabled:text-slate-500"
                     />
                   </TooltipProvider>
                 </div>
@@ -931,12 +940,12 @@ export default function ProductFormPage() {
                 <div className="space-y-2">
                   <TooltipProvider>
                     <div className="flex items-center gap-2">
-                      <Label htmlFor="lowStockThreshold">{t('products.lowStockThreshold') || 'Low Stock Alert'}</Label>
+                      <Label htmlFor="lowStockThreshold" className="dark:text-slate-200">{t('products.lowStockThreshold') || 'Low Stock Alert'}</Label>
                       <Tooltip>
                         <TooltipTrigger><HelpCircle className="h-4 w-4 text-slate-400" /></TooltipTrigger>
-                        <TooltipContent className="max-w-xs">
-                          <p className="font-semibold">Low Stock Threshold</p>
-                          <p className="text-sm mt-1">When inventory falls to or below this number, you'll receive a low stock alert notification. Default is 10 units.</p>
+                        <TooltipContent className="max-w-xs dark:bg-slate-800 dark:border-slate-700">
+                          <p className="font-semibold dark:text-white">Low Stock Threshold</p>
+                          <p className="text-sm mt-1 dark:text-slate-300">When inventory falls to or below this number, you'll receive a low stock alert notification. Default is 10 units.</p>
                         </TooltipContent>
                       </Tooltip>
                     </div>
@@ -947,49 +956,52 @@ export default function ProductFormPage() {
                       value={formData.lowStockThreshold}
                       onChange={(e) => handleChange('lowStockThreshold', e.target.value)}
                       disabled={!formData.isStockable}
+                      className="dark:bg-slate-700 dark:text-white dark:border-slate-600 dark:disabled:bg-slate-800 dark:disabled:text-slate-500"
                     />
                   </TooltipProvider>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="defaultWarehouse">{t('products.defaultWarehouse') || 'Default Warehouse'}</Label>
+                  <Label htmlFor="defaultWarehouse" className="dark:text-slate-200">{t('products.defaultWarehouse') || 'Default Warehouse'}</Label>
                   <Select 
                     value={formData.defaultWarehouse} 
                     onValueChange={(value) => handleChange('defaultWarehouse', value)}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
                       <SelectValue placeholder={t('products.selectWarehouse') || 'Select warehouse'} />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="dark:bg-slate-800">
                       {warehouses.map((wh: any) => (
-                        <SelectItem key={wh._id} value={wh._id}>{wh.name} ({wh.code})</SelectItem>
+                        <SelectItem key={wh._id} value={wh._id} className="dark:text-slate-200">{wh.name} ({wh.code})</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="brand">{t('products.brand') || 'Brand'}</Label>
+                  <Label htmlFor="brand" className="dark:text-slate-200">{t('products.brand') || 'Brand'}</Label>
                   <Input
                     id="brand"
                     value={formData.brand}
                     onChange={(e) => handleChange('brand', e.target.value)}
                     placeholder={t('products.brandPlaceholder') || 'Enter brand name'}
+                    className="dark:bg-slate-700 dark:text-white dark:border-slate-600 dark:placeholder:text-slate-400"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="location">{t('products.location') || 'Storage Location'}</Label>
+                  <Label htmlFor="location" className="dark:text-slate-200">{t('products.location') || 'Storage Location'}</Label>
                   <Input
                     id="location"
                     value={formData.location}
                     onChange={(e) => handleChange('location', e.target.value)}
                     placeholder={t('products.locationPlaceholder') || 'e.g., Warehouse A, Shelf 3'}
+                    className="dark:bg-slate-700 dark:text-white dark:border-slate-600 dark:placeholder:text-slate-400"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="weight">{t('products.weight') || 'Weight'}</Label>
+                  <Label htmlFor="weight" className="dark:text-slate-200">{t('products.weight') || 'Weight'}</Label>
                   <Input
                     id="weight"
                     type="number"
@@ -998,6 +1010,7 @@ export default function ProductFormPage() {
                     value={formData.weight}
                     onChange={(e) => handleChange('weight', e.target.value)}
                     placeholder={t('products.weightPlaceholder') || 'Weight in kg'}
+                    className="dark:bg-slate-700 dark:text-white dark:border-slate-600 dark:placeholder:text-slate-400"
                   />
                 </div>
               </CardContent>
@@ -1005,7 +1018,7 @@ export default function ProductFormPage() {
 
             {/* Form Actions */}
             <div className="flex items-center justify-end gap-4">
-              <Button type="button" variant="outline" onClick={() => navigate('/products')}>
+              <Button type="button" variant="outline" onClick={() => navigate('/products')} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
                 {t('common.cancel') || 'Cancel'}
               </Button>
               <Button type="submit" disabled={saving}>

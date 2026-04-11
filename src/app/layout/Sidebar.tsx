@@ -1,5 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
+import { UserProfileDialog } from "@/app/components/UserProfileDialog";
+import { CompanyProfileDialog } from "@/app/components/CompanyProfileDialog";
+import { companyApi } from "@/lib/api";
+import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import {
   Users,
   Lock,
@@ -26,6 +30,7 @@ import {
   Boxes,
   ShoppingCart,
   Truck,
+  Building2,
   FileText,
   Wallet,
   Receipt,
@@ -38,7 +43,6 @@ import {
   Waves,
   Gauge,
   Calendar,
-  Building2,
   Shield,
   LayoutDashboard,
   Banknote,
@@ -62,6 +66,8 @@ import {
   AlertDialogTrigger,
 } from "@/app/components/ui/alert-dialog";
 import authService from "@/services/authService";
+import { usersApi } from "@/lib/api";
+import { useCompanyStore } from "@/store/companyStore";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -211,6 +217,12 @@ const salesNav: NavSection = {
   title: "nav.sectionSales",
   items: [
     {
+      nameKey: "nav.pos",
+      href: "/sales-legacy",
+      icon: Receipt,
+      permission: "stock:read",
+    },
+    {
       nameKey: "nav.clients",
       href: "/clients",
       icon: Users,
@@ -325,6 +337,12 @@ const financeNav: NavSection = {
       permission: "stock:read",
     },
     {
+      nameKey: "nav.budgetSettings",
+      href: "/budgets/settings",
+      icon: Settings,
+      permission: "budgets:admin",
+    },
+    {
       nameKey: "nav.payroll",
       href: "/payroll",
       icon: DollarSign,
@@ -334,12 +352,6 @@ const financeNav: NavSection = {
       nameKey: "payroll.payrollRuns",
       href: "/payroll-runs",
       icon: Play,
-      permission: "stock:read",
-    },
-    {
-      nameKey: "nav.taxes",
-      href: "/taxes",
-      icon: DollarSign,
       permission: "stock:read",
     },
     {
@@ -481,10 +493,56 @@ export function Sidebar({
 }: SidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, logout, hasPermission: checkPermission } = useAuth();
+  const { user, logout, hasPermission: checkPermission, updateUser } = useAuth();
   const { language, toggleLanguage } = useLanguage();
   const { t } = useTranslation();
   const [loggingOut, setLoggingOut] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [companyProfileOpen, setCompanyProfileOpen] = useState(false);
+  const company = useCompanyStore((state) => state.company);
+  const setCompany = useCompanyStore((state) => state.setCompany);
+
+  // Fetch company data on mount
+  useEffect(() => {
+    // Clear any old localStorage company data
+    localStorage.removeItem('company-storage');
+    
+    // Always fetch fresh company profile from DB
+    companyApi.getMe().then((response) => {
+      if (response.success && response.data) {
+        const companyData = response.data as any;
+        setCompany({
+          _id: companyData._id || companyData.id || '',
+          name: companyData.name || 'My Company',
+          legal_name: companyData.legal_name,
+          email: companyData.email,
+          phone: companyData.phone,
+          website: companyData.website,
+          registration_number: companyData.registration_number,
+          tax_identification_number: companyData.tax_identification_number,
+          industry: companyData.industry,
+          logo_url: companyData.logo_url,
+          address: companyData.address,
+        });
+      }
+    }).catch(() => {
+      if (!company) {
+        setCompany({ _id: 'fallback', name: 'My Company' });
+      }
+    });
+
+    // Fetch user profile for latest avatar
+    usersApi.getProfile().then((response) => {
+      if (response.success && response.data) {
+        const profile = response.data as any;
+        if (profile.avatar) {
+          updateUser?.({ avatar: profile.avatar });
+        }
+      }
+    }).catch(() => {
+      // Ignore profile fetch errors
+    });
+  }, []);
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -622,21 +680,42 @@ export function Sidebar({
           collapsed ? "px-1 justify-center" : "px-3",
         )}
       >
-        <div
-          className={cn(
-            "flex items-center gap-2",
-            collapsed && "justify-center",
-          )}
-        >
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 flex-shrink-0">
-            <Warehouse className="h-5 w-5 text-white" />
-          </div>
-          {!collapsed && (
-            <span className="text-base font-bold text-white hidden sm:inline tracking-tight">
-              StockManager
-            </span>
-          )}
-        </div>
+        {/* ── Company Profile Section ── */}
+        {collapsed ? (
+          <button
+            onClick={() => setCompanyProfileOpen(true)}
+            className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 flex-shrink-0 hover:ring-2 hover:ring-indigo-400 transition-all"
+            title={company?.name || "Company"}
+          >
+            {company?.logo_url ? (
+              <Avatar className="h-9 w-9">
+                <AvatarImage src={company.logo_url} alt={company.name} />
+                <AvatarFallback className="bg-indigo-600 text-white text-sm">
+                  {company?.name?.charAt(0).toUpperCase() || "C"}
+                </AvatarFallback>
+              </Avatar>
+            ) : (
+              <Building2 className="h-5 w-5 text-white" />
+            )}
+          </button>
+        ) : (
+          <button
+            onClick={() => setCompanyProfileOpen(true)}
+            className="flex items-center gap-2 w-full text-left hover:bg-slate-800/50 rounded-lg p-1 transition-colors"
+          >
+            <Avatar className="h-9 w-9 flex-shrink-0">
+              <AvatarImage src={company?.logo_url} alt={company?.name || "Company"} />
+              <AvatarFallback className="bg-indigo-600 text-white text-sm font-medium">
+                {company?.name?.charAt(0).toUpperCase() || "C"}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0 overflow-hidden">
+              <p className="truncate text-base font-bold text-white tracking-tight">
+                {company?.name || "My Company"}
+              </p>
+            </div>
+          </button>
+        )}
 
         <div className="flex items-center gap-1">
           {onToggleCollapse && (
@@ -732,12 +811,22 @@ export function Sidebar({
       >
         {collapsed ? (
           <div className="flex flex-col items-center gap-2">
-            <div
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600 text-white text-sm font-medium"
+            <button
+              onClick={() => setProfileOpen(true)}
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600 text-white text-sm font-medium hover:ring-2 hover:ring-indigo-400 transition-all"
               title={user?.name || "User"}
             >
-              {user?.name?.charAt(0).toUpperCase() || "U"}
-            </div>
+              {user?.avatar ? (
+                <Avatar className="h-8 w-8">
+<AvatarImage src={user?.avatar} alt={user?.name || "User"} />
+                  <AvatarFallback className="bg-indigo-600 text-white text-sm">
+                    {user?.name?.charAt(0).toUpperCase() || "U"}
+                  </AvatarFallback>
+                </Avatar>
+              ) : (
+                user?.name?.charAt(0).toUpperCase() || "U"
+              )}
+            </button>
             <div className="flex gap-1">
               <Link
                 to="/company-settings"
@@ -788,10 +877,16 @@ export function Sidebar({
           </div>
         ) : (
           <>
-            <div className="flex items-center gap-2 mb-2 md:mb-3 md:gap-3">
-              <div className="flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-full bg-indigo-600 text-white text-sm font-medium flex-shrink-0">
-                {user?.name?.charAt(0).toUpperCase() || "U"}
-              </div>
+            <button
+              onClick={() => setProfileOpen(true)}
+              className="flex items-center gap-2 mb-2 md:mb-3 md:gap-3 w-full text-left hover:bg-slate-800/50 rounded-lg p-1 transition-colors"
+            >
+              <Avatar className="h-8 w-8 md:h-9 md:w-9 flex-shrink-0">
+                <AvatarImage src={user?.avatar} alt={user?.name || "User"} />
+                <AvatarFallback className="bg-indigo-600 text-white text-sm font-medium">
+                  {user?.name?.charAt(0).toUpperCase() || "U"}
+                </AvatarFallback>
+              </Avatar>
               <div className="flex-1 min-w-0">
                 <p className="truncate text-sm font-semibold text-white">
                   {user?.name || "User"}
@@ -800,7 +895,7 @@ export function Sidebar({
                   {user?.email || ""}
                 </p>
               </div>
-            </div>
+            </button>
 
             <div className="flex gap-2">
               <Link
@@ -853,6 +948,12 @@ export function Sidebar({
           </>
         )}
       </div>
+      
+      {/* User Profile Dialog */}
+      <UserProfileDialog open={profileOpen} onOpenChange={setProfileOpen} />
+      
+      {/* Company Profile Dialog */}
+      <CompanyProfileDialog open={companyProfileOpen} onOpenChange={setCompanyProfileOpen} />
     </div>
   );
 }

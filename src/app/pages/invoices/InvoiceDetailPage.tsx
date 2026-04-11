@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { invoicesApi } from '@/lib/api';
+import { invoicesApi, bankAccountsApi } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
 import { 
   ArrowLeft, 
@@ -29,6 +29,7 @@ import {
 } from '@/app/components/ui/table';
 import { Input } from '@/app/components/ui/input';
 import { Label } from '@/app/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/app/components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -153,6 +154,8 @@ export default function InvoiceDetailPage() {
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [paymentReference, setPaymentReference] = useState('');
+  const [bankAccountId, setBankAccountId] = useState('');
+  const [bankAccounts, setBankAccounts] = useState<Array<{_id: string; name: string; accountType: string}>>([]);
 
   const fetchInvoice = useCallback(async () => {
     if (!id) return;
@@ -169,9 +172,21 @@ export default function InvoiceDetailPage() {
     }
   }, [id]);
 
+  const fetchBankAccounts = useCallback(async () => {
+    try {
+      const response = await bankAccountsApi.getAll({ isActive: true });
+      if (response.success && Array.isArray(response.data)) {
+        setBankAccounts(response.data as Array<{_id: string; name: string; accountType: string}>);
+      }
+    } catch (error) {
+      console.error('Failed to fetch bank accounts:', error);
+    }
+  }, []);
+
   useEffect(() => {
     fetchInvoice();
-  }, [fetchInvoice]);
+    fetchBankAccounts();
+  }, [fetchInvoice, fetchBankAccounts]);
 
   const handleConfirm = async () => {
     if (!id) return;
@@ -206,6 +221,7 @@ export default function InvoiceDetailPage() {
     setPaymentAmount(invoice?.balance?.toString() || invoice?.amountOutstanding?.toString() || '');
     setPaymentReference('');
     setPaymentMethod('cash');
+    setBankAccountId('');
     setShowPaymentDialog(true);
   };
 
@@ -213,12 +229,20 @@ export default function InvoiceDetailPage() {
     if (!paymentAmount || !id) return;
     setActionLoading(true);
     try {
-      await invoicesApi.recordPayment(id, {
+      const data: { amount: number; paymentMethod: any; reference?: string; bankAccountId?: string } = {
         amount: parseFloat(paymentAmount),
         paymentMethod: paymentMethod as any,
         reference: paymentReference || undefined
-      });
+      };
+      if (
+        (paymentMethod === 'bank_transfer' || paymentMethod === 'cheque' || paymentMethod === 'mobile_money') &&
+        bankAccountId
+      ) {
+        data.bankAccountId = bankAccountId;
+      }
+      await invoicesApi.recordPayment(id, data);
       setShowPaymentDialog(false);
+      setBankAccountId('');
       fetchInvoice();
     } catch (error) {
       console.error('Failed to record payment:', error);
@@ -308,66 +332,66 @@ export default function InvoiceDetailPage() {
   return (
     <Layout>
       <div className="container mx-auto py-6">
-        {/* Header */}
+          {/* Header */}
         <div className="flex items-center gap-4 mb-6">
-          <Button variant="ghost" onClick={() => navigate('/invoices')}>
+          <Button variant="ghost" onClick={() => navigate('/invoices')} className="dark:text-gray-300">
             <ArrowLeft className="mr-2 h-4 w-4" />
             {t('common.back', 'Back')}
           </Button>
         </div>
 
         {/* Document Header */}
-        <div className="bg-card rounded-lg border p-6 mb-6">
+        <div className="bg-card rounded-lg border p-6 mb-6 dark:border-slate-700 dark:bg-slate-800">
           <div className="flex justify-between items-start">
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <FileText className="h-8 w-8 text-primary" />
-                <h1 className="text-2xl font-bold">
+                <h1 className="text-2xl font-bold dark:text-gray-100">
                   {invoice.referenceNo || invoice.invoiceNumber || 'N/A'}
                 </h1>
                 {getStatusBadge(invoice.status)}
               </div>
               <div className="grid grid-cols-2 gap-4 mt-4 text-sm">
                 <div>
-                  <p className="text-muted-foreground">{t('invoice.client', 'Client')}</p>
-                  <p className="font-medium">{invoice.client?.name || '-'}</p>
-                  {invoice.client?.contact?.phone && <p className="text-muted-foreground">{invoice.client.contact.phone}</p>}
-                  {invoice.client?.contact?.email && <p className="text-muted-foreground">{invoice.client.contact.email}</p>}
-                  {invoice.client?.contact?.address && <p className="text-muted-foreground">{invoice.client.contact.address}</p>}
-                  {invoice.client?.taxId && <p className="text-muted-foreground">TIN: {invoice.client.taxId}</p>}
+                  <p className="text-muted-foreground dark:text-gray-400">{t('invoice.client', 'Client')}</p>
+                  <p className="font-medium dark:text-gray-200">{invoice.client?.name || '-'}</p>
+                  {invoice.client?.contact?.phone && <p className="text-muted-foreground dark:text-gray-400">{invoice.client.contact.phone}</p>}
+                  {invoice.client?.contact?.email && <p className="text-muted-foreground dark:text-gray-400">{invoice.client.contact.email}</p>}
+                  {invoice.client?.contact?.address && <p className="text-muted-foreground dark:text-gray-400">{invoice.client.contact.address}</p>}
+                  {invoice.client?.taxId && <p className="text-muted-foreground dark:text-gray-400">TIN: {invoice.client.taxId}</p>}
                 </div>
                 <div>
-                  <p className="text-muted-foreground">{t('invoice.paymentTerms', 'Payment Terms')}</p>
-                  <p className="font-medium">{invoice.paymentTerms || '-'}</p>
+                  <p className="text-muted-foreground dark:text-gray-400">{t('invoice.paymentTerms', 'Payment Terms')}</p>
+                  <p className="font-medium dark:text-gray-200">{invoice.paymentTerms || '-'}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">{t('invoice.invoiceDate', 'Invoice Date')}</p>
-                  <p className="font-medium">{formatDate(invoice.invoiceDate)}</p>
+                  <p className="text-muted-foreground dark:text-gray-400">{t('invoice.invoiceDate', 'Invoice Date')}</p>
+                  <p className="font-medium dark:text-gray-200">{formatDate(invoice.invoiceDate)}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">{t('invoice.dueDate', 'Due Date')}</p>
-                  <p className="font-medium">{formatDate(invoice.dueDate)}</p>
+                  <p className="text-muted-foreground dark:text-gray-400">{t('invoice.dueDate', 'Due Date')}</p>
+                  <p className="font-medium dark:text-gray-200">{formatDate(invoice.dueDate)}</p>
                 </div>
               </div>
             </div>
             <div className="text-right">
-              <p className="text-muted-foreground text-sm">{t('invoice.total', 'Total Amount')}</p>
-              <p className="text-2xl font-bold">
+              <p className="text-muted-foreground text-sm dark:text-gray-400">{t('invoice.total', 'Total Amount')}</p>
+              <p className="text-2xl font-bold dark:text-gray-100">
                 {formatCurrency(invoice.grandTotal, invoice.currencyCode)}
               </p>
             </div>
           </div>
 
           {/* Status Timeline */}
-          <div className="mt-6 pt-6 border-t">
-            <p className="text-sm font-medium mb-3">{t('invoice.statusTimeline', 'Status Timeline')}</p>
+          <div className="mt-6 pt-6 border-t dark:border-slate-700">
+            <p className="text-sm font-medium mb-3 dark:text-gray-300">{t('invoice.statusTimeline', 'Status Timeline')}</p>
             <div className="flex items-center gap-2">
               {STATUS_FLOW.map((step, index) => (
                 <div key={step.status} className="flex items-center">
                   <div className={`flex items-center gap-2 px-3 py-2 rounded-full ${
                     index <= currentStatusStep 
                       ? 'bg-primary text-primary-foreground' 
-                      : 'bg-muted text-muted-foreground'
+                      : 'bg-muted text-muted-foreground dark:bg-slate-700 dark:text-gray-400'
                   }`}>
                     {index < currentStatusStep ? (
                       <CheckCircle className="h-4 w-4" />
@@ -394,7 +418,7 @@ export default function InvoiceDetailPage() {
           </div>
 
           {/* Action Buttons */}
-          <div className="mt-6 pt-6 border-t flex gap-2">
+          <div className="mt-6 pt-6 border-t dark:border-slate-700 flex gap-2">
             {invoice.status === 'draft' && (
               <>
                 <Button onClick={handleConfirm} disabled={actionLoading}>
@@ -428,47 +452,47 @@ export default function InvoiceDetailPage() {
 
         {/* Tabs */}
         <Tabs defaultValue="details" className="w-full">
-          <TabsList>
-            <TabsTrigger value="details">{t('invoice.tabs.details', 'Details')}</TabsTrigger>
-            <TabsTrigger value="payments">
+          <TabsList className="dark:bg-slate-800">
+            <TabsTrigger value="details" className="dark:data-[state=active]:bg-slate-700 dark:data-[state=active]:text-gray-100 dark:text-gray-300">{t('invoice.tabs.details', 'Details')}</TabsTrigger>
+            <TabsTrigger value="payments" className="dark:data-[state=active]:bg-slate-700 dark:data-[state=active]:text-gray-100 dark:text-gray-300">
               {t('invoice.tabs.payments', 'Payments')}
               {invoice.payments && invoice.payments.length > 0 && (
                 <Badge variant="secondary" className="ml-2">{invoice.payments.length}</Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="creditNotes">{t('invoice.tabs.creditNotes', 'Credit Notes')}</TabsTrigger>
-            <TabsTrigger value="deliveries">{t('invoice.tabs.deliveries', 'Deliveries')}</TabsTrigger>
-            <TabsTrigger value="journal">{t('invoice.tabs.journal', 'Journal Entries')}</TabsTrigger>
+            <TabsTrigger value="creditNotes" className="dark:data-[state=active]:bg-slate-700 dark:data-[state=active]:text-gray-100 dark:text-gray-300">{t('invoice.tabs.creditNotes', 'Credit Notes')}</TabsTrigger>
+            <TabsTrigger value="deliveries" className="dark:data-[state=active]:bg-slate-700 dark:data-[state=active]:text-gray-100 dark:text-gray-300">{t('invoice.tabs.deliveries', 'Deliveries')}</TabsTrigger>
+            <TabsTrigger value="journal" className="dark:data-[state=active]:bg-slate-700 dark:data-[state=active]:text-gray-100 dark:text-gray-300">{t('invoice.tabs.journal', 'Journal Entries')}</TabsTrigger>
           </TabsList>
 
           {/* Details Tab */}
           <TabsContent value="details">
-            <Card>
+            <Card className="dark:border-slate-700 dark:bg-slate-800">
               <CardHeader>
-                <CardTitle>{t('invoice.lineItems', 'Line Items')}</CardTitle>
+                <CardTitle className="dark:text-gray-100">{t('invoice.lineItems', 'Line Items')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <Table>
-                  <TableRow>
-                    <TableHead>{t('invoice.product', 'Product')}</TableHead>
-                    <TableHead className="text-right">{t('invoice.qty', 'Qty')}</TableHead>
-                    <TableHead className="text-right">{t('invoice.unitPrice', 'Unit Price')}</TableHead>
-                    <TableHead className="text-right">{t('invoice.discount', 'Discount')}</TableHead>
-                    <TableHead className="text-right">{t('invoice.tax', 'Tax')}</TableHead>
-                    <TableHead className="text-right">{t('invoice.total', 'Total')}</TableHead>
+                  <TableRow className="dark:hover:bg-slate-700/50 dark:border-b dark:border-slate-700">
+                    <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.product', 'Product')}</TableHead>
+                    <TableHead className="text-right dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.qty', 'Qty')}</TableHead>
+                    <TableHead className="text-right dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.unitPrice', 'Unit Price')}</TableHead>
+                    <TableHead className="text-right dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.discount', 'Discount')}</TableHead>
+                    <TableHead className="text-right dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.tax', 'Tax')}</TableHead>
+                    <TableHead className="text-right dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.total', 'Total')}</TableHead>
                   </TableRow>
-                  <TableBody>
+                  <TableBody className="dark:bg-slate-800">
                     {invoice.lines?.map((line) => (
-                      <TableRow key={line._id}>
-                        <TableCell>
-                          <div className="font-medium">{line.product?.name || '-'}</div>
-                          <div className="text-sm text-muted-foreground">{line.product?.sku}</div>
+                      <TableRow key={line._id} className="dark:hover:bg-slate-700/50 dark:border-b dark:border-slate-700">
+                        <TableCell className="dark:bg-slate-800 dark:border-b dark:border-slate-700">
+                          <div className="font-medium dark:text-gray-200">{line.product?.name || '-'}</div>
+                          <div className="text-sm text-muted-foreground dark:text-gray-400">{line.product?.sku}</div>
                         </TableCell>
-                        <TableCell className="text-right">{line.qty || line.quantity || 0}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(line.unitPrice || 0, invoice.currencyCode)}</TableCell>
-                        <TableCell className="text-right">{(line.discountPct || line.discount || 0)}%</TableCell>
-                        <TableCell className="text-right">{formatCurrency(line.lineTax || line.taxAmount || 0, invoice.currencyCode)}</TableCell>
-                        <TableCell className="text-right font-medium">{formatCurrency(line.lineTotal || line.totalWithTax || 0, invoice.currencyCode)}</TableCell>
+                        <TableCell className="text-right dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{line.qty || line.quantity || 0}</TableCell>
+                        <TableCell className="text-right dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{formatCurrency(line.unitPrice || 0, invoice.currencyCode)}</TableCell>
+                        <TableCell className="text-right dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{(line.discountPct || line.discount || 0)}%</TableCell>
+                        <TableCell className="text-right dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{formatCurrency(line.lineTax || line.taxAmount || 0, invoice.currencyCode)}</TableCell>
+                        <TableCell className="text-right font-medium dark:text-gray-200 dark:bg-slate-800 dark:border-b dark:border-slate-700">{formatCurrency(line.lineTotal || line.totalWithTax || 0, invoice.currencyCode)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -477,33 +501,33 @@ export default function InvoiceDetailPage() {
                 <div className="flex justify-end mt-4">
                   <div className="w-64 space-y-2">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">{t('invoice.subtotal', 'Subtotal')}</span>
-                      <span className="font-medium">{formatCurrency(invoice.subtotal, invoice.currencyCode)}</span>
+                      <span className="text-muted-foreground dark:text-gray-400">{t('invoice.subtotal', 'Subtotal')}</span>
+                      <span className="font-medium dark:text-gray-200">{formatCurrency(invoice.subtotal, invoice.currencyCode)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">{t('invoice.tax', 'Tax')}</span>
-                      <span className="font-medium">{formatCurrency(invoice.taxAmount || 0, invoice.currencyCode)}</span>
+                      <span className="text-muted-foreground dark:text-gray-400">{t('invoice.tax', 'Tax')}</span>
+                      <span className="font-medium dark:text-gray-200">{formatCurrency(invoice.taxAmount || 0, invoice.currencyCode)}</span>
                     </div>
-                    <div className="flex justify-between border-t pt-2">
-                      <span className="font-bold">{t('invoice.total', 'Total')}</span>
-                      <span className="font-bold text-lg">{formatCurrency(invoice.grandTotal, invoice.currencyCode)}</span>
+                    <div className="flex justify-between border-t pt-2 dark:border-slate-700">
+                      <span className="font-bold dark:text-gray-100">{t('invoice.total', 'Total')}</span>
+                      <span className="font-bold text-lg dark:text-gray-100">{formatCurrency(invoice.grandTotal, invoice.currencyCode)}</span>
                     </div>
                     <div className="flex justify-between pt-2">
-                      <span className="text-muted-foreground">{t('invoice.amountPaid', 'Amount Paid')}</span>
-                      <span className="font-medium text-green-600">{formatCurrency(invoice.amountPaid, invoice.currencyCode)}</span>
+                      <span className="text-muted-foreground dark:text-gray-400">{t('invoice.amountPaid', 'Amount Paid')}</span>
+                      <span className="font-medium text-green-600 dark:text-green-400">{formatCurrency(invoice.amountPaid, invoice.currencyCode)}</span>
                     </div>
-                    <div className="flex justify-between border-t pt-2">
-                      <span className="font-medium">{t('invoice.amountOutstanding', 'Outstanding')}</span>
-                      <span className="font-bold">{formatCurrency(invoice.balance || invoice.amountOutstanding || 0, invoice.currencyCode)}</span>
+                    <div className="flex justify-between border-t pt-2 dark:border-slate-700">
+                      <span className="font-medium dark:text-gray-200">{t('invoice.amountOutstanding', 'Outstanding')}</span>
+                      <span className="font-bold dark:text-gray-100">{formatCurrency(invoice.balance || invoice.amountOutstanding || 0, invoice.currencyCode)}</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Notes */}
                 {invoice.notes && (
-                  <div className="mt-4 pt-4 border-t">
-                    <p className="text-muted-foreground text-sm">{t('invoice.notes', 'Notes')}</p>
-                    <p>{invoice.notes}</p>
+                  <div className="mt-4 pt-4 border-t dark:border-slate-700">
+                    <p className="text-muted-foreground text-sm dark:text-gray-400">{t('invoice.notes', 'Notes')}</p>
+                    <p className="dark:text-gray-200">{invoice.notes}</p>
                   </div>
                 )}
               </CardContent>
@@ -512,28 +536,28 @@ export default function InvoiceDetailPage() {
 
           {/* Payments Tab */}
           <TabsContent value="payments">
-            <Card>
+            <Card className="dark:border-slate-700 dark:bg-slate-800">
               <CardHeader>
-                <CardTitle>{t('invoice.payments', 'Payment History')}</CardTitle>
+                <CardTitle className="dark:text-gray-100">{t('invoice.payments', 'Payment History')}</CardTitle>
               </CardHeader>
               <CardContent>
                 {invoice.payments && invoice.payments.length > 0 ? (
                   <Table>
-                    <TableRow>
-                      <TableHead>{t('invoice.paymentDate', 'Date')}</TableHead>
-                      <TableHead>{t('invoice.paymentMethod', 'Method')}</TableHead>
-                      <TableHead>{t('invoice.reference', 'Reference')}</TableHead>
-                      <TableHead>{t('invoice.recordedBy', 'Recorded By')}</TableHead>
-                      <TableHead className="text-right">{t('invoice.amount', 'Amount')}</TableHead>
+                    <TableRow className="dark:hover:bg-slate-700/50 dark:border-b dark:border-slate-700">
+                      <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.paymentDate', 'Date')}</TableHead>
+                      <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.paymentMethod', 'Method')}</TableHead>
+                      <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.reference', 'Reference')}</TableHead>
+                      <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.recordedBy', 'Recorded By')}</TableHead>
+                      <TableHead className="text-right dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.amount', 'Amount')}</TableHead>
                     </TableRow>
-                    <TableBody>
+                    <TableBody className="dark:bg-slate-800">
                       {invoice.payments.map((payment) => (
-                        <TableRow key={payment._id}>
-                          <TableCell>{formatDate(payment.paidDate || payment.recordedAt)}</TableCell>
-                          <TableCell className="capitalize">{payment.paymentMethod?.replace('_', ' ')}</TableCell>
-                          <TableCell>{payment.reference || '-'}</TableCell>
-                          <TableCell>{payment.recordedBy?.name || '-'}</TableCell>
-                          <TableCell className="text-right font-medium">
+                        <TableRow key={payment._id} className="dark:hover:bg-slate-700/50 dark:border-b dark:border-slate-700">
+                          <TableCell className="dark:text-gray-300 dark:bg-slate-800">{formatDate(payment.paidDate || payment.recordedAt)}</TableCell>
+                          <TableCell className="capitalize dark:text-gray-300">{payment.paymentMethod?.replace('_', ' ')}</TableCell>
+                          <TableCell className="dark:text-gray-300">{payment.reference || '-'}</TableCell>
+                          <TableCell className="dark:text-gray-300">{payment.recordedBy?.name || '-'}</TableCell>
+                          <TableCell className="text-right font-medium dark:text-gray-200">
                             {formatCurrency(payment.amount, invoice.currencyCode)}
                           </TableCell>
                         </TableRow>
@@ -541,7 +565,7 @@ export default function InvoiceDetailPage() {
                     </TableBody>
                   </Table>
                 ) : (
-                  <div className="text-center py-8 text-muted-foreground">
+                  <div className="text-center py-8 text-muted-foreground dark:text-gray-400">
                     <DollarSign className="mx-auto h-8 w-8 mb-2" />
                     <p>{t('invoice.noPayments', 'No payments recorded yet')}</p>
                   </div>
@@ -552,26 +576,26 @@ export default function InvoiceDetailPage() {
 
           {/* Credit Notes Tab */}
           <TabsContent value="creditNotes">
-            <Card>
+            <Card className="dark:border-slate-700 dark:bg-slate-800">
               <CardHeader>
-                <CardTitle>{t('invoice.creditNotes', 'Credit Notes')}</CardTitle>
+                <CardTitle className="dark:text-gray-100">{t('invoice.creditNotes', 'Credit Notes')}</CardTitle>
               </CardHeader>
               <CardContent>
                 {creditNotes.length > 0 ? (
                   <Table>
-                    <TableRow>
-                      <TableHead>{t('invoice.reference', 'Reference')}</TableHead>
-                      <TableHead>{t('invoice.date', 'Date')}</TableHead>
-                      <TableHead>{t('invoice.status', 'Status')}</TableHead>
-                      <TableHead className="text-right">{t('invoice.amount', 'Amount')}</TableHead>
+                    <TableRow className="dark:hover:bg-slate-700/50 dark:border-b dark:border-slate-700">
+                      <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.reference', 'Reference')}</TableHead>
+                      <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.date', 'Date')}</TableHead>
+                      <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.status', 'Status')}</TableHead>
+                      <TableHead className="text-right dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.amount', 'Amount')}</TableHead>
                     </TableRow>
-                    <TableBody>
+                    <TableBody className="dark:bg-slate-800">
                       {creditNotes.map((cn) => (
-                        <TableRow key={cn._id}>
-                          <TableCell className="font-medium">{cn.referenceNo || cn.creditNoteNumber}</TableCell>
-                          <TableCell>{formatDate(cn.createdAt)}</TableCell>
-                          <TableCell>{cn.status}</TableCell>
-                          <TableCell className="text-right font-medium">
+                        <TableRow key={cn._id} className="dark:hover:bg-slate-700/50 dark:border-b dark:border-slate-700">
+                          <TableCell className="font-medium dark:text-gray-200">{cn.referenceNo || cn.creditNoteNumber}</TableCell>
+                          <TableCell className="dark:text-gray-300">{formatDate(cn.createdAt)}</TableCell>
+                          <TableCell className="dark:text-gray-300">{cn.status}</TableCell>
+                          <TableCell className="text-right font-medium dark:text-gray-200">
                             {formatCurrency(cn.grandTotal, invoice.currencyCode)}
                           </TableCell>
                         </TableRow>
@@ -579,7 +603,7 @@ export default function InvoiceDetailPage() {
                     </TableBody>
                   </Table>
                 ) : (
-                  <div className="text-center py-8 text-muted-foreground">
+                  <div className="text-center py-8 text-muted-foreground dark:text-gray-400">
                     <CreditCard className="mx-auto h-8 w-8 mb-2" />
                     <p>{t('invoice.noCreditNotes', 'No credit notes for this invoice')}</p>
                   </div>
@@ -590,9 +614,9 @@ export default function InvoiceDetailPage() {
 
           {/* Deliveries Tab */}
           <TabsContent value="deliveries">
-            <Card>
+            <Card className="dark:border-slate-700 dark:bg-slate-800">
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>{t('invoice.deliveries', 'Delivery Notes')}</CardTitle>
+                <CardTitle className="dark:text-gray-100">{t('invoice.deliveries', 'Delivery Notes')}</CardTitle>
                 <Button variant="outline" onClick={() => navigate(`/delivery-notes/new?invoice=${id}`)}>
                   <Truck className="mr-2 h-4 w-4" />
                   {t('invoice.newDeliveryNote', 'New Delivery Note')}
@@ -601,19 +625,19 @@ export default function InvoiceDetailPage() {
               <CardContent>
                 {deliveryNotes.length > 0 ? (
                   <Table>
-                    <TableRow>
-                      <TableHead>{t('invoice.reference', 'Reference')}</TableHead>
-                      <TableHead>{t('invoice.date', 'Date')}</TableHead>
-                      <TableHead>{t('invoice.status', 'Status')}</TableHead>
-                      <TableHead className="text-right">{t('invoice.amount', 'Amount')}</TableHead>
+                    <TableRow className="dark:hover:bg-slate-700/50 dark:border-b dark:border-slate-700">
+                      <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.reference', 'Reference')}</TableHead>
+                      <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.date', 'Date')}</TableHead>
+                      <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.status', 'Status')}</TableHead>
+                      <TableHead className="text-right dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.amount', 'Amount')}</TableHead>
                     </TableRow>
-                    <TableBody>
+                    <TableBody className="dark:bg-slate-800">
                       {deliveryNotes.map((dn) => (
-                        <TableRow key={dn._id}>
-                          <TableCell className="font-medium">{dn.referenceNo || dn.deliveryNoteNumber}</TableCell>
-                          <TableCell>{formatDate(dn.createdAt)}</TableCell>
-                          <TableCell>{dn.status}</TableCell>
-                          <TableCell className="text-right font-medium">
+                        <TableRow key={dn._id} className="dark:hover:bg-slate-700/50 dark:border-b dark:border-slate-700">
+                          <TableCell className="font-medium dark:text-gray-200">{dn.referenceNo || dn.deliveryNoteNumber}</TableCell>
+                          <TableCell className="dark:text-gray-300">{formatDate(dn.createdAt)}</TableCell>
+                          <TableCell className="dark:text-gray-300">{dn.status}</TableCell>
+                          <TableCell className="text-right font-medium dark:text-gray-200">
                             {formatCurrency(dn.grandTotal, invoice.currencyCode)}
                           </TableCell>
                         </TableRow>
@@ -621,7 +645,7 @@ export default function InvoiceDetailPage() {
                     </TableBody>
                   </Table>
                 ) : (
-                  <div className="text-center py-8 text-muted-foreground">
+                  <div className="text-center py-8 text-muted-foreground dark:text-gray-400">
                     <Truck className="mx-auto h-8 w-8 mb-2" />
                     <p>{t('invoice.noDeliveries', 'No delivery notes for this invoice')}</p>
                   </div>
@@ -632,36 +656,36 @@ export default function InvoiceDetailPage() {
 
           {/* Journal Entries Tab */}
           <TabsContent value="journal">
-            <Card>
+            <Card className="dark:border-slate-700 dark:bg-slate-800">
               <CardHeader>
-                <CardTitle>{t('invoice.journalEntries', 'Journal Entries')}</CardTitle>
+                <CardTitle className="dark:text-gray-100">{t('invoice.journalEntries', 'Journal Entries')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   {invoice.revenueJournalEntry && (
-                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex items-center justify-between p-4 border rounded-lg dark:border-slate-700 dark:bg-slate-800/50">
                       <div>
-                        <p className="font-medium">{t('invoice.revenueEntry', 'Revenue Entry')}</p>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="font-medium dark:text-gray-200">{t('invoice.revenueEntry', 'Revenue Entry')}</p>
+                        <p className="text-sm text-muted-foreground dark:text-gray-400">
                           Entry #: {invoice.revenueJournalEntry.entryNumber}
                         </p>
                       </div>
-                      <Badge variant="outline">Posted</Badge>
+                      <Badge variant="outline" className="dark:border-slate-600 dark:text-gray-300">Posted</Badge>
                     </div>
                   )}
                   {invoice.cogsJournalEntry && (
-                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex items-center justify-between p-4 border rounded-lg dark:border-slate-700 dark:bg-slate-800/50">
                       <div>
-                        <p className="font-medium">{t('invoice.cogsEntry', 'COGS Entry')}</p>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="font-medium dark:text-gray-200">{t('invoice.cogsEntry', 'COGS Entry')}</p>
+                        <p className="text-sm text-muted-foreground dark:text-gray-400">
                           Entry #: {invoice.cogsJournalEntry.entryNumber}
                         </p>
                       </div>
-                      <Badge variant="outline">Posted</Badge>
+                      <Badge variant="outline" className="dark:border-slate-600 dark:text-gray-300">Posted</Badge>
                     </div>
                   )}
                   {!invoice.revenueJournalEntry && !invoice.cogsJournalEntry && (
-                    <div className="text-center py-8 text-muted-foreground">
+                    <div className="text-center py-8 text-muted-foreground dark:text-gray-400">
                       <FileText className="mx-auto h-8 w-8 mb-2" />
                       <p>{t('invoice.noJournalEntries', 'No journal entries posted yet')}</p>
                     </div>
@@ -674,26 +698,27 @@ export default function InvoiceDetailPage() {
 
         {/* Payment Dialog */}
         <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
-          <DialogContent>
+          <DialogContent className="dark:border-slate-700 dark:bg-slate-800">
             <DialogHeader>
-              <DialogTitle>{t('invoice.recordPayment', 'Record Payment')}</DialogTitle>
+              <DialogTitle className="dark:text-gray-100">{t('invoice.recordPayment', 'Record Payment')}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="amount">{t('invoice.amount', 'Amount')}</Label>
+                <Label htmlFor="amount" className="dark:text-gray-200">{t('invoice.amount', 'Amount')}</Label>
                 <Input
                   id="amount"
                   type="number"
                   value={paymentAmount}
                   onChange={(e) => setPaymentAmount(e.target.value)}
                   placeholder="Enter amount"
+                  className="dark:bg-slate-700 dark:border-slate-600 dark:text-gray-200"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="method">{t('invoice.paymentMethod', 'Payment Method')}</Label>
+                <Label htmlFor="method" className="dark:text-gray-200">{t('invoice.paymentMethod', 'Payment Method')}</Label>
                 <select
                   id="method"
-                  className="w-full h-10 px-3 border rounded-md bg-background"
+                  className="w-full h-10 px-3 border rounded-md bg-background dark:bg-slate-700 dark:border-slate-600 dark:text-gray-200"
                   value={paymentMethod}
                   onChange={(e) => setPaymentMethod(e.target.value)}
                 >
@@ -705,17 +730,35 @@ export default function InvoiceDetailPage() {
                 </select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="reference">{t('invoice.reference', 'Reference')}</Label>
+                <Label htmlFor="reference" className="dark:text-gray-200">{t('invoice.reference', 'Reference')}</Label>
                 <Input
                   id="reference"
                   value={paymentReference}
                   onChange={(e) => setPaymentReference(e.target.value)}
                   placeholder="Optional reference"
+                  className="dark:bg-slate-700 dark:border-slate-600 dark:text-gray-200"
                 />
               </div>
+              {(paymentMethod === 'bank_transfer' || paymentMethod === 'cheque' || paymentMethod === 'mobile_money') && (
+                <div className="space-y-2">
+                  <Label htmlFor="bankAccount" className="dark:text-gray-200">{t('invoice.bankAccount', 'Bank Account')}</Label>
+                  <Select value={bankAccountId} onValueChange={setBankAccountId}>
+                    <SelectTrigger className="dark:bg-slate-700 dark:border-slate-600">
+                      <SelectValue placeholder="Select bank account" />
+                    </SelectTrigger>
+                    <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
+                      {bankAccounts.map((acc) => (
+                        <SelectItem key={acc._id} value={acc._id} className="dark:text-gray-200">
+                          {acc.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowPaymentDialog(false)}>
+              <Button variant="outline" onClick={() => setShowPaymentDialog(false)} className="dark:border-slate-600 dark:text-gray-300">
                 Cancel
               </Button>
               <Button onClick={handlePaymentSubmit} disabled={actionLoading || !paymentAmount}>

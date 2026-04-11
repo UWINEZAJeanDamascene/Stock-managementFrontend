@@ -157,19 +157,19 @@ export default function SupplierDetailPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-6">
+      <div className="container mx-auto py-6 min-h-screen bg-slate-50 dark:bg-slate-900">
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
           <Button variant="ghost" size="icon" onClick={() => navigate('/suppliers')}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex-1">
-            <h1 className="text-3xl font-bold">{supplier.name}</h1>
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">{supplier.name}</h1>
             <div className="flex items-center gap-2 text-muted-foreground">
               <span className="font-mono">{supplier.code}</span>
               <Badge 
                 variant={supplier.isActive ? 'default' : 'secondary'}
-                className={supplier.isActive ? 'bg-green-500' : ''}
+                className={supplier.isActive ? 'bg-green-500 dark:bg-green-600' : ''}
               >
                 {supplier.isActive ? t('common.active', 'Active') : t('common.inactive', 'Inactive')}
               </Badge>
@@ -183,36 +183,36 @@ export default function SupplierDetailPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <Card>
+          <Card className="dark:bg-slate-800">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">{t('suppliers.totalPurchases', 'Total Purchases')}</CardTitle>
+              <CardTitle className="text-sm font-medium text-slate-900 dark:text-white">{t('suppliers.totalPurchases', 'Total Purchases')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(supplier.totalPurchases)}</div>
+              <div className="text-2xl font-bold dark:text-white">{formatCurrency(supplier.totalPurchases)}</div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="dark:bg-slate-800">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">{t('suppliers.paymentTerms', 'Payment Terms')}</CardTitle>
+              <CardTitle className="text-sm font-medium text-slate-900 dark:text-white">{t('suppliers.paymentTerms', 'Payment Terms')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{getPaymentTermsLabel(supplier.paymentTerms)}</div>
+              <div className="text-2xl font-bold dark:text-white">{getPaymentTermsLabel(supplier.paymentTerms)}</div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="dark:bg-slate-800">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">{t('suppliers.products', 'Products Supplied')}</CardTitle>
+              <CardTitle className="text-sm font-medium text-slate-900 dark:text-white">{t('suppliers.products', 'Products Supplied')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{supplier.productsSupplied?.length || 0}</div>
+              <div className="text-2xl font-bold dark:text-white">{supplier.productsSupplied?.length || 0}</div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="dark:bg-slate-800">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">{t('suppliers.lastPurchase', 'Last Purchase')}</CardTitle>
+              <CardTitle className="text-sm font-medium text-slate-900 dark:text-white">{t('suppliers.lastPurchase', 'Last Purchase')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-lg font-bold">
+              <div className="text-lg font-bold dark:text-white">
                 {supplier.lastPurchaseDate ? formatDate(supplier.lastPurchaseDate) : '-'}
               </div>
             </CardContent>
@@ -221,21 +221,21 @@ export default function SupplierDetailPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Contact Information */}
-          <Card>
+          <Card className="dark:bg-slate-800">
             <CardHeader>
-              <CardTitle>{t('suppliers.contactInfo', 'Contact Information')}</CardTitle>
+              <CardTitle className="text-slate-900 dark:text-white">{t('suppliers.contactInfo', 'Contact Information')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {supplier.contact?.contactPerson && (
                 <div className="flex items-center gap-2">
                   <Building2 className="h-4 w-4 text-muted-foreground" />
-                  <span>{supplier.contact.contactPerson}</span>
+                  <span className="dark:text-slate-200">{supplier.contact.contactPerson}</span>
                 </div>
               )}
               {supplier.contact?.email && (
                 <div className="flex items-center gap-2">
                   <Mail className="h-4 w-4 text-muted-foreground" />
-                  <a href={`mailto:${supplier.contact.email}`} className="text-primary hover:underline">
+                  <a href={`mailto:${supplier.contact.email}`} className="text-primary hover:underline dark:text-blue-400">
                     {supplier.contact.email}
                   </a>
                 </div>
@@ -243,7 +243,7 @@ export default function SupplierDetailPage() {
               {supplier.contact?.phone && (
                 <div className="flex items-center gap-2">
                   <Phone className="h-4 w-4 text-muted-foreground" />
-                  <a href={`tel:${supplier.contact.phone}`} className="hover:underline">
+                  <a href={`tel:${supplier.contact.phone}`} className="hover:underline dark:text-slate-200">
                     {supplier.contact.phone}
                   </a>
                 </div>
@@ -251,7 +251,7 @@ export default function SupplierDetailPage() {
               {supplier.contact?.website && (
                 <div className="flex items-center gap-2">
                   <Globe className="h-4 w-4 text-muted-foreground" />
-                  <a href={supplier.contact.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                  <a href={supplier.contact.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline dark:text-blue-400">
                     {supplier.contact.website}
                   </a>
                 </div>
@@ -259,7 +259,7 @@ export default function SupplierDetailPage() {
               {(supplier.contact?.address || supplier.contact?.city || supplier.contact?.country) && (
                 <div className="flex items-start gap-2">
                   <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
-                  <div>
+                  <div className="dark:text-slate-300">
                     {supplier.contact.address && <div>{supplier.contact.address}</div>}
                     <div>
                       {[supplier.contact.city, supplier.contact.state, supplier.contact.zipCode].filter(Boolean).join(', ')}
@@ -269,93 +269,93 @@ export default function SupplierDetailPage() {
                 </div>
               )}
               {!supplier.contact?.email && !supplier.contact?.phone && !supplier.contact?.contactPerson && (
-                <div className="text-muted-foreground text-sm">{t('suppliers.noContactInfo', 'No contact information')}</div>
+                <div className="text-muted-foreground text-sm dark:text-slate-400">{t('suppliers.noContactInfo', 'No contact information')}</div>
               )}
             </CardContent>
           </Card>
 
           {/* Additional Details */}
-          <Card>
+          <Card className="dark:bg-slate-800">
             <CardHeader>
-              <CardTitle>{t('suppliers.details', 'Details')}</CardTitle>
+              <CardTitle className="text-slate-900 dark:text-white">{t('suppliers.details', 'Details')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {supplier.taxId && (
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">{t('suppliers.taxId', 'Tax ID')}</span>
-                  <span className="font-medium">{supplier.taxId}</span>
+                  <span className="text-muted-foreground dark:text-slate-400">{t('suppliers.taxId', 'Tax ID')}</span>
+                  <span className="font-medium dark:text-slate-200">{supplier.taxId}</span>
                 </div>
               )}
               {supplier.region && (
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">{t('suppliers.region', 'Region')}</span>
-                  <span className="font-medium">{supplier.region}</span>
+                  <span className="text-muted-foreground dark:text-slate-400">{t('suppliers.region', 'Region')}</span>
+                  <span className="font-medium dark:text-slate-200">{supplier.region}</span>
                 </div>
               )}
               {supplier.currency && (
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">{t('suppliers.currency', 'Currency')}</span>
-                  <span className="font-medium">{supplier.currency}</span>
+                  <span className="text-muted-foreground dark:text-slate-400">{t('suppliers.currency', 'Currency')}</span>
+                  <span className="font-medium dark:text-slate-200">{supplier.currency}</span>
                 </div>
               )}
               {supplier.leadTime != null && supplier.leadTime > 0 && (
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">{t('suppliers.leadTime', 'Lead Time')}</span>
-                  <span className="font-medium">{supplier.leadTime} days</span>
+                  <span className="text-muted-foreground dark:text-slate-400">{t('suppliers.leadTime', 'Lead Time')}</span>
+                  <span className="font-medium dark:text-slate-200">{supplier.leadTime} days</span>
                 </div>
               )}
               {supplier.minimumOrder != null && supplier.minimumOrder > 0 && (
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">{t('suppliers.minimumOrder', 'Min Order')}</span>
-                  <span className="font-medium">{formatCurrency(supplier.minimumOrder)}</span>
+                  <span className="text-muted-foreground dark:text-slate-400">{t('suppliers.minimumOrder', 'Min Order')}</span>
+                  <span className="font-medium dark:text-slate-200">{formatCurrency(supplier.minimumOrder)}</span>
                 </div>
               )}
               {supplier.bankName && (
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">{t('suppliers.bankName', 'Bank')}</span>
-                  <span className="font-medium">{supplier.bankName}</span>
+                  <span className="text-muted-foreground dark:text-slate-400">{t('suppliers.bankName', 'Bank')}</span>
+                  <span className="font-medium dark:text-slate-200">{supplier.bankName}</span>
                 </div>
               )}
               {supplier.bankAccount && (
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">{t('suppliers.bankAccount', 'Account')}</span>
-                  <span className="font-medium font-mono">{supplier.bankAccount}</span>
+                  <span className="text-muted-foreground dark:text-slate-400">{t('suppliers.bankAccount', 'Account')}</span>
+                  <span className="font-medium font-mono dark:text-slate-200">{supplier.bankAccount}</span>
                 </div>
               )}
               <div className="flex justify-between">
-                <span className="text-muted-foreground">{t('common.createdAt', 'Created')}</span>
-                <span className="font-medium">{formatDate(supplier.createdAt)}</span>
+                <span className="text-muted-foreground dark:text-slate-400">{t('common.createdAt', 'Created')}</span>
+                <span className="font-medium dark:text-slate-200">{formatDate(supplier.createdAt)}</span>
               </div>
             </CardContent>
           </Card>
 
           {/* Products Supplied */}
-          <Card>
+          <Card className="dark:bg-slate-800">
             <CardHeader>
-              <CardTitle>{t('suppliers.productsSupplied', 'Products Supplied')}</CardTitle>
+              <CardTitle className="text-slate-900 dark:text-white">{t('suppliers.productsSupplied', 'Products Supplied')}</CardTitle>
             </CardHeader>
             <CardContent>
               {supplier.productsSupplied && supplier.productsSupplied.length > 0 ? (
                 <div className="space-y-2">
                   {supplier.productsSupplied.map((product) => (
-                    <div key={product._id} className="flex justify-between items-center p-2 rounded bg-muted/50">
-                      <span className="font-medium">{product.name}</span>
-                      <span className="text-sm text-muted-foreground font-mono">{product.sku}</span>
+                    <div key={product._id} className="flex justify-between items-center p-2 rounded bg-muted/50 dark:bg-slate-700/50">
+                      <span className="font-medium dark:text-slate-200">{product.name}</span>
+                      <span className="text-sm text-muted-foreground dark:text-slate-400 font-mono">{product.sku}</span>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-muted-foreground text-sm">{t('suppliers.noProductsLinked', 'No products linked to this supplier')}</div>
+                <div className="text-muted-foreground text-sm dark:text-slate-400">{t('suppliers.noProductsLinked', 'No products linked to this supplier')}</div>
               )}
             </CardContent>
           </Card>
         </div>
 
         {/* Purchase History */}
-        <Card className="mt-6">
+        <Card className="mt-6 dark:bg-slate-800">
           <CardHeader>
-            <CardTitle>{t('suppliers.purchaseHistory', 'Purchase History')}</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-slate-900 dark:text-white">{t('suppliers.purchaseHistory', 'Purchase History')}</CardTitle>
+            <CardDescription className="dark:text-slate-400">
               {t('suppliers.purchaseHistoryDesc', 'Recent stock received from this supplier')}
               {purchaseSummary.totalPurchases > 0 && (
                 <span className="ml-2 font-medium">
@@ -372,32 +372,32 @@ export default function SupplierDetailPage() {
             ) : purchases.length === 0 ? (
               <div className="flex flex-col items-center py-12">
                 <AlertCircle className="h-12 w-12 mb-4 text-muted-foreground" />
-                <p className="text-muted-foreground">{t('suppliers.noPurchaseHistory', 'No purchase history found')}</p>
+                <p className="text-muted-foreground dark:text-slate-400">{t('suppliers.noPurchaseHistory', 'No purchase history found')}</p>
               </div>
             ) : (
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>{t('suppliers.date', 'Date')}</TableHead>
-                    <TableHead>{t('suppliers.product', 'Product')}</TableHead>
-                    <TableHead className="text-right">{t('suppliers.quantity', 'Quantity')}</TableHead>
-                    <TableHead className="text-right">{t('suppliers.totalCost', 'Total Cost')}</TableHead>
+                  <TableRow className="dark:bg-slate-700">
+                    <TableHead className="dark:text-white">{t('suppliers.date', 'Date')}</TableHead>
+                    <TableHead className="dark:text-white">{t('suppliers.product', 'Product')}</TableHead>
+                    <TableHead className="text-right dark:text-white">{t('suppliers.quantity', 'Quantity')}</TableHead>
+                    <TableHead className="text-right dark:text-white">{t('suppliers.totalCost', 'Total Cost')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {purchases.map((purchase) => (
-                    <TableRow key={purchase._id}>
-                      <TableCell>{formatDate(purchase.movementDate)}</TableCell>
-                      <TableCell>
+                    <TableRow key={purchase._id} className="dark:hover:bg-slate-700/50">
+                      <TableCell className="dark:text-slate-300">{formatDate(purchase.movementDate)}</TableCell>
+                      <TableCell className="dark:text-slate-300">
                         <div>{purchase.product?.name || '-'}</div>
                         {purchase.product?.sku && (
-                          <div className="text-xs text-muted-foreground font-mono">{purchase.product.sku}</div>
+                          <div className="text-xs text-muted-foreground dark:text-slate-400 font-mono">{purchase.product.sku}</div>
                         )}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right dark:text-slate-300">
                         {purchase.quantity} {purchase.product?.unit || ''}
                       </TableCell>
-                      <TableCell className="text-right font-medium">{formatCurrency(purchase.totalCost)}</TableCell>
+                      <TableCell className="text-right font-medium dark:text-slate-200">{formatCurrency(purchase.totalCost)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -408,12 +408,12 @@ export default function SupplierDetailPage() {
 
         {/* Notes */}
         {supplier.notes && (
-          <Card className="mt-6">
+          <Card className="mt-6 dark:bg-slate-800">
             <CardHeader>
-              <CardTitle>{t('suppliers.notes', 'Notes')}</CardTitle>
+              <CardTitle className="text-slate-900 dark:text-white">{t('suppliers.notes', 'Notes')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="whitespace-pre-wrap">{supplier.notes}</p>
+              <p className="whitespace-pre-wrap dark:text-slate-300">{supplier.notes}</p>
             </CardContent>
           </Card>
         )}

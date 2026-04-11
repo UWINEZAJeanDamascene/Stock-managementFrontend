@@ -218,11 +218,11 @@ export default function QuotationsListPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-6">
+      <div className="container mx-auto py-6 min-h-screen bg-slate-50 dark:bg-slate-900">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-2xl font-bold">{t('quotation.title', 'Quotations')}</h1>
-            <p className="text-muted-foreground">{t('quotation.description', 'Manage quotations')}</p>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t('quotation.title', 'Quotations')}</h1>
+            <p className="text-muted-foreground dark:text-slate-400">{t('quotation.description', 'Manage quotations')}</p>
           </div>
           <Button onClick={() => navigate('/quotations/new')}>
             <Plus className="mr-2 h-4 w-4" />
@@ -231,35 +231,35 @@ export default function QuotationsListPage() {
         </div>
 
         {/* Filters */}
-        <div className="bg-card rounded-lg border p-4 mb-6">
+        <div className="bg-card dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div>
-              <label className="text-sm font-medium mb-1 block">{t('quotation.statusLabel', 'Status')}</label>
+              <label className="text-sm font-medium mb-1 block text-slate-900 dark:text-white">{t('quotation.statusLabel', 'Status')}</label>
               <Select value={statusFilter || 'all'} onValueChange={(value) => { setStatusFilter(value === 'all' ? '' : value); setPage(1); }}>
-                <SelectTrigger>
+                <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600">
                   <SelectValue placeholder={t('quotation.allStatuses', 'All Statuses')} />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('quotation.allStatuses', 'All Statuses')}</SelectItem>
-                  <SelectItem value="draft">{t('quotation.status.draft', 'Draft')}</SelectItem>
-                  <SelectItem value="sent">{t('quotation.status.sent', 'Sent')}</SelectItem>
-                  <SelectItem value="accepted">{t('quotation.status.accepted', 'Accepted')}</SelectItem>
-                  <SelectItem value="rejected">{t('quotation.status.rejected', 'Rejected')}</SelectItem>
-                  <SelectItem value="expired">{t('quotation.status.expired', 'Expired')}</SelectItem>
-                  <SelectItem value="converted">{t('quotation.status.converted', 'Converted')}</SelectItem>
+                <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                  <SelectItem value="all" className="dark:text-slate-200">{t('quotation.allStatuses', 'All Statuses')}</SelectItem>
+                  <SelectItem value="draft" className="dark:text-slate-200">{t('quotation.status.draft', 'Draft')}</SelectItem>
+                  <SelectItem value="sent" className="dark:text-slate-200">{t('quotation.status.sent', 'Sent')}</SelectItem>
+                  <SelectItem value="accepted" className="dark:text-slate-200">{t('quotation.status.accepted', 'Accepted')}</SelectItem>
+                  <SelectItem value="rejected" className="dark:text-slate-200">{t('quotation.status.rejected', 'Rejected')}</SelectItem>
+                  <SelectItem value="expired" className="dark:text-slate-200">{t('quotation.status.expired', 'Expired')}</SelectItem>
+                  <SelectItem value="converted" className="dark:text-slate-200">{t('quotation.status.converted', 'Converted')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">{t('quotation.client', 'Client')}</label>
+              <label className="text-sm font-medium mb-1 block text-slate-900 dark:text-white">{t('quotation.client', 'Client')}</label>
               <Select value={clientFilter || 'all'} onValueChange={(value) => { setClientFilter(value === 'all' ? '' : value); setPage(1); }}>
-                <SelectTrigger>
+                <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600">
                   <SelectValue placeholder={t('quotation.allClients', 'All Clients')} />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('quotation.allClients', 'All Clients')}</SelectItem>
+                <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                  <SelectItem value="all" className="dark:text-slate-200">{t('quotation.allClients', 'All Clients')}</SelectItem>
                   {clients.map((client) => (
-                    <SelectItem key={client._id} value={client._id}>
+                    <SelectItem key={client._id} value={client._id} className="dark:text-slate-200">
                       {client.name}
                     </SelectItem>
                   ))}
@@ -267,29 +267,32 @@ export default function QuotationsListPage() {
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">{t('quotation.dateFrom', 'Date From')}</label>
+              <label className="text-sm font-medium mb-1 block text-slate-900 dark:text-white">{t('quotation.dateFrom', 'Date From')}</label>
               <Input 
                 type="date" 
                 value={dateFrom}
                 onChange={(e) => { setDateFrom(e.target.value); setPage(1); }}
+                className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
               />
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">{t('quotation.dateTo', 'Date To')}</label>
+              <label className="text-sm font-medium mb-1 block text-slate-900 dark:text-white">{t('quotation.dateTo', 'Date To')}</label>
               <Input 
                 type="date" 
                 value={dateTo}
                 onChange={(e) => { setDateTo(e.target.value); setPage(1); }}
+                className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
               />
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">{t('quotation.search', 'Search')}</label>
+              <label className="text-sm font-medium mb-1 block text-slate-900 dark:text-white">{t('quotation.search', 'Search')}</label>
               <form onSubmit={handleSearch}>
                 <div className="flex gap-2">
                   <Input 
                     placeholder={t('quotation.searchPlaceholder', 'Search...')}
                     value={searchInput}
                     onChange={(e) => setSearchInput(e.target.value)}
+                    className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                   />
                   <Button type="submit" variant="secondary" size="sm">
                     <Search className="h-4 w-4" />
@@ -301,49 +304,49 @@ export default function QuotationsListPage() {
         </div>
 
         {/* Table */}
-        <div className="bg-card rounded-lg border">
+        <div className="bg-card dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
           {loading ? (
             <div className="flex items-center justify-center p-8">
-              <Loader2 className="h-8 w-8 animate-spin" />
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground dark:text-slate-400" />
             </div>
           ) : (
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>{t('quotation.reference', 'Reference')}</TableHead>
-                  <TableHead>{t('quotation.client', 'Client')}</TableHead>
-                  <TableHead>{t('quotation.date', 'Date')}</TableHead>
-                  <TableHead>{t('quotation.expiryDate', 'Expiry Date')}</TableHead>
-                  <TableHead>{t('quotation.statusLabel', 'Status')}</TableHead>
-                  <TableHead className="text-right">{t('quotation.total', 'Total')}</TableHead>
-                  <TableHead>{t('quotation.convertedTo', 'Converted To')}</TableHead>
-                  <TableHead className="text-right">{t('common.actions', 'Actions')}</TableHead>
+                <TableRow className="dark:bg-slate-700">
+                  <TableHead className="dark:text-white">{t('quotation.reference', 'Reference')}</TableHead>
+                  <TableHead className="dark:text-white">{t('quotation.client', 'Client')}</TableHead>
+                  <TableHead className="dark:text-white">{t('quotation.date', 'Date')}</TableHead>
+                  <TableHead className="dark:text-white">{t('quotation.expiryDate', 'Expiry Date')}</TableHead>
+                  <TableHead className="dark:text-white">{t('quotation.statusLabel', 'Status')}</TableHead>
+                  <TableHead className="text-right dark:text-white">{t('quotation.total', 'Total')}</TableHead>
+                  <TableHead className="dark:text-white">{t('quotation.convertedTo', 'Converted To')}</TableHead>
+                  <TableHead className="text-right dark:text-white">{t('common.actions', 'Actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {quotations.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground dark:text-slate-400">
                       {t('quotation.noQuotations', 'No quotations found')}
                     </TableCell>
                   </TableRow>
                 ) : (
                   quotations.map((quotation) => (
-                    <TableRow key={quotation._id}>
-                      <TableCell className="font-medium">
+                    <TableRow key={quotation._id} className="dark:hover:bg-slate-700/50">
+                      <TableCell className="font-medium dark:text-slate-200">
                         <FileText className="inline-block mr-2 h-4 w-4" />
                         {quotation.referenceNo || 'N/A'}
                       </TableCell>
-                      <TableCell>{quotation.client?.name || '-'}</TableCell>
-                      <TableCell>{formatDate(quotation.quotationDate)}</TableCell>
-                      <TableCell>{formatDate(quotation.expiryDate)}</TableCell>
+                      <TableCell className="dark:text-slate-300">{quotation.client?.name || '-'}</TableCell>
+                      <TableCell className="dark:text-slate-300">{formatDate(quotation.quotationDate)}</TableCell>
+                      <TableCell className="dark:text-slate-300">{formatDate(quotation.expiryDate)}</TableCell>
                       <TableCell>{getStatusBadge(quotation.status)}</TableCell>
-                       <TableCell className="text-right font-medium">
+                       <TableCell className="text-right font-medium dark:text-slate-200">
                          {formatCurrency(quotation.totalAmount, quotation.currency)}
                        </TableCell>
                       <TableCell>
                         {quotation.convertedToInvoice ? (
-                          <span className="text-green-600 text-sm">{quotation.convertedToInvoice}</span>
+                          <span className="text-green-600 dark:text-green-400 text-sm">{quotation.convertedToInvoice}</span>
                         ) : (
                           '-'
                         )}
@@ -353,7 +356,7 @@ export default function QuotationsListPage() {
                           <Button 
                             variant="ghost" 
                             size="sm"
-                            onClick={() => navigate(`/quotations/${quotation._id}`)}
+                            onClick={() => navigate(`/quotations/${quotation._id}?view=true`)}
                             title={t('common.view', 'View')}
                           >
                             <Eye className="h-4 w-4" />
@@ -386,7 +389,7 @@ export default function QuotationsListPage() {
                                 onClick={() => handleAccept(quotation._id)}
                                 title={t('quotation.accept', 'Accept')}
                               >
-                                <CheckCircle className="h-4 w-4 text-green-600" />
+                                <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
                               </Button>
                               <Button 
                                 variant="ghost" 
@@ -394,7 +397,7 @@ export default function QuotationsListPage() {
                                 onClick={() => handleReject(quotation._id)}
                                 title={t('quotation.reject', 'Reject')}
                               >
-                                <XCircle className="h-4 w-4 text-red-600" />
+                                <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
                               </Button>
                             </>
                           )}

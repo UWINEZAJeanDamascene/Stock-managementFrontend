@@ -202,16 +202,16 @@ export default function DeliveryNotesListPage() {
   };
 
   const getStatusBadge = (status: string) => {
-    const statusConfig: Record<string, { variant: 'default' | 'secondary' | 'outline' | 'destructive'; label: string }> = {
-      draft: { variant: 'secondary', label: t('deliveryNote.status.draft', 'Draft') },
-      confirmed: { variant: 'default', label: t('deliveryNote.status.confirmed', 'Confirmed') },
-      dispatched: { variant: 'outline', label: t('deliveryNote.status.dispatched', 'Dispatched') },
-      delivered: { variant: 'default', label: t('deliveryNote.status.delivered', 'Delivered') },
-      cancelled: { variant: 'destructive', label: t('deliveryNote.status.cancelled', 'Cancelled') },
+    const statusConfig: Record<string, { variant: 'default' | 'secondary' | 'outline' | 'destructive'; label: string; className?: string }> = {
+      draft: { variant: 'secondary', label: t('deliveryNote.status.draft', 'Draft'), className: 'dark:bg-slate-700 dark:text-gray-200' },
+      confirmed: { variant: 'default', label: t('deliveryNote.status.confirmed', 'Confirmed'), className: 'dark:bg-blue-900 dark:text-blue-200' },
+      dispatched: { variant: 'outline', label: t('deliveryNote.status.dispatched', 'Dispatched'), className: 'dark:text-yellow-300 dark:border-yellow-600' },
+      delivered: { variant: 'default', label: t('deliveryNote.status.delivered', 'Delivered'), className: 'dark:bg-green-900 dark:text-green-200' },
+      cancelled: { variant: 'destructive', label: t('deliveryNote.status.cancelled', 'Cancelled'), className: 'dark:bg-red-900 dark:text-red-200' },
     };
     
-    const config = statusConfig[status] || { variant: 'outline', label: status };
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+    const config = statusConfig[status] || { variant: 'outline', label: status, className: 'dark:text-gray-300 dark:border-gray-600' };
+    return <Badge variant={config.variant} className={config.className}>{config.label}</Badge>;
   };
 
   const formatCurrency = (amount: number, currency: string = 'USD') => {
@@ -250,16 +250,26 @@ export default function DeliveryNotesListPage() {
 
   const handleConfirm = async (id: string) => {
     try {
+      console.log('=== CONFIRM WORKFLOW START ===');
+      console.log('Delivery Note ID:', id);
+      
       // Step 1: Create invoice from delivery note first
       toast.info('Creating invoice from delivery note...');
-      const createResponse = await deliveryNotesApi.createInvoice(id);
+      console.log('Step 1: Calling deliveryNotesApi.createInvoice...');
+      const createResponse = await deliveryNotesApi.createInvoice(id, {
+        confirmDelivery: true  // Also confirm the delivery note in one call
+      });
+      console.log('Step 1 - createInvoice response:', createResponse);
       
       if (!createResponse.success) {
+        console.error('Step 1 FAILED:', createResponse);
         toast.error((createResponse as any).message || 'Failed to create invoice');
         return;
       }
       
       const invoiceId = (createResponse.data as any)?._id;
+      console.log('Invoice ID from response:', invoiceId);
+      
       if (!invoiceId) {
         toast.error('Invoice created but no ID returned');
         return;
@@ -269,34 +279,28 @@ export default function DeliveryNotesListPage() {
 
       // Step 2: Confirm the invoice
       toast.info('Confirming invoice...');
+      console.log('Step 2: Calling invoicesApi.confirm for:', invoiceId);
       const confirmInvoiceResponse = await invoicesApi.confirm(invoiceId);
+      console.log('Step 2 - confirmInvoice response:', confirmInvoiceResponse);
       
       if (!confirmInvoiceResponse.success) {
+        console.error('Step 2 FAILED:', confirmInvoiceResponse);
         toast.error((confirmInvoiceResponse as any).message || 'Failed to confirm invoice');
         return;
       }
       toast.success('Invoice confirmed');
 
-      // Step 3: Confirm the delivery note
-      toast.info('Confirming delivery note...');
-      console.log('Calling deliveryNotesApi.confirm for id:', id);
-      const response = await deliveryNotesApi.confirm(id, {});
-      console.log('Confirm delivery note response:', response);
-      
-      if (response.success) {
-        toast.success(t('deliveryNote.confirmed', 'Delivery note confirmed'));
-        console.log('Delivery note confirmed, refreshing list...');
-        await fetchDeliveryNotes();
-        console.log('List refreshed');
-      } else {
-        console.error('Failed to confirm delivery note:', response);
-        toast.error((response as any).message || t('deliveryNote.confirmFailed', 'Failed to confirm'));
-      }
+      // Step 3: Refresh the list to show updated status
+      console.log('Step 3: Refreshing delivery notes list...');
+      await fetchDeliveryNotes();
+      console.log('=== CONFIRM WORKFLOW COMPLETE ===');
+      toast.success('Delivery note confirmed successfully');
     } catch (error: any) {
-      console.error('Error in confirm workflow:', error);
+      console.error('=== CONFIRM WORKFLOW ERROR ===');
+      console.error('Error:', error);
       console.error('Error response:', error?.response?.data);
       console.error('Error message:', error?.message);
-      toast.error(error?.response?.data?.message || error?.message || t('deliveryNote.confirmFailed', 'Failed to confirm delivery note'));
+      toast.error(error?.response?.data?.message || error?.message || 'Failed to confirm delivery note');
     }
   };
 
@@ -369,8 +373,8 @@ export default function DeliveryNotesListPage() {
         {/* Page Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold">{t('deliveryNote.title', 'Delivery Notes')}</h1>
-            <p className="text-muted-foreground">{t('deliveryNote.subtitle', 'Manage delivery notes')}</p>
+            <h1 className="text-2xl font-bold dark:text-white">{t('deliveryNote.title', 'Delivery Notes')}</h1>
+            <p className="text-muted-foreground dark:text-gray-400">{t('deliveryNote.subtitle', 'Manage delivery notes')}</p>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={handleExport}>
@@ -385,7 +389,7 @@ export default function DeliveryNotesListPage() {
         </div>
 
         {/* Filters */}
-        <Card className="mb-6">
+        <Card className="mb-6 dark:border-slate-700 dark:bg-slate-800">
           <CardContent className="pt-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
               <div className="relative">
@@ -394,29 +398,29 @@ export default function DeliveryNotesListPage() {
                   placeholder={t('deliveryNote.search', 'Search delivery notes...')}
                   value={search}
                   onChange={(e) => handleSearch(e.target.value)}
-                  className="pl-9"
+                  className="pl-9 dark:bg-slate-700 dark:border-slate-600 dark:text-gray-200"
                 />
               </div>
               <Select value={statusFilter} onValueChange={handleStatusFilter}>
-                <SelectTrigger>
+                <SelectTrigger className="dark:bg-slate-700 dark:border-slate-600">
                   <SelectValue placeholder={t('deliveryNote.filterStatus', 'Status')} />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
                   {STATUS_OPTIONS.map(option => (
-                    <SelectItem key={option.value} value={option.value}>
+                    <SelectItem key={option.value} value={option.value} className="dark:text-gray-200">
                       {option.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               <Select value={clientFilter} onValueChange={handleClientFilter}>
-                <SelectTrigger>
+                <SelectTrigger className="dark:bg-slate-700 dark:border-slate-600">
                   <SelectValue placeholder={t('deliveryNote.filterClient', 'Client')} />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('common.all', 'All Clients')}</SelectItem>
+                <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
+                  <SelectItem value="all" className="dark:text-gray-200">{t('common.all', 'All Clients')}</SelectItem>
                   {clients.map(client => (
-                    <SelectItem key={client._id} value={client._id}>
+                    <SelectItem key={client._id} value={client._id} className="dark:text-gray-200">
                       {client.name}
                     </SelectItem>
                   ))}
@@ -427,12 +431,14 @@ export default function DeliveryNotesListPage() {
                 value={dateFrom}
                 onChange={(e) => handleDateFromChange(e.target.value)}
                 placeholder={t('deliveryNote.dateFrom', 'From')}
+                className="dark:bg-slate-700 dark:border-slate-600 dark:text-gray-200"
               />
               <Input
                 type="date"
                 value={dateTo}
                 onChange={(e) => handleDateToChange(e.target.value)}
                 placeholder={t('deliveryNote.dateTo', 'To')}
+                className="dark:bg-slate-700 dark:border-slate-600 dark:text-gray-200"
               />
             </div>
             {(search || statusFilter !== 'all' || clientFilter !== 'all' || quotationFilter !== 'all' || dateFrom || dateTo) && (
@@ -446,7 +452,7 @@ export default function DeliveryNotesListPage() {
         </Card>
 
         {/* Delivery Notes Table */}
-        <Card>
+        <Card className="dark:bg-slate-800">
           <CardContent className="p-0">
             {loading ? (
               <div className="flex items-center justify-center p-8">
@@ -455,8 +461,8 @@ export default function DeliveryNotesListPage() {
             ) : filteredDeliveryNotes.length === 0 ? (
               <div className="text-center py-12">
                 <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium">{t('deliveryNote.noDeliveryNotes', 'No delivery notes found')}</h3>
-                <p className="text-muted-foreground mb-4">
+                <h3 className="text-lg font-medium dark:text-white">{t('deliveryNote.noDeliveryNotes', 'No delivery notes found')}</h3>
+                <p className="text-muted-foreground dark:text-gray-400 mb-4">
                   {t('deliveryNote.noDeliveryNotesDescription', 'Create your first delivery note to get started')}
                 </p>
                 <Button onClick={() => navigate('/delivery-notes/new')}>
@@ -467,31 +473,31 @@ export default function DeliveryNotesListPage() {
             ) : (
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>{t('deliveryNote.reference', 'Reference')}</TableHead>
-                    <TableHead>{t('deliveryNote.quotation', 'Quotation')}</TableHead>
-                    <TableHead>{t('deliveryNote.client', 'Client')}</TableHead>
-                    <TableHead>{t('deliveryNote.deliveryDate', 'Delivery Date')}</TableHead>
-                    <TableHead>{t('deliveryNote.status', 'Status')}</TableHead>
-                    <TableHead>{t('deliveryNote.carrier', 'Carrier')}</TableHead>
-                    <TableHead>{t('deliveryNote.tracking', 'Tracking')}</TableHead>
-                    <TableHead className="text-right">{t('deliveryNote.total', 'Total')}</TableHead>
+                  <TableRow className="dark:hover:bg-slate-700">
+                    <TableHead className="dark:text-gray-300">{t('deliveryNote.reference', 'Reference')}</TableHead>
+                    <TableHead className="dark:text-gray-300">{t('deliveryNote.quotation', 'Quotation')}</TableHead>
+                    <TableHead className="dark:text-gray-300">{t('deliveryNote.client', 'Client')}</TableHead>
+                    <TableHead className="dark:text-gray-300">{t('deliveryNote.deliveryDate', 'Delivery Date')}</TableHead>
+                    <TableHead className="dark:text-gray-300">Status</TableHead>
+                    <TableHead className="dark:text-gray-300">{t('deliveryNote.carrier', 'Carrier')}</TableHead>
+                    <TableHead className="dark:text-gray-300">{t('deliveryNote.tracking', 'Tracking')}</TableHead>
+                    <TableHead className="text-right dark:text-gray-300">{t('deliveryNote.total', 'Total')}</TableHead>
                     <TableHead></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredDeliveryNotes.map((dn) => (
-                    <TableRow key={dn._id}>
-                      <TableCell className="font-medium">
+                    <TableRow key={dn._id} className="dark:hover:bg-slate-700">
+                      <TableCell className="font-medium dark:text-white">
                         {dn.referenceNo}
                       </TableCell>
-                      <TableCell>{dn.quotation?.referenceNo || '-'}</TableCell>
-                      <TableCell>{dn.client?.name || '-'}</TableCell>
-                      <TableCell>{formatDate(dn.deliveryDate)}</TableCell>
+                      <TableCell className="dark:text-gray-300">{dn.quotation?.referenceNo || '-'}</TableCell>
+                      <TableCell className="dark:text-gray-300">{dn.client?.name || '-'}</TableCell>
+                      <TableCell className="dark:text-gray-300">{formatDate(dn.deliveryDate)}</TableCell>
                       <TableCell>{getStatusBadge(dn.status)}</TableCell>
-                      <TableCell>{dn.carrier || '-'}</TableCell>
-                      <TableCell>{dn.trackingNumber || '-'}</TableCell>
-                      <TableCell className="text-right font-medium">
+                      <TableCell className="dark:text-gray-300">{dn.carrier || '-'}</TableCell>
+                      <TableCell className="dark:text-gray-300">{dn.trackingNumber || '-'}</TableCell>
+                      <TableCell className="text-right font-medium dark:text-white">
                         {formatCurrency(dn.grandTotal, dn.currencyCode)}
                       </TableCell>
                       <TableCell className="text-right">

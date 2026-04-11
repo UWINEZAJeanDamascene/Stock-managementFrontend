@@ -78,6 +78,15 @@ export default function TransfersListPage() {
   const [transfers, setTransfers] = useState<StockTransfer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  const isDark = () => document.documentElement.classList.contains('dark');
+  const [dark, setDark] = useState(isDark());
+  
+  useEffect(() => {
+    const observer = new MutationObserver(() => setDark(isDark()));
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
   const [pagination, setPagination] = useState<PaginationInfo>({
     total: 0,
     page: 1,
@@ -227,201 +236,258 @@ export default function TransfersListPage() {
 
   return (
     <Layout>
-      <Box sx={{ p: 3 }}>
-        {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-3">
-            <TruckIcon className="text-primary" style={{ fontSize: 32 }} />
-            <Typography variant="h5" component="h1">
-              {t('transfers.title', 'Stock Transfers')}
-            </Typography>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outlined"
-              startIcon={<DownloadIcon />}
-              onClick={handleExport}
-            >
-              {t('common.export', 'Export')}
-            </Button>
-            <Button
-              variant="contained"
-              startIcon={<PlusIcon />}
-              onClick={() => navigate('/stock-transfers/new')}
-            >
-              {t('transfers.newTransfer', 'New Transfer')}
-            </Button>
-          </div>
-        </div>
-
-        {/* Error Alert */}
-        {error && (
-          <Alert severity="error" className="mb-4" onClose={() => setError(null)}>
-            {error}
-          </Alert>
-        )}
-
-        {/* Filters */}
-        <Paper className="p-4 mb-4">
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-center">
-            <TextField
-              fullWidth
-              size="small"
-              placeholder={t('transfers.searchPlaceholder', 'Search by reference...')}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon />
-                  </InputAdornment>
-                ),
-              }}
-            />
-            <FormControl fullWidth size="small">
-              <InputLabel>{t('transfers.status', 'Status')}</InputLabel>
-              <Select
-                value={statusFilter}
-                label={t('transfers.status', 'Status')}
-                onChange={(e) => setStatusFilter(e.target.value)}
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+        <Box sx={{ p: 3 }}>
+          {/* Header */}
+          <div className="flex justify-between items-center mb-6">
+            <div className="flex items-center gap-3">
+              <TruckIcon className="text-primary" style={{ fontSize: 32 }} />
+              <Typography variant="h5" component="h1" sx={{ color: dark ? '#f1f5f9' : '#1e293b' }}>
+                {t('transfers.title', 'Stock Transfers')}
+              </Typography>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outlined"
+                startIcon={<DownloadIcon />}
+                onClick={handleExport}
+                sx={{ borderColor: dark ? '#475569' : '#cbd5e1', color: dark ? '#e2e8f0' : '#475569' }}
               >
-                <MenuItem value="">{t('common.all', 'All')}</MenuItem>
-                <MenuItem value="draft">{t('transfers.draft', 'Draft')}</MenuItem>
-                <MenuItem value="confirmed">{t('transfers.confirmed', 'Confirmed')}</MenuItem>
-                <MenuItem value="completed">{t('transfers.completed', 'Completed')}</MenuItem>
-                <MenuItem value="cancelled">{t('transfers.cancelled', 'Cancelled')}</MenuItem>
-              </Select>
-            </FormControl>
-            <TextField
-              fullWidth
-              size="small"
-              type="date"
-              label={t('transfers.startDate', 'Start Date')}
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              InputLabelProps={{ shrink: true }}
-            />
-            <TextField
-              fullWidth
-              size="small"
-              type="date"
-              label={t('transfers.endDate', 'End Date')}
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              InputLabelProps={{ shrink: true }}
-            />
-            <Button 
-              fullWidth 
-              variant="outlined" 
-              onClick={() => {
-                setSearch('');
-                setStatusFilter('');
-                setFromWarehouseFilter('');
-                setToWarehouseFilter('');
-                setStartDate('');
-                setEndDate('');
-              }}
-            >
-              {t('common.clear', 'Clear')}
-            </Button>
+                {t('common.export', 'Export')}
+              </Button>
+              <Button
+                variant="contained"
+                startIcon={<PlusIcon />}
+                onClick={() => navigate('/stock-transfers/new')}
+              >
+                {t('transfers.newTransfer', 'New Transfer')}
+              </Button>
+            </div>
           </div>
-        </Paper>
 
-        {/* Table */}
-        <Paper>
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>{t('transfers.reference', 'Reference')}</TableCell>
-                  <TableCell>{t('transfers.fromWarehouse', 'From Warehouse')}</TableCell>
-                  <TableCell>{t('transfers.toWarehouse', 'To Warehouse')}</TableCell>
-                  <TableCell>{t('transfers.status', 'Status')}</TableCell>
-                  <TableCell>{t('transfers.date', 'Date')}</TableCell>
-                  <TableCell align="center">{t('transfers.linesCount', 'Lines')}</TableCell>
-                  <TableCell>{t('transfers.journalEntry', 'Journal Entry')}</TableCell>
-                  <TableCell align="right">{t('common.actions', 'Actions')}</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
-                      <CircularProgress />
-                    </TableCell>
-                </TableRow>
-                ) : transfers.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
-                      {t('transfers.noData', 'No transfers found')}
-                    </TableCell>
-                </TableRow>
-                ) : (
-                  transfers.map((item) => (
-                    <TableRow key={item._id} hover>
-                      <TableCell>
-                        <Typography variant="body2" fontWeight="medium">
-                          {item.reference}
-                        </Typography>
+          {/* Error Alert */}
+          {error && (
+            <Alert severity="error" className="mb-4" onClose={() => setError(null)}>
+              {error}
+            </Alert>
+          )}
+
+          {/* Filters */}
+          <Paper sx={{ p: 4, mb: 4, backgroundColor: dark ? '#1e293b' : 'white', border: `1px solid ${dark ? '#334155' : '#e2e8f0'}` }}>
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-center">
+              <TextField
+                fullWidth
+                size="small"
+                placeholder={t('transfers.searchPlaceholder', 'Search by reference...')}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                sx={{
+                  '& .MuiInputBase-root': {
+                    backgroundColor: dark ? '#0f172a' : 'white',
+                    color: dark ? '#e2e8f0' : '#1e293b',
+                  },
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: dark ? '#334155' : '#cbd5e1',
+                  },
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon sx={{ color: dark ? '#94a3b8' : '#64748b' }} />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              <FormControl fullWidth size="small" sx={{
+                '& .MuiInputLabel-root': {
+                  color: dark ? '#94a3b8' : '#64748b',
+                },
+                '& .MuiInputBase-root': {
+                  backgroundColor: dark ? '#0f172a' : 'white',
+                  color: dark ? '#e2e8f0' : '#1e293b',
+                },
+                '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: dark ? '#334155' : '#cbd5e1',
+                },
+              }}>
+                <InputLabel>{t('transfers.status', 'Status')}</InputLabel>
+                <Select
+                  value={statusFilter}
+                  label={t('transfers.status', 'Status')}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                >
+                  <MenuItem value="">{t('common.all', 'All')}</MenuItem>
+                  <MenuItem value="draft">{t('transfers.draft', 'Draft')}</MenuItem>
+                  <MenuItem value="confirmed">{t('transfers.confirmed', 'Confirmed')}</MenuItem>
+                  <MenuItem value="completed">{t('transfers.completed', 'Completed')}</MenuItem>
+                  <MenuItem value="cancelled">{t('transfers.cancelled', 'Cancelled')}</MenuItem>
+                </Select>
+              </FormControl>
+              <TextField
+                fullWidth
+                size="small"
+                type="date"
+                label={t('transfers.startDate', 'Start Date')}
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+                sx={{
+                  '& .MuiInputBase-root': {
+                    backgroundColor: dark ? '#0f172a' : 'white',
+                    color: dark ? '#e2e8f0' : '#1e293b',
+                  },
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: dark ? '#334155' : '#cbd5e1',
+                  },
+                  '& .MuiInputLabel-root': {
+                    color: dark ? '#94a3b8' : '#64748b',
+                  },
+                }}
+              />
+              <TextField
+                fullWidth
+                size="small"
+                type="date"
+                label={t('transfers.endDate', 'End Date')}
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+                sx={{
+                  '& .MuiInputBase-root': {
+                    backgroundColor: dark ? '#0f172a' : 'white',
+                    color: dark ? '#e2e8f0' : '#1e293b',
+                  },
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: dark ? '#334155' : '#cbd5e1',
+                  },
+                  '& .MuiInputLabel-root': {
+                    color: dark ? '#94a3b8' : '#64748b',
+                  },
+                }}
+              />
+              <Button 
+                fullWidth 
+                variant="outlined" 
+                onClick={() => {
+                  setSearch('');
+                  setStatusFilter('');
+                  setFromWarehouseFilter('');
+                  setToWarehouseFilter('');
+                  setStartDate('');
+                  setEndDate('');
+                }}
+                sx={{ borderColor: dark ? '#475569' : '#cbd5e1', color: dark ? '#e2e8f0' : '#475569' }}
+              >
+                {t('common.clear', 'Clear')}
+              </Button>
+            </div>
+          </Paper>
+
+          {/* Table */}
+          <Paper sx={{ backgroundColor: dark ? '#1e293b' : 'white', border: `1px solid ${dark ? '#334155' : '#e2e8f0'}` }}>
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow sx={{ backgroundColor: dark ? '#0f172a' : '#f1f5f9' }}>
+                    <TableCell sx={{ color: dark ? '#e2e8f0' : '#1e293b', fontWeight: 600 }}>{t('transfers.reference', 'Reference')}</TableCell>
+                    <TableCell sx={{ color: dark ? '#e2e8f0' : '#1e293b', fontWeight: 600 }}>{t('transfers.fromWarehouse', 'From Warehouse')}</TableCell>
+                    <TableCell sx={{ color: dark ? '#e2e8f0' : '#1e293b', fontWeight: 600 }}>{t('transfers.toWarehouse', 'To Warehouse')}</TableCell>
+                    <TableCell sx={{ color: dark ? '#e2e8f0' : '#1e293b', fontWeight: 600 }}>{t('transfers.status', 'Status')}</TableCell>
+                    <TableCell sx={{ color: dark ? '#e2e8f0' : '#1e293b', fontWeight: 600 }}>{t('transfers.date', 'Date')}</TableCell>
+                    <TableCell align="center" sx={{ color: dark ? '#e2e8f0' : '#1e293b', fontWeight: 600 }}>{t('transfers.linesCount', 'Lines')}</TableCell>
+                    <TableCell sx={{ color: dark ? '#e2e8f0' : '#1e293b', fontWeight: 600 }}>{t('transfers.journalEntry', 'Journal Entry')}</TableCell>
+                    <TableCell align="right" sx={{ color: dark ? '#e2e8f0' : '#1e293b', fontWeight: 600 }}>{t('common.actions', 'Actions')}</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody sx={{ backgroundColor: dark ? '#1e293b' : 'white' }}>
+                  {loading ? (
+                    <TableRow>
+                      <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
+                        <CircularProgress />
                       </TableCell>
-                      <TableCell>{item.fromWarehouse?.name || '-'}</TableCell>
-                      <TableCell>{item.toWarehouse?.name || '-'}</TableCell>
-                      <TableCell>{getStatusChip(item.status)}</TableCell>
-                      <TableCell>
-                        {item.transferDate ? new Date(item.transferDate).toLocaleDateString() : '-'}
+                  </TableRow>
+                  ) : transfers.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={8} align="center" sx={{ py: 4, color: dark ? '#94a3b8' : '#64748b' }}>
+                        {t('transfers.noData', 'No transfers found')}
                       </TableCell>
-                      <TableCell align="center">
-                        <Chip label={item.items?.length || 0} size="small" variant="outlined" />
-                      </TableCell>
-                      <TableCell>{item.journalEntry || '-'}</TableCell>
-                      <TableCell align="right">
-                        <div className="flex items-center gap-1">
-                          <Button
-                            size="small"
-                            startIcon={<EyeIcon />}
-                            onClick={() => navigate(`/stock-transfers/${item._id}`)}
-                          >
-                            {t('common.view', 'View')}
-                          </Button>
-                          {item.status === 'draft' && (
+                  </TableRow>
+                  ) : (
+                    transfers.map((item) => (
+                      <TableRow key={item._id} hover sx={{ backgroundColor: dark ? '#1e293b' : 'white', '&:hover': { backgroundColor: dark ? '#0f172a' : '#f1f5f9' } }}>
+                        <TableCell>
+                          <Typography variant="body2" fontWeight="medium" sx={{ color: dark ? '#f1f5f9' : '#1e293b' }}>
+                            {item.reference}
+                          </Typography>
+                        </TableCell>
+                        <TableCell sx={{ color: dark ? '#e2e8f0' : '#1e293b' }}>{item.fromWarehouse?.name || '-'}</TableCell>
+                        <TableCell sx={{ color: dark ? '#e2e8f0' : '#1e293b' }}>{item.toWarehouse?.name || '-'}</TableCell>
+                        <TableCell>{getStatusChip(item.status)}</TableCell>
+                        <TableCell sx={{ color: dark ? '#e2e8f0' : '#1e293b' }}>
+                          {item.transferDate ? new Date(item.transferDate).toLocaleDateString() : '-'}
+                        </TableCell>
+                        <TableCell align="center">
+                          <Chip label={item.items?.length || 0} size="small" variant="outlined" sx={{ borderColor: dark ? '#475569' : '#cbd5e1', color: dark ? '#e2e8f0' : '#475569' }} />
+                        </TableCell>
+                        <TableCell sx={{ color: dark ? '#e2e8f0' : '#1e293b' }}>{item.journalEntry || '-'}</TableCell>
+                        <TableCell align="right">
+                          <div className="flex items-center gap-1">
                             <Button
                               size="small"
-                              color="success"
-                              startIcon={<CheckCircleIcon />}
-                              onClick={() => handleConfirm(item._id)}
+                              startIcon={<EyeIcon />}
+                              onClick={() => navigate(`/stock-transfers/${item._id}`)}
+                              sx={{ color: dark ? '#94a3b8' : '#64748b' }}
                             >
-                              {t('transfers.confirm', 'Confirm')}
+                              {t('common.view', 'View')}
                             </Button>
-                          )}
-                          {item.status === 'confirmed' && (
-                            <Button
-                              size="small"
-                              color="error"
-                              startIcon={<XCircleIcon />}
-                              onClick={() => handleCancel(item._id)}
-                            >
-                              {t('transfers.cancel', 'Cancel')}
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-          <TablePagination
-            component="div"
-            count={pagination.total}
-            page={pagination.page - 1}
-            onPageChange={handlePageChange}
-            rowsPerPage={pagination.limit}
-            onRowsPerPageChange={handleRowsPerPageChange}
-            rowsPerPageOptions={[10, 25, 50, 100]}
-          />
-        </Paper>
-      </Box>
+                            {item.status === 'draft' && (
+                              <Button
+                                size="small"
+                                color="success"
+                                startIcon={<CheckCircleIcon />}
+                                onClick={() => handleConfirm(item._id)}
+                              >
+                                {t('transfers.confirm', 'Confirm')}
+                              </Button>
+                            )}
+                            {item.status === 'confirmed' && (
+                              <Button
+                                size="small"
+                                color="error"
+                                startIcon={<XCircleIcon />}
+                                onClick={() => handleCancel(item._id)}
+                              >
+                                {t('transfers.cancel', 'Cancel')}
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            <TablePagination
+              component="div"
+              count={pagination.total}
+              page={pagination.page - 1}
+              onPageChange={handlePageChange}
+              rowsPerPage={pagination.limit}
+              onRowsPerPageChange={handleRowsPerPageChange}
+              rowsPerPageOptions={[10, 25, 50, 100]}
+              sx={{
+                backgroundColor: dark ? '#0f172a' : '#f1f5f9',
+                color: dark ? '#e2e8f0' : '#1e293b',
+                borderTop: `1px solid ${dark ? '#334155' : '#e2e8f0'}`,
+                '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
+                  color: 'inherit',
+                },
+              }}
+            />
+          </Paper>
+        </Box>
+      </div>
     </Layout>
   );
 }

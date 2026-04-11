@@ -201,221 +201,240 @@ export default function AuditsListPage() {
 
   return (
     <Layout>
-      <Box sx={{ p: 3 }}>
-        {/* Header */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <ClipboardListIcon size={28} />
-            <Typography variant="h5" component="h1">
-              {t('common.stockAudits.title')}
-            </Typography>
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+        <Box sx={{ p: 3 }} className="dark:text-white">
+          {/* Header */}
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <ClipboardListIcon size={28} className="dark:text-white" />
+              <Typography variant="h5" component="h1" className="dark:text-white">
+                {t('common.stockAudits.title')}
+              </Typography>
+            </Box>
+            <Button
+              variant="contained"
+              startIcon={<PlusIcon />}
+              onClick={() => navigate('/stock-audits/new')}
+            >
+              {t('common.stockAudits.newAudit')}
+            </Button>
           </Box>
-          <Button
-            variant="contained"
-            startIcon={<PlusIcon />}
-            onClick={() => navigate('/stock-audits/new')}
-          >
-            {t('common.stockAudits.newAudit')}
-          </Button>
-        </Box>
 
-        {/* Filters */}
-        <Paper sx={{ p: 2, mb: 3 }}>
-          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
-            <FormControl size="small" sx={{ minWidth: 150 }}>
-              <InputLabel>{t('common.stockAudits.status')}</InputLabel>
-              <Select
-                value={statusFilter}
-                label={t('common.stockAudits.status')}
-                onChange={(e) => setStatusFilter(e.target.value)}
-              >
-                <MenuItem value="">{t('common.all')}</MenuItem>
-                <MenuItem value="draft">{t('common.stockAudits.statuses.draft')}</MenuItem>
-                <MenuItem value="counting">{t('common.stockAudits.statuses.counting')}</MenuItem>
-                <MenuItem value="posted">{t('common.stockAudits.statuses.posted')}</MenuItem>
-                <MenuItem value="cancelled">{t('common.stockAudits.statuses.cancelled')}</MenuItem>
-              </Select>
-            </FormControl>
+          {/* Filters */}
+          <Paper sx={{ p: 2, mb: 3 }} className="dark:!bg-slate-800 dark:border dark:border-slate-700">
+            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+              <FormControl size="small" sx={{ minWidth: 150 }}>
+                <InputLabel className="dark:text-slate-400">{t('common.stockAudits.status')}</InputLabel>
+                <Select
+                  value={statusFilter}
+                  label={t('common.stockAudits.status')}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                  MenuProps={{
+                    PaperProps: {
+                      className: 'dark:!bg-slate-800 dark:!border-slate-700'
+                    }
+                  }}
+                >
+                  <MenuItem value="" className="dark:text-white">{t('common.all')}</MenuItem>
+                  <MenuItem value="draft" className="dark:text-white">{t('common.stockAudits.statuses.draft')}</MenuItem>
+                  <MenuItem value="counting" className="dark:text-white">{t('common.stockAudits.statuses.counting')}</MenuItem>
+                  <MenuItem value="posted" className="dark:text-white">{t('common.stockAudits.statuses.posted')}</MenuItem>
+                  <MenuItem value="cancelled" className="dark:text-white">{t('common.stockAudits.statuses.cancelled')}</MenuItem>
+                </Select>
+              </FormControl>
 
-            <FormControl size="small" sx={{ minWidth: 180 }}>
-              <InputLabel>{t('common.stockAudits.warehouse')}</InputLabel>
-              <Select
-                value={warehouseFilter}
-                label={t('common.stockAudits.warehouse')}
-                onChange={(e) => setWarehouseFilter(e.target.value)}
-              >
-                <MenuItem value="">{t('common.all')}</MenuItem>
-                {warehouses.map((wh) => (
-                  <MenuItem key={wh._id} value={wh._id}>
-                    {wh.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+              <FormControl size="small" sx={{ minWidth: 180 }}>
+                <InputLabel className="dark:text-slate-400">{t('common.stockAudits.warehouse')}</InputLabel>
+                <Select
+                  value={warehouseFilter}
+                  label={t('common.stockAudits.warehouse')}
+                  onChange={(e) => setWarehouseFilter(e.target.value)}
+                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                  MenuProps={{
+                    PaperProps: {
+                      className: 'dark:!bg-slate-800 dark:!border-slate-700'
+                    }
+                  }}
+                >
+                  <MenuItem value="" className="dark:text-white">{t('common.all')}</MenuItem>
+                  {warehouses.map((wh) => (
+                    <MenuItem key={wh._id} value={wh._id} className="dark:text-white">
+                      {wh.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
 
-            <TextField
-              type="date"
-              size="small"
-              label={t('common.stockAudits.dateFrom')}
-              value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
-              InputLabelProps={{ shrink: true }}
-              sx={{ width: 160 }}
-            />
-
-            <TextField
-              type="date"
-              size="small"
-              label={t('common.stockAudits.dateTo')}
-              value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
-              InputLabelProps={{ shrink: true }}
-              sx={{ width: 160 }}
-            />
-
-            {hasActiveFilters && (
-              <Button
-                variant="outlined"
+              <TextField
+                type="date"
                 size="small"
-                startIcon={<FilterXIcon size={16} />}
-                onClick={handleClearFilters}
-              >
-                {t('common.clearFilters')}
-              </Button>
-            )}
-          </Box>
-        </Paper>
+                label={t('common.stockAudits.dateFrom')}
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+                sx={{ width: 160 }}
+                className="dark:text-white"
+              />
 
-        {/* Error Alert */}
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-            {error}
-          </Alert>
-        )}
+              <TextField
+                type="date"
+                size="small"
+                label={t('common.stockAudits.dateTo')}
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+                sx={{ width: 160 }}
+                className="dark:text-white"
+              />
 
-        {/* Loading */}
-        {loading && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-            <CircularProgress />
-          </Box>
-        )}
+              {hasActiveFilters && (
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<FilterXIcon size={16} />}
+                  onClick={handleClearFilters}
+                  className="dark:border-slate-600 dark:text-white"
+                >
+                  {t('common.clearFilters')}
+                </Button>
+              )}
+            </Box>
+          </Paper>
 
-        {/* Table */}
-        {!loading && (
-          <Paper>
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>{t('common.stockAudits.reference')}</TableCell>
-                    <TableCell>{t('common.stockAudits.warehouse')}</TableCell>
-                    <TableCell>{t('common.stockAudits.auditDate')}</TableCell>
-                    <TableCell>{t('common.stockAudits.status')}</TableCell>
-                    <TableCell align="right">{t('common.stockAudits.totalVarianceValue')}</TableCell>
-                    <TableCell>{t('common.stockAudits.postedBy')}</TableCell>
-                    <TableCell align="center">{t('common.actions')}</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {audits.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
-                        <Typography color="text.secondary">
-                          {t('common.stockAudits.noAudits')}
-                        </Typography>
-                      </TableCell>
+          {/* Error Alert */}
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+              {error}
+            </Alert>
+          )}
+
+          {/* Loading */}
+          {loading && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress />
+            </Box>
+          )}
+
+          {/* Table */}
+          {!loading && (
+            <Paper className="dark:!bg-slate-800 dark:border dark:border-slate-700">
+              <TableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow className="dark:bg-slate-800">
+                      <TableCell className="dark:text-slate-200">{t('common.stockAudits.reference')}</TableCell>
+                      <TableCell className="dark:text-slate-200">{t('common.stockAudits.warehouse')}</TableCell>
+                      <TableCell className="dark:text-slate-200">{t('common.stockAudits.auditDate')}</TableCell>
+                      <TableCell className="dark:text-slate-200">{t('common.stockAudits.status')}</TableCell>
+                      <TableCell align="right" className="dark:text-slate-200">{t('common.stockAudits.totalVarianceValue')}</TableCell>
+                      <TableCell className="dark:text-slate-200">{t('common.stockAudits.postedBy')}</TableCell>
+                      <TableCell align="center" className="dark:text-slate-200">{t('common.actions')}</TableCell>
                     </TableRow>
-                  ) : (
-                    audits.map((audit) => (
-                      <TableRow key={audit._id} hover>
-                        <TableCell>
-                          <Typography variant="body2" fontWeight={500}>
-                            {audit.referenceNo}
+                  </TableHead>
+                  <TableBody className="dark:bg-slate-800">
+                    {audits.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                          <Typography color="text.secondary" className="dark:text-slate-400">
+                            {t('common.stockAudits.noAudits')}
                           </Typography>
                         </TableCell>
-                        <TableCell>{audit.warehouse?.name || '-'}</TableCell>
-                        <TableCell>{formatDate(audit.auditDate)}</TableCell>
-                        <TableCell>
-                          <Chip
-                            label={t(`common.stockAudits.statuses.${audit.status}`)}
-                            color={STATUS_COLORS[audit.status] || 'default'}
-                            size="small"
-                          />
-                        </TableCell>
-                        <TableCell align="right">
-                          {formatCurrency(audit.totalVarianceValue)}
-                        </TableCell>
-                        <TableCell>{audit.postedBy?.name || '-'}</TableCell>
-                        <TableCell align="center">
-                          <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-                            {/* View button - always visible */}
-                            <IconButton
+                      </TableRow>
+                    ) : (
+                      audits.map((audit) => (
+                        <TableRow key={audit._id} hover className="dark:bg-slate-800 dark:hover:bg-slate-700/50">
+                          <TableCell>
+                            <Typography variant="body2" fontWeight={500} className="dark:text-white">
+                              {audit.referenceNo}
+                            </Typography>
+                          </TableCell>
+                          <TableCell className="dark:text-slate-200">{audit.warehouse?.name || '-'}</TableCell>
+                          <TableCell className="dark:text-slate-200">{formatDate(audit.auditDate)}</TableCell>
+                          <TableCell>
+                            <Chip
+                              label={t(`common.stockAudits.statuses.${audit.status}`)}
+                              color={STATUS_COLORS[audit.status] || 'default'}
                               size="small"
-                              onClick={() => handleView(audit)}
-                              title={t('common.view')}
-                            >
-                              <EyeIcon size={18} />
-                            </IconButton>
-
-                            {/* Post button - only for counting status */}
-                            {audit.status === 'counting' && (
+                            />
+                          </TableCell>
+                          <TableCell align="right" className="dark:text-slate-200">
+                            {formatCurrency(audit.totalVarianceValue)}
+                          </TableCell>
+                          <TableCell className="dark:text-slate-200">{audit.postedBy?.name || '-'}</TableCell>
+                          <TableCell align="center">
+                            <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                              {/* View button - always visible */}
                               <IconButton
                                 size="small"
-                                color="success"
-                                onClick={() => handlePostClick(audit)}
-                                title={t('common.stockAudits.post')}
+                                onClick={() => handleView(audit)}
+                                title={t('common.view')}
+                                className="dark:text-slate-300 dark:hover:text-white"
                               >
-                                <CheckCircleIcon size={18} />
+                                <EyeIcon size={18} />
                               </IconButton>
-                            )}
-                          </Box>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
 
-            {/* Pagination */}
-            <TablePagination
-              component="div"
-              count={pagination.total}
-              page={pagination.page - 1}
-              onPageChange={handlePageChange}
-              rowsPerPage={pagination.limit}
-              onRowsPerPageChange={handleRowsPerPageChange}
-              rowsPerPageOptions={[10, 25, 50, 100]}
-            />
-          </Paper>
-        )}
+                              {/* Post button - only for counting status */}
+                              {audit.status === 'counting' && (
+                                <IconButton
+                                  size="small"
+                                  color="success"
+                                  onClick={() => handlePostClick(audit)}
+                                  title={t('common.stockAudits.post')}
+                                >
+                                  <CheckCircleIcon size={18} />
+                                </IconButton>
+                              )}
+                            </Box>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
 
-        {/* Post Confirmation Dialog */}
-        <Dialog open={postDialogOpen} onClose={() => setPostDialogOpen(false)}>
-          <DialogTitle>{t('common.stockAudits.postConfirmTitle')}</DialogTitle>
-          <DialogContent>
-            <Typography>
-              {t('common.stockAudits.postConfirmMessage', {
-                reference: selectedAudit?.referenceNo,
-                variance: formatCurrency(selectedAudit?.totalVarianceValue || '0'),
-              })}
-            </Typography>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setPostDialogOpen(false)} disabled={postLoading}>
-              {t('common.cancel')}
-            </Button>
-            <Button
-              onClick={handleConfirmPost}
-              variant="contained"
-              color="success"
-              disabled={postLoading}
-            >
-              {postLoading ? <CircularProgress size={20} /> : t('common.stockAudits.post')}
-            </Button>
-          </DialogActions>
-        </Dialog>
-      </Box>
+              {/* Pagination */}
+              <TablePagination
+                component="div"
+                count={pagination.total}
+                page={pagination.page - 1}
+                onPageChange={handlePageChange}
+                rowsPerPage={pagination.limit}
+                onRowsPerPageChange={handleRowsPerPageChange}
+                rowsPerPageOptions={[10, 25, 50, 100]}
+                className="dark:bg-slate-800 dark:text-slate-300"
+              />
+            </Paper>
+          )}
+
+          {/* Post Confirmation Dialog */}
+          <Dialog open={postDialogOpen} onClose={() => setPostDialogOpen(false)}>
+            <DialogTitle>{t('common.stockAudits.postConfirmTitle')}</DialogTitle>
+            <DialogContent>
+              <Typography>
+                {t('common.stockAudits.postConfirmMessage', {
+                  reference: selectedAudit?.referenceNo,
+                  variance: formatCurrency(selectedAudit?.totalVarianceValue || '0'),
+                })}
+              </Typography>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setPostDialogOpen(false)} disabled={postLoading}>
+                {t('common.cancel')}
+              </Button>
+              <Button
+                onClick={handleConfirmPost}
+                variant="contained"
+                color="success"
+                disabled={postLoading}
+              >
+                {postLoading ? <CircularProgress size={20} /> : t('common.stockAudits.post')}
+              </Button>
+            </DialogActions>
+          </Dialog>
+        </Box>
+      </div>
     </Layout>
   );
 }

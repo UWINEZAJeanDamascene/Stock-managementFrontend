@@ -114,10 +114,10 @@ export default function JournalEntryDetailPage() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'posted': return <Badge className="bg-green-100 text-green-700">Posted</Badge>;
-      case 'draft': return <Badge className="bg-yellow-100 text-yellow-700">Draft</Badge>;
-      case 'voided': return <Badge className="bg-red-100 text-red-700">Voided</Badge>;
-      case 'reversed': return <Badge className="bg-gray-100 text-gray-700">Reversed</Badge>;
+      case 'posted': return <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">Posted</Badge>;
+      case 'draft': return <Badge className="bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">Draft</Badge>;
+      case 'voided': return <Badge className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">Voided</Badge>;
+      case 'reversed': return <Badge className="bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">Reversed</Badge>;
       default: return <Badge>{status}</Badge>;
     }
   };
@@ -135,9 +135,9 @@ export default function JournalEntryDetailPage() {
   if (!entry) {
     return (
       <Layout>
-        <div className="text-center py-24">
-          <p className="text-slate-500">Journal entry not found</p>
-          <Button variant="outline" className="mt-4" onClick={() => navigate('/journal')}>
+        <div className="text-center py-24 dark:bg-slate-900 min-h-screen">
+          <p className="text-slate-500 dark:text-slate-400">Journal entry not found</p>
+          <Button variant="outline" className="mt-4 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700" onClick={() => navigate('/journal')}>
             <ArrowLeft className="h-4 w-4 mr-2" /> Back to Journal
           </Button>
         </div>
@@ -147,32 +147,32 @@ export default function JournalEntryDetailPage() {
 
   return (
     <Layout>
-      <div className="space-y-6">
+      <div className="space-y-6 bg-gray-50 dark:bg-slate-900 min-h-screen p-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="outline" size="sm" onClick={() => navigate('/journal')}>
+            <Button variant="outline" size="sm" onClick={() => navigate('/journal')} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>
-              <h1 className="text-2xl font-bold flex items-center gap-2">
-                <BookOpen className="h-6 w-6" />
+              <h1 className="text-2xl font-bold flex items-center gap-2 dark:text-white">
+                <BookOpen className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
                 {entry.entryNumber}
               </h1>
-              <p className="text-muted-foreground">{entry.description}</p>
+              <p className="text-muted-foreground dark:text-slate-400">{entry.description}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             {getStatusBadge(entry.status)}
             {entry.status === 'draft' && (
-              <Button onClick={() => setPostDialogOpen(true)}>
+              <Button onClick={() => setPostDialogOpen(true)} className="dark:bg-primary dark:text-primary-foreground">
                 <CheckCircle className="h-4 w-4 mr-2" />
                 Post Entry
               </Button>
             )}
             {entry.status === 'posted' && (
               <>
-                <Button variant="outline" onClick={() => setReverseDialogOpen(true)}>
+                <Button variant="outline" onClick={() => setReverseDialogOpen(true)} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
                   <RotateCcw className="h-4 w-4 mr-2" />
                   Reverse
                 </Button>
@@ -187,77 +187,77 @@ export default function JournalEntryDetailPage() {
 
         {/* Entry Details */}
         <div className="grid grid-cols-4 gap-4">
-          <Card>
+          <Card className="dark:bg-slate-800">
             <CardContent className="pt-4">
-              <p className="text-xs text-slate-500">Entry Number</p>
-              <p className="font-mono font-semibold">{entry.entryNumber}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Entry Number</p>
+              <p className="font-mono font-semibold dark:text-white">{entry.entryNumber}</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="dark:bg-slate-800">
             <CardContent className="pt-4">
-              <p className="text-xs text-slate-500">Date</p>
-              <p className="font-semibold">{format(new Date(entry.date), 'dd MMM yyyy')}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Date</p>
+              <p className="font-semibold dark:text-white">{format(new Date(entry.date), 'dd MMM yyyy')}</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="dark:bg-slate-800">
             <CardContent className="pt-4">
-              <p className="text-xs text-slate-500">Source</p>
-              <p className="font-semibold">{(entry as any).sourceType || 'manual'}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Source</p>
+              <p className="font-semibold dark:text-white">{(entry as any).sourceType || 'manual'}</p>
               {(entry as any).sourceReference && (
-                <p className="text-xs text-slate-400">{(entry as any).sourceReference}</p>
+                <p className="text-xs text-slate-400 dark:text-slate-500">{(entry as any).sourceReference}</p>
               )}
             </CardContent>
           </Card>
-          <Card>
+          <Card className="dark:bg-slate-800">
             <CardContent className="pt-4">
-              <p className="text-xs text-slate-500">Status</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Status</p>
               <p>{getStatusBadge(entry.status)}</p>
             </CardContent>
           </Card>
         </div>
 
         {/* Journal Lines */}
-        <Card>
+        <Card className="dark:bg-slate-800">
           <CardHeader>
-            <CardTitle>Journal Lines</CardTitle>
-            <CardDescription>
+            <CardTitle className="dark:text-white">Journal Lines</CardTitle>
+            <CardDescription className="dark:text-slate-400">
               Total Debit: {entry.totalDebit.toLocaleString()} | Total Credit: {entry.totalCredit.toLocaleString()}
               {Math.abs(entry.totalDebit - entry.totalCredit) < 0.01 && (
-                <Badge className="ml-2 bg-green-100 text-green-700">Balanced</Badge>
+                <Badge className="ml-2 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">Balanced</Badge>
               )}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Account Code</TableHead>
-                  <TableHead>Account Name</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead className="text-right">Debit</TableHead>
-                  <TableHead className="text-right">Credit</TableHead>
+                <TableRow className="dark:bg-slate-700/50 dark:border-slate-600">
+                  <TableHead className="dark:text-slate-200">Account Code</TableHead>
+                  <TableHead className="dark:text-slate-200">Account Name</TableHead>
+                  <TableHead className="dark:text-slate-200">Description</TableHead>
+                  <TableHead className="text-right dark:text-slate-200">Debit</TableHead>
+                  <TableHead className="text-right dark:text-slate-200">Credit</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {entry.lines.map((line, idx) => (
-                  <TableRow key={idx}>
-                    <TableCell className="font-mono">{line.accountCode}</TableCell>
-                    <TableCell>{line.accountName}</TableCell>
-                    <TableCell className="text-slate-500">{line.description}</TableCell>
-                    <TableCell className="text-right font-mono">
+                  <TableRow key={idx} className="dark:border-slate-600">
+                    <TableCell className="font-mono dark:text-white">{line.accountCode}</TableCell>
+                    <TableCell className="dark:text-slate-300">{line.accountName}</TableCell>
+                    <TableCell className="text-slate-500 dark:text-slate-400">{line.description}</TableCell>
+                    <TableCell className="text-right font-mono dark:text-slate-300">
                       {line.debit > 0 ? line.debit.toLocaleString() : ''}
                     </TableCell>
-                    <TableCell className="text-right font-mono">
+                    <TableCell className="text-right font-mono dark:text-slate-300">
                       {line.credit > 0 ? line.credit.toLocaleString() : ''}
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
               <TableFooter>
-                <TableRow className="font-bold bg-slate-50">
-                  <TableCell colSpan={3}>Total</TableCell>
-                  <TableCell className="text-right font-mono">{entry.totalDebit.toLocaleString()}</TableCell>
-                  <TableCell className="text-right font-mono">{entry.totalCredit.toLocaleString()}</TableCell>
+                <TableRow className="font-bold bg-slate-50 dark:bg-slate-700/50 dark:border-slate-600">
+                  <TableCell colSpan={3} className="dark:text-white">Total</TableCell>
+                  <TableCell className="text-right font-mono dark:text-white">{entry.totalDebit.toLocaleString()}</TableCell>
+                  <TableCell className="text-right font-mono dark:text-white">{entry.totalCredit.toLocaleString()}</TableCell>
                 </TableRow>
               </TableFooter>
             </Table>
@@ -266,24 +266,24 @@ export default function JournalEntryDetailPage() {
 
         {/* Metadata */}
         {entry.notes && (
-          <Card>
-            <CardHeader><CardTitle>Notes</CardTitle></CardHeader>
-            <CardContent><p className="text-sm">{entry.notes}</p></CardContent>
+          <Card className="dark:bg-slate-800">
+            <CardHeader><CardTitle className="dark:text-white">Notes</CardTitle></CardHeader>
+            <CardContent><p className="text-sm dark:text-slate-300">{entry.notes}</p></CardContent>
           </Card>
         )}
 
         {/* Post Dialog */}
         <Dialog open={postDialogOpen} onOpenChange={setPostDialogOpen}>
-          <DialogContent>
+          <DialogContent className="dark:bg-slate-800">
             <DialogHeader>
-              <DialogTitle>Post Journal Entry</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="dark:text-white">Post Journal Entry</DialogTitle>
+              <DialogDescription className="dark:text-slate-400">
                 Posting will finalize this entry and update all account balances. This cannot be undone (use Reverse instead).
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setPostDialogOpen(false)}>Cancel</Button>
-              <Button onClick={handlePost} disabled={actionLoading}>
+              <Button variant="outline" onClick={() => setPostDialogOpen(false)} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">Cancel</Button>
+              <Button onClick={handlePost} disabled={actionLoading} className="dark:bg-primary dark:text-primary-foreground">
                 {actionLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle className="h-4 w-4 mr-2" />}
                 Post Entry
               </Button>
@@ -293,15 +293,15 @@ export default function JournalEntryDetailPage() {
 
         {/* Void Dialog */}
         <Dialog open={voidDialogOpen} onOpenChange={setVoidDialogOpen}>
-          <DialogContent>
+          <DialogContent className="dark:bg-slate-800">
             <DialogHeader>
-              <DialogTitle>Void Journal Entry</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="dark:text-white">Void Journal Entry</DialogTitle>
+              <DialogDescription className="dark:text-slate-400">
                 Voiding will reverse all account balance adjustments for this entry.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setVoidDialogOpen(false)}>Cancel</Button>
+              <Button variant="outline" onClick={() => setVoidDialogOpen(false)} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">Cancel</Button>
               <Button variant="destructive" onClick={handleVoid} disabled={actionLoading}>
                 {actionLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <XCircle className="h-4 w-4 mr-2" />}
                 Void Entry
@@ -312,25 +312,26 @@ export default function JournalEntryDetailPage() {
 
         {/* Reverse Dialog */}
         <Dialog open={reverseDialogOpen} onOpenChange={setReverseDialogOpen}>
-          <DialogContent>
+          <DialogContent className="dark:bg-slate-800">
             <DialogHeader>
-              <DialogTitle>Reverse Journal Entry</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="dark:text-white">Reverse Journal Entry</DialogTitle>
+              <DialogDescription className="dark:text-slate-400">
                 This will create a new entry that reverses all debits and credits.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-2">
-              <Label htmlFor="reason">Reason for reversal</Label>
+              <Label htmlFor="reason" className="dark:text-slate-200">Reason for reversal</Label>
               <Textarea
                 id="reason"
                 value={reverseReason}
                 onChange={(e) => setReverseReason(e.target.value)}
                 placeholder="Optional reason..."
+                className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
               />
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setReverseDialogOpen(false)}>Cancel</Button>
-              <Button onClick={handleReverse} disabled={actionLoading}>
+              <Button variant="outline" onClick={() => setReverseDialogOpen(false)} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">Cancel</Button>
+              <Button onClick={handleReverse} disabled={actionLoading} className="dark:bg-primary dark:text-primary-foreground">
                 {actionLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RotateCcw className="h-4 w-4 mr-2" />}
                 Reverse Entry
               </Button>

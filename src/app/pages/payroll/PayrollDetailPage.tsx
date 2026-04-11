@@ -268,10 +268,21 @@ export default function PayrollDetailPage() {
   const getStatusBadge = (r: PayrollRecord) => {
     const status = r.record_status || r.payment?.status || 'draft';
     const config: Record<string, { className: string }> = {
-      draft: { className: 'bg-gray-100 text-gray-700 border-gray-300' },
-      pending: { className: 'bg-yellow-100 text-yellow-700 border-yellow-300' },
-      finalised: { className: 'bg-blue-100 text-blue-700 border-blue-300' },
-      paid: { className: 'bg-green-100 text-green-700 border-green-300' },
+      draft: { className: 'bg-gray-100 text-gray-700 border-gray-300 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-500' },
+      pending: { className: 'bg-yellow-100 text-yellow-700 border-yellow-300 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-700' },
+      finalised: { className: 'bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-700' },
+      paid: { className: 'bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-400 dark:border-green-700' },
+    };
+    const { className } = config[status] || config.draft;
+    return <Badge variant="outline" className={className}>{status}</Badge>;
+  };
+
+  const getStatusBadgeCalc = (status: string) => {
+    const config: Record<string, { className: string }> = {
+      draft: { className: 'bg-gray-100 text-gray-700 border-gray-300 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-500' },
+      pending: { className: 'bg-yellow-100 text-yellow-700 border-yellow-300 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-700' },
+      finalised: { className: 'bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-700' },
+      paid: { className: 'bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-400 dark:border-green-700' },
     };
     const { className } = config[status] || config.draft;
     return <Badge variant="outline" className={className}>{status}</Badge>;
@@ -288,7 +299,7 @@ export default function PayrollDetailPage() {
     return (
       <Layout>
         <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground dark:text-slate-400" />
         </div>
       </Layout>
     );
@@ -299,9 +310,9 @@ export default function PayrollDetailPage() {
       <Layout>
         <div className="container mx-auto py-6">
           <div className="flex flex-col items-center py-12">
-            <AlertCircle className="h-12 w-12 mb-4 text-muted-foreground" />
-            <p className="text-muted-foreground">Payroll record not found</p>
-            <Button variant="outline" className="mt-4" onClick={() => navigate('/payroll')}>
+            <AlertCircle className="h-12 w-12 mb-4 text-muted-foreground dark:text-slate-400" />
+            <p className="text-muted-foreground dark:text-slate-400">Payroll record not found</p>
+            <Button variant="outline" className="mt-4 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700" onClick={() => navigate('/payroll')}>
               <ArrowLeft className="mr-2 h-4 w-4" /> Back to Payroll
             </Button>
           </div>
@@ -312,34 +323,34 @@ export default function PayrollDetailPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-6 space-y-6">
+      <div className="container mx-auto py-6 space-y-6 bg-gray-50 dark:bg-slate-900 min-h-screen">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={() => navigate('/payroll')}>
+            <Button variant="ghost" onClick={() => navigate('/payroll')} className="dark:text-slate-300 dark:hover:bg-slate-700">
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>
               <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold">
+                <h1 className="text-2xl font-bold dark:text-white">
                   {record.employee.firstName} {record.employee.lastName}
                 </h1>
                 {getStatusBadge(record)}
               </div>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground dark:text-slate-400">
                 Employee ID: {record.employee.employeeId} | {record.period.monthName} {record.period.year}
               </p>
             </div>
           </div>
           <div className="flex gap-2">
             {!editing && canEdit(record) && (
-              <Button variant="outline" onClick={() => setEditing(true)}>
+              <Button variant="outline" onClick={() => setEditing(true)} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
                 <Edit className="mr-2 h-4 w-4" />
                 {t('common.edit')}
               </Button>
             )}
             {canFinalise(record) && (
-              <Button variant="outline" onClick={handleFinalise} disabled={submitting}>
+              <Button variant="outline" onClick={handleFinalise} disabled={submitting} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
                 {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
                 {t('payroll.finaliseSelected') || 'Finalise'}
               </Button>
@@ -529,104 +540,104 @@ export default function PayrollDetailPage() {
           <div className="space-y-6">
             {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-              <Card>
+              <Card className="dark:bg-slate-800">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium flex items-center gap-2">
-                    <User className="h-4 w-4 text-muted-foreground" /> Employee
+                  <CardTitle className="text-sm font-medium flex items-center gap-2 dark:text-slate-200">
+                    <User className="h-4 w-4 text-muted-foreground dark:text-slate-400" /> Employee
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-lg font-bold">{record.employee.firstName} {record.employee.lastName}</div>
-                  <p className="text-xs text-muted-foreground">{record.employee.employeeId}</p>
+                  <div className="text-lg font-bold dark:text-white">{record.employee.firstName} {record.employee.lastName}</div>
+                  <p className="text-xs text-muted-foreground dark:text-slate-400">{record.employee.employeeId}</p>
                 </CardContent>
               </Card>
-              <Card>
+              <Card className="dark:bg-slate-800">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium flex items-center gap-2">
-                    <DollarSign className="h-4 w-4 text-muted-foreground" /> Gross Salary
+                  <CardTitle className="text-sm font-medium flex items-center gap-2 dark:text-slate-200">
+                    <DollarSign className="h-4 w-4 text-muted-foreground dark:text-slate-400" /> Gross Salary
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{formatCurrency(record.salary.grossSalary)}</div>
+                  <div className="text-2xl font-bold dark:text-white">{formatCurrency(record.salary.grossSalary)}</div>
                 </CardContent>
               </Card>
-              <Card>
+              <Card className="dark:bg-slate-800">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-red-600">Total Deductions</CardTitle>
+                  <CardTitle className="text-sm font-medium text-red-600 dark:text-red-400">Total Deductions</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-red-600">{formatCurrency(record.deductions.totalDeductions)}</div>
+                  <div className="text-2xl font-bold text-red-600 dark:text-red-400">{formatCurrency(record.deductions.totalDeductions)}</div>
                 </CardContent>
               </Card>
-              <Card>
+              <Card className="dark:bg-slate-800">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-green-600">Net Pay</CardTitle>
+                  <CardTitle className="text-sm font-medium text-green-600 dark:text-green-400">Net Pay</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-green-600">{formatCurrency(record.netPay)}</div>
+                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">{formatCurrency(record.netPay)}</div>
                 </CardContent>
               </Card>
-              <Card>
+              <Card className="dark:bg-slate-800">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium">Period</CardTitle>
+                  <CardTitle className="text-sm font-medium dark:text-slate-200">Period</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-lg font-bold">{record.period.monthName} {record.period.year}</div>
+                  <div className="text-lg font-bold dark:text-white">{record.period.monthName} {record.period.year}</div>
                 </CardContent>
               </Card>
             </div>
 
             {/* Employee Details */}
-            <Card>
+            <Card className="dark:bg-slate-800">
               <CardHeader>
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <CardTitle className="text-sm font-medium flex items-center gap-2 dark:text-white">
                   <User className="h-4 w-4" /> Employee Details
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
-                    <p className="text-xs text-muted-foreground">Full Name</p>
-                    <p className="font-medium">{record.employee.firstName} {record.employee.lastName}</p>
+                    <p className="text-xs text-muted-foreground dark:text-slate-400">Full Name</p>
+                    <p className="font-medium dark:text-white">{record.employee.firstName} {record.employee.lastName}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Employee ID</p>
-                    <p className="font-medium">{record.employee.employeeId}</p>
+                    <p className="text-xs text-muted-foreground dark:text-slate-400">Employee ID</p>
+                    <p className="font-medium dark:text-white">{record.employee.employeeId}</p>
                   </div>
                   {record.employee.email && (
                     <div>
-                      <p className="text-xs text-muted-foreground">Email</p>
-                      <p className="font-medium">{record.employee.email}</p>
+                      <p className="text-xs text-muted-foreground dark:text-slate-400">Email</p>
+                      <p className="font-medium dark:text-white">{record.employee.email}</p>
                     </div>
                   )}
                   {record.employee.phone && (
                     <div>
-                      <p className="text-xs text-muted-foreground">Phone</p>
-                      <p className="font-medium">{record.employee.phone}</p>
+                      <p className="text-xs text-muted-foreground dark:text-slate-400">Phone</p>
+                      <p className="font-medium dark:text-white">{record.employee.phone}</p>
                     </div>
                   )}
                   {record.employee.department && (
                     <div>
-                      <p className="text-xs text-muted-foreground">Department</p>
-                      <p className="font-medium">{record.employee.department}</p>
+                      <p className="text-xs text-muted-foreground dark:text-slate-400">Department</p>
+                      <p className="font-medium dark:text-white">{record.employee.department}</p>
                     </div>
                   )}
                   {record.employee.position && (
                     <div>
-                      <p className="text-xs text-muted-foreground">Position</p>
-                      <p className="font-medium">{record.employee.position}</p>
+                      <p className="text-xs text-muted-foreground dark:text-slate-400">Position</p>
+                      <p className="font-medium dark:text-white">{record.employee.position}</p>
                     </div>
                   )}
                   {record.employee.nationalId && (
                     <div>
-                      <p className="text-xs text-muted-foreground">National ID</p>
-                      <p className="font-medium">{record.employee.nationalId}</p>
+                      <p className="text-xs text-muted-foreground dark:text-slate-400">National ID</p>
+                      <p className="font-medium dark:text-white">{record.employee.nationalId}</p>
                     </div>
                   )}
                   {record.employee.bankName && (
                     <div>
-                      <p className="text-xs text-muted-foreground">Bank</p>
-                      <p className="font-medium">{record.employee.bankName} - {record.employee.bankAccount}</p>
+                      <p className="text-xs text-muted-foreground dark:text-slate-400">Bank</p>
+                      <p className="font-medium dark:text-white">{record.employee.bankName} - {record.employee.bankAccount}</p>
                     </div>
                   )}
                 </div>
@@ -634,78 +645,78 @@ export default function PayrollDetailPage() {
             </Card>
 
             {/* Salary Breakdown */}
-            <Card>
+            <Card className="dark:bg-slate-800">
               <CardHeader>
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <CardTitle className="text-sm font-medium flex items-center gap-2 dark:text-white">
                   <DollarSign className="h-4 w-4" /> Salary Breakdown
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
-                    <p className="text-xs text-muted-foreground">Basic Salary</p>
-                    <p className="font-medium">{formatCurrency(record.salary.basicSalary)}</p>
+                    <p className="text-xs text-muted-foreground dark:text-slate-400">Basic Salary</p>
+                    <p className="font-medium dark:text-white">{formatCurrency(record.salary.basicSalary)}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Transport Allowance</p>
-                    <p className="font-medium">{formatCurrency(record.salary.transportAllowance)}</p>
+                    <p className="text-xs text-muted-foreground dark:text-slate-400">Transport Allowance</p>
+                    <p className="font-medium dark:text-white">{formatCurrency(record.salary.transportAllowance)}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Housing Allowance</p>
-                    <p className="font-medium">{formatCurrency(record.salary.housingAllowance)}</p>
+                    <p className="text-xs text-muted-foreground dark:text-slate-400">Housing Allowance</p>
+                    <p className="font-medium dark:text-white">{formatCurrency(record.salary.housingAllowance)}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Other Allowances</p>
-                    <p className="font-medium">{formatCurrency(record.salary.otherAllowances)}</p>
+                    <p className="text-xs text-muted-foreground dark:text-slate-400">Other Allowances</p>
+                    <p className="font-medium dark:text-white">{formatCurrency(record.salary.otherAllowances)}</p>
                   </div>
                   <div className="col-span-2">
-                    <p className="text-xs text-muted-foreground">Gross Salary</p>
-                    <p className="font-bold text-lg">{formatCurrency(record.salary.grossSalary)}</p>
+                    <p className="text-xs text-muted-foreground dark:text-slate-400">Gross Salary</p>
+                    <p className="font-bold text-lg dark:text-white">{formatCurrency(record.salary.grossSalary)}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             {/* Deductions & Contributions */}
-            <Card>
+            <Card className="dark:bg-slate-800">
               <CardHeader>
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <CardTitle className="text-sm font-medium flex items-center gap-2 dark:text-white">
                   <TrendingDown className="h-4 w-4" /> Deductions & Contributions
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
-                    <p className="text-xs text-muted-foreground">PAYE</p>
-                    <p className="font-medium text-red-600">{formatCurrency(record.deductions.paye)}</p>
+                    <p className="text-xs text-muted-foreground dark:text-slate-400">PAYE</p>
+                    <p className="font-medium text-red-600 dark:text-red-400">{formatCurrency(record.deductions.paye)}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">RSSB Employee Pension (6%)</p>
-                    <p className="font-medium text-orange-600">{formatCurrency(record.deductions.rssbEmployeePension)}</p>
+                    <p className="text-xs text-muted-foreground dark:text-slate-400">RSSB Employee Pension (6%)</p>
+                    <p className="font-medium text-orange-600 dark:text-orange-400">{formatCurrency(record.deductions.rssbEmployeePension)}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">RSSB Employee Maternity (0.3%)</p>
-                    <p className="font-medium text-orange-600">{formatCurrency(record.deductions.rssbEmployeeMaternity)}</p>
+                    <p className="text-xs text-muted-foreground dark:text-slate-400">RSSB Employee Maternity (0.3%)</p>
+                    <p className="font-medium text-orange-600 dark:text-orange-400">{formatCurrency(record.deductions.rssbEmployeeMaternity)}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Total Deductions</p>
-                    <p className="font-bold text-red-700">{formatCurrency(record.deductions.totalDeductions)}</p>
+                    <p className="text-xs text-muted-foreground dark:text-slate-400">Total Deductions</p>
+                    <p className="font-bold text-red-700 dark:text-red-400">{formatCurrency(record.deductions.totalDeductions)}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">RSSB Employer Pension (6%)</p>
-                    <p className="font-medium text-blue-600">{formatCurrency(record.contributions?.rssbEmployerPension || 0)}</p>
+                    <p className="text-xs text-muted-foreground dark:text-slate-400">RSSB Employer Pension (6%)</p>
+                    <p className="font-medium text-blue-600 dark:text-blue-400">{formatCurrency(record.contributions?.rssbEmployerPension || 0)}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">RSSB Employer Maternity (0.3%)</p>
-                    <p className="font-medium text-blue-600">{formatCurrency(record.contributions?.rssbEmployerMaternity || 0)}</p>
+                    <p className="text-xs text-muted-foreground dark:text-slate-400">RSSB Employer Maternity (0.3%)</p>
+                    <p className="font-medium text-blue-600 dark:text-blue-400">{formatCurrency(record.contributions?.rssbEmployerMaternity || 0)}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Occupational Hazard (2%)</p>
-                    <p className="font-medium text-blue-600">{formatCurrency(record.contributions?.occupationalHazard || 0)}</p>
+                    <p className="text-xs text-muted-foreground dark:text-slate-400">Occupational Hazard (2%)</p>
+                    <p className="font-medium text-blue-600 dark:text-blue-400">{formatCurrency(record.contributions?.occupationalHazard || 0)}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground font-bold">Net Pay</p>
-                    <p className="font-bold text-lg text-green-600">{formatCurrency(record.netPay)}</p>
+                    <p className="text-xs text-muted-foreground font-bold dark:text-slate-400">Net Pay</p>
+                    <p className="font-bold text-lg text-green-600 dark:text-green-400">{formatCurrency(record.netPay)}</p>
                   </div>
                 </div>
               </CardContent>
@@ -713,12 +724,12 @@ export default function PayrollDetailPage() {
 
             {/* Notes */}
             {record.notes && (
-              <Card>
+              <Card className="dark:bg-slate-800">
                 <CardHeader>
-                  <CardTitle className="text-sm font-medium">Notes</CardTitle>
+                  <CardTitle className="text-sm font-medium dark:text-white">Notes</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground">{record.notes}</p>
+                  <p className="text-sm text-muted-foreground dark:text-slate-400">{record.notes}</p>
                 </CardContent>
               </Card>
             )}
@@ -726,17 +737,17 @@ export default function PayrollDetailPage() {
         )}
 
         {/* Delete Confirmation */}
-        <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-          <DialogContent>
+<Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <DialogContent className="dark:bg-slate-800">
             <DialogHeader>
-              <DialogTitle>{t('common.delete')}</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="dark:text-white">{t('common.delete')}</DialogTitle>
+              <DialogDescription className="dark:text-slate-400">
                 Are you sure you want to delete the payroll record for{' '}
                 <strong>{record.employee.firstName} {record.employee.lastName}</strong>?
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>{t('common.cancel')}</Button>
+              <Button variant="outline" onClick={() => setShowDeleteDialog(false)} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">{t('common.cancel')}</Button>
               <Button variant="destructive" onClick={handleDelete} disabled={submitting}>
                 {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {t('common.delete')}

@@ -6,7 +6,7 @@ import {
   ArrowLeft,
   Edit,
   Trash2,
-  RefreshCcw,
+  RotateCcw,
   Loader2,
   Receipt,
   Calendar,
@@ -16,6 +16,7 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
+  Clock,
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Badge } from '@/app/components/ui/badge';
@@ -276,13 +277,13 @@ export default function ExpenseDetailPage() {
   };
 
   const getStatusBadge = (status: string) => {
-    const config: Record<string, { variant: string; className: string; icon: React.ReactNode }> = {
-      pending: { variant: 'outline', className: 'bg-yellow-500', icon: <AlertCircle className="h-3 w-3" /> },
-      approved: { variant: 'default', className: 'bg-green-500', icon: <CheckCircle className="h-3 w-3" /> },
-      rejected: { variant: 'destructive', className: 'bg-red-500', icon: <XCircle className="h-3 w-3" /> },
-      posted: { variant: 'default', className: 'bg-green-500', icon: <CheckCircle className="h-3 w-3" /> },
-      reversed: { variant: 'secondary', className: 'bg-orange-500', icon: <RefreshCcw className="h-3 w-3" /> },
-      cancelled: { variant: 'outline', className: 'bg-gray-500', icon: <XCircle className="h-3 w-3" /> },
+    const config: Record<string, { variant: string; className: string; icon: React.ReactElement }> = {
+      pending: { variant: 'outline', className: 'bg-yellow-500 text-white dark:bg-yellow-600', icon: <Clock className="h-3 w-3" /> },
+      approved: { variant: 'default', className: 'bg-green-500 dark:bg-green-600', icon: <CheckCircle className="h-3 w-3" /> },
+      rejected: { variant: 'destructive', className: '', icon: <XCircle className="h-3 w-3" /> },
+      posted: { variant: 'default', className: 'bg-green-500 dark:bg-green-600', icon: <CheckCircle className="h-3 w-3" /> },
+      reversed: { variant: 'secondary', className: 'bg-orange-500 text-white dark:bg-orange-600', icon: <RotateCcw className="h-3 w-3" /> },
+      cancelled: { variant: 'outline', className: 'bg-gray-500 dark:bg-gray-600', icon: <XCircle className="h-3 w-3" /> },
     };
     const { variant, className, icon } = config[status] || config.posted;
     return (
@@ -297,14 +298,14 @@ export default function ExpenseDetailPage() {
 
   const getPaymentMethodBadge = (method: string) => {
     const config: Record<string, { variant: string; className: string }> = {
-      bank: { variant: 'default', className: 'bg-blue-500' },
-      cash: { variant: 'secondary', className: 'bg-green-500' },
-      bank_transfer: { variant: 'outline', className: 'bg-blue-600' },
-      cheque: { variant: 'outline', className: 'bg-purple-500' },
-      mobile_money: { variant: 'outline', className: 'bg-yellow-500' },
-      credit_card: { variant: 'outline', className: 'bg-pink-500' },
-      petty_cash: { variant: 'outline', className: 'bg-orange-500' },
-      payable: { variant: 'outline', className: 'bg-gray-500' },
+      bank: { variant: 'default', className: 'bg-blue-500 dark:bg-blue-600' },
+      cash: { variant: 'secondary', className: 'bg-green-500 dark:bg-green-600' },
+      bank_transfer: { variant: 'outline', className: 'bg-blue-600 dark:bg-blue-700' },
+      cheque: { variant: 'outline', className: 'bg-purple-500 dark:bg-purple-600' },
+      mobile_money: { variant: 'outline', className: 'bg-yellow-500 dark:bg-yellow-600' },
+      credit_card: { variant: 'outline', className: 'bg-pink-500 dark:bg-pink-600' },
+      petty_cash: { variant: 'outline', className: 'bg-orange-500 dark:bg-orange-600' },
+      payable: { variant: 'outline', className: 'bg-gray-500 dark:bg-gray-600' },
     };
     const { variant, className } = config[method] || { variant: 'outline', className: '' };
     return <Badge variant={variant as any} className={className}>{method}</Badge>;
@@ -314,7 +315,7 @@ export default function ExpenseDetailPage() {
     return (
       <Layout>
         <div className="flex items-center justify-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin" />
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground dark:text-slate-400" />
         </div>
       </Layout>
     );
@@ -326,18 +327,18 @@ export default function ExpenseDetailPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-6">
+      <div className="container mx-auto py-6 bg-gray-50 dark:bg-slate-900 min-h-screen">
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/expenses')}>
+          <Button variant="ghost" size="icon" onClick={() => navigate('/expenses')} className="dark:text-slate-300 dark:hover:bg-slate-700">
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex-1">
             <div className="flex items-center gap-3">
-              <Receipt className="h-8 w-8 text-indigo-600" />
+              <Receipt className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
               <div>
-                <h1 className="text-3xl font-bold">{expense.reference}</h1>
-                <p className="text-muted-foreground">{expense.description}</p>
+                <h1 className="text-3xl font-bold dark:text-white">{expense.reference}</h1>
+                <p className="text-muted-foreground dark:text-slate-400">{expense.description}</p>
               </div>
             </div>
           </div>
@@ -345,11 +346,11 @@ export default function ExpenseDetailPage() {
             {/* Approval buttons */}
             {expense.status === 'pending' && (
               <>
-                <Button variant="outline" onClick={handleApprove} disabled={submitting} className="text-green-600 border-green-600 hover:bg-green-50">
+                <Button variant="outline" onClick={handleApprove} disabled={submitting} className="text-green-600 border-green-600 hover:bg-green-50 dark:text-green-400 dark:border-green-400 dark:hover:bg-green-900/20">
                   <CheckCircle className="mr-2 h-4 w-4" />
                   Approve
                 </Button>
-                <Button variant="outline" onClick={() => setReverseDialogOpen(true)} disabled={submitting} className="text-red-600 border-red-600 hover:bg-red-50">
+                <Button variant="outline" onClick={() => setReverseDialogOpen(true)} disabled={submitting} className="text-red-600 border-red-600 hover:bg-red-50 dark:text-red-400 dark:border-red-400 dark:hover:bg-red-900/20">
                   <XCircle className="mr-2 h-4 w-4" />
                   Reject
                 </Button>
@@ -357,15 +358,15 @@ export default function ExpenseDetailPage() {
             )}
 
             {expense.status === 'approved' && (
-               <Button variant="outline" onClick={() => handlePost()} disabled={submitting} className="text-blue-600 border-blue-600 hover:bg-blue-50">
-                 <CheckCircle className="mr-2 h-4 w-4" />
-                 Post Expense
-               </Button>
+              <Button variant="outline" onClick={() => handlePost()} disabled={submitting} className="text-blue-600 border-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-400 dark:hover:bg-blue-900/20">
+                <CheckCircle className="mr-2 h-4 w-4" />
+                Post Expense
+              </Button>
             )}
             
             {/* Edit button */}
             {expense.status === 'pending' && (
-              <Button variant="outline" onClick={() => setEditDialogOpen(true)}>
+              <Button variant="outline" onClick={() => setEditDialogOpen(true)} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
                 <Edit className="mr-2 h-4 w-4" />
                 Edit
               </Button>
@@ -383,58 +384,58 @@ export default function ExpenseDetailPage() {
 
         {/* Status Banner */}
         {expense.status === 'pending' && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6 flex items-center gap-3">
-            <AlertCircle className="h-5 w-5 text-yellow-600" />
-            <p className="text-yellow-800">This expense is pending approval and has not been posted to the ledger.</p>
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4 mb-6 flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+            <p className="text-yellow-800 dark:text-yellow-300">This expense is pending approval and has not been posted to the ledger.</p>
           </div>
         )}
 
         {expense.status === 'reversed' && (
-          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6 flex items-center gap-3">
-            <RefreshCcw className="h-5 w-5 text-orange-600" />
-            <p className="text-orange-800">This expense has been reversed. A reversing journal entry has been created.</p>
+          <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700 rounded-lg p-4 mb-6 flex items-center gap-3">
+            <RotateCcw className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+            <p className="text-orange-800 dark:text-orange-300">This expense has been reversed. A reversing journal entry has been created.</p>
           </div>
         )}
 
         {expense.status === 'cancelled' && (
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6 flex items-center gap-3">
-            <XCircle className="h-5 w-5 text-gray-600" />
-            <p className="text-gray-800">This expense has been cancelled.</p>
+          <div className="bg-gray-50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-6 flex items-center gap-3">
+            <XCircle className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+            <p className="text-gray-800 dark:text-gray-300">This expense has been cancelled.</p>
           </div>
         )}
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <Card>
+          <Card className="dark:bg-slate-800">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Status</CardTitle>
+              <CardTitle className="text-sm font-medium dark:text-white">Status</CardTitle>
             </CardHeader>
             <CardContent>
               {getStatusBadge(expense.status)}
             </CardContent>
           </Card>
-          <Card>
+          <Card className="dark:bg-slate-800">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Net Amount</CardTitle>
+              <CardTitle className="text-sm font-medium dark:text-white">Net Amount</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(expense.amount)}</div>
+              <div className="text-2xl font-bold dark:text-white">{formatCurrency(expense.amount)}</div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="dark:bg-slate-800">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Tax Amount</CardTitle>
+              <CardTitle className="text-sm font-medium dark:text-white">Tax Amount</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-orange-600">{formatCurrency(expense.taxAmount)}</div>
+              <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{formatCurrency(expense.taxAmount)}</div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="dark:bg-slate-800">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Total Amount</CardTitle>
+              <CardTitle className="text-sm font-medium dark:text-white">Total Amount</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600">{formatCurrency(expense.totalAmount)}</div>
+              <div className="text-2xl font-bold text-red-600 dark:text-red-400">{formatCurrency(expense.totalAmount)}</div>
             </CardContent>
           </Card>
         </div>
@@ -442,78 +443,78 @@ export default function ExpenseDetailPage() {
         {/* Details Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           {/* General Information */}
-          <Card>
+          <Card className="dark:bg-slate-800">
             <CardHeader>
-              <CardTitle>Expense Details</CardTitle>
+              <CardTitle className="dark:text-white">Expense Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-muted-foreground text-sm">Date</Label>
+                  <Label className="text-muted-foreground text-sm dark:text-slate-400">Date</Label>
                   <div className="flex items-center gap-2 mt-1">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span>{formatDate(expense.date)}</span>
+                    <Calendar className="h-4 w-4 text-muted-foreground dark:text-slate-400" />
+                    <span className="dark:text-slate-200">{formatDate(expense.date)}</span>
                   </div>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground text-sm">Payment Method</Label>
+                  <Label className="text-muted-foreground text-sm dark:text-slate-400">Payment Method</Label>
                   <div className="mt-1">{getPaymentMethodBadge(expense.method)}</div>
                 </div>
               </div>
 
               <div>
-                <Label className="text-muted-foreground text-sm">Description</Label>
-                <p className="mt-1">{expense.description}</p>
+                <Label className="text-muted-foreground text-sm dark:text-slate-400">Description</Label>
+                <p className="mt-1 dark:text-slate-200">{expense.description}</p>
               </div>
 
               {expense.notes && (
                 <div>
-                  <Label className="text-muted-foreground text-sm">Notes</Label>
-                  <p className="mt-1">{expense.notes}</p>
+                  <Label className="text-muted-foreground text-sm dark:text-slate-400">Notes</Label>
+                  <p className="mt-1 dark:text-slate-200">{expense.notes}</p>
                 </div>
               )}
 
               {expense.type && (
                 <div>
-                  <Label className="text-muted-foreground text-sm">Type</Label>
-                  <p className="mt-1 capitalize">{expense.type.replace(/_/g, ' ')}</p>
+                  <Label className="text-muted-foreground text-sm dark:text-slate-400">Type</Label>
+                  <p className="mt-1 capitalize dark:text-slate-200">{expense.type.replace(/_/g, ' ')}</p>
                 </div>
               )}
             </CardContent>
           </Card>
 
           {/* Account Information */}
-          <Card>
+          <Card className="dark:bg-slate-800">
             <CardHeader>
-              <CardTitle>Account Information</CardTitle>
+              <CardTitle className="dark:text-white">Account Information</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label className="text-muted-foreground text-sm">Expense Account</Label>
+                <Label className="text-muted-foreground text-sm dark:text-slate-400">Expense Account</Label>
                 {expense.account ? (
                   <div className="mt-1">
-                    <div className="font-semibold">{expense.account.code}</div>
-                    <div className="text-sm text-muted-foreground">{expense.account.name}</div>
+                    <div className="font-semibold dark:text-white">{expense.account.code}</div>
+                    <div className="text-sm text-muted-foreground dark:text-slate-400">{expense.account.name}</div>
                   </div>
                 ) : (
-                  <p className="mt-1 text-muted-foreground">Not specified</p>
+                  <p className="mt-1 text-muted-foreground dark:text-slate-400">Not specified</p>
                 )}
               </div>
 
               {expense.bankAccount && (
                 <div>
-                  <Label className="text-muted-foreground text-sm">Bank Account</Label>
+                  <Label className="text-muted-foreground text-sm dark:text-slate-400">Bank Account</Label>
                   <div className="mt-1">
-                    <div className="font-semibold">{expense.bankAccount.code}</div>
-                    <div className="text-sm text-muted-foreground">{expense.bankAccount.name}</div>
+                    <div className="font-semibold dark:text-white">{expense.bankAccount.code}</div>
+                    <div className="text-sm text-muted-foreground dark:text-slate-400">{expense.bankAccount.name}</div>
                   </div>
                 </div>
               )}
 
               {expense.pettyCashFund && (
                 <div>
-                  <Label className="text-muted-foreground text-sm">Petty Cash Fund</Label>
-                  <p className="mt-1">{expense.pettyCashFund.name}</p>
+                  <Label className="text-muted-foreground text-sm dark:text-slate-400">Petty Cash Fund</Label>
+                  <p className="mt-1 dark:text-slate-200">{expense.pettyCashFund.name}</p>
                 </div>
               )}
 
@@ -564,54 +565,57 @@ export default function ExpenseDetailPage() {
 
         {/* Edit Dialog */}
         <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl dark:bg-slate-800">
             <DialogHeader>
-              <DialogTitle>Edit Expense</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="dark:text-white">Edit Expense</DialogTitle>
+              <DialogDescription className="dark:text-slate-400">
                 Update the expense details. Fields marked with * are required.
               </DialogDescription>
             </DialogHeader>
             <div className="grid grid-cols-2 gap-4 py-4">
               <div className="space-y-2 col-span-2">
-                <Label>Description *</Label>
+                <Label className="dark:text-slate-200">Description *</Label>
                 <Input
                   placeholder="Enter expense description"
                   value={editForm.description}
                   onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                 />
               </div>
               <div className="space-y-2">
-                <Label>Amount (Net) *</Label>
+                <Label className="dark:text-slate-200">Amount (Net) *</Label>
                 <Input
                   type="number"
                   step="0.01"
                   placeholder="0.00"
                   value={editForm.amount || ''}
                   onChange={(e) => setEditForm({ ...editForm, amount: parseFloat(e.target.value) || 0 })}
+                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                 />
               </div>
               <div className="space-y-2">
-                <Label>Tax Amount</Label>
+                <Label className="dark:text-slate-200">Tax Amount</Label>
                 <Input
                   type="number"
                   step="0.01"
                   placeholder="0.00"
                   value={editForm.taxAmount || ''}
                   onChange={(e) => setEditForm({ ...editForm, taxAmount: parseFloat(e.target.value) || 0 })}
+                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                 />
               </div>
               <div className="space-y-2">
-                <Label>Expense Account *</Label>
+                <Label className="dark:text-slate-200">Expense Account *</Label>
                 <Select
                   value={editForm.expenseAccountId}
                   onValueChange={(value) => setEditForm({ ...editForm, expenseAccountId: value })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
                     <SelectValue placeholder="Select account" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="dark:bg-slate-800">
                     {expenseAccounts.map((account) => (
-                      <SelectItem key={account._id} value={account._id}>
+                      <SelectItem key={account._id} value={account._id} className="dark:text-slate-200">
                         {account.code} - {account.name}
                       </SelectItem>
                     ))}
@@ -619,38 +623,38 @@ export default function ExpenseDetailPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Payment Method *</Label>
+                <Label className="dark:text-slate-200">Payment Method *</Label>
                 <Select
                   value={editForm.paymentMethod}
                   onValueChange={(value) => setEditForm({ ...editForm, paymentMethod: value })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
                     <SelectValue placeholder="Select method" />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="bank">Bank</SelectItem>
-                    <SelectItem value="cash">Cash</SelectItem>
-                    <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                    <SelectItem value="cheque">Cheque</SelectItem>
-                    <SelectItem value="mobile_money">Mobile Money</SelectItem>
-                    <SelectItem value="credit_card">Credit Card</SelectItem>
-                    <SelectItem value="petty_cash">Petty Cash</SelectItem>
-                    <SelectItem value="payable">Payable</SelectItem>
+                  <SelectContent className="dark:bg-slate-800">
+                    <SelectItem value="bank" className="dark:text-slate-200">Bank</SelectItem>
+                    <SelectItem value="cash" className="dark:text-slate-200">Cash</SelectItem>
+                    <SelectItem value="bank_transfer" className="dark:text-slate-200">Bank Transfer</SelectItem>
+                    <SelectItem value="cheque" className="dark:text-slate-200">Cheque</SelectItem>
+                    <SelectItem value="mobile_money" className="dark:text-slate-200">Mobile Money</SelectItem>
+                    <SelectItem value="credit_card" className="dark:text-slate-200">Credit Card</SelectItem>
+                    <SelectItem value="petty_cash" className="dark:text-slate-200">Petty Cash</SelectItem>
+                    <SelectItem value="payable" className="dark:text-slate-200">Payable</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Bank Account</Label>
+                <Label className="dark:text-slate-200">Bank Account</Label>
                 <Select
                   value={editForm.bankAccountId}
                   onValueChange={(value) => setEditForm({ ...editForm, bankAccountId: value })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
                     <SelectValue placeholder="Select bank account" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="dark:bg-slate-800">
                     {bankAccounts.map((account) => (
-                      <SelectItem key={account._id} value={account._id}>
+                      <SelectItem key={account._id} value={account._id} className="dark:text-slate-200">
                         {account.accountName} - {account.bankName}
                       </SelectItem>
                     ))}
@@ -658,56 +662,59 @@ export default function ExpenseDetailPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Expense Date *</Label>
+                <Label className="dark:text-slate-200">Expense Date *</Label>
                 <Input
                   type="date"
                   value={editForm.expenseDate}
                   onChange={(e) => setEditForm({ ...editForm, expenseDate: e.target.value })}
+                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                 />
               </div>
               <div className="space-y-2">
-                <Label>Type</Label>
+                <Label className="dark:text-slate-200">Type</Label>
                 <Select
                   value={editForm.type}
                   onValueChange={(value) => setEditForm({ ...editForm, type: value })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="salaries_wages">Salaries & Wages</SelectItem>
-                    <SelectItem value="rent">Rent</SelectItem>
-                    <SelectItem value="utilities">Utilities</SelectItem>
-                    <SelectItem value="transport_delivery">Transport & Delivery</SelectItem>
-                    <SelectItem value="marketing_advertising">Marketing & Advertising</SelectItem>
-                    <SelectItem value="other_expense">Other Expense</SelectItem>
-                    <SelectItem value="interest_income">Interest Income</SelectItem>
-                    <SelectItem value="other_income">Other Income</SelectItem>
+                  <SelectContent className="dark:bg-slate-800">
+                    <SelectItem value="salaries_wages" className="dark:text-slate-200">Salaries & Wages</SelectItem>
+                    <SelectItem value="rent" className="dark:text-slate-200">Rent</SelectItem>
+                    <SelectItem value="utilities" className="dark:text-slate-200">Utilities</SelectItem>
+                    <SelectItem value="transport_delivery" className="dark:text-slate-200">Transport & Delivery</SelectItem>
+                    <SelectItem value="marketing_advertising" className="dark:text-slate-200">Marketing & Advertising</SelectItem>
+                    <SelectItem value="other_expense" className="dark:text-slate-200">Other Expense</SelectItem>
+                    <SelectItem value="interest_income" className="dark:text-slate-200">Interest Income</SelectItem>
+                    <SelectItem value="other_income" className="dark:text-slate-200">Other Income</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Reference</Label>
+                <Label className="dark:text-slate-200">Reference</Label>
                 <Input
                   placeholder="Reference number"
                   value={editForm.reference}
                   onChange={(e) => setEditForm({ ...editForm, reference: e.target.value })}
+                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                 />
               </div>
               <div className="space-y-2 col-span-2">
-                <Label>Notes</Label>
+                <Label className="dark:text-slate-200">Notes</Label>
                 <Input
                   placeholder="Additional notes"
                   value={editForm.notes}
                   onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                 />
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              <Button variant="outline" onClick={() => setEditDialogOpen(false)} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
                 Cancel
               </Button>
-              <Button onClick={handleUpdate} disabled={submitting}>
+              <Button onClick={handleUpdate} disabled={submitting} className="dark:bg-primary dark:text-primary-foreground">
                 {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Update Expense
               </Button>
@@ -717,15 +724,15 @@ export default function ExpenseDetailPage() {
 
         {/* Delete Dialog */}
         <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <DialogContent>
+          <DialogContent className="dark:bg-slate-800">
             <DialogHeader>
-              <DialogTitle>Cancel Expense</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="dark:text-white">Cancel Expense</DialogTitle>
+              <DialogDescription className="dark:text-slate-400">
                 Are you sure you want to cancel this expense? This will mark it as cancelled and reverse any associated journal entries.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
                 No, Keep It
               </Button>
               <Button variant="destructive" onClick={handleDelete} disabled={submitting}>
@@ -738,10 +745,10 @@ export default function ExpenseDetailPage() {
 
         {/* Reverse Dialog */}
         <Dialog open={reverseDialogOpen} onOpenChange={setReverseDialogOpen}>
-          <DialogContent>
+          <DialogContent className="dark:bg-slate-800">
             <DialogHeader>
-              <DialogTitle>Reverse Expense</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="dark:text-white">Reverse Expense</DialogTitle>
+              <DialogDescription className="dark:text-slate-400">
                 Please provide a reason for reversing this expense. A reversing journal entry will be created.
               </DialogDescription>
             </DialogHeader>
@@ -765,18 +772,18 @@ function ReverseForm({ onSubmit, loading, onClose }: { onSubmit: (reason: string
   return (
     <form onSubmit={handleSubmit}>
       <div className="py-4">
-        <Label htmlFor="reverseReason">Reason for Reversal *</Label>
+        <Label htmlFor="reverseReason" className="dark:text-slate-200">Reason for Reversal *</Label>
         <Input
           id="reverseReason"
           placeholder="Enter reason for reversal"
           value={reason}
           onChange={(e) => setReason(e.target.value)}
-          className="mt-2"
+          className="mt-2 dark:bg-slate-700 dark:text-white dark:border-slate-600"
           required
         />
       </div>
       <DialogFooter>
-        <Button type="button" variant="outline" onClick={onClose}>
+        <Button type="button" variant="outline" onClick={onClose} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
           Cancel
         </Button>
         <Button type="submit" variant="destructive" disabled={loading || !reason}>

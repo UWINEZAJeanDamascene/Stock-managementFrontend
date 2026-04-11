@@ -9,11 +9,14 @@ export interface User {
   email: string;
   role: string;
   company?: string;
+  avatar?: string;
+  phone?: string;
+  jobTitle?: string;
+  bio?: string;
   isActive?: boolean;
   lastLogin?: string;
   mustChangePassword?: boolean;
   permissions?: string[];
-  [key: string]: unknown;
 }
 
 export interface Company {
@@ -21,9 +24,9 @@ export interface Company {
   id?: string;
   name: string;
   email?: string;
+  logo_url?: string;
   isActive?: boolean;
   approvalStatus?: string;
-  [key: string]: unknown;
 }
 
 // Membership from login response

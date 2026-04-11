@@ -1,7 +1,13 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router';
-import { fixedAssetsApi, FixedAsset, DepreciationScheduleItem, DepreciationEntry } from '@/lib/api';
-import { Layout } from '../../layout/Layout';
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router";
+import {
+  fixedAssetsApi,
+  bankAccountsApi,
+  FixedAsset,
+  DepreciationScheduleItem,
+  DepreciationEntry,
+} from "@/lib/api";
+import { Layout } from "../../layout/Layout";
 import {
   ArrowLeft,
   Loader2,
@@ -15,11 +21,23 @@ import {
   Plus,
   Pencil,
   RefreshCw,
-} from 'lucide-react';
-import { Button } from '@/app/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/app/components/ui/card';
-import { Badge } from '@/app/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs';
+  Shield,
+} from "lucide-react";
+import { Button } from "@/app/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/app/components/ui/card";
+import { Badge } from "@/app/components/ui/badge";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/app/components/ui/tabs";
 import {
   Table,
   TableBody,
@@ -27,7 +45,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/app/components/ui/table';
+} from "@/app/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -35,11 +53,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/app/components/ui/dialog';
-import { Input } from '@/app/components/ui/input';
-import { Label } from '@/app/components/ui/label';
-import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+} from "@/app/components/ui/dialog";
+import { Input } from "@/app/components/ui/input";
+import { Label } from "@/app/components/ui/label";
+import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 
 export default function AssetDetailPage() {
   const { t } = useTranslation();
@@ -49,30 +67,46 @@ export default function AssetDetailPage() {
   const [loading, setLoading] = useState(true);
   const [asset, setAsset] = useState<FixedAsset | null>(null);
   const [schedule, setSchedule] = useState<DepreciationScheduleItem[]>([]);
-  const [depreciationEntries, setDepreciationEntries] = useState<DepreciationEntry[]>([]);
-  const [activeTab, setActiveTab] = useState('details');
+  const [depreciationEntries, setDepreciationEntries] = useState<
+    DepreciationEntry[]
+  >([]);
+  const [activeTab, setActiveTab] = useState("details");
 
   // Depreciation dialog
   const [depreciateDialogOpen, setDepreciateDialogOpen] = useState(false);
-  const [depreciateDate, setDepreciateDate] = useState(new Date().toISOString().split('T')[0]);
+  const [depreciateDate, setDepreciateDate] = useState(
+    new Date().toISOString().split("T")[0],
+  );
   const [depreciating, setDepreciating] = useState(false);
   const [depreciationPreview, setDepreciationPreview] = useState<any>(null);
 
   // Disposal dialog
   const [disposeDialogOpen, setDisposeDialogOpen] = useState(false);
   const [disposalForm, setDisposalForm] = useState({
-    disposalDate: new Date().toISOString().split('T')[0],
+    disposalDate: new Date().toISOString().split("T")[0],
     disposalProceeds: 0,
-    disposalMethod: 'sold',
-    notes: '',
+    disposalMethod: "sold",
+    bankAccountId: "",
+    notes: "",
   });
+  const [bankAccounts, setBankAccounts] = useState<any[]>([]);
   const [disposing, setDisposing] = useState(false);
 
   useEffect(() => {
     if (id) {
       fetchAsset();
+      fetchBankAccounts();
     }
   }, [id]);
+
+  const fetchBankAccounts = async () => {
+    try {
+      const res: any = await bankAccountsApi.getAll({ isActive: true });
+      if (res.success) setBankAccounts(res.data || []);
+    } catch {
+      // non-fatal
+    }
+  };
 
   const fetchAsset = async () => {
     if (!id) return;
@@ -89,9 +123,9 @@ export default function AssetDetailPage() {
         }
       }
     } catch (error) {
-      console.error('[AssetDetailPage] Failed to fetch asset:', error);
-      toast.error(t('assets.errors.fetchFailed'));
-      navigate('/assets');
+      console.error("[AssetDetailPage] Failed to fetch asset:", error);
+      toast.error(t("assets.errors.fetchFailed"));
+      navigate("/assets");
     } finally {
       setLoading(false);
     }
@@ -105,12 +139,15 @@ export default function AssetDetailPage() {
         setDepreciationEntries(response.data || []);
       }
     } catch (error) {
-      console.error('[AssetDetailPage] Failed to fetch depreciation entries:', error);
+      console.error(
+        "[AssetDetailPage] Failed to fetch depreciation entries:",
+        error,
+      );
     }
   };
 
   useEffect(() => {
-    if (activeTab === 'entries' && id) {
+    if (activeTab === "entries" && id) {
       fetchDepreciationEntries();
     }
   }, [activeTab, id]);
@@ -119,17 +156,22 @@ export default function AssetDetailPage() {
     if (!id) return;
     setDepreciating(true);
     try {
-      const response: any = await fixedAssetsApi.postDepreciation(id, depreciateDate);
+      const response: any = await fixedAssetsApi.postDepreciation(
+        id,
+        depreciateDate,
+      );
       if (response.success) {
-        toast.success(t('assets.success.depreciation'));
+        toast.success(t("assets.success.depreciation"));
         setDepreciateDialogOpen(false);
         fetchAsset();
       } else {
-        toast.error(response.error || t('assets.errors.depreciationFailed'));
+        toast.error(response.error || t("assets.errors.depreciationFailed"));
       }
     } catch (error: any) {
-      console.error('[AssetDetailPage] Depreciation error:', error);
-      toast.error(error.response?.data?.error || t('assets.errors.depreciationFailed'));
+      console.error("[AssetDetailPage] Depreciation error:", error);
+      toast.error(
+        error.response?.data?.error || t("assets.errors.depreciationFailed"),
+      );
     } finally {
       setDepreciating(false);
     }
@@ -143,19 +185,22 @@ export default function AssetDetailPage() {
         disposalDate: disposalForm.disposalDate,
         disposalProceeds: disposalForm.disposalProceeds,
         disposalMethod: disposalForm.disposalMethod,
+        bankAccountId: (disposalForm as any).bankAccountId || undefined,
         notes: disposalForm.notes,
       });
       const res: any = response;
       if (res.success) {
-        toast.success(t('assets.success.disposal'));
+        toast.success(t("assets.success.disposal"));
         setDisposeDialogOpen(false);
         fetchAsset();
       } else {
-        toast.error(res.error || t('assets.errors.disposalFailed'));
+        toast.error(res.error || t("assets.errors.disposalFailed"));
       }
     } catch (error: any) {
-      console.error('[AssetDetailPage] Disposal error:', error);
-      toast.error(error.response?.data?.error || t('assets.errors.disposalFailed'));
+      console.error("[AssetDetailPage] Disposal error:", error);
+      toast.error(
+        error.response?.data?.error || t("assets.errors.disposalFailed"),
+      );
     } finally {
       setDisposing(false);
     }
@@ -163,40 +208,50 @@ export default function AssetDetailPage() {
 
   const formatCurrency = (amount: any) => {
     let numAmount = 0;
-    if (amount !== null && amount !== undefined && amount !== '') {
-      if (typeof amount === 'object') {
+    if (amount !== null && amount !== undefined && amount !== "") {
+      if (typeof amount === "object") {
         if (amount.$numberDecimal) {
           numAmount = parseFloat(amount.$numberDecimal);
-        } else if (typeof amount.toString === 'function') {
+        } else if (typeof amount.toString === "function") {
           numAmount = parseFloat(amount.toString());
         }
-      } else if (typeof amount === 'string') {
+      } else if (typeof amount === "string") {
         numAmount = parseFloat(amount);
       } else {
         numAmount = amount;
       }
     }
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
     }).format(numAmount);
   };
 
-  const formatDate = (date: string) => {
-    if (!date) return '-';
+  const formatDate = (date: string | undefined | null) => {
+    if (!date) return "-";
     return new Date(date).toLocaleDateString();
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'active':
-        return <Badge variant="default" className="bg-green-500">{t('assets.status.active')}</Badge>;
-      case 'fully_depreciated':
-        return <Badge variant="secondary" className="bg-amber-500">{t('assets.status.fullyDepreciated')}</Badge>;
-      case 'disposed':
-        return <Badge variant="destructive">{t('assets.status.disposed')}</Badge>;
+      case "active":
+        return (
+          <Badge variant="default" className="bg-green-500 dark:bg-green-600">
+            {t("assets.status.active")}
+          </Badge>
+        );
+      case "fully_depreciated":
+        return (
+          <Badge variant="secondary" className="bg-amber-500 dark:bg-amber-600">
+            {t("assets.status.fullyDepreciated")}
+          </Badge>
+        );
+      case "disposed":
+        return (
+          <Badge variant="destructive" className="dark:bg-red-600">{t("assets.status.disposed")}</Badge>
+        );
       default:
-        return <Badge>{status}</Badge>;
+        return <Badge className="dark:bg-slate-700 dark:text-slate-200">{status}</Badge>;
     }
   };
 
@@ -214,7 +269,7 @@ export default function AssetDetailPage() {
     return (
       <Layout>
         <div className="container mx-auto py-6">
-          <p>{t('assets.errors.notFound')}</p>
+          <p>{t("assets.errors.notFound")}</p>
         </div>
       </Layout>
     );
@@ -222,138 +277,268 @@ export default function AssetDetailPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-6 space-y-6">
+      <div className="container mx-auto py-6 space-y-6 bg-gray-50 dark:bg-slate-900 min-h-screen p-6">
         {/* Header */}
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/assets')}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate("/assets")}
+            className="dark:text-slate-200"
+          >
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex-1">
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold">{asset.name}</h1>
+              <h1 className="text-3xl font-bold dark:text-white">{asset.name}</h1>
               {getStatusBadge(asset.status)}
             </div>
-            <p className="text-muted-foreground">{asset.referenceNo}</p>
+            <p className="text-muted-foreground dark:text-slate-400">{asset.referenceNo}</p>
           </div>
-          {asset.status === 'active' && (
+          {asset.status === "active" && (
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setDepreciateDialogOpen(true)}>
+              <Button
+                variant="outline"
+                onClick={() => setDepreciateDialogOpen(true)}
+                className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
+              >
                 <Calculator className="mr-2 h-4 w-4" />
-                {t('assets.actions.depreciate')}
+                {t("assets.actions.depreciate")}
               </Button>
-              <Button variant="destructive" onClick={() => setDisposeDialogOpen(true)}>
+              <Button
+                variant="destructive"
+                onClick={() => setDisposeDialogOpen(true)}
+              >
                 <Trash2 className="mr-2 h-4 w-4" />
-                {t('assets.actions.dispose')}
+                {t("assets.actions.dispose")}
               </Button>
             </div>
           )}
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList>
-            <TabsTrigger value="details">{t('assets.tabs.details')}</TabsTrigger>
-            <TabsTrigger value="schedule">{t('assets.tabs.schedule')}</TabsTrigger>
-            <TabsTrigger value="entries">{t('assets.tabs.entries')}</TabsTrigger>
+          <TabsList className="dark:bg-slate-800">
+            <TabsTrigger value="details" className="dark:text-slate-300 dark:data-[state=active]:bg-slate-700">
+              {t("assets.tabs.details")}
+            </TabsTrigger>
+            <TabsTrigger value="schedule" className="dark:text-slate-300 dark:data-[state=active]:bg-slate-700">
+              {t("assets.tabs.schedule")}
+            </TabsTrigger>
+            <TabsTrigger value="entries" className="dark:text-slate-300 dark:data-[state=active]:bg-slate-700">
+              {t("assets.tabs.entries")}
+            </TabsTrigger>
           </TabsList>
 
           {/* Details Tab */}
           <TabsContent value="details" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Asset Info */}
-              <Card className="lg:col-span-2">
+              <Card className="lg:col-span-2 dark:bg-slate-800">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 dark:text-white">
                     <Package className="h-5 w-5" />
-                    {t('assets.sections.assetInfo')}
+                    {t("assets.sections.assetInfo")}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label className="text-muted-foreground">{t('assets.fields.referenceNo')}</Label>
-                      <p className="font-medium">{asset.referenceNo}</p>
+                      <Label className="text-muted-foreground dark:text-slate-400">
+                        {t("assets.fields.referenceNo")}
+                      </Label>
+                      <p className="font-medium dark:text-white">{asset.referenceNo}</p>
                     </div>
                     <div>
-                      <Label className="text-muted-foreground">{t('assets.fields.name')}</Label>
-                      <p className="font-medium">{asset.name}</p>
+                      <Label className="text-muted-foreground dark:text-slate-400">
+                        {t("assets.fields.name")}
+                      </Label>
+                      <p className="font-medium dark:text-white">{asset.name}</p>
                     </div>
                     <div className="col-span-2">
-                      <Label className="text-muted-foreground">{t('assets.fields.description')}</Label>
-                      <p>{asset.description || '-'}</p>
+                      <Label className="text-muted-foreground dark:text-slate-400">
+                        {t("assets.fields.description")}
+                      </Label>
+                      <p className="dark:text-slate-300">{asset.description || "-"}</p>
                     </div>
                     <div>
-                      <Label className="text-muted-foreground">{t('assets.fields.purchaseDate')}</Label>
-                      <p>{formatDate(asset.purchaseDate)}</p>
+                      <Label className="text-muted-foreground dark:text-slate-400">
+                        {t("assets.fields.category")}
+                      </Label>
+                      <p className="dark:text-slate-300">{(asset.categoryId as any)?.name || "-"}</p>
                     </div>
                     <div>
-                      <Label className="text-muted-foreground">{t('assets.fields.purchaseCost')}</Label>
-                      <p className="font-medium">{formatCurrency(asset.purchaseCost)}</p>
+                      <Label className="text-muted-foreground dark:text-slate-400">
+                        {t("assets.fields.status")}
+                      </Label>
+                      <p className="dark:text-slate-300">{asset.status}</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground dark:text-slate-400">
+                        {t("assets.fields.serialNumber")}
+                      </Label>
+                      <p className="dark:text-slate-300">{asset.serialNumber || "-"}</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground dark:text-slate-400">
+                        {t("assets.fields.location")}
+                      </Label>
+                      <p className="dark:text-slate-300">{asset.location || "-"}</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground dark:text-slate-400">
+                        {t("assets.fields.department")}
+                      </Label>
+                      <p className="dark:text-slate-300">{(asset.departmentId as any)?.name || "-"}</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground dark:text-slate-400">
+                        {t("assets.fields.supplier")}
+                      </Label>
+                      <p className="dark:text-slate-300">{(asset.supplierId as any)?.name || "-"}</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground dark:text-slate-400">
+                        {t("assets.fields.purchaseDate")}
+                      </Label>
+                      <p className="dark:text-slate-300">{formatDate(asset.purchaseDate)}</p>
+                    </div>
+                    <div>
+                      <Label className="text-muted-foreground dark:text-slate-400">
+                        {t("assets.fields.purchaseCost")}
+                      </Label>
+                      <p className="font-medium dark:text-white">
+                        {formatCurrency(asset.purchaseCost)}
+                      </p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
               {/* Depreciation Summary */}
-              <Card>
+              <Card className="dark:bg-slate-800">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 dark:text-white">
                     <TrendingDown className="h-5 w-5" />
-                    {t('assets.sections.depreciationSummary')}
+                    {t("assets.sections.depreciationSummary")}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label className="text-muted-foreground">{t('assets.fields.purchaseCost')}</Label>
-                    <p className="text-2xl font-bold">{formatCurrency(asset.purchaseCost)}</p>
+                    <Label className="text-muted-foreground dark:text-slate-400">
+                      {t("assets.fields.purchaseCost")}
+                    </Label>
+                    <p className="text-2xl font-bold dark:text-white">
+                      {formatCurrency(asset.purchaseCost)}
+                    </p>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-muted-foreground">{t('assets.fields.accumulatedDepreciation')}</Label>
-                    <p className="text-xl">{formatCurrency(asset.accumulatedDepreciation)}</p>
+                    <Label className="text-muted-foreground dark:text-slate-400">
+                      {t("assets.fields.accumulatedDepreciation")}
+                    </Label>
+                    <p className="text-xl dark:text-slate-300">
+                      {formatCurrency(asset.accumulatedDepreciation)}
+                    </p>
                   </div>
                   <div className="border-t pt-4 space-y-2">
-                    <Label className="text-muted-foreground">{t('assets.fields.netBookValue')}</Label>
-                    <p className="text-2xl font-bold text-primary">{formatCurrency(asset.netBookValue)}</p>
+                    <Label className="text-muted-foreground dark:text-slate-400">
+                      {t("assets.fields.netBookValue")}
+                    </Label>
+                    <p className="text-2xl font-bold text-primary dark:text-primary">
+                      {formatCurrency(asset.netBookValue)}
+                    </p>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-muted-foreground">{t('assets.fields.salvageValue')}</Label>
-                    <p>{formatCurrency(asset.salvageValue)}</p>
+                    <Label className="text-muted-foreground dark:text-slate-400">
+                      {t("assets.fields.salvageValue")}
+                    </Label>
+                    <p className="dark:text-slate-300">{formatCurrency(asset.salvageValue)}</p>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-muted-foreground">{t('assets.fields.usefulLifeMonths')}</Label>
-                    <p>{asset.usefulLifeMonths} months</p>
+                    <Label className="text-muted-foreground dark:text-slate-400">
+                      {t("assets.fields.usefulLifeMonths")}
+                    </Label>
+                    <p className="dark:text-slate-300">{asset.usefulLifeMonths} months</p>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-muted-foreground">{t('assets.fields.depreciationMethod')}</Label>
-                    <p>
-                      {asset.depreciationMethod === 'straight_line'
-                        ? t('assets.depreciation.straightLine')
-                        : t('assets.depreciation.decliningBalance')}
+                    <Label className="text-muted-foreground dark:text-slate-400">
+                      {t("assets.fields.depreciationMethod")}
+                    </Label>
+                    <p className="dark:text-slate-300">
+                      {asset.depreciationMethod === "straight_line"
+                        ? t("assets.depreciation.straightLine")
+                        : t("assets.depreciation.decliningBalance")}
                     </p>
                   </div>
                 </CardContent>
               </Card>
 
+              {/* Warranty & Insurance */}
+              {(asset.warrantyStartDate || asset.warrantyEndDate || asset.insuredValue) && (
+                <Card className="lg:col-span-3 dark:bg-slate-800">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 dark:text-white">
+                      <Shield className="h-5 w-5" />
+                      {t("assets.sections.warrantyInsurance")}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <Label className="text-muted-foreground dark:text-slate-400">
+                          {t("assets.fields.warrantyStartDate")}
+                        </Label>
+                        <p className="dark:text-slate-300">{formatDate(asset.warrantyStartDate)}</p>
+                      </div>
+                      <div>
+                        <Label className="text-muted-foreground dark:text-slate-400">
+                          {t("assets.fields.warrantyEndDate")}
+                        </Label>
+                        <p className="dark:text-slate-300">{formatDate(asset.warrantyEndDate)}</p>
+                      </div>
+                      <div>
+                        <Label className="text-muted-foreground dark:text-slate-400">
+                          {t("assets.fields.insuredValue")}
+                        </Label>
+                        <p className="font-medium dark:text-white">
+                          {formatCurrency(asset.insuredValue)}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               {/* Account Codes */}
-              <Card className="lg:col-span-3">
+              <Card className="lg:col-span-3 dark:bg-slate-800">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 dark:text-white">
                     <FileText className="h-5 w-5" />
-                    {t('assets.sections.accountCodes')}
+                    {t("assets.sections.accountCodes")}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-3 gap-4">
                     <div>
-                      <Label className="text-muted-foreground">{t('assets.fields.assetAccount')}</Label>
-                      <p className="font-mono">{asset.assetAccountCode}</p>
+                      <Label className="text-muted-foreground dark:text-slate-400">
+                        {t("assets.fields.assetAccount")}
+                      </Label>
+                      <p className="font-mono dark:text-white">{asset.assetAccountCode}</p>
                     </div>
                     <div>
-                      <Label className="text-muted-foreground">{t('assets.fields.accumDepreciationAccount')}</Label>
-                      <p className="font-mono">{asset.accumDepreciationAccountCode}</p>
+                      <Label className="text-muted-foreground dark:text-slate-400">
+                        {t("assets.fields.accumDepreciationAccount")}
+                      </Label>
+                      <p className="font-mono dark:text-white">
+                        {asset.accumDepreciationAccountCode}
+                      </p>
                     </div>
                     <div>
-                      <Label className="text-muted-foreground">{t('assets.fields.depreciationExpenseAccount')}</Label>
-                      <p className="font-mono">{asset.depreciationExpenseAccountCode}</p>
+                      <Label className="text-muted-foreground dark:text-slate-400">
+                        {t("assets.fields.depreciationExpenseAccount")}
+                      </Label>
+                      <p className="font-mono dark:text-white">
+                        {asset.depreciationExpenseAccountCode}
+                      </p>
                     </div>
                   </div>
                 </CardContent>
@@ -363,36 +548,52 @@ export default function AssetDetailPage() {
 
           {/* Depreciation Schedule Tab */}
           <TabsContent value="schedule">
-            <Card>
+            <Card className="dark:bg-slate-800">
               <CardHeader>
-                <CardTitle>{t('assets.sections.depreciationSchedule')}</CardTitle>
-                <CardDescription>{t('assets.sections.depreciationScheduleDescription')}</CardDescription>
+                <CardTitle className="dark:text-white">
+                  {t("assets.sections.depreciationSchedule")}
+                </CardTitle>
+                <CardDescription className="dark:text-slate-400">
+                  {t("assets.sections.depreciationScheduleDescription")}
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 {schedule.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Calculator className="h-12 w-12 mx-auto mb-4" />
-                    <p>{t('assets.noSchedule')}</p>
+                  <div className="text-center py-8 text-muted-foreground dark:text-slate-400">
+                    <Calculator className="h-12 w-12 mx-auto mb-4 dark:text-slate-500" />
+                    <p>{t("assets.noSchedule")}</p>
                   </div>
                 ) : (
                   <Table>
                     <TableHeader>
-                      <TableRow>
-                        <TableHead>{t('assets.schedule.period')}</TableHead>
-                        <TableHead>{t('assets.schedule.date')}</TableHead>
-                        <TableHead className="text-right">{t('assets.schedule.openingNBV')}</TableHead>
-                        <TableHead className="text-right">{t('assets.schedule.depreciation')}</TableHead>
-                        <TableHead className="text-right">{t('assets.schedule.closingNBV')}</TableHead>
+                      <TableRow className="dark:bg-slate-700/50 dark:border-slate-600">
+                        <TableHead className="dark:text-slate-200">{t("assets.schedule.period")}</TableHead>
+                        <TableHead className="dark:text-slate-200">{t("assets.schedule.date")}</TableHead>
+                        <TableHead className="text-right dark:text-slate-200">
+                          {t("assets.schedule.openingNBV")}
+                        </TableHead>
+                        <TableHead className="text-right dark:text-slate-200">
+                          {t("assets.schedule.depreciation")}
+                        </TableHead>
+                        <TableHead className="text-right dark:text-slate-200">
+                          {t("assets.schedule.closingNBV")}
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {schedule.map((item) => (
-                        <TableRow key={item.period}>
-                          <TableCell>{item.label}</TableCell>
-                          <TableCell>{formatDate(item.date)}</TableCell>
-                          <TableCell className="text-right">{formatCurrency(item.openingNBV)}</TableCell>
-                          <TableCell className="text-right">{formatCurrency(item.depreciation)}</TableCell>
-                          <TableCell className="text-right font-medium">{formatCurrency(item.closingNBV)}</TableCell>
+                        <TableRow key={item.period} className="dark:border-slate-600">
+                          <TableCell className="dark:text-slate-300">{item.label}</TableCell>
+                          <TableCell className="dark:text-slate-300">{formatDate(item.date)}</TableCell>
+                          <TableCell className="text-right dark:text-slate-300">
+                            {formatCurrency(item.openingNBV)}
+                          </TableCell>
+                          <TableCell className="text-right dark:text-slate-300">
+                            {formatCurrency(item.depreciation)}
+                          </TableCell>
+                          <TableCell className="text-right font-medium dark:text-white">
+                            {formatCurrency(item.closingNBV)}
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -404,36 +605,50 @@ export default function AssetDetailPage() {
 
           {/* Posted Entries Tab */}
           <TabsContent value="entries">
-            <Card>
+            <Card className="dark:bg-slate-800">
               <CardHeader>
-                <CardTitle>{t('assets.sections.postedEntries')}</CardTitle>
-                <CardDescription>{t('assets.sections.postedEntriesDescription')}</CardDescription>
+                <CardTitle className="dark:text-white">{t("assets.sections.postedEntries")}</CardTitle>
+                <CardDescription className="dark:text-slate-400">
+                  {t("assets.sections.postedEntriesDescription")}
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 {depreciationEntries.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <FileText className="h-12 w-12 mx-auto mb-4" />
-                    <p>{t('assets.noEntries')}</p>
+                  <div className="text-center py-8 text-muted-foreground dark:text-slate-400">
+                    <FileText className="h-12 w-12 mx-auto mb-4 dark:text-slate-500" />
+                    <p>{t("assets.noEntries")}</p>
                   </div>
                 ) : (
                   <Table>
                     <TableHeader>
-                      <TableRow>
-                        <TableHead>{t('assets.entries.period')}</TableHead>
-                        <TableHead>{t('assets.entries.date')}</TableHead>
-                        <TableHead className="text-right">{t('assets.entries.depreciation')}</TableHead>
-                        <TableHead className="text-right">{t('assets.entries.accumAfter')}</TableHead>
-                        <TableHead className="text-right">{t('assets.entries.nbvAfter')}</TableHead>
+                      <TableRow className="dark:bg-slate-700/50 dark:border-slate-600">
+                        <TableHead className="dark:text-slate-200">{t("assets.entries.period")}</TableHead>
+                        <TableHead className="dark:text-slate-200">{t("assets.entries.date")}</TableHead>
+                        <TableHead className="text-right dark:text-slate-200">
+                          {t("assets.entries.depreciation")}
+                        </TableHead>
+                        <TableHead className="text-right dark:text-slate-200">
+                          {t("assets.entries.accumAfter")}
+                        </TableHead>
+                        <TableHead className="text-right dark:text-slate-200">
+                          {t("assets.entries.nbvAfter")}
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {depreciationEntries.map((entry) => (
-                        <TableRow key={entry._id}>
-                          <TableCell>{formatDate(entry.periodDate)}</TableCell>
-                          <TableCell>{formatDate(entry.createdAt)}</TableCell>
-                          <TableCell className="text-right">{formatCurrency(entry.depreciationAmount)}</TableCell>
-                          <TableCell className="text-right">{formatCurrency(entry.accumulatedAfter)}</TableCell>
-                          <TableCell className="text-right font-medium">{formatCurrency(entry.netBookValueAfter)}</TableCell>
+                        <TableRow key={entry._id} className="dark:border-slate-600">
+                          <TableCell className="dark:text-slate-300">{formatDate(entry.periodDate)}</TableCell>
+                          <TableCell className="dark:text-slate-300">{formatDate(entry.createdAt)}</TableCell>
+                          <TableCell className="text-right dark:text-slate-300">
+                            {formatCurrency(entry.depreciationAmount)}
+                          </TableCell>
+                          <TableCell className="text-right dark:text-slate-300">
+                            {formatCurrency(entry.accumulatedAfter)}
+                          </TableCell>
+                          <TableCell className="text-right font-medium dark:text-white">
+                            {formatCurrency(entry.netBookValueAfter)}
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -445,29 +660,41 @@ export default function AssetDetailPage() {
         </Tabs>
 
         {/* Depreciate Dialog */}
-        <Dialog open={depreciateDialogOpen} onOpenChange={setDepreciateDialogOpen}>
-          <DialogContent>
+        <Dialog
+          open={depreciateDialogOpen}
+          onOpenChange={setDepreciateDialogOpen}
+        >
+          <DialogContent className="dark:bg-slate-800">
             <DialogHeader>
-              <DialogTitle>{t('assets.dialogs.depreciate.title')}</DialogTitle>
-              <DialogDescription>{t('assets.dialogs.depreciate.description')}</DialogDescription>
+              <DialogTitle className="dark:text-white">{t("assets.dialogs.depreciate.title")}</DialogTitle>
+              <DialogDescription className="dark:text-slate-400">
+                {t("assets.dialogs.depreciate.description")}
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label>{t('assets.fields.periodDate')}</Label>
+                <Label className="dark:text-slate-200">{t("assets.fields.periodDate")}</Label>
                 <Input
                   type="date"
                   value={depreciateDate}
                   onChange={(e) => setDepreciateDate(e.target.value)}
+                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                 />
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setDepreciateDialogOpen(false)}>
-                {t('common.cancel')}
+              <Button
+                variant="outline"
+                onClick={() => setDepreciateDialogOpen(false)}
+                className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
+              >
+                {t("common.cancel")}
               </Button>
-              <Button onClick={handleDepreciate} disabled={depreciating}>
-                {depreciating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {t('assets.actions.depreciate')}
+              <Button onClick={handleDepreciate} disabled={depreciating} className="dark:bg-primary dark:text-primary-foreground">
+                {depreciating && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                {t("assets.actions.depreciate")}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -475,44 +702,94 @@ export default function AssetDetailPage() {
 
         {/* Dispose Dialog */}
         <Dialog open={disposeDialogOpen} onOpenChange={setDisposeDialogOpen}>
-          <DialogContent>
+          <DialogContent className="dark:bg-slate-800">
             <DialogHeader>
-              <DialogTitle>{t('assets.dialogs.dispose.title')}</DialogTitle>
-              <DialogDescription>{t('assets.dialogs.dispose.description')}</DialogDescription>
+              <DialogTitle className="dark:text-white">{t("assets.dialogs.dispose.title")}</DialogTitle>
+              <DialogDescription className="dark:text-slate-400">
+                {t("assets.dialogs.dispose.description")}
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label>{t('assets.fields.disposalDate')}</Label>
+                <Label className="dark:text-slate-200">{t("assets.fields.disposalDate")}</Label>
                 <Input
                   type="date"
                   value={disposalForm.disposalDate}
-                  onChange={(e) => setDisposalForm({ ...disposalForm, disposalDate: e.target.value })}
+                  onChange={(e) =>
+                    setDisposalForm({
+                      ...disposalForm,
+                      disposalDate: e.target.value,
+                    })
+                  }
+                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                 />
               </div>
               <div className="space-y-2">
-                <Label>{t('assets.fields.disposalProceeds')}</Label>
+                <Label className="dark:text-slate-200">{t("assets.fields.disposalProceeds")}</Label>
                 <Input
                   type="number"
                   min="0"
                   step="0.01"
                   value={disposalForm.disposalProceeds}
-                  onChange={(e) => setDisposalForm({ ...disposalForm, disposalProceeds: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) =>
+                    setDisposalForm({
+                      ...disposalForm,
+                      disposalProceeds: parseFloat(e.target.value) || 0,
+                    })
+                  }
+                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                 />
               </div>
+              {disposalForm.disposalProceeds > 0 && (
+                <div className="space-y-2">
+                  <Label className="dark:text-slate-200">Deposit Proceeds to Bank Account</Label>
+                  <select
+                    className="w-full border border-input rounded-md px-3 py-2 text-sm bg-background dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                    value={disposalForm.bankAccountId}
+                    onChange={(e) =>
+                      setDisposalForm({
+                        ...disposalForm,
+                        bankAccountId: e.target.value,
+                      })
+                    }
+                  >
+                    <option value="">Select bank account for proceeds…</option>
+                    {bankAccounts.map((acc: any) => (
+                      <option key={acc._id} value={acc._id}>
+                        {acc.name}
+                        {acc.cachedBalance !== undefined
+                          ? ` (Balance: ${Number(acc.cachedBalance).toLocaleString()})`
+                          : ""}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-muted-foreground dark:text-slate-400">
+                    Journal: DR Bank Account / CR Asset Account (proceeds)
+                  </p>
+                </div>
+              )}
               <div className="space-y-2">
-                <Label>{t('assets.fields.netBookValue')}</Label>
-                <div className="p-2 bg-muted rounded">
+                <Label className="dark:text-slate-200">{t("assets.fields.netBookValue")}</Label>
+                <div className="p-2 bg-muted rounded dark:bg-slate-700 dark:text-white">
                   {formatCurrency(asset.netBookValue)}
                 </div>
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setDisposeDialogOpen(false)}>
-                {t('common.cancel')}
+              <Button
+                variant="outline"
+                onClick={() => setDisposeDialogOpen(false)}
+                className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
+              >
+                {t("common.cancel")}
               </Button>
-              <Button variant="destructive" onClick={handleDispose} disabled={disposing}>
+              <Button
+                variant="destructive"
+                onClick={handleDispose}
+                disabled={disposing}
+              >
                 {disposing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {t('assets.actions.dispose')}
+                {t("assets.actions.dispose")}
               </Button>
             </DialogFooter>
           </DialogContent>

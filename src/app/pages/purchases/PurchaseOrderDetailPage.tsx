@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { purchaseOrdersApi, grnApi } from '@/lib/api';
+import { purchaseOrdersApi, grnApi, bankAccountsApi } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
 import { 
   ArrowLeft, 
@@ -99,6 +99,8 @@ interface PurchaseOrder {
     taxRate: number;
     taxAmount: number;
     lineTotal: number;
+    budgetId?: string | { _id: string; name: string; fiscalYear?: string };
+    accountId?: string | { _id: string; code: string; name: string };
   }>;
 }
 
@@ -178,6 +180,17 @@ export default function PurchaseOrderDetailPage() {
     fetchPurchaseOrder();
   }, [fetchPurchaseOrder]);
 
+  const fetchBankAccounts = useCallback(async () => {
+    try {
+      const response = await bankAccountsApi.getAll({ isActive: true });
+      if (response.success && Array.isArray(response.data)) {
+        setBankAccounts(response.data as Array<{_id: string; name: string; accountType: string}>);
+      }
+    } catch (error) {
+      console.error('Failed to fetch bank accounts:', error);
+    }
+  }, []);
+
   const handleApprove = async () => {
     if (!id) return;
     setActionLoading(true);
@@ -210,19 +223,35 @@ export default function PurchaseOrderDetailPage() {
   const [paymentMethod, setPaymentMethod] = useState('bank_transfer');
   const [paymentNotes, setPaymentNotes] = useState('');
   const [paymentSaving, setPaymentSaving] = useState(false);
+  const [bankAccountId, setBankAccountId] = useState('');
+  const [bankAccounts, setBankAccounts] = useState<Array<{_id: string; name: string; accountType: string}>>([]);
+
+  useEffect(() => {
+    if (paymentOpen) {
+      fetchBankAccounts();
+    }
+  }, [paymentOpen, fetchBankAccounts]);
 
   const handleRecordPayment = async () => {
     if (!id || !paymentAmount) return;
     setPaymentSaving(true);
     try {
-      await purchaseOrdersApi.recordPayment(id, {
+      const data: { amount: number; paymentMethod: string; notes?: string; bankAccountId?: string } = {
         amount: parseFloat(paymentAmount),
         paymentMethod,
         notes: paymentNotes || undefined,
-      });
+      };
+      if (
+        (paymentMethod === 'bank_transfer' || paymentMethod === 'cheque' || paymentMethod === 'mobile_money') &&
+        bankAccountId
+      ) {
+        data.bankAccountId = bankAccountId;
+      }
+      await purchaseOrdersApi.recordPayment(id, data);
       setPaymentOpen(false);
       setPaymentAmount('');
       setPaymentNotes('');
+      setBankAccountId('');
       fetchPurchaseOrder();
     } catch (error) {
       console.error('Failed to record payment:', error);
@@ -308,7 +337,7 @@ export default function PurchaseOrderDetailPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-6">
+      <div className="container mx-auto py-6 min-h-screen bg-slate-50 dark:bg-slate-900">
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
           <Button variant="ghost" onClick={() => navigate('/purchase-orders')}>
@@ -318,56 +347,56 @@ export default function PurchaseOrderDetailPage() {
         </div>
 
         {/* Document Header */}
-        <div className="bg-card rounded-lg border p-6 mb-6">
+        <div className="bg-card dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6 mb-6">
           <div className="flex justify-between items-start">
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <FileText className="h-8 w-8 text-primary" />
-                <h1 className="text-2xl font-bold">
+                <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
                   {purchaseOrder.referenceNo || 'N/A'}
                 </h1>
                 {getStatusBadge(purchaseOrder.status)}
               </div>
               <div className="grid grid-cols-2 gap-4 mt-4 text-sm">
                 <div>
-                  <p className="text-muted-foreground">{t('purchase.detail.supplier', 'Supplier')}</p>
-                  <p className="font-medium">{purchaseOrder.supplier?.name || '-'}</p>
-                  {purchaseOrder.supplier?.contact?.contactPerson && <p className="text-muted-foreground">{purchaseOrder.supplier.contact.contactPerson}</p>}
-                  {purchaseOrder.supplier?.contact?.email && <p className="text-muted-foreground">{purchaseOrder.supplier.contact.email}</p>}
-                  {purchaseOrder.supplier?.contact?.phone && <p className="text-muted-foreground">{purchaseOrder.supplier.contact.phone}</p>}
+                  <p className="text-muted-foreground dark:text-slate-400">{t('purchase.detail.supplier', 'Supplier')}</p>
+                  <p className="font-medium dark:text-slate-200">{(purchaseOrder.supplier as any)?.name || '-'}</p>
+                  {(purchaseOrder.supplier as any)?.contact?.contactPerson && <p className="text-muted-foreground dark:text-slate-400">{(purchaseOrder.supplier as any).contact.contactPerson}</p>}
+                  {(purchaseOrder.supplier as any)?.contact?.email && <p className="text-muted-foreground dark:text-slate-400">{(purchaseOrder.supplier as any).contact.email}</p>}
+                  {(purchaseOrder.supplier as any)?.contact?.phone && <p className="text-muted-foreground dark:text-slate-400">{(purchaseOrder.supplier as any).contact.phone}</p>}
                 </div>
                 <div>
-                  <p className="text-muted-foreground">{t('purchase.detail.warehouse', 'Warehouse')}</p>
-                  <p className="font-medium">{purchaseOrder.warehouse?.name || '-'}</p>
+                  <p className="text-muted-foreground dark:text-slate-400">{t('purchase.detail.warehouse', 'Warehouse')}</p>
+                  <p className="font-medium dark:text-slate-200">{purchaseOrder.warehouse?.name || '-'}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">{t('purchase.detail.orderDate', 'Order Date')}</p>
-                  <p className="font-medium">{formatDate(purchaseOrder.orderDate)}</p>
+                  <p className="text-muted-foreground dark:text-slate-400">{t('purchase.detail.orderDate', 'Order Date')}</p>
+                  <p className="font-medium dark:text-slate-200">{formatDate(purchaseOrder.orderDate)}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">{t('purchase.detail.expectedDelivery', 'Expected Delivery')}</p>
-                  <p className="font-medium">{purchaseOrder.expectedDeliveryDate ? formatDate(purchaseOrder.expectedDeliveryDate) : '-'}</p>
+                  <p className="text-muted-foreground dark:text-slate-400">{t('purchase.detail.expectedDelivery', 'Expected Delivery')}</p>
+                  <p className="font-medium dark:text-slate-200">{purchaseOrder.expectedDeliveryDate ? formatDate(purchaseOrder.expectedDeliveryDate) : '-'}</p>
                 </div>
               </div>
             </div>
             <div className="text-right">
-              <p className="text-muted-foreground text-sm">{t('purchase.detail.total', 'Total Amount')}</p>
-              <p className="text-2xl font-bold">
+              <p className="text-muted-foreground text-sm dark:text-slate-400">{t('purchase.detail.total', 'Total Amount')}</p>
+              <p className="text-2xl font-bold text-slate-900 dark:text-white">
                 {formatCurrency(purchaseOrder.totalAmount, purchaseOrder.currencyCode)}
               </p>
             </div>
           </div>
 
           {/* Status Timeline */}
-          <div className="mt-6 pt-6 border-t">
-            <p className="text-sm font-medium mb-3">{t('purchase.detail.statusTimeline', 'Status Timeline')}</p>
+          <div className="mt-6 pt-6 border-t dark:border-slate-600">
+            <p className="text-sm font-medium mb-3 text-slate-900 dark:text-white">{t('purchase.detail.statusTimeline', 'Status Timeline')}</p>
             <div className="flex items-center gap-2">
               {STATUS_FLOW.map((step, index) => (
                 <div key={step.status} className="flex items-center">
                   <div className={`flex items-center gap-2 px-3 py-2 rounded-full ${
                     index <= currentStatusStep 
                       ? 'bg-primary text-primary-foreground' 
-                      : 'bg-muted text-muted-foreground'
+                      : 'bg-muted text-muted-foreground dark:bg-slate-700 dark:text-slate-400'
                   }`}>
                     {index < currentStatusStep ? (
                       <CheckCircle className="h-4 w-4" />
@@ -380,7 +409,7 @@ export default function PurchaseOrderDetailPage() {
                   </div>
                   {index < STATUS_FLOW.length - 1 && (
                     <div className={`w-8 h-0.5 mx-2 ${
-                      index < currentStatusStep ? 'bg-primary' : 'bg-muted'
+                      index < currentStatusStep ? 'bg-primary' : 'bg-muted dark:bg-slate-600'
                     }`} />
                   )}
                 </div>
@@ -394,7 +423,7 @@ export default function PurchaseOrderDetailPage() {
           </div>
 
           {/* Action Buttons */}
-          <div className="mt-6 pt-6 border-t flex gap-2">
+          <div className="mt-6 pt-6 border-t dark:border-slate-600 flex gap-2">
             {purchaseOrder.status === 'draft' && (
               <>
                 <Button onClick={handleApprove} disabled={actionLoading}>
@@ -428,76 +457,110 @@ export default function PurchaseOrderDetailPage() {
 
         {/* Tabs */}
         <Tabs defaultValue="details" className="w-full">
-          <TabsList>
-            <TabsTrigger value="details">{t('purchase.detail.tabs.details', 'Details')}</TabsTrigger>
-            <TabsTrigger value="grns">
+          <TabsList className="dark:bg-slate-800">
+            <TabsTrigger value="details" className="dark:text-slate-200 dark:data-[state=active]:bg-slate-700">{t('purchase.detail.tabs.details', 'Details')}</TabsTrigger>
+            <TabsTrigger value="grns" className="dark:text-slate-200 dark:data-[state=active]:bg-slate-700">
               {t('purchase.detail.tabs.grns', 'GRNs')} 
               {grns.length > 0 && <Badge variant="secondary" className="ml-2">{grns.length}</Badge>}
             </TabsTrigger>
-            <TabsTrigger value="payments">
+            <TabsTrigger value="payments" className="dark:text-slate-200 dark:data-[state=active]:bg-slate-700">
               {t('purchase.detail.tabs.payments', 'Payments')}
               {(purchaseOrder.payments?.length || 0) > 0 && <Badge variant="secondary" className="ml-2">{purchaseOrder.payments?.length}</Badge>}
             </TabsTrigger>
-            <TabsTrigger value="history">{t('purchase.detail.tabs.history', 'History')}</TabsTrigger>
+            <TabsTrigger value="history" className="dark:text-slate-200 dark:data-[state=active]:bg-slate-700">{t('purchase.detail.tabs.history', 'History')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="details" className="mt-4">
-            <Card>
+            <Card className="dark:bg-slate-800">
               <CardHeader>
-                <CardTitle>{t('purchase.detail.lineItems', 'Line Items')}</CardTitle>
+                <CardTitle className="text-slate-900 dark:text-white">{t('purchase.detail.lineItems', 'Line Items')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>{t('purchase.detail.product', 'Product')}</TableHead>
-                      <TableHead className="text-right">{t('purchase.detail.qtyOrdered', 'Qty Ordered')}</TableHead>
-                      <TableHead className="text-right">{t('purchase.detail.qtyReceived', 'Qty Received')}</TableHead>
-                      <TableHead className="text-right">{t('purchase.detail.unitCost', 'Unit Cost')}</TableHead>
-                      <TableHead className="text-right">{t('purchase.detail.tax', 'Tax')}</TableHead>
-                      <TableHead className="text-right">{t('purchase.detail.total', 'Total')}</TableHead>
+                    <TableRow className="dark:bg-slate-700">
+                      <TableHead className="dark:text-white">{t('purchase.detail.product', 'Product')}</TableHead>
+                      <TableHead className="text-right dark:text-white">{t('purchase.detail.qtyOrdered', 'Qty Ordered')}</TableHead>
+                      <TableHead className="text-right dark:text-white">{t('purchase.detail.qtyReceived', 'Qty Received')}</TableHead>
+                      <TableHead className="text-right dark:text-white">{t('purchase.detail.unitCost', 'Unit Cost')}</TableHead>
+                      <TableHead className="text-right dark:text-white">{t('purchase.detail.tax', 'Tax')}</TableHead>
+                      <TableHead className="text-right dark:text-white">{t('purchase.detail.total', 'Total')}</TableHead>
+                      <TableHead className="dark:text-white">{t('purchase.detail.budget', 'Budget')}</TableHead>
+                      <TableHead className="dark:text-white">{t('purchase.detail.account', 'Account')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {purchaseOrder.lines?.map((line) => (
-                      <TableRow key={line._id}>
+                      <TableRow key={line._id} className="dark:hover:bg-slate-700/50">
                         <TableCell>
                           <div>
-                            <p className="font-medium">{line.product?.name || '-'}</p>
-                            <p className="text-sm text-muted-foreground">{line.product?.sku || ''}</p>
+                            <p className="font-medium dark:text-slate-200">{line.product?.name || '-'}</p>
+                            <p className="text-sm text-muted-foreground dark:text-slate-400">{line.product?.sku || ''}</p>
                           </div>
                         </TableCell>
-                        <TableCell className="text-right">{line.qtyOrdered}</TableCell>
-                        <TableCell className="text-right">{line.qtyReceived || 0}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(line.unitCost, purchaseOrder.currencyCode)}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(line.taxAmount, purchaseOrder.currencyCode)}</TableCell>
-                        <TableCell className="text-right font-medium">{formatCurrency(line.lineTotal, purchaseOrder.currencyCode)}</TableCell>
+                        <TableCell className="text-right dark:text-slate-300">{line.qtyOrdered}</TableCell>
+                        <TableCell className="text-right dark:text-slate-300">{line.qtyReceived || 0}</TableCell>
+                        <TableCell className="text-right dark:text-slate-300">{formatCurrency(line.unitCost, purchaseOrder.currencyCode)}</TableCell>
+                        <TableCell className="text-right dark:text-slate-300">{formatCurrency(line.taxAmount, purchaseOrder.currencyCode)}</TableCell>
+                        <TableCell className="text-right font-medium dark:text-slate-200">{formatCurrency(line.lineTotal, purchaseOrder.currencyCode)}</TableCell>
+                        <TableCell className="dark:text-slate-300">
+                          {(() => {
+                            if (typeof line.budgetId === 'object' && line.budgetId?.name) {
+                              return (
+                                <Badge variant="outline" className="text-xs dark:border-slate-600 dark:text-slate-300">
+                                  {line.budgetId.name}
+                                </Badge>
+                              );
+                            } else if (typeof line.budgetId === 'string' && line.budgetId) {
+                              return (
+                                <Badge variant="outline" className="text-xs dark:border-slate-600 dark:text-slate-300">
+                                  {line.budgetId.substring(0, 8)}...
+                                </Badge>
+                              );
+                            }
+                            return <span className="text-muted-foreground text-sm">-</span>;
+                          })()}
+                        </TableCell>
+                        <TableCell className="dark:text-slate-300">
+                          {(() => {
+                            if (typeof line.accountId === 'object' && line.accountId?.code) {
+                              return (
+                                <span className="text-xs">{line.accountId.code} - {line.accountId.name}</span>
+                              );
+                            } else if (typeof line.accountId === 'string' && line.accountId) {
+                              return (
+                                <span className="text-xs">{line.accountId.substring(0, 8)}...</span>
+                              );
+                            }
+                            return <span className="text-muted-foreground text-sm">-</span>;
+                          })()}
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
 
                 {/* Summary */}
-                <div className="mt-4 pt-4 border-t flex justify-end gap-8">
+                <div className="mt-4 pt-4 border-t dark:border-slate-600 flex justify-end gap-8">
                   <div className="text-right">
-                    <p className="text-muted-foreground">{t('purchase.detail.subtotal', 'Subtotal')}</p>
-                    <p className="font-medium">{formatCurrency(purchaseOrder.subtotal, purchaseOrder.currencyCode)}</p>
+                    <p className="text-muted-foreground dark:text-slate-400">{t('purchase.detail.subtotal', 'Subtotal')}</p>
+                    <p className="font-medium dark:text-slate-200">{formatCurrency(purchaseOrder.subtotal, purchaseOrder.currencyCode)}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-muted-foreground">{t('purchase.detail.tax', 'Tax')}</p>
-                    <p className="font-medium">{formatCurrency(purchaseOrder.taxAmount, purchaseOrder.currencyCode)}</p>
+                    <p className="text-muted-foreground dark:text-slate-400">{t('purchase.detail.tax', 'Tax')}</p>
+                    <p className="font-medium dark:text-slate-200">{formatCurrency(purchaseOrder.taxAmount, purchaseOrder.currencyCode)}</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-bold">{t('purchase.detail.total', 'Total')}</p>
-                    <p className="font-bold text-lg">{formatCurrency(purchaseOrder.totalAmount, purchaseOrder.currencyCode)}</p>
+                    <p className="font-bold text-slate-900 dark:text-white">{t('purchase.detail.total', 'Total')}</p>
+                    <p className="font-bold text-lg text-slate-900 dark:text-white">{formatCurrency(purchaseOrder.totalAmount, purchaseOrder.currencyCode)}</p>
                   </div>
                 </div>
 
                 {/* Notes */}
                 {purchaseOrder.notes && (
-                  <div className="mt-4 pt-4 border-t">
-                    <p className="text-muted-foreground text-sm">{t('purchase.detail.notes', 'Notes')}</p>
-                    <p>{purchaseOrder.notes}</p>
+                  <div className="mt-4 pt-4 border-t dark:border-slate-600">
+                    <p className="text-muted-foreground text-sm dark:text-slate-400">{t('purchase.detail.notes', 'Notes')}</p>
+                    <p className="dark:text-slate-200">{purchaseOrder.notes}</p>
                   </div>
                 )}
               </CardContent>
@@ -505,9 +568,9 @@ export default function PurchaseOrderDetailPage() {
           </TabsContent>
 
           <TabsContent value="grns" className="mt-4">
-            <Card>
+            <Card className="dark:bg-slate-800">
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>{t('purchase.detail.grnList', 'Goods Received Notes')}</CardTitle>
+                <CardTitle className="text-slate-900 dark:text-white">{t('purchase.detail.grnList', 'Goods Received Notes')}</CardTitle>
                 {purchaseOrder.status === 'approved' && (
                   <Button size="sm" onClick={() => navigate('/grn/new', { state: { purchaseOrderId: id } })}>
                     <Plus className="mr-2 h-4 w-4" />
@@ -517,35 +580,35 @@ export default function PurchaseOrderDetailPage() {
               </CardHeader>
               <CardContent>
                 {grns.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
+                  <div className="text-center py-8 text-muted-foreground dark:text-slate-400">
                     <Truck className="mx-auto h-8 w-8 mb-2" />
                     <p>{t('purchase.detail.noGRNs', 'No GRNs found for this purchase order')}</p>
                   </div>
                 ) : (
                   <Table>
                     <TableHeader>
-                      <TableRow>
-                        <TableHead>{t('purchase.detail.grnRef', 'GRN Reference')}</TableHead>
-                        <TableHead>{t('purchase.detail.receivedDate', 'Received Date')}</TableHead>
-                        <TableHead>{t('purchase.detail.status', 'Status')}</TableHead>
-                        <TableHead className="text-right">{t('purchase.detail.amount', 'Amount')}</TableHead>
-                        <TableHead>{t('purchase.detail.confirmedBy', 'Confirmed By')}</TableHead>
+                      <TableRow className="dark:bg-slate-700">
+                        <TableHead className="dark:text-white">{t('purchase.detail.grnRef', 'GRN Reference')}</TableHead>
+                        <TableHead className="dark:text-white">{t('purchase.detail.receivedDate', 'Received Date')}</TableHead>
+                        <TableHead className="dark:text-white">{t('purchase.detail.status', 'Status')}</TableHead>
+                        <TableHead className="text-right dark:text-white">{t('purchase.detail.amount', 'Amount')}</TableHead>
+                        <TableHead className="dark:text-white">{t('purchase.detail.confirmedBy', 'Confirmed By')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {grns.map((grn) => (
-                        <TableRow key={grn._id}>
-                          <TableCell className="font-medium">{grn.referenceNo}</TableCell>
-                          <TableCell>{formatDate(grn.receivedDate)}</TableCell>
+                        <TableRow key={grn._id} className="dark:hover:bg-slate-700/50">
+                          <TableCell className="font-medium dark:text-slate-200">{grn.referenceNo}</TableCell>
+                          <TableCell className="dark:text-slate-300">{formatDate(grn.receivedDate)}</TableCell>
                           <TableCell>
                             <Badge variant={grn.status === 'confirmed' ? 'default' : 'secondary'}>
                               {grn.status === 'confirmed' ? t('purchase.grn.confirmed', 'Confirmed') : t('purchase.grn.draft', 'Draft')}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-right">{formatCurrency(grn.totalAmount, purchaseOrder.currencyCode)}</TableCell>
-                          <TableCell>
+                          <TableCell className="text-right dark:text-slate-300">{formatCurrency(grn.totalAmount, purchaseOrder.currencyCode)}</TableCell>
+                          <TableCell className="dark:text-slate-300">
                             {grn.confirmedBy?.name || '-'}
-                            {grn.confirmedAt && <span className="text-muted-foreground text-sm ml-2">{formatDate(grn.confirmedAt)}</span>}
+                            {grn.confirmedAt && <span className="text-muted-foreground text-sm ml-2 dark:text-slate-400">{formatDate(grn.confirmedAt)}</span>}
                           </TableCell>
                         </TableRow>
                       ))}
@@ -557,9 +620,9 @@ export default function PurchaseOrderDetailPage() {
           </TabsContent>
 
           <TabsContent value="payments" className="mt-4">
-            <Card>
+            <Card className="dark:bg-slate-800">
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>{t('purchase.detail.paymentsTitle', 'Payments')}</CardTitle>
+                <CardTitle className="text-slate-900 dark:text-white">{t('purchase.detail.paymentsTitle', 'Payments')}</CardTitle>
                 {purchaseOrder.status !== 'cancelled' && (purchaseOrder.paymentStatus || 'unpaid') !== 'paid' && (
                   <Button size="sm" onClick={() => setPaymentOpen(true)}>
                     <Plus className="mr-2 h-4 w-4" />
@@ -570,43 +633,43 @@ export default function PurchaseOrderDetailPage() {
               <CardContent>
                 {/* Payment Summary */}
                 <div className="grid grid-cols-3 gap-4 mb-4">
-                  <div className="bg-muted rounded-lg p-3">
-                    <p className="text-sm text-muted-foreground">{t('purchase.detail.totalAmount', 'Total Amount')}</p>
-                    <p className="text-lg font-bold">{formatCurrency(purchaseOrder.totalAmount, purchaseOrder.currencyCode)}</p>
+                  <div className="bg-muted dark:bg-slate-700 rounded-lg p-3">
+                    <p className="text-sm text-muted-foreground dark:text-slate-400">{t('purchase.detail.totalAmount', 'Total Amount')}</p>
+                    <p className="text-lg font-bold dark:text-white">{formatCurrency(purchaseOrder.totalAmount, purchaseOrder.currencyCode)}</p>
                   </div>
-                  <div className="bg-muted rounded-lg p-3">
-                    <p className="text-sm text-muted-foreground">{t('purchase.detail.amountPaid', 'Amount Paid')}</p>
-                    <p className="text-lg font-bold text-green-600">{formatCurrency((purchaseOrder as any).amountPaid || 0, purchaseOrder.currencyCode)}</p>
+                  <div className="bg-muted dark:bg-slate-700 rounded-lg p-3">
+                    <p className="text-sm text-muted-foreground dark:text-slate-400">{t('purchase.detail.amountPaid', 'Amount Paid')}</p>
+                    <p className="text-lg font-bold text-green-600 dark:text-green-400">{formatCurrency((purchaseOrder.payments?.reduce((sum, p) => sum + (Number(p.amount) || 0), 0) || 0), purchaseOrder.currencyCode)}</p>
                   </div>
-                  <div className="bg-muted rounded-lg p-3">
-                    <p className="text-sm text-muted-foreground">{t('purchase.detail.balance', 'Balance')}</p>
-                    <p className="text-lg font-bold text-red-600">{formatCurrency((purchaseOrder as any).balance ?? purchaseOrder.totalAmount, purchaseOrder.currencyCode)}</p>
+                  <div className="bg-muted dark:bg-slate-700 rounded-lg p-3">
+                    <p className="text-sm text-muted-foreground dark:text-slate-400">{t('purchase.detail.balance', 'Balance')}</p>
+                    <p className="text-lg font-bold text-red-600 dark:text-green-400">{formatCurrency((Number(purchaseOrder.totalAmount) - (purchaseOrder.payments?.reduce((sum, p) => sum + (Number(p.amount) || 0), 0) || 0)), purchaseOrder.currencyCode)}</p>
                   </div>
                 </div>
 
                 {/* Payments Table */}
                 {(!purchaseOrder.payments || purchaseOrder.payments.length === 0) ? (
-                  <div className="text-center py-8 text-muted-foreground">
+                  <div className="text-center py-8 text-muted-foreground dark:text-slate-400">
                     <DollarSign className="mx-auto h-8 w-8 mb-2" />
                     <p>{t('purchase.detail.noPayments', 'No payments recorded yet')}</p>
                   </div>
                 ) : (
                   <Table>
                     <TableHeader>
-                      <TableRow>
-                        <TableHead>{t('purchase.detail.date', 'Date')}</TableHead>
-                        <TableHead>{t('purchase.detail.method', 'Method')}</TableHead>
-                        <TableHead className="text-right">{t('purchase.detail.amount', 'Amount')}</TableHead>
-                        <TableHead>{t('purchase.detail.notes', 'Notes')}</TableHead>
+                      <TableRow className="dark:bg-slate-700">
+                        <TableHead className="dark:text-white">{t('purchase.detail.date', 'Date')}</TableHead>
+                        <TableHead className="dark:text-white">{t('purchase.detail.method', 'Method')}</TableHead>
+                        <TableHead className="text-right dark:text-white">{t('purchase.detail.amount', 'Amount')}</TableHead>
+                        <TableHead className="dark:text-white">{t('purchase.detail.notes', 'Notes')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {(purchaseOrder.payments || []).map((payment: any, idx: number) => (
-                        <TableRow key={idx}>
-                          <TableCell>{new Date(payment.paidDate || payment.date).toLocaleDateString()}</TableCell>
+                        <TableRow key={idx} className="dark:hover:bg-slate-700/50">
+                          <TableCell className="dark:text-slate-300">{new Date(payment.paidDate || payment.date).toLocaleDateString()}</TableCell>
                           <TableCell><Badge variant="outline">{payment.paymentMethod}</Badge></TableCell>
-                          <TableCell className="text-right font-medium">{formatCurrency(payment.amount, purchaseOrder.currencyCode)}</TableCell>
-                          <TableCell>{payment.notes || '-'}</TableCell>
+                          <TableCell className="text-right font-medium dark:text-slate-200">{formatCurrency(payment.amount, purchaseOrder.currencyCode)}</TableCell>
+                          <TableCell className="dark:text-slate-300">{payment.notes || '-'}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -616,42 +679,61 @@ export default function PurchaseOrderDetailPage() {
                 {/* Record Payment Dialog */}
                 {paymentOpen && (
                   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-                    <div className="bg-background rounded-lg border p-6 max-w-md w-full mx-4">
-                      <h3 className="text-lg font-semibold mb-4">{t('purchase.detail.recordPayment', 'Record Payment')}</h3>
+                    <div className="bg-background dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6 max-w-md w-full mx-4">
+                      <h3 className="text-lg font-semibold mb-4 text-slate-900 dark:text-white">{t('purchase.detail.recordPayment', 'Record Payment')}</h3>
                       <div className="space-y-4">
                         <div>
-                          <Label>{t('purchase.detail.paymentAmount', 'Amount')}</Label>
+                          <Label className="text-slate-900 dark:text-white">{t('purchase.detail.paymentAmount', 'Amount')}</Label>
                           <Input
                             type="number"
                             value={paymentAmount}
                             onChange={(e) => setPaymentAmount(e.target.value)}
                             placeholder={String((purchaseOrder as any).balance ?? purchaseOrder.totalAmount)}
+                            className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                           />
                         </div>
                         <div>
-                          <Label>{t('purchase.detail.paymentMethod', 'Payment Method')}</Label>
+                          <Label className="text-slate-900 dark:text-white">{t('purchase.detail.paymentMethod', 'Payment Method')}</Label>
                           <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                            <SelectTrigger>
+                            <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600">
                               <SelectValue />
                             </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="cash">Cash</SelectItem>
-                              <SelectItem value="card">Card</SelectItem>
-                              <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                              <SelectItem value="cheque">Cheque</SelectItem>
-                              <SelectItem value="mobile_money">Mobile Money</SelectItem>
-                              <SelectItem value="credit">Credit</SelectItem>
+                            <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                              <SelectItem value="cash" className="dark:text-slate-200">Cash</SelectItem>
+                              <SelectItem value="card" className="dark:text-slate-200">Card</SelectItem>
+                              <SelectItem value="bank_transfer" className="dark:text-slate-200">Bank Transfer</SelectItem>
+                              <SelectItem value="cheque" className="dark:text-slate-200">Cheque</SelectItem>
+                              <SelectItem value="mobile_money" className="dark:text-slate-200">Mobile Money</SelectItem>
+                              <SelectItem value="credit" className="dark:text-slate-200">Credit</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
                         <div>
-                          <Label>{t('purchase.detail.paymentNotes', 'Notes')}</Label>
-                          <Textarea value={paymentNotes} onChange={(e) => setPaymentNotes(e.target.value)} rows={2} />
+                          <Label className="text-slate-900 dark:text-white">{t('purchase.detail.paymentNotes', 'Notes')}</Label>
+                          <Textarea value={paymentNotes} onChange={(e) => setPaymentNotes(e.target.value)} rows={2} className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600" />
                         </div>
+                        {(paymentMethod === 'bank_transfer' || paymentMethod === 'cheque' || paymentMethod === 'mobile_money') && (
+                          <div>
+                            <Label className="text-slate-900 dark:text-white">{t('purchase.detail.bankAccount', 'Bank Account')}</Label>
+                            <Select value={bankAccountId} onValueChange={setBankAccountId}>
+                              <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600">
+                                <SelectValue placeholder="Select bank account" />
+                              </SelectTrigger>
+                              <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                                {bankAccounts.map((acc) => (
+                                  <SelectItem key={acc._id} value={acc._id} className="dark:text-slate-200">
+                                    {acc.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
                       </div>
                       <div className="flex justify-end gap-2 mt-4">
-                        <Button variant="outline" onClick={() => setPaymentOpen(false)}>{t('common.cancel', 'Cancel')}</Button>
-                        <Button onClick={handleRecordPayment} disabled={paymentSaving || !paymentAmount}>
+                        <Button variant="outline" onClick={() => setPaymentOpen(false)} className="border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white">{t('common.cancel', 'Cancel')}</Button>
+                        <Button onClick={handleRecordPayment} disabled={paymentSaving || !paymentAmount} className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-200">
+                          {paymentSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2 h-4 w-4" />}
                           {paymentSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2 h-4 w-4" />}
                           {t('purchase.detail.submitPayment', 'Submit Payment')}
                         </Button>
@@ -664,17 +746,17 @@ export default function PurchaseOrderDetailPage() {
           </TabsContent>
 
           <TabsContent value="history" className="mt-4">
-            <Card>
+            <Card className="dark:bg-slate-800">
               <CardHeader>
-                <CardTitle>{t('purchase.detail.historyTitle', 'Activity History')}</CardTitle>
+                <CardTitle className="text-slate-900 dark:text-white">{t('purchase.detail.historyTitle', 'Activity History')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex gap-4">
                     <div className="w-2 h-2 rounded-full bg-primary mt-2" />
                     <div>
-                      <p className="font-medium">{t('purchase.history.created', 'Purchase Order Created')}</p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="font-medium dark:text-slate-200">{t('purchase.history.created', 'Purchase Order Created')}</p>
+                      <p className="text-sm text-muted-foreground dark:text-slate-400">
                         {purchaseOrder.createdBy?.name || 'Unknown'} - {formatDate(purchaseOrder.createdAt)}
                       </p>
                     </div>
@@ -683,8 +765,8 @@ export default function PurchaseOrderDetailPage() {
                     <div className="flex gap-4">
                       <div className="w-2 h-2 rounded-full bg-green-500 mt-2" />
                       <div>
-                        <p className="font-medium">{t('purchase.history.approved', 'Purchase Order Approved')}</p>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="font-medium dark:text-slate-200">{t('purchase.history.approved', 'Purchase Order Approved')}</p>
+                        <p className="text-sm text-muted-foreground dark:text-slate-400">
                           {purchaseOrder.approvedBy?.name || 'Unknown'} - {formatDate(purchaseOrder.approvedAt)}
                         </p>
                       </div>
@@ -694,7 +776,7 @@ export default function PurchaseOrderDetailPage() {
                     <div className="flex gap-4">
                       <div className="w-2 h-2 rounded-full bg-yellow-500 mt-2" />
                       <div>
-                        <p className="font-medium">{t('purchase.history.partialReceived', 'Partially Received')}</p>
+                        <p className="font-medium dark:text-slate-200">{t('purchase.history.partialReceived', 'Partially Received')}</p>
                       </div>
                     </div>
                   )}
@@ -702,7 +784,7 @@ export default function PurchaseOrderDetailPage() {
                     <div className="flex gap-4">
                       <div className="w-2 h-2 rounded-full bg-green-500 mt-2" />
                       <div>
-                        <p className="font-medium">{t('purchase.history.fullyReceived', 'Fully Received')}</p>
+                        <p className="font-medium dark:text-slate-200">{t('purchase.history.fullyReceived', 'Fully Received')}</p>
                       </div>
                     </div>
                   )}
@@ -710,7 +792,7 @@ export default function PurchaseOrderDetailPage() {
                     <div className="flex gap-4">
                       <div className="w-2 h-2 rounded-full bg-red-500 mt-2" />
                       <div>
-                        <p className="font-medium">{t('purchase.history.cancelled', 'Purchase Order Cancelled')}</p>
+                        <p className="font-medium dark:text-slate-200">{t('purchase.history.cancelled', 'Purchase Order Cancelled')}</p>
                       </div>
                     </div>
                   )}

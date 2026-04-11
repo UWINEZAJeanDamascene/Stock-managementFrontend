@@ -196,8 +196,8 @@ export default function PickPackPickPage() {
             Back
           </Button>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Pick Items</h1>
-            <p className="text-gray-500">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Pick Items</h1>
+            <p className="text-gray-500 dark:text-gray-400">
               {pickPack.referenceNo} - {pickPack.salesOrder?.client?.name}
             </p>
           </div>
@@ -217,15 +217,15 @@ export default function PickPackPickPage() {
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <h3 className="font-medium">{line.description}</h3>
+                          <h3 className="font-medium dark:text-gray-100">{line.description}</h3>
                           {isComplete && (
-                            <Badge className="bg-green-100 text-green-800">
+                            <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
                               <CheckCircle className="h-3 w-3 mr-1" />
                               Picked
                             </Badge>
                           )}
                         </div>
-                        <p className="text-sm text-gray-500">{line.product?.sku}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">{line.product?.sku}</p>
                         {line.location && (
                           <p className="text-sm text-blue-600">
                             <Scan className="h-3 w-3 inline mr-1" />
@@ -236,8 +236,8 @@ export default function PickPackPickPage() {
 
                       <div className="flex items-center gap-4">
                         <div className="text-right">
-                          <div className="text-sm text-gray-500">To Pick: {qtyToPick}</div>
-                          <div className="text-lg font-bold">
+                          <div className="text-sm text-gray-500 dark:text-gray-400">To Pick: {qtyToPick}</div>
+                          <div className="text-lg font-bold dark:text-gray-100">
                             {pickedQty} / {qtyToPick}
                           </div>
                         </div>
@@ -285,18 +285,18 @@ export default function PickPackPickPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Total Items:</span>
-                  <span className="font-medium">{pickPack.lines.length}</span>
+                  <span className="text-gray-600 dark:text-gray-400">Total Items:</span>
+                  <span className="font-medium dark:text-gray-100">{pickPack.lines.length}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Picked:</span>
-                  <span className="font-medium">
+                  <span className="text-gray-600 dark:text-gray-400">Picked:</span>
+                  <span className="font-medium dark:text-gray-100">
                     {pickPack.lines.filter(l => (pickingLines[l._id] || 0) >= toNumber(l.qtyToPick)).length}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Remaining:</span>
-                  <span className="font-medium">
+                  <span className="text-gray-600 dark:text-gray-400">Remaining:</span>
+                  <span className="font-medium dark:text-gray-100">
                     {pickPack.lines.filter(l => (pickingLines[l._id] || 0) < toNumber(l.qtyToPick)).length}
                   </span>
                 </div>

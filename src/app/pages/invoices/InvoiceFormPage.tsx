@@ -38,6 +38,12 @@ interface Product {
   sku: string;
   sellingPrice?: number;
   currentStock?: number;
+  description?: string;
+  taxRate?: number;
+  defaultWarehouse?: {
+    _id: string;
+    name: string;
+  };
 }
 
 interface Client {
@@ -219,6 +225,18 @@ export default function InvoiceFormPage() {
         line.productName = product.name;
         line.productSku = product.sku;
         line.unitPrice = product.sellingPrice || 0;
+        // Auto-fill description from product name if empty
+        if (!line.description) {
+          line.description = product.description || product.name;
+        }
+        // Auto-fill tax rate from product
+        if (product.taxRate !== undefined && product.taxRate !== null) {
+          line.taxRate = product.taxRate;
+        }
+        // Auto-fill warehouse from product's default warehouse
+        if (product.defaultWarehouse?._id) {
+          line.warehouse = product.defaultWarehouse._id;
+        }
       }
     } else {
       (line as any)[field] = value;
@@ -356,11 +374,11 @@ export default function InvoiceFormPage() {
     <Layout>
       <div className="container mx-auto py-6">
         <div className="flex items-center gap-4 mb-6">
-          <Button variant="ghost" onClick={() => navigate('/invoices')}>
+          <Button variant="ghost" onClick={() => navigate('/invoices')} className="dark:text-gray-300">
             <ArrowLeft className="mr-2 h-4 w-4" />
             {t('common.back', 'Back')}
           </Button>
-          <h1 className="text-2xl font-bold">
+          <h1 className="text-2xl font-bold dark:text-gray-100">
             {isEditMode ? t('invoice.editInvoice', 'Edit Invoice') : t('invoice.newInvoice', 'New Invoice')}
           </h1>
         </div>
@@ -368,21 +386,21 @@ export default function InvoiceFormPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            <Card>
+            <Card className="dark:border-slate-700 dark:bg-slate-800">
               <CardHeader>
-                <CardTitle>{t('invoice.basicInfo', 'Basic Information')}</CardTitle>
+                <CardTitle className="dark:text-gray-100">{t('invoice.basicInfo', 'Basic Information')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label>{t('invoice.client')} *</Label>
+                    <Label className="dark:text-gray-200">{t('invoice.client')} *</Label>
                     <Select value={formData.client} onValueChange={(value) => setFormData(prev => ({ ...prev, client: value }))}>
-                      <SelectTrigger>
+                      <SelectTrigger className="dark:bg-slate-700 dark:border-slate-600">
                         <SelectValue placeholder={t('invoice.selectClient')} />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
                         {clients.map(client => (
-                          <SelectItem key={client._id} value={client._id}>
+                          <SelectItem key={client._id} value={client._id} className="dark:text-gray-200">
                             {client.name} ({client.code})
                           </SelectItem>
                         ))}
@@ -390,14 +408,14 @@ export default function InvoiceFormPage() {
                     </Select>
                   </div>
                   <div>
-                    <Label>{t('invoice.currency')}</Label>
+                    <Label className="dark:text-gray-200">{t('invoice.currency')}</Label>
                     <Select value={formData.currencyCode} onValueChange={(value) => setFormData(prev => ({ ...prev, currencyCode: value }))}>
-                      <SelectTrigger>
+                      <SelectTrigger className="dark:bg-slate-700 dark:border-slate-600">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
                         {CURRENCIES.map(curr => (
-                          <SelectItem key={curr} value={curr}>{curr}</SelectItem>
+                          <SelectItem key={curr} value={curr} className="dark:text-gray-200">{curr}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -406,34 +424,36 @@ export default function InvoiceFormPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <Label>{t('invoice.invoiceDate')}</Label>
+                    <Label className="dark:text-gray-200">{t('invoice.invoiceDate')}</Label>
                     <Input
                       type="date"
                       value={formData.invoiceDate}
                       onChange={(e) => setFormData(prev => ({ ...prev, invoiceDate: e.target.value }))}
+                      className="dark:bg-slate-700 dark:border-slate-600 dark:text-gray-200"
                     />
                   </div>
                   <div>
-                    <Label>{t('invoice.dueDate')}</Label>
+                    <Label className="dark:text-gray-200">{t('invoice.dueDate')}</Label>
                     <Input
                       type="date"
                       value={formData.dueDate}
                       onChange={(e) => setFormData(prev => ({ ...prev, dueDate: e.target.value }))}
+                      className="dark:bg-slate-700 dark:border-slate-600 dark:text-gray-200"
                     />
                   </div>
                   <div>
-                    <Label>{t('invoice.paymentTerms')}</Label>
+                    <Label className="dark:text-gray-200">{t('invoice.paymentTerms')}</Label>
                     <Select value={formData.paymentTerms} onValueChange={(value) => setFormData(prev => ({ ...prev, paymentTerms: value }))}>
-                      <SelectTrigger>
+                      <SelectTrigger className="dark:bg-slate-700 dark:border-slate-600">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="due_on_receipt">{t('invoice.terms.due_on_receipt', 'Due on Receipt')}</SelectItem>
-                        <SelectItem value="net7">{t('invoice.terms.net7', 'Net 7')}</SelectItem>
-                        <SelectItem value="net15">{t('invoice.terms.net15', 'Net 15')}</SelectItem>
-                        <SelectItem value="net30">{t('invoice.terms.net30', 'Net 30')}</SelectItem>
-                        <SelectItem value="net45">{t('invoice.terms.net45', 'Net 45')}</SelectItem>
-                        <SelectItem value="net60">{t('invoice.terms.net60', 'Net 60')}</SelectItem>
+                      <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
+                        <SelectItem value="due_on_receipt" className="dark:text-gray-200">{t('invoice.terms.due_on_receipt', 'Due on Receipt')}</SelectItem>
+                        <SelectItem value="net7" className="dark:text-gray-200">{t('invoice.terms.net7', 'Net 7')}</SelectItem>
+                        <SelectItem value="net15" className="dark:text-gray-200">{t('invoice.terms.net15', 'Net 15')}</SelectItem>
+                        <SelectItem value="net30" className="dark:text-gray-200">{t('invoice.terms.net30', 'Net 30')}</SelectItem>
+                        <SelectItem value="net45" className="dark:text-gray-200">{t('invoice.terms.net45', 'Net 45')}</SelectItem>
+                        <SelectItem value="net60" className="dark:text-gray-200">{t('invoice.terms.net60', 'Net 60')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -442,47 +462,48 @@ export default function InvoiceFormPage() {
             </Card>
 
             {/* Line Items */}
-            <Card>
+            <Card className="dark:border-slate-700 dark:bg-slate-800">
               <CardHeader>
-                <CardTitle>{t('invoice.lineItems', 'Line Items')}</CardTitle>
+                <CardTitle className="dark:text-gray-100">{t('invoice.lineItems', 'Line Items')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead style={{ width: 200 }}>{t('invoice.product', 'Product')}</TableHead>
-                      <TableHead>{t('invoice.description', 'Description')}</TableHead>
-                      <TableHead>{t('invoice.warehouse', 'Warehouse')}</TableHead>
-                      <TableHead className="text-right">{t('invoice.qty', 'Qty')}</TableHead>
-                      <TableHead className="text-right">{t('invoice.unitPrice', 'Unit Price')}</TableHead>
-                      <TableHead className="text-right">{t('invoice.discount', 'Discount %')}</TableHead>
-                      <TableHead className="text-right">{t('invoice.taxRate', 'Tax %')}</TableHead>
-                      <TableHead className="text-right">{t('invoice.total', 'Total')}</TableHead>
-                      <TableHead></TableHead>
+                  <TableHeader className="dark:bg-slate-800">
+                    <TableRow className="dark:hover:bg-slate-700/50 dark:border-b dark:border-slate-700">
+                      <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700" style={{ width: 200 }}>{t('invoice.product', 'Product')}</TableHead>
+                      <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.description', 'Description')}</TableHead>
+                      <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.warehouse', 'Warehouse')}</TableHead>
+                      <TableHead className="text-right dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.qty', 'Qty')}</TableHead>
+                      <TableHead className="text-right dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.unitPrice', 'Unit Price')}</TableHead>
+                      <TableHead className="text-right dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.discount', 'Discount %')}</TableHead>
+                      <TableHead className="text-right dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.taxRate', 'Tax %')}</TableHead>
+                      <TableHead className="text-right dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.total', 'Total')}</TableHead>
+                      <TableHead className="dark:bg-slate-800 dark:border-b dark:border-slate-700"></TableHead>
                     </TableRow>
                   </TableHeader>
-                  <TableBody>
+                  <TableBody className="dark:bg-slate-800">
                     {formData.lines.map((line, index) => (
-                      <TableRow key={index}>
-                        <TableCell>
+                      <TableRow key={index} className="dark:hover:bg-slate-700/50 dark:border-b dark:border-slate-700">
+                        <TableCell className="dark:bg-slate-800">
                           <Select value={line.product} onValueChange={(value) => handleLineChange(index, 'product', value)}>
-                            <SelectTrigger>
+                            <SelectTrigger className="dark:bg-slate-700 dark:border-slate-600">
                               <SelectValue placeholder={t('invoice.selectProduct')} />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
                               {products.map(product => (
-                                <SelectItem key={product._id} value={product._id}>
+                                <SelectItem key={product._id} value={product._id} className="dark:text-gray-200">
                                   {product.name} ({product.sku}) - Stock: {product.currentStock || 0}
                                 </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="dark:bg-slate-800">
                           <Input
                             value={line.description}
                             onChange={(e) => handleLineChange(index, 'description', e.target.value)}
                             placeholder={t('invoice.descriptionOverride', 'Description override')}
+                            className="dark:bg-slate-700 dark:border-slate-600 dark:text-gray-200"
                           />
                         </TableCell>
                         <TableCell>
@@ -490,72 +511,73 @@ export default function InvoiceFormPage() {
                             <SelectTrigger>
                               <SelectValue placeholder={t('invoice.selectWarehouse')} />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
                               {warehouses.map(warehouse => (
-                                <SelectItem key={warehouse._id} value={warehouse._id}>
+                                <SelectItem key={warehouse._id} value={warehouse._id} className="dark:text-gray-200">
                                   {warehouse.name}
                                 </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="dark:bg-slate-800">
                           <Input
                             type="number"
                             min="1"
                             value={line.qty || line.quantity}
                             onChange={(e) => handleLineChange(index, 'qty', e.target.value)}
-                            className="w-20 text-right"
+                            className="w-20 text-right dark:bg-slate-700 dark:border-slate-600 dark:text-gray-200"
                           />
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="dark:bg-slate-800">
                           <Input
                             type="number"
                             min="0"
                             step="0.01"
                             value={line.unitPrice}
                             onChange={(e) => handleLineChange(index, 'unitPrice', e.target.value)}
-                            className="w-24 text-right"
+                            className="w-24 text-right dark:bg-slate-700 dark:border-slate-600 dark:text-gray-200"
                           />
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="dark:bg-slate-800">
                           <Input
                             type="number"
                             min="0"
                             max="100"
                             value={line.discountPct}
                             onChange={(e) => handleLineChange(index, 'discountPct', e.target.value)}
-                            className="w-16 text-right"
+                            className="w-16 text-right dark:bg-slate-700 dark:border-slate-600 dark:text-gray-200"
                           />
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="dark:bg-slate-800">
                           <Input
                             type="number"
                             min="0"
                             max="100"
                             value={line.taxRate}
                             onChange={(e) => handleLineChange(index, 'taxRate', e.target.value)}
-                            className="w-16 text-right"
+                            className="w-16 text-right dark:bg-slate-700 dark:border-slate-600 dark:text-gray-200"
                           />
                         </TableCell>
-                        <TableCell className="text-right font-medium">
+                        <TableCell className="text-right font-medium dark:text-gray-200 dark:bg-slate-800">
                           {formatCurrency(line.lineTotal)}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="dark:bg-slate-800">
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => removeLine(index)}
                             disabled={formData.lines.length === 1}
+                            className="dark:hover:bg-slate-700"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-4 w-4 dark:text-gray-300" />
                           </Button>
                         </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
-                <Button variant="outline" onClick={addLine} className="mt-4">
+                <Button variant="outline" onClick={addLine} className="mt-4 dark:border-slate-600 dark:text-gray-200 dark:hover:bg-slate-700">
                   <Plus className="mr-2 h-4 w-4" />
                   {t('invoice.addLine', 'Add Line')}
                 </Button>
@@ -565,33 +587,33 @@ export default function InvoiceFormPage() {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            <Card>
+            <Card className="dark:border-slate-700 dark:bg-slate-800">
               <CardHeader>
-                <CardTitle>{t('invoice.summary', 'Summary')}</CardTitle>
+                <CardTitle className="dark:text-gray-100">{t('invoice.summary', 'Summary')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="flex justify-between">
+                <div className="flex justify-between dark:text-gray-300">
                   <span>{t('invoice.subtotal', 'Subtotal')}</span>
                   <span>{formatCurrency(calculateSubtotal())}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between dark:text-gray-300">
                   <span>{t('invoice.discount', 'Discount')}</span>
                   <span>- {formatCurrency(calculateDiscount())}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between dark:text-gray-300">
                   <span>{t('invoice.tax', 'Tax')}</span>
                   <span>{formatCurrency(calculateTax())}</span>
                 </div>
-                <div className="flex justify-between text-lg font-bold pt-3 border-t">
+                <div className="flex justify-between text-lg font-bold pt-3 border-t dark:border-slate-700 dark:text-gray-100">
                   <span>{t('invoice.total', 'Total')}</span>
                   <span>{formatCurrency(calculateTotal())}</span>
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="dark:border-slate-700 dark:bg-slate-800">
               <CardHeader>
-                <CardTitle>{t('invoice.notes', 'Notes')}</CardTitle>
+                <CardTitle className="dark:text-gray-100">{t('invoice.notes', 'Notes')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <Textarea
@@ -599,6 +621,7 @@ export default function InvoiceFormPage() {
                   onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
                   placeholder={t('invoice.notesPlaceholder', 'Add notes...')}
                   rows={4}
+                  className="dark:bg-slate-700 dark:border-slate-600 dark:text-gray-200"
                 />
               </CardContent>
             </Card>

@@ -81,19 +81,19 @@ interface PickPack {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  draft: 'bg-gray-100 text-gray-800',
-  picking: 'bg-yellow-100 text-yellow-800',
-  picked: 'bg-blue-100 text-blue-800',
-  packed: 'bg-purple-100 text-purple-800',
-  ready_for_delivery: 'bg-green-100 text-green-800',
-  cancelled: 'bg-red-100 text-red-800',
+  draft: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300',
+  picking: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+  picked: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+  packed: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
+  ready_for_delivery: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+  cancelled: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
 };
 
 const PRIORITY_COLORS: Record<string, string> = {
-  low: 'bg-gray-100 text-gray-800',
-  medium: 'bg-blue-100 text-blue-800',
-  high: 'bg-orange-100 text-orange-800',
-  urgent: 'bg-red-100 text-red-800',
+  low: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300',
+  medium: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+  high: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
+  urgent: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
 };
 
 export default function PickPackDetailPage() {
@@ -220,8 +220,8 @@ export default function PickPackDetailPage() {
               Back
             </Button>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">{pickPack.referenceNo}</h1>
-              <p className="text-gray-500">Pick & Pack Task</p>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{pickPack.referenceNo}</h1>
+              <p className="text-gray-500 dark:text-gray-400">Pick & Pack Task</p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -300,25 +300,25 @@ export default function PickPackDetailPage() {
                   <table className="w-full">
                     <thead className="border-b">
                       <tr>
-                        <th className="text-left py-2">Product</th>
-                        <th className="text-right py-2">To Pick</th>
-                        <th className="text-right py-2">Picked</th>
-                        <th className="text-right py-2">Packed</th>
-                        <th className="text-center py-2">Status</th>
+                        <th className="text-left py-2 dark:text-gray-200">Product</th>
+                        <th className="text-right py-2 dark:text-gray-200">To Pick</th>
+                        <th className="text-right py-2 dark:text-gray-200">Picked</th>
+                        <th className="text-right py-2 dark:text-gray-200">Packed</th>
+                        <th className="text-center py-2 dark:text-gray-200">Status</th>
                       </tr>
                     </thead>
                     <tbody>
                       {pickPack.lines.map((line) => (
-                        <tr key={line._id} className="border-b last:border-0">
+                        <tr key={line._id} className="border-b last:border-0 dark:border-gray-700">
                           <td className="py-3">
-                            <div className="font-medium">{line.description}</div>
-                            <div className="text-sm text-gray-500">{line.product?.sku}</div>
+                            <div className="font-medium dark:text-gray-100">{line.description}</div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400">{line.product?.sku}</div>
                           </td>
-                          <td className="text-right py-3">{toNumber(line.qtyToPick)}</td>
-                          <td className="text-right py-3">{toNumber(line.qtyPicked)}</td>
-                          <td className="text-right py-3">{toNumber(line.qtyPacked)}</td>
+                          <td className="text-right py-3 dark:text-gray-100">{toNumber(line.qtyToPick)}</td>
+                          <td className="text-right py-3 dark:text-gray-100">{toNumber(line.qtyPicked)}</td>
+                          <td className="text-right py-3 dark:text-gray-100">{toNumber(line.qtyPacked)}</td>
                           <td className="text-center py-3">
-                            <Badge className="capitalize">{line.status}</Badge>
+                            <Badge className="capitalize dark:bg-gray-700 dark:text-gray-200">{line.status}</Badge>
                           </td>
                         </tr>
                       ))}
@@ -337,9 +337,9 @@ export default function PickPackDetailPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <Package className="h-5 w-5 text-gray-400" />
+                  <Package className="h-5 w-5 text-gray-400 dark:text-gray-500" />
                   <div>
-                    <p className="font-medium">{pickPack.salesOrder?.referenceNo}</p>
+                    <p className="font-medium dark:text-gray-100">{pickPack.salesOrder?.referenceNo}</p>
                     <Button 
                       variant="link" 
                       className="p-0 h-auto text-sm"
@@ -350,10 +350,10 @@ export default function PickPackDetailPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <User className="h-5 w-5 text-gray-400" />
+                  <User className="h-5 w-5 text-gray-400 dark:text-gray-500" />
                   <div>
-                    <p className="font-medium">{pickPack.salesOrder?.client?.name}</p>
-                    <p className="text-sm text-gray-500">Client</p>
+                    <p className="font-medium dark:text-gray-100">{pickPack.salesOrder?.client?.name}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Client</p>
                   </div>
                 </div>
               </CardContent>
@@ -365,8 +365,8 @@ export default function PickPackDetailPage() {
               </CardHeader>
               <CardContent>
                 <div className="flex items-center gap-3">
-                  <Warehouse className="h-5 w-5 text-gray-400" />
-                  <span>{pickPack.warehouse?.name}</span>
+                  <Warehouse className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+                  <span className="dark:text-gray-100">{pickPack.warehouse?.name}</span>
                 </div>
               </CardContent>
             </Card>
@@ -377,21 +377,21 @@ export default function PickPackDetailPage() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Method:</span>
-                  <span>{pickPack.shippingMethod || '-'}</span>
+                  <span className="text-gray-600 dark:text-gray-400">Method:</span>
+                  <span className="dark:text-gray-100">{pickPack.shippingMethod || '-'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Packages:</span>
-                  <span>{toNumber(pickPack.packageCount)}</span>
+                  <span className="text-gray-600 dark:text-gray-400">Packages:</span>
+                  <span className="dark:text-gray-100">{toNumber(pickPack.packageCount)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Weight:</span>
-                  <span>{toNumber(pickPack.totalWeight)} kg</span>
+                  <span className="text-gray-600 dark:text-gray-400">Weight:</span>
+                  <span className="dark:text-gray-100">{toNumber(pickPack.totalWeight)} kg</span>
                 </div>
                 {pickPack.trackingNumber && (
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Tracking:</span>
-                    <span>{pickPack.trackingNumber}</span>
+                    <span className="text-gray-600 dark:text-gray-400">Tracking:</span>
+                    <span className="dark:text-gray-100">{pickPack.trackingNumber}</span>
                   </div>
                 )}
               </CardContent>
@@ -404,7 +404,7 @@ export default function PickPackDetailPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center gap-3">
-                    <Truck className="h-5 w-5 text-gray-400" />
+                    <Truck className="h-5 w-5 text-gray-400 dark:text-gray-500" />
                     <div>
                       <Button 
                         variant="link" 
@@ -426,31 +426,31 @@ export default function PickPackDetailPage() {
               </CardHeader>
               <CardContent className="space-y-3 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Created:</span>
-                  <span>{formatDate(pickPack.createdAt)}</span>
+                  <span className="text-gray-600 dark:text-gray-400">Created:</span>
+                  <span className="dark:text-gray-100">{formatDate(pickPack.createdAt)}</span>
                 </div>
                 {pickPack.pickingStartedAt && (
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Picking Started:</span>
-                    <span>{formatDate(pickPack.pickingStartedAt)}</span>
+                    <span className="text-gray-600 dark:text-gray-400">Picking Started:</span>
+                    <span className="dark:text-gray-100">{formatDate(pickPack.pickingStartedAt)}</span>
                   </div>
                 )}
                 {pickPack.pickingCompletedAt && (
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Picking Completed:</span>
-                    <span>{formatDate(pickPack.pickingCompletedAt)}</span>
+                    <span className="text-gray-600 dark:text-gray-400">Picking Completed:</span>
+                    <span className="dark:text-gray-100">{formatDate(pickPack.pickingCompletedAt)}</span>
                   </div>
                 )}
                 {pickPack.packingStartedAt && (
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Packing Started:</span>
-                    <span>{formatDate(pickPack.packingStartedAt)}</span>
+                    <span className="text-gray-600 dark:text-gray-400">Packing Started:</span>
+                    <span className="dark:text-gray-100">{formatDate(pickPack.packingStartedAt)}</span>
                   </div>
                 )}
                 {pickPack.packingCompletedAt && (
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Packing Completed:</span>
-                    <span>{formatDate(pickPack.packingCompletedAt)}</span>
+                    <span className="text-gray-600 dark:text-gray-400">Packing Completed:</span>
+                    <span className="dark:text-gray-100">{formatDate(pickPack.packingCompletedAt)}</span>
                   </div>
                 )}
               </CardContent>

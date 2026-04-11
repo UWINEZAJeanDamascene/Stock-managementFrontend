@@ -180,22 +180,22 @@ export default function RolesSettingsPage() {
 
   return (
     <Layout>
-      <div className="space-y-6 max-w-6xl mx-auto">
+      <div className="space-y-6 max-w-6xl mx-auto bg-gray-50 dark:bg-slate-900 min-h-screen p-3 md:p-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="outline" size="sm" onClick={() => navigate('/dashboard')}>
+            <Button variant="outline" size="sm" onClick={() => navigate('/dashboard')} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>
-              <h1 className="text-2xl font-bold flex items-center gap-2">
+              <h1 className="text-2xl font-bold flex items-center gap-2 dark:text-white">
                 <Shield className="h-6 w-6" />
                 Roles & Permissions
               </h1>
-              <p className="text-muted-foreground">Configure what each role can access and do</p>
+              <p className="text-muted-foreground dark:text-slate-400">Configure what each role can access and do</p>
             </div>
           </div>
-          <Button onClick={openCreate} className="gap-2">
+          <Button onClick={openCreate} className="gap-2 dark:bg-primary dark:text-primary-foreground">
             <Plus className="h-4 w-4" />
             Create Role
           </Button>
@@ -203,60 +203,60 @@ export default function RolesSettingsPage() {
 
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search roles..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground dark:text-slate-400" />
+          <Input placeholder="Search roles..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10 bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600" />
         </div>
 
         {/* Roles Grid */}
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground dark:text-slate-400" />
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredRoles.map(role => (
-              <Card key={role._id} className={!role.is_system_role ? 'border-primary/30' : ''}>
+              <Card key={role._id} className={!role.is_system_role ? 'border-primary/30 dark:border-primary/50' : 'dark:bg-slate-800'}>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      {role.is_system_role ? <Lock className="h-4 w-4 text-muted-foreground" /> : <Shield className="h-4 w-4 text-primary" />}
+                    <CardTitle className="text-base flex items-center gap-2 dark:text-white">
+                      {role.is_system_role ? <Lock className="h-4 w-4 text-muted-foreground dark:text-slate-400" /> : <Shield className="h-4 w-4 text-primary" />}
                       {role.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                     </CardTitle>
                     {role.is_system_role ? (
-                      <Badge variant="outline" className="text-xs">System</Badge>
+                      <Badge variant="outline" className="text-xs dark:border-slate-500 dark:text-slate-300">System</Badge>
                     ) : (
-                      <Badge className="text-xs bg-primary/10 text-primary">Custom</Badge>
+                      <Badge className="text-xs bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-foreground">Custom</Badge>
                     )}
                   </div>
                   {role.description && (
-                    <CardDescription className="text-xs">{role.description}</CardDescription>
+                    <CardDescription className="text-xs dark:text-slate-400">{role.description}</CardDescription>
                   )}
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    <div className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+                    <div className="text-xs text-muted-foreground dark:text-slate-400 font-medium uppercase tracking-wider">
                       {role.permissions.length} permission{role.permissions.length !== 1 ? 's' : ''}
                     </div>
                     <div className="flex flex-wrap gap-1">
                       {role.permissions.slice(0, 6).map((p, i) => (
-                        <Badge key={i} variant="secondary" className="text-xs">
+                        <Badge key={i} variant="secondary" className="text-xs dark:bg-slate-700 dark:text-slate-200">
                           {p.resource === '*' ? 'All Resources' : resourceLabel(p.resource)}
                         </Badge>
                       ))}
                       {role.permissions.length > 6 && (
-                        <Badge variant="secondary" className="text-xs">+{role.permissions.length - 6} more</Badge>
+                        <Badge variant="secondary" className="text-xs dark:bg-slate-700 dark:text-slate-200">+{role.permissions.length - 6} more</Badge>
                       )}
                     </div>
                     <div className="flex gap-1 pt-2">
-                      <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => openView(role)}>
+                      <Button variant="outline" size="sm" className="flex-1 text-xs dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700" onClick={() => openView(role)}>
                         View
                       </Button>
                       {!role.is_system_role && (
                         <>
-                          <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => openEdit(role)}>
+                          <Button variant="outline" size="sm" className="flex-1 text-xs dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700" onClick={() => openEdit(role)}>
                             <Edit2 className="h-3 w-3 mr-1" /> Edit
                           </Button>
-                          <Button variant="outline" size="sm" className="text-destructive hover:text-destructive" onClick={() => handleDelete(role)}>
+                          <Button variant="outline" size="sm" className="text-destructive hover:text-destructive dark:text-red-400 dark:hover:text-red-300" onClick={() => handleDelete(role)}>
                             <Trash2 className="h-3 w-3" />
                           </Button>
                         </>
@@ -273,35 +273,35 @@ export default function RolesSettingsPage() {
         {drawerMode && (
           <>
             <div className="fixed inset-0 bg-black/50 z-40" onClick={closeDrawer} />
-            <div className="fixed right-0 top-0 bottom-0 w-full max-w-2xl bg-background border-l z-50 shadow-xl flex flex-col">
+            <div className="fixed right-0 top-0 bottom-0 w-full max-w-2xl bg-background dark:bg-slate-800 border-l dark:border-slate-600 z-50 shadow-xl flex flex-col">
 
               {/* View Permissions */}
               {drawerMode === 'view' && selectedRole && (
                 <>
-                  <div className="flex items-center justify-between p-6 border-b">
+                  <div className="flex items-center justify-between p-6 border-b dark:border-slate-600">
                     <div>
-                      <h2 className="text-lg font-semibold flex items-center gap-2">
+                      <h2 className="text-lg font-semibold flex items-center gap-2 dark:text-white">
                         <Shield className="h-5 w-5" />
                         {selectedRole.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                        {selectedRole.is_system_role && <Badge variant="outline" className="text-xs ml-2">System</Badge>}
+                        {selectedRole.is_system_role && <Badge variant="outline" className="text-xs ml-2 dark:border-slate-500 dark:text-slate-300">System</Badge>}
                       </h2>
-                      <p className="text-sm text-muted-foreground">{selectedRole.description}</p>
+                      <p className="text-sm text-muted-foreground dark:text-slate-400">{selectedRole.description}</p>
                     </div>
-                    <Button variant="ghost" size="sm" onClick={closeDrawer}>✕</Button>
+                    <Button variant="ghost" size="sm" onClick={closeDrawer} className="dark:text-slate-200">✕</Button>
                   </div>
                   <div className="flex-1 overflow-y-auto p-6">
                     {selectedRole.permissions.length === 0 ? (
-                      <p className="text-muted-foreground text-center py-8">No permissions assigned</p>
+                      <p className="text-muted-foreground dark:text-slate-400 text-center py-8">No permissions assigned</p>
                     ) : (
                       <div className="space-y-3">
                         {selectedRole.permissions.map((perm, i) => (
-                          <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                            <span className="font-medium text-sm">
+                          <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-muted/50 dark:bg-slate-700/50">
+                            <span className="font-medium text-sm dark:text-slate-200">
                               {perm.resource === '*' ? 'All Resources' : resourceLabel(perm.resource)}
                             </span>
                             <div className="flex flex-wrap gap-1 justify-end">
                               {perm.actions.map(a => (
-                                <Badge key={a} variant="secondary" className="text-xs">{actionLabel(a)}</Badge>
+                                <Badge key={a} variant="secondary" className="text-xs dark:bg-slate-600 dark:text-slate-200">{actionLabel(a)}</Badge>
                               ))}
                             </div>
                           </div>
@@ -315,39 +315,39 @@ export default function RolesSettingsPage() {
               {/* Create / Edit */}
               {(drawerMode === 'create' || drawerMode === 'edit') && (
                 <>
-                  <div className="flex items-center justify-between p-6 border-b">
+                  <div className="flex items-center justify-between p-6 border-b dark:border-slate-600">
                     <div>
-                      <h2 className="text-lg font-semibold flex items-center gap-2">
+                      <h2 className="text-lg font-semibold flex items-center gap-2 dark:text-white">
                         {drawerMode === 'create' ? <Plus className="h-5 w-5" /> : <Edit2 className="h-5 w-5" />}
                         {drawerMode === 'create' ? 'Create Role' : 'Edit Role'}
                       </h2>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-muted-foreground dark:text-slate-400">
                         {drawerMode === 'create' ? 'Define a new custom role with specific permissions' : `Editing: ${selectedRole?.name}`}
                       </p>
                     </div>
-                    <Button variant="ghost" size="sm" onClick={closeDrawer}>✕</Button>
+                    <Button variant="ghost" size="sm" onClick={closeDrawer} className="dark:text-slate-200">✕</Button>
                   </div>
                   <div className="flex-1 overflow-y-auto p-6 space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label>Role Name *</Label>
-                        <Input value={formName} onChange={e => setFormName(e.target.value)} placeholder="e.g. warehouse_staff" />
+                        <Label className="dark:text-slate-200">Role Name *</Label>
+                        <Input value={formName} onChange={e => setFormName(e.target.value)} placeholder="e.g. warehouse_staff" className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600" />
                       </div>
                       <div className="space-y-2">
-                        <Label>Description</Label>
-                        <Input value={formDescription} onChange={e => setFormDescription(e.target.value)} placeholder="What this role does" />
+                        <Label className="dark:text-slate-200">Description</Label>
+                        <Input value={formDescription} onChange={e => setFormDescription(e.target.value)} placeholder="What this role does" className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600" />
                       </div>
                     </div>
 
                     <div>
-                      <Label className="text-base mb-3 block">Permissions</Label>
-                      <div className="border rounded-lg overflow-hidden">
+                      <Label className="text-base mb-3 block dark:text-slate-200">Permissions</Label>
+                      <div className="border rounded-lg overflow-hidden dark:border-slate-600">
                         <table className="w-full text-sm">
                           <thead>
-                            <tr className="bg-muted/50">
-                              <th className="text-left p-3 font-medium">Resource</th>
+                            <tr className="bg-muted/50 dark:bg-slate-700/50">
+                              <th className="text-left p-3 font-medium dark:text-slate-200">Resource</th>
                               {ALL_ACTIONS.slice(0, 6).map(a => (
-                                <th key={a} className="text-center p-3 font-medium w-16">{actionLabel(a)}</th>
+                                <th key={a} className="text-center p-3 font-medium dark:text-slate-200 w-16">{actionLabel(a)}</th>
                               ))}
                             </tr>
                           </thead>
@@ -355,8 +355,8 @@ export default function RolesSettingsPage() {
                             {ALL_RESOURCES.map(resource => {
                               const perm = formPermissions.find(p => p.resource === resource);
                               return (
-                                <tr key={resource} className="border-t">
-                                  <td className="p-3 font-medium">{resourceLabel(resource)}</td>
+                                <tr key={resource} className="border-t dark:border-slate-600">
+                                  <td className="p-3 font-medium dark:text-slate-200">{resourceLabel(resource)}</td>
                                   {ALL_ACTIONS.slice(0, 6).map(action => {
                                     const checked = perm?.actions.includes(action) || false;
                                     return (
@@ -365,7 +365,7 @@ export default function RolesSettingsPage() {
                                           type="checkbox"
                                           checked={checked}
                                           onChange={() => togglePermission(resource, action)}
-                                          className="h-4 w-4 rounded border-slate-300"
+                                          className="h-4 w-4 rounded border-slate-300 dark:border-slate-500"
                                         />
                                       </td>
                                     );
@@ -378,10 +378,10 @@ export default function RolesSettingsPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="p-6 border-t">
+                  <div className="p-6 border-t dark:border-slate-600">
                     <Button
                       onClick={drawerMode === 'create' ? handleCreate : handleUpdate}
-                      className="w-full gap-2"
+                      className="w-full gap-2 dark:bg-primary dark:text-primary-foreground"
                       disabled={actionLoading === 'create' || actionLoading === 'update'}
                     >
                       {(actionLoading === 'create' || actionLoading === 'update')

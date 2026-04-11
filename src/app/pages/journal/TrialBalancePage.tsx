@@ -58,34 +58,34 @@ export default function TrialBalancePage() {
 
   return (
     <Layout>
-      <div className="space-y-6">
+      <div className="space-y-6 bg-gray-50 dark:bg-slate-900 min-h-screen p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="outline" size="sm" onClick={() => navigate('/journal')}>
+            <Button variant="outline" size="sm" onClick={() => navigate('/journal')} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>
-              <h1 className="text-2xl font-bold flex items-center gap-2">
-                <Calculator className="h-6 w-6" />
+              <h1 className="text-2xl font-bold flex items-center gap-2 dark:text-white">
+                <Calculator className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
                 Trial Balance
               </h1>
-              <p className="text-muted-foreground">Verify all debits equal all credits</p>
+              <p className="text-muted-foreground dark:text-slate-400">Verify all debits equal all credits</p>
             </div>
           </div>
         </div>
 
-        <Card>
+        <Card className="dark:bg-slate-800">
           <CardContent className="pt-6">
             <div className="flex items-end gap-4">
               <div className="space-y-2">
-                <Label>Start Date</Label>
-                <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+                <Label className="dark:text-slate-200">Start Date</Label>
+                <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="dark:bg-slate-700 dark:text-white dark:border-slate-600" />
               </div>
               <div className="space-y-2">
-                <Label>End Date</Label>
-                <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+                <Label className="dark:text-slate-200">End Date</Label>
+                <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="dark:bg-slate-700 dark:text-white dark:border-slate-600" />
               </div>
-              <Button onClick={fetchTrialBalance}>
+              <Button onClick={fetchTrialBalance} className="dark:bg-primary dark:text-primary-foreground">
                 {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Calculator className="h-4 w-4 mr-2" />}
                 Generate
               </Button>
@@ -93,56 +93,56 @@ export default function TrialBalancePage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="dark:bg-slate-800">
           <CardHeader>
-            <CardTitle className="flex items-center justify-between">
+            <CardTitle className="flex items-center justify-between dark:text-white">
               <span>Trial Balance</span>
               {isBalanced ? (
-                <Badge className="bg-green-100 text-green-700">Balanced</Badge>
+                <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">Balanced</Badge>
               ) : (
-                <Badge className="bg-red-100 text-red-700">
+                <Badge className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
                   Unbalanced by {Math.abs(totalDebit - totalCredit).toLocaleString()}
                 </Badge>
               )}
             </CardTitle>
             {startDate || endDate ? (
-              <CardDescription>
+              <CardDescription className="dark:text-slate-400">
                 Period: {startDate ? format(new Date(startDate), 'dd MMM yyyy') : 'Beginning'} — {endDate ? format(new Date(endDate), 'dd MMM yyyy') : 'Present'}
               </CardDescription>
             ) : null}
           </CardHeader>
           <CardContent>
             {entries.length === 0 && !loading ? (
-              <p className="text-center py-12 text-slate-500">No entries found for the selected period</p>
+              <p className="text-center py-12 text-slate-500 dark:text-slate-400">No entries found for the selected period</p>
             ) : (
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Account Code</TableHead>
-                    <TableHead>Account Name</TableHead>
-                    <TableHead className="text-right">Debit</TableHead>
-                    <TableHead className="text-right">Credit</TableHead>
+                  <TableRow className="dark:bg-slate-700/50 dark:border-slate-600">
+                    <TableHead className="dark:text-slate-200">Account Code</TableHead>
+                    <TableHead className="dark:text-slate-200">Account Name</TableHead>
+                    <TableHead className="text-right dark:text-slate-200">Debit</TableHead>
+                    <TableHead className="text-right dark:text-slate-200">Credit</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {entries.map((entry) => (
-                    <TableRow key={entry.accountCode}>
-                      <TableCell className="font-mono">{entry.accountCode}</TableCell>
-                      <TableCell>{entry.accountName}</TableCell>
-                      <TableCell className="text-right font-mono">
+                    <TableRow key={entry.accountCode} className="dark:border-slate-600">
+                      <TableCell className="font-mono dark:text-white">{entry.accountCode}</TableCell>
+                      <TableCell className="dark:text-slate-300">{entry.accountName}</TableCell>
+                      <TableCell className="text-right font-mono dark:text-slate-300">
                         {entry.debit > 0 ? entry.debit.toLocaleString() : '-'}
                       </TableCell>
-                      <TableCell className="text-right font-mono">
+                      <TableCell className="text-right font-mono dark:text-slate-300">
                         {entry.credit > 0 ? entry.credit.toLocaleString() : '-'}
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
                 <TableFooter>
-                  <TableRow className="font-bold bg-slate-50 text-lg">
-                    <TableCell colSpan={2}>Total</TableCell>
-                    <TableCell className="text-right font-mono">{totalDebit.toLocaleString()}</TableCell>
-                    <TableCell className="text-right font-mono">{totalCredit.toLocaleString()}</TableCell>
+                  <TableRow className="font-bold bg-slate-50 text-lg dark:bg-slate-700/50 dark:border-slate-600">
+                    <TableCell colSpan={2} className="dark:text-white">Total</TableCell>
+                    <TableCell className="text-right font-mono dark:text-white">{totalDebit.toLocaleString()}</TableCell>
+                    <TableCell className="text-right font-mono dark:text-white">{totalCredit.toLocaleString()}</TableCell>
                   </TableRow>
                 </TableFooter>
               </Table>

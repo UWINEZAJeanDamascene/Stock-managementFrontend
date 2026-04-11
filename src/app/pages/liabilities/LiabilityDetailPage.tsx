@@ -353,11 +353,11 @@ export default function LiabilityDetailPage() {
 
   const getStatusBadge = (status: string) => {
     const config: Record<string, { variant: string; className: string }> = {
-      active: { variant: 'default', className: 'bg-green-500' },
-      fully_repaid: { variant: 'secondary', className: 'bg-blue-500' },
-      'paid-off': { variant: 'secondary', className: 'bg-blue-500' },
-      closed: { variant: 'outline', className: 'bg-gray-500' },
-      cancelled: { variant: 'outline', className: 'bg-gray-400' },
+      active: { variant: 'default', className: 'bg-green-500 dark:bg-green-600' },
+      fully_repaid: { variant: 'secondary', className: 'bg-blue-500 dark:bg-blue-600' },
+      'paid-off': { variant: 'secondary', className: 'bg-blue-500 dark:bg-blue-600' },
+      closed: { variant: 'outline', className: 'bg-gray-500 dark:bg-gray-600' },
+      cancelled: { variant: 'outline', className: 'bg-gray-400 dark:bg-gray-500' },
       defaulted: { variant: 'destructive', className: '' },
       default: { variant: 'destructive', className: '' },
     };
@@ -367,10 +367,10 @@ export default function LiabilityDetailPage() {
 
   const getTransactionTypeBadge = (type: string) => {
     const config: Record<string, { variant: string; className: string }> = {
-      drawdown: { variant: 'default', className: 'bg-green-500' },
-      repayment: { variant: 'secondary', className: 'bg-blue-500' },
-      interest_charge: { variant: 'outline', className: 'bg-orange-500' },
-      interest: { variant: 'outline', className: 'bg-orange-500' }, // Backwards compatibility
+      drawdown: { variant: 'default', className: 'bg-green-500 dark:bg-green-600' },
+      repayment: { variant: 'secondary', className: 'bg-blue-500 dark:bg-blue-600' },
+      interest_charge: { variant: 'outline', className: 'bg-orange-500 dark:bg-orange-600' },
+      interest: { variant: 'outline', className: 'bg-orange-500 dark:bg-orange-600' }, // Backwards compatibility
       default: { variant: 'outline', className: '' },
     };
     const { variant, className } = config[type] || config.default;
@@ -393,22 +393,22 @@ export default function LiabilityDetailPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-6">
+      <div className="container mx-auto py-6 bg-gray-50 dark:bg-slate-900 min-h-screen p-6">
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/liabilities')}>
+          <Button variant="ghost" size="icon" onClick={() => navigate('/liabilities')} className="dark:text-slate-200">
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex-1">
-            <h1 className="text-3xl font-bold">{liability.name}</h1>
-            <p className="text-muted-foreground">{liability.loanNumber}</p>
+            <h1 className="text-3xl font-bold dark:text-white">{liability.name}</h1>
+            <p className="text-muted-foreground dark:text-slate-400">{liability.loanNumber}</p>
           </div>
-          <Button variant="outline" onClick={() => navigate(`/liabilities/${id}/edit`)}>
+          <Button variant="outline" onClick={() => navigate(`/liabilities/${id}/edit`)} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
             <Pencil className="mr-2 h-4 w-4" />
             {t('liabilities.editLiability')}
           </Button>
           {liability.status !== 'cancelled' && liability.status !== 'fully_repaid' && liability.status !== 'paid-off' && (
-            <Button variant="outline" onClick={() => setCancelDialogOpen(true)}>
+            <Button variant="outline" onClick={() => setCancelDialogOpen(true)} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
               <XCircle className="mr-2 h-4 w-4" />
               {t('liabilities.actions.cancel')}
             </Button>
@@ -427,6 +427,7 @@ export default function LiabilityDetailPage() {
                 onClick={() => setRepaymentOpen(true)}
                 disabled={!liabIsValid}
                 title={liabNotConfigured ? 'Liability account not configured - Please edit to add account' : (!liabIsValid ? 'Liability account is invalid (deleted from Chart of Accounts) - Please edit to select a valid account' : '')}
+                className="dark:bg-primary dark:text-primary-foreground"
               >
                 <RefreshCcw className="mr-2 h-4 w-4" />
                 {t('liabilities.actions.recordRepayment')}
@@ -443,6 +444,7 @@ export default function LiabilityDetailPage() {
                 onClick={() => setInterestOpen(true)}
                 disabled={!intIsValid}
                 title={intNotConfigured ? 'Interest expense account not configured - Please edit to add account' : (!intIsValid ? 'Interest expense account is invalid (deleted from Chart of Accounts) - Please edit to select a valid account' : '')}
+                className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
               >
                 <TrendingUp className="mr-2 h-4 w-4" />
                 {t('liabilities.actions.recordInterest')}
@@ -453,81 +455,81 @@ export default function LiabilityDetailPage() {
 
         {/* Details Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <Card>
+          <Card className="dark:bg-slate-800">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">{t('liabilities.statusLabel')}</CardTitle>
+              <CardTitle className="text-sm font-medium dark:text-slate-400">{t('liabilities.statusLabel')}</CardTitle>
             </CardHeader>
             <CardContent>
               {getStatusBadge(liability.status)}
             </CardContent>
           </Card>
-          <Card>
+          <Card className="dark:bg-slate-800">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">{t('liabilities.principal')}</CardTitle>
+              <CardTitle className="text-sm font-medium dark:text-slate-400">{t('liabilities.principal')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(liability.originalAmount)}</div>
+              <div className="text-2xl font-bold dark:text-white">{formatCurrency(liability.originalAmount)}</div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="dark:bg-slate-800">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">{t('liabilities.outstandingBalance')}</CardTitle>
+              <CardTitle className="text-sm font-medium dark:text-slate-400">{t('liabilities.outstandingBalance')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600">{formatCurrency(liability.outstandingBalance)}</div>
+              <div className="text-2xl font-bold text-red-600 dark:text-red-400">{formatCurrency(liability.outstandingBalance)}</div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="dark:bg-slate-800">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">{t('liabilities.interestRate')}</CardTitle>
+              <CardTitle className="text-sm font-medium dark:text-slate-400">{t('liabilities.interestRate')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{liability.interestRate || 0}%</div>
+              <div className="text-2xl font-bold dark:text-white">{liability.interestRate || 0}%</div>
             </CardContent>
           </Card>
         </div>
 
         {/* Account Configuration */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <Card>
+          <Card className="dark:bg-slate-800">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Liability Account</CardTitle>
+              <CardTitle className="text-sm font-medium dark:text-slate-400">Liability Account</CardTitle>
             </CardHeader>
             <CardContent>
               {(liability as any).liabilityAccountId ? (
                 <div>
                   {(liability as any).liabilityAccountId.name ? (
                     <>
-                      <div className="text-lg font-semibold">{(liability as any).liabilityAccountId.name}</div>
-                      <div className="text-sm text-gray-500">{(liability as any).liabilityAccountId.code}</div>
+                      <div className="text-lg font-semibold dark:text-white">{(liability as any).liabilityAccountId.name}</div>
+                      <div className="text-sm text-gray-500 dark:text-slate-400">{(liability as any).liabilityAccountId.code}</div>
                     </>
                   ) : (
-                    <div className="text-lg font-semibold">{(liability as any).liabilityAccountId}</div>
+                    <div className="text-lg font-semibold dark:text-white">{(liability as any).liabilityAccountId}</div>
                   )}
                 </div>
               ) : (
-                <div className="text-lg text-red-500">Not configured - Please edit to add account</div>
+                <div className="text-lg text-red-500 dark:text-red-400">Not configured - Please edit to add account</div>
               )}
             </CardContent>
           </Card>
-          <Card>
+          <Card className="dark:bg-slate-800">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Interest Expense Account</CardTitle>
+              <CardTitle className="text-sm font-medium dark:text-slate-400">Interest Expense Account</CardTitle>
             </CardHeader>
             <CardContent>
               {(liability as any).interestExpenseAccountId ? (
                 <div>
                   {(liability as any).interestExpenseAccountId.name ? (
                     <>
-                      <div className="text-lg font-semibold">{(liability as any).interestExpenseAccountId.name}</div>
-                      <div className="text-sm text-gray-500">{(liability as any).interestExpenseAccountId.code}</div>
+                      <div className="text-lg font-semibold dark:text-white">{(liability as any).interestExpenseAccountId.name}</div>
+                      <div className="text-sm text-gray-500 dark:text-slate-400">{(liability as any).interestExpenseAccountId.code}</div>
                     </>
                   ) : (
-                    <div className="text-lg font-semibold">{(liability as any).interestExpenseAccountId}</div>
+                    <div className="text-lg font-semibold dark:text-white">{(liability as any).interestExpenseAccountId}</div>
                   )}
                 </div>
               ) : (
-                <div className="text-lg text-orange-500">Not configured - Required for interest recording</div>
+                <div className="text-lg text-orange-500 dark:text-orange-400">Not configured - Required for interest recording</div>
               )}
             </CardContent>
           </Card>
@@ -536,38 +538,38 @@ export default function LiabilityDetailPage() {
         {/* Transaction History - Split into two tables */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Repayment History Table */}
-          <Card>
+          <Card className="dark:bg-slate-800">
             <CardHeader>
-              <CardTitle>{t('liabilities.repaymentHistory')}</CardTitle>
-              <CardDescription>{t('liabilities.repaymentHistoryDescription')}</CardDescription>
+              <CardTitle className="dark:text-white">{t('liabilities.repaymentHistory')}</CardTitle>
+              <CardDescription className="dark:text-slate-400">{t('liabilities.repaymentHistoryDescription')}</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               {transactions.filter(tx => tx.type === 'repayment').length === 0 ? (
                 <div className="flex flex-col items-center py-12">
-                  <AlertCircle className="h-12 w-12 mb-4 text-muted-foreground" />
-                  <p>{t('liabilities.noRepayments')}</p>
+                  <AlertCircle className="h-12 w-12 mb-4 text-muted-foreground dark:text-slate-500" />
+                  <p className="dark:text-slate-400">{t('liabilities.noRepayments')}</p>
                 </div>
               ) : (
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>{t('liabilities.transactionDate')}</TableHead>
-                      <TableHead>{t('liabilities.reference')}</TableHead>
-                      <TableHead className="text-right">{t('liabilities.principalPortion')}</TableHead>
-                      <TableHead className="text-right">{t('liabilities.interestPortion')}</TableHead>
-                      <TableHead className="text-right">{t('liabilities.total')}</TableHead>
+                    <TableRow className="dark:bg-slate-700/50 dark:border-slate-600">
+                      <TableHead className="dark:text-slate-200">{t('liabilities.transactionDate')}</TableHead>
+                      <TableHead className="dark:text-slate-200">{t('liabilities.reference')}</TableHead>
+                      <TableHead className="text-right dark:text-slate-200">{t('liabilities.principalPortion')}</TableHead>
+                      <TableHead className="text-right dark:text-slate-200">{t('liabilities.interestPortion')}</TableHead>
+                      <TableHead className="text-right dark:text-slate-200">{t('liabilities.total')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {transactions
                       .filter(tx => tx.type === 'repayment')
                       .map((tx) => (
-                        <TableRow key={tx._id}>
-                          <TableCell>{formatDate(tx.transactionDate)}</TableCell>
-                          <TableCell>{tx.reference || '-'}</TableCell>
-                          <TableCell className="text-right">{formatCurrency(tx.principalPortion || 0)}</TableCell>
-                          <TableCell className="text-right">{formatCurrency(tx.interestPortion || 0)}</TableCell>
-                          <TableCell className="text-right font-medium">{formatCurrency(tx.amount)}</TableCell>
+                        <TableRow key={tx._id} className="dark:border-slate-600">
+                          <TableCell className="dark:text-slate-300">{formatDate(tx.transactionDate)}</TableCell>
+                          <TableCell className="dark:text-slate-300">{tx.reference || '-'}</TableCell>
+                          <TableCell className="text-right dark:text-slate-300">{formatCurrency(tx.principalPortion || 0)}</TableCell>
+                          <TableCell className="text-right dark:text-slate-300">{formatCurrency(tx.interestPortion || 0)}</TableCell>
+                          <TableCell className="text-right font-medium dark:text-white">{formatCurrency(tx.amount)}</TableCell>
                         </TableRow>
                       ))}
                   </TableBody>
@@ -577,36 +579,36 @@ export default function LiabilityDetailPage() {
           </Card>
 
           {/* Interest Charges Table */}
-          <Card>
+          <Card className="dark:bg-slate-800">
             <CardHeader>
-              <CardTitle>{t('liabilities.interestCharges')}</CardTitle>
-              <CardDescription>{t('liabilities.interestChargesDescription')}</CardDescription>
+              <CardTitle className="dark:text-white">{t('liabilities.interestCharges')}</CardTitle>
+              <CardDescription className="dark:text-slate-400">{t('liabilities.interestChargesDescription')}</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               {transactions.filter(tx => tx.type === 'interest_charge' || tx.type === 'interest').length === 0 ? (
                 <div className="flex flex-col items-center py-12">
-                  <AlertCircle className="h-12 w-12 mb-4 text-muted-foreground" />
-                  <p>{t('liabilities.noInterestCharges')}</p>
+                  <AlertCircle className="h-12 w-12 mb-4 text-muted-foreground dark:text-slate-500" />
+                  <p className="dark:text-slate-400">{t('liabilities.noInterestCharges')}</p>
                 </div>
               ) : (
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>{t('liabilities.transactionDate')}</TableHead>
-                      <TableHead>{t('liabilities.reference')}</TableHead>
-                      <TableHead>{t('liabilities.notes')}</TableHead>
-                      <TableHead className="text-right">{t('liabilities.amount')}</TableHead>
+                    <TableRow className="dark:bg-slate-700/50 dark:border-slate-600">
+                      <TableHead className="dark:text-slate-200">{t('liabilities.transactionDate')}</TableHead>
+                      <TableHead className="dark:text-slate-200">{t('liabilities.reference')}</TableHead>
+                      <TableHead className="dark:text-slate-200">{t('liabilities.notes')}</TableHead>
+                      <TableHead className="text-right dark:text-slate-200">{t('liabilities.amount')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {transactions
                       .filter(tx => tx.type === 'interest_charge' || tx.type === 'interest')
                       .map((tx) => (
-                        <TableRow key={tx._id}>
-                          <TableCell>{formatDate(tx.transactionDate)}</TableCell>
-                          <TableCell>{tx.reference || '-'}</TableCell>
-                          <TableCell>{tx.notes || '-'}</TableCell>
-                          <TableCell className="text-right font-medium">{formatCurrency(tx.amount)}</TableCell>
+                        <TableRow key={tx._id} className="dark:border-slate-600">
+                          <TableCell className="dark:text-slate-300">{formatDate(tx.transactionDate)}</TableCell>
+                          <TableCell className="dark:text-slate-300">{tx.reference || '-'}</TableCell>
+                          <TableCell className="dark:text-slate-300">{tx.notes || '-'}</TableCell>
+                          <TableCell className="text-right font-medium dark:text-white">{formatCurrency(tx.amount)}</TableCell>
                         </TableRow>
                       ))}
                   </TableBody>
@@ -618,30 +620,30 @@ export default function LiabilityDetailPage() {
 
         {/* Drawdown History Table (Full Width) */}
         {transactions.filter(tx => tx.type === 'drawdown').length > 0 && (
-          <Card className="mt-6">
+          <Card className="mt-6 dark:bg-slate-800">
             <CardHeader>
-              <CardTitle>{t('liabilities.drawdownHistory')}</CardTitle>
-              <CardDescription>{t('liabilities.drawdownHistoryDescription')}</CardDescription>
+              <CardTitle className="dark:text-white">{t('liabilities.drawdownHistory')}</CardTitle>
+              <CardDescription className="dark:text-slate-400">{t('liabilities.drawdownHistoryDescription')}</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>{t('liabilities.transactionDate')}</TableHead>
-                    <TableHead>{t('liabilities.reference')}</TableHead>
-                    <TableHead>{t('liabilities.notes')}</TableHead>
-                    <TableHead className="text-right">{t('liabilities.amount')}</TableHead>
+                  <TableRow className="dark:bg-slate-700/50 dark:border-slate-600">
+                    <TableHead className="dark:text-slate-200">{t('liabilities.transactionDate')}</TableHead>
+                    <TableHead className="dark:text-slate-200">{t('liabilities.reference')}</TableHead>
+                    <TableHead className="dark:text-slate-200">{t('liabilities.notes')}</TableHead>
+                    <TableHead className="text-right dark:text-slate-200">{t('liabilities.amount')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {transactions
                     .filter(tx => tx.type === 'drawdown')
                     .map((tx) => (
-                      <TableRow key={tx._id}>
-                        <TableCell>{formatDate(tx.transactionDate)}</TableCell>
-                        <TableCell>{tx.reference || '-'}</TableCell>
-                        <TableCell>{tx.notes || '-'}</TableCell>
-                        <TableCell className="text-right font-medium">{formatCurrency(tx.amount)}</TableCell>
+                      <TableRow key={tx._id} className="dark:border-slate-600">
+                        <TableCell className="dark:text-slate-300">{formatDate(tx.transactionDate)}</TableCell>
+                        <TableCell className="dark:text-slate-300">{tx.reference || '-'}</TableCell>
+                        <TableCell className="dark:text-slate-300">{tx.notes || '-'}</TableCell>
+                        <TableCell className="text-right font-medium dark:text-white">{formatCurrency(tx.amount)}</TableCell>
                       </TableRow>
                     ))}
                 </TableBody>
@@ -652,30 +654,31 @@ export default function LiabilityDetailPage() {
 
         {/* Repayment Dialog */}
         <Dialog open={repaymentOpen} onOpenChange={setRepaymentOpen}>
-          <DialogContent>
+          <DialogContent className="dark:bg-slate-800">
             <DialogHeader>
-              <DialogTitle>{t('liabilities.dialogs.repayment.title')}</DialogTitle>
-              <DialogDescription>{t('liabilities.dialogs.repayment.description')}</DialogDescription>
+              <DialogTitle className="dark:text-white">{t('liabilities.dialogs.repayment.title')}</DialogTitle>
+              <DialogDescription className="dark:text-slate-400">{t('liabilities.dialogs.repayment.description')}</DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label>{t('liabilities.totalAmount')} *</Label>
+                <Label className="dark:text-slate-200">{t('liabilities.totalAmount')} *</Label>
                 <Input 
                   type="number" 
                   value={repaymentForm.amount}
                   onChange={(e) => setRepaymentForm({...repaymentForm, amount: parseFloat(e.target.value) || 0})}
+                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                 />
               </div>
               <div className="space-y-2">
-                <Label>Bank Account *</Label>
+                <Label className="dark:text-slate-200">Bank Account *</Label>
                 <Select 
                   value={repaymentForm.bankAccountId}
                   onValueChange={(value) => setRepaymentForm({...repaymentForm, bankAccountId: value})}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
                     <SelectValue placeholder="Select bank account" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="dark:bg-slate-800">
                     {bankAccounts.map((account) => (
                       <SelectItem key={account._id} value={account._id}>
                         {account.accountName} - {account.bankName}
@@ -686,48 +689,53 @@ export default function LiabilityDetailPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>{t('liabilities.principalPortion')}</Label>
+                  <Label className="dark:text-slate-200">{t('liabilities.principalPortion')}</Label>
                   <Input 
                     type="number" 
                     value={repaymentForm.principalPortion}
                     onChange={(e) => setRepaymentForm({...repaymentForm, principalPortion: parseFloat(e.target.value) || 0})}
+                    className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>{t('liabilities.interestPortion')}</Label>
+                  <Label className="dark:text-slate-200">{t('liabilities.interestPortion')}</Label>
                   <Input 
                     type="number" 
                     value={repaymentForm.interestPortion}
                     onChange={(e) => setRepaymentForm({...repaymentForm, interestPortion: parseFloat(e.target.value) || 0})}
+                    className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                   />
                 </div>
               </div>
               <div className="space-y-2">
-                <Label>{t('liabilities.date')}</Label>
+                <Label className="dark:text-slate-200">{t('liabilities.date')}</Label>
                 <Input 
                   type="date" 
                   value={repaymentForm.transactionDate}
                   onChange={(e) => setRepaymentForm({...repaymentForm, transactionDate: e.target.value})}
+                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                 />
               </div>
               <div className="space-y-2">
-                <Label>{t('liabilities.reference')}</Label>
+                <Label className="dark:text-slate-200">{t('liabilities.reference')}</Label>
                 <Input 
                   value={repaymentForm.reference}
                   onChange={(e) => setRepaymentForm({...repaymentForm, reference: e.target.value})}
+                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                 />
               </div>
               <div className="space-y-2">
-                <Label>{t('liabilities.notes')}</Label>
+                <Label className="dark:text-slate-200">{t('liabilities.notes')}</Label>
                 <Input 
                   value={repaymentForm.notes}
                   onChange={(e) => setRepaymentForm({...repaymentForm, notes: e.target.value})}
+                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                 />
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setRepaymentOpen(false)}>{t('common.cancel')}</Button>
-              <Button onClick={handleRepayment} disabled={submitting}>
+              <Button variant="outline" onClick={() => setRepaymentOpen(false)} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">{t('common.cancel')}</Button>
+              <Button onClick={handleRepayment} disabled={submitting} className="dark:bg-primary dark:text-primary-foreground">
                 {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {t('liabilities.actions.recordRepayment')}
               </Button>
@@ -737,46 +745,50 @@ export default function LiabilityDetailPage() {
 
         {/* Interest Dialog */}
         <Dialog open={interestOpen} onOpenChange={setInterestOpen}>
-          <DialogContent>
+          <DialogContent className="dark:bg-slate-800">
             <DialogHeader>
-              <DialogTitle>{t('liabilities.dialogs.interest.title')}</DialogTitle>
-              <DialogDescription>{t('liabilities.dialogs.interest.description')}</DialogDescription>
+              <DialogTitle className="dark:text-white">{t('liabilities.dialogs.interest.title')}</DialogTitle>
+              <DialogDescription className="dark:text-slate-400">{t('liabilities.dialogs.interest.description')}</DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label>{t('liabilities.interestAmount')} *</Label>
+                <Label className="dark:text-slate-200">{t('liabilities.interestAmount')} *</Label>
                 <Input 
                   type="number" 
                   value={interestForm.amount}
                   onChange={(e) => setInterestForm({...interestForm, amount: parseFloat(e.target.value) || 0})}
+                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                 />
               </div>
               <div className="space-y-2">
-                <Label>{t('liabilities.date')}</Label>
+                <Label className="dark:text-slate-200">{t('liabilities.date')}</Label>
                 <Input 
                   type="date" 
                   value={interestForm.transactionDate}
                   onChange={(e) => setInterestForm({...interestForm, transactionDate: e.target.value})}
+                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                 />
               </div>
               <div className="space-y-2">
-                <Label>{t('liabilities.reference')}</Label>
+                <Label className="dark:text-slate-200">{t('liabilities.reference')}</Label>
                 <Input 
                   value={interestForm.reference}
                   onChange={(e) => setInterestForm({...interestForm, reference: e.target.value})}
+                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                 />
               </div>
               <div className="space-y-2">
-                <Label>{t('liabilities.notes')}</Label>
+                <Label className="dark:text-slate-200">{t('liabilities.notes')}</Label>
                 <Input 
                   value={interestForm.notes}
                   onChange={(e) => setInterestForm({...interestForm, notes: e.target.value})}
+                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                 />
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setInterestOpen(false)}>{t('common.cancel')}</Button>
-              <Button onClick={handleInterest} disabled={submitting}>
+              <Button variant="outline" onClick={() => setInterestOpen(false)} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">{t('common.cancel')}</Button>
+              <Button onClick={handleInterest} disabled={submitting} className="dark:bg-primary dark:text-primary-foreground">
                 {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {t('liabilities.actions.recordInterest')}
               </Button>
@@ -785,13 +797,13 @@ export default function LiabilityDetailPage() {
         </Dialog>
         {/* Cancel Dialog */}
         <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
-          <DialogContent>
+          <DialogContent className="dark:bg-slate-800">
             <DialogHeader>
-              <DialogTitle>{t('liabilities.dialogs.cancel.title')}</DialogTitle>
-              <DialogDescription>{t('liabilities.dialogs.cancel.description')}</DialogDescription>
+              <DialogTitle className="dark:text-white">{t('liabilities.dialogs.cancel.title')}</DialogTitle>
+              <DialogDescription className="dark:text-slate-400">{t('liabilities.dialogs.cancel.description')}</DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setCancelDialogOpen(false)}>{t('common.cancel')}</Button>
+              <Button variant="outline" onClick={() => setCancelDialogOpen(false)} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">{t('common.cancel')}</Button>
               <Button variant="destructive" onClick={handleCancel} disabled={submitting}>
                 {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {t('liabilities.actions.cancel')}
@@ -802,14 +814,14 @@ export default function LiabilityDetailPage() {
 
         {/* Delete Confirmation Dialog */}
         <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <AlertDialogContent>
+          <AlertDialogContent className="dark:bg-slate-800">
             <AlertDialogHeader>
-              <AlertDialogTitle>{t('liabilities.dialogs.delete.title')}</AlertDialogTitle>
-              <AlertDialogDescription>{t('liabilities.dialogs.delete.description')}</AlertDialogDescription>
+              <AlertDialogTitle className="dark:text-white">{t('liabilities.dialogs.delete.title')}</AlertDialogTitle>
+              <AlertDialogDescription className="dark:text-slate-400">{t('liabilities.dialogs.delete.description')}</AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDelete} disabled={submitting}>
+              <AlertDialogCancel className="dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600">{t('common.cancel')}</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDelete} disabled={submitting} className="dark:bg-red-600 dark:text-white">
                 {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {t('liabilities.actions.delete')}
               </AlertDialogAction>

@@ -246,29 +246,29 @@ export default function PurchaseReturnCreatePage() {
     <Layout>
       <div className="container mx-auto py-6">
         <div className="flex items-center gap-4 mb-6">
-          <Button variant="ghost" onClick={() => navigate('/purchase-returns')}>
+          <Button variant="ghost" onClick={() => navigate('/purchase-returns')} className="dark:text-gray-300">
             <ArrowLeft className="mr-2 h-4 w-4" />
             {t('common.back', 'Back')}
           </Button>
-          <h1 className="text-2xl font-bold">{t('purchaseReturn.create', 'Create Purchase Return')}</h1>
+          <h1 className="text-2xl font-bold dark:text-gray-100">{t('purchaseReturn.create', 'Create Purchase Return')}</h1>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* GRN Selection */}
-            <Card>
+            <Card className="dark:border-slate-700 dark:bg-slate-800">
               <CardHeader>
-                <CardTitle>{t('purchaseReturn.selectGRN', 'Select GRN')}</CardTitle>
+                <CardTitle className="dark:text-gray-100">{t('purchaseReturn.selectGRN', 'Select GRN')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <Select value={selectedGRNId || undefined} onValueChange={handleGRNSelect}>
-                  <SelectTrigger>
+                  <SelectTrigger className="dark:bg-slate-700 dark:border-slate-600">
                     <SelectValue placeholder={t('purchaseReturn.selectGRNPlaceholder', 'Select a confirmed GRN...')} />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
                     {grns.map((grn) => (
-                      <SelectItem key={grn._id} value={grn._id}>
+                      <SelectItem key={grn._id} value={grn._id} className="dark:text-gray-200">
                         {grn.referenceNo} - {grn.supplier?.name}
                       </SelectItem>
                     ))}
@@ -279,50 +279,50 @@ export default function PurchaseReturnCreatePage() {
 
             {/* Line Items */}
             {selectedGRN && lines.length > 0 && (
-              <Card>
+              <Card className="dark:border-slate-700 dark:bg-slate-800">
                 <CardHeader>
-                  <CardTitle>{t('purchaseReturn.lineItems', 'Line Items')}</CardTitle>
+                  <CardTitle className="dark:text-gray-100">{t('purchaseReturn.lineItems', 'Line Items')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>{t('purchaseReturn.product', 'Product')}</TableHead>
-                        <TableHead className="text-right">{t('purchaseReturn.qtyReceived', 'Qty Received')}</TableHead>
-                        <TableHead className="text-right">{t('purchaseReturn.alreadyReturned', 'Already Returned')}</TableHead>
-                        <TableHead className="text-right">{t('purchaseReturn.available', 'Available')}</TableHead>
-                        <TableHead className="text-right">{t('purchaseReturn.qtyToReturn', 'Qty to Return')}</TableHead>
-                        <TableHead className="text-right">{t('purchaseReturn.unitCost', 'Unit Cost')}</TableHead>
-                        <TableHead className="text-right">{t('purchaseReturn.lineTotal', 'Total')}</TableHead>
+                    <TableHeader className="dark:bg-slate-800">
+                      <TableRow className="dark:hover:bg-slate-700/50">
+                        <TableHead className="dark:text-gray-300">{t('purchaseReturn.product', 'Product')}</TableHead>
+                        <TableHead className="text-right dark:text-gray-300">{t('purchaseReturn.qtyReceived', 'Qty Received')}</TableHead>
+                        <TableHead className="text-right dark:text-gray-300">{t('purchaseReturn.alreadyReturned', 'Already Returned')}</TableHead>
+                        <TableHead className="text-right dark:text-gray-300">{t('purchaseReturn.available', 'Available')}</TableHead>
+                        <TableHead className="text-right dark:text-gray-300">{t('purchaseReturn.qtyToReturn', 'Qty to Return')}</TableHead>
+                        <TableHead className="text-right dark:text-gray-300">{t('purchaseReturn.unitCost', 'Unit Cost')}</TableHead>
+                        <TableHead className="text-right dark:text-gray-300">{t('purchaseReturn.lineTotal', 'Total')}</TableHead>
                       </TableRow>
                     </TableHeader>
-                    <TableBody>
+                    <TableBody className="dark:bg-slate-800">
                       {lines.map((line, index) => {
                         const availableQty = line.qtyReceived - line.qtyPreviouslyReturned;
                         return (
-                          <TableRow key={index}>
-                            <TableCell>
-                              <div className="font-medium">{line.productName}</div>
-                              <div className="text-sm text-muted-foreground">{line.productSku}</div>
+                          <TableRow key={index} className="dark:hover:bg-slate-700/50">
+                            <TableCell className="dark:bg-slate-800">
+                              <div className="font-medium dark:text-gray-200">{line.productName}</div>
+                              <div className="text-sm text-muted-foreground dark:text-gray-400">{line.productSku}</div>
                             </TableCell>
-                            <TableCell className="text-right">{line.qtyReceived}</TableCell>
-                            <TableCell className="text-right">{line.qtyPreviouslyReturned}</TableCell>
-                            <TableCell className="text-right">{availableQty}</TableCell>
-                            <TableCell className="text-right">
+                            <TableCell className="text-right dark:text-gray-300 dark:bg-slate-800">{line.qtyReceived}</TableCell>
+                            <TableCell className="text-right dark:text-gray-300 dark:bg-slate-800">{line.qtyPreviouslyReturned}</TableCell>
+                            <TableCell className="text-right dark:text-gray-300 dark:bg-slate-800">{availableQty}</TableCell>
+                            <TableCell className="text-right dark:bg-slate-800">
                               <Input
                                 type="number"
                                 min="0"
                                 max={availableQty}
                                 value={line.qtyToReturn}
                                 onChange={(e) => handleLineChange(index, parseFloat(e.target.value) || 0)}
-                                className="w-20 text-right"
+                                className="w-20 text-right dark:bg-slate-700 dark:border-slate-600 dark:text-gray-200"
                                 disabled={availableQty <= 0}
                               />
                             </TableCell>
-                            <TableCell className="text-right">
+                            <TableCell className="text-right dark:text-gray-300 dark:bg-slate-800">
                               {line.unitCost.toFixed(2)}
                             </TableCell>
-                            <TableCell className="text-right font-medium">
+                            <TableCell className="text-right font-medium dark:text-gray-200 dark:bg-slate-800">
                               {(line.qtyToReturn * line.unitCost).toFixed(2)}
                             </TableCell>
                           </TableRow>
@@ -338,28 +338,29 @@ export default function PurchaseReturnCreatePage() {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Return Details */}
-            <Card>
+            <Card className="dark:border-slate-700 dark:bg-slate-800">
               <CardHeader>
-                <CardTitle>{t('purchaseReturn.details', 'Return Details')}</CardTitle>
+                <CardTitle className="dark:text-gray-100">{t('purchaseReturn.details', 'Return Details')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label>{t('purchaseReturn.referenceNo', 'Reference No')}</Label>
+                  <Label className="dark:text-gray-200">{t('purchaseReturn.referenceNo', 'Reference No')}</Label>
                   <Input 
                     value={referenceNo}
                     onChange={(e) => setReferenceNo(e.target.value)}
                     placeholder={t('purchaseReturn.autoGenerate', 'Auto-generate if empty')}
+                    className="dark:bg-slate-700 dark:border-slate-600 dark:text-gray-200"
                   />
                 </div>
                 <div>
-                  <Label>{t('purchaseReturn.warehouse', 'Warehouse')}</Label>
+                  <Label className="dark:text-gray-200">{t('purchaseReturn.warehouse', 'Warehouse')}</Label>
                   <Select value={warehouseId || undefined} onValueChange={setWarehouseId}>
-                    <SelectTrigger>
+                    <SelectTrigger className="dark:bg-slate-700 dark:border-slate-600">
                       <SelectValue placeholder={t('purchaseReturn.selectWarehouse', 'Select warehouse')} />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
                       {warehouses.map((wh) => (
-                        <SelectItem key={wh._id} value={wh._id}>
+                        <SelectItem key={wh._id} value={wh._id} className="dark:text-gray-200">
                           {wh.name}
                         </SelectItem>
                       ))}
@@ -367,48 +368,51 @@ export default function PurchaseReturnCreatePage() {
                   </Select>
                 </div>
                 <div>
-                  <Label>{t('purchaseReturn.returnDate', 'Return Date')}</Label>
+                  <Label className="dark:text-gray-200">{t('purchaseReturn.returnDate', 'Return Date')}</Label>
                   <Input 
                     type="date"
                     value={returnDate}
                     onChange={(e) => setReturnDate(e.target.value)}
+                    className="dark:bg-slate-700 dark:border-slate-600 dark:text-gray-200"
                   />
                 </div>
                 <div>
-                  <Label>{t('purchaseReturn.reason', 'Reason')} *</Label>
+                  <Label className="dark:text-gray-200">{t('purchaseReturn.reason', 'Reason')} *</Label>
                   <Textarea 
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
                     placeholder={t('purchaseReturn.reasonPlaceholder', 'Enter reason for return...')}
                     rows={3}
                     required
+                    className="dark:bg-slate-700 dark:border-slate-600 dark:text-gray-200"
                   />
                 </div>
                 <div>
-                  <Label>{t('purchaseReturn.supplierCreditNote', 'Supplier Credit Note No')}</Label>
+                  <Label className="dark:text-gray-200">{t('purchaseReturn.supplierCreditNote', 'Supplier Credit Note No')}</Label>
                   <Input 
                     value={supplierCreditNoteNo}
                     onChange={(e) => setSupplierCreditNoteNo(e.target.value)}
                     placeholder={t('purchaseReturn.supplierCreditNotePlaceholder', 'Enter credit note number (optional)')}
+                    className="dark:bg-slate-700 dark:border-slate-600 dark:text-gray-200"
                   />
                 </div>
               </CardContent>
             </Card>
 
             {/* Summary */}
-            <Card>
+            <Card className="dark:border-slate-700 dark:bg-slate-800">
               <CardHeader>
-                <CardTitle>{t('purchaseReturn.summary', 'Summary')}</CardTitle>
+                <CardTitle className="dark:text-gray-100">{t('purchaseReturn.summary', 'Summary')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  <div className="flex justify-between">
+                  <div className="flex justify-between dark:text-gray-300">
                     <span>{t('purchaseReturn.subtotal', 'Subtotal')}</span>
-                    <span className="font-medium">${calculateSubtotal().toFixed(2)}</span>
+                    <span className="font-medium dark:text-gray-200">${calculateSubtotal().toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between text-lg font-bold pt-2 border-t">
+                  <div className="flex justify-between text-lg font-bold pt-2 border-t dark:border-slate-700 dark:text-gray-100">
                     <span>{t('purchaseReturn.total', 'Total')}</span>
-                    <span>${calculateTotal().toFixed(2)}</span>
+                    <span className="dark:text-gray-100">${calculateTotal().toFixed(2)}</span>
                   </div>
                 </div>
               </CardContent>

@@ -375,11 +375,11 @@ export default function RecurringInvoiceFormPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" onClick={() => navigate('/recurring-invoices')}>
+            <Button variant="ghost" size="sm" onClick={() => navigate('/recurring-invoices')} className="dark:text-gray-300">
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>
-              <h1 className="text-2xl font-bold">
+              <h1 className="text-2xl font-bold dark:text-gray-100">
                 {isEdit ? t('recurringInvoices.editTitle', 'Edit Recurring Invoice') : t('recurringInvoices.createTitle', 'Create Recurring Invoice')}
               </h1>
             </div>
@@ -397,9 +397,9 @@ export default function RecurringInvoiceFormPage() {
           {/* Main Form */}
           <div className="lg:col-span-2 space-y-6">
             {/* Basic Info */}
-            <Card>
+            <Card className="dark:border-slate-700">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 dark:text-gray-100">
                   <Calendar className="h-5 w-5" />
                   {t('recurringInvoices.basicInfo', 'Basic Information')}
                 </CardTitle>
@@ -407,14 +407,14 @@ export default function RecurringInvoiceFormPage() {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label>{t('recurringInvoices.client', 'Client')} *</Label>
+                    <Label className="dark:text-gray-200">{t('recurringInvoices.client', 'Client')} *</Label>
                     <Select value={selectedClient} onValueChange={setSelectedClient} disabled={isEdit}>
-                      <SelectTrigger className="mt-2">
+                      <SelectTrigger className="mt-2 dark:bg-slate-800 dark:border-slate-600">
                         <SelectValue placeholder={t('recurringInvoices.selectClient', 'Select Client')} />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
                         {clients.map(client => (
-                          <SelectItem key={client._id} value={client._id}>
+                          <SelectItem key={client._id} value={client._id} className="dark:text-gray-200">
                             {client.name}
                           </SelectItem>
                         ))}
@@ -422,15 +422,15 @@ export default function RecurringInvoiceFormPage() {
                     </Select>
                   </div>
                   <div>
-                    <Label>{t('recurringInvoices.currency', 'Currency')}</Label>
+                    <Label className="dark:text-gray-200">{t('recurringInvoices.currency', 'Currency')}</Label>
                     <Select value={currencyCode} onValueChange={setCurrencyCode}>
-                      <SelectTrigger className="mt-2">
+                      <SelectTrigger className="mt-2 dark:bg-slate-800 dark:border-slate-600">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="USD">USD</SelectItem>
-                        <SelectItem value="EUR">EUR</SelectItem>
-                        <SelectItem value="GBP">GBP</SelectItem>
+                      <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
+                        <SelectItem value="USD" className="dark:text-gray-200">USD</SelectItem>
+                        <SelectItem value="EUR" className="dark:text-gray-200">EUR</SelectItem>
+                        <SelectItem value="GBP" className="dark:text-gray-200">GBP</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -438,14 +438,14 @@ export default function RecurringInvoiceFormPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <Label>{t('recurringInvoices.frequency', 'Frequency')} *</Label>
+                    <Label className="dark:text-gray-200">{t('recurringInvoices.frequency', 'Frequency')} *</Label>
                     <Select value={frequency} onValueChange={setFrequency}>
-                      <SelectTrigger className="mt-2">
+                      <SelectTrigger className="mt-2 dark:bg-slate-800 dark:border-slate-600">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
                         {FREQUENCY_OPTIONS.map(opt => (
-                          <SelectItem key={opt.value} value={opt.value}>
+                          <SelectItem key={opt.value} value={opt.value} className="dark:text-gray-200">
                             {opt.label}
                           </SelectItem>
                         ))}
@@ -453,68 +453,68 @@ export default function RecurringInvoiceFormPage() {
                     </Select>
                   </div>
                   <div>
-                    <Label>{t('recurringInvoices.interval', 'Every')}</Label>
+                    <Label className="dark:text-gray-200">{t('recurringInvoices.interval', 'Every')}</Label>
                     <Input
                       type="number"
                       min="1"
                       value={interval}
                       onChange={(e) => setInterval(parseInt(e.target.value) || 1)}
-                      className="mt-2"
+                      className="mt-2 dark:bg-slate-800 dark:border-slate-600 dark:text-gray-200"
                     />
                   </div>
                   <div>
-                    <Label>{t('recurringInvoices.startDate', 'Start Date')} *</Label>
+                    <Label className="dark:text-gray-200">{t('recurringInvoices.startDate', 'Start Date')} *</Label>
                     <Input
                       type="date"
                       value={startDate}
                       onChange={(e) => setStartDate(e.target.value)}
-                      className="mt-2"
+                      className="mt-2 dark:bg-slate-800 dark:border-slate-600 dark:text-gray-200"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label>{t('recurringInvoices.endDate', 'End Date')} ({t('common.optional', 'optional')})</Label>
+                    <Label className="dark:text-gray-200">{t('recurringInvoices.endDate', 'End Date')} ({t('common.optional', 'optional')})</Label>
                     <Input
                       type="date"
                       value={endDate}
                       onChange={(e) => setEndDate(e.target.value)}
-                      className="mt-2"
+                      className="mt-2 dark:bg-slate-800 dark:border-slate-600 dark:text-gray-200"
                     />
                   </div>
                   {frequency === 'monthly' && (
                     <div>
-                      <Label>{t('recurringInvoices.dayOfMonth', 'Day of Month')} ({t('common.optional', 'optional')})</Label>
+                      <Label className="dark:text-gray-200">{t('recurringInvoices.dayOfMonth', 'Day of Month')} ({t('common.optional', 'optional')})</Label>
                       <Input
                         type="number"
                         min="1"
                         max="28"
                         value={dayOfMonth || ''}
                         onChange={(e) => setDayOfMonth(e.target.value ? parseInt(e.target.value) : undefined)}
-                        className="mt-2"
+                        className="mt-2 dark:bg-slate-800 dark:border-slate-600 dark:text-gray-200"
                         placeholder="1-28"
                       />
                     </div>
                   )}
                   {frequency === 'weekly' && (
                     <div>
-                      <Label>{t('recurringInvoices.dayOfWeek', 'Day of Week')} ({t('common.optional', 'optional')})</Label>
+                      <Label className="dark:text-gray-200">{t('recurringInvoices.dayOfWeek', 'Day of Week')} ({t('common.optional', 'optional')})</Label>
                       <Select 
                         value={dayOfWeek?.toString() || ''} 
                         onValueChange={(v) => setDayOfWeek(v ? parseInt(v) : undefined)}
                       >
-                        <SelectTrigger className="mt-2">
+                        <SelectTrigger className="mt-2 dark:bg-slate-800 dark:border-slate-600">
                           <SelectValue placeholder={t('recurringInvoices.selectDay', 'Select Day')} />
                         </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="0">Sunday</SelectItem>
-                          <SelectItem value="1">Monday</SelectItem>
-                          <SelectItem value="2">Tuesday</SelectItem>
-                          <SelectItem value="3">Wednesday</SelectItem>
-                          <SelectItem value="4">Thursday</SelectItem>
-                          <SelectItem value="5">Friday</SelectItem>
-                          <SelectItem value="6">Saturday</SelectItem>
+                        <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
+                          <SelectItem value="0" className="dark:text-gray-200">Sunday</SelectItem>
+                          <SelectItem value="1" className="dark:text-gray-200">Monday</SelectItem>
+                          <SelectItem value="2" className="dark:text-gray-200">Tuesday</SelectItem>
+                          <SelectItem value="3" className="dark:text-gray-200">Wednesday</SelectItem>
+                          <SelectItem value="4" className="dark:text-gray-200">Thursday</SelectItem>
+                          <SelectItem value="5" className="dark:text-gray-200">Friday</SelectItem>
+                          <SelectItem value="6" className="dark:text-gray-200">Saturday</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -527,18 +527,18 @@ export default function RecurringInvoiceFormPage() {
                     checked={autoConfirm}
                     onCheckedChange={(checked) => setAutoConfirm(checked as boolean)}
                   />
-                  <Label htmlFor="autoConfirm" className="cursor-pointer">
+                  <Label htmlFor="autoConfirm" className="cursor-pointer dark:text-gray-200">
                     {t('recurringInvoices.autoConfirmLabel', 'Auto-confirm generated invoices (deduct stock and create journal entries)')}
                   </Label>
                 </div>
 
                 <div>
-                  <Label>{t('recurringInvoices.notes', 'Notes')}</Label>
+                  <Label className="dark:text-gray-200">{t('recurringInvoices.notes', 'Notes')}</Label>
                   <Input
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder={t('recurringInvoices.notesPlaceholder', 'Additional notes...')}
-                    className="mt-2"
+                    className="mt-2 dark:bg-slate-800 dark:border-slate-600 dark:text-gray-200"
                   />
                 </div>
               </CardContent>

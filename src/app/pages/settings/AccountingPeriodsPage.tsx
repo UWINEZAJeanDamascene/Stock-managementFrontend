@@ -129,43 +129,43 @@ export default function AccountingPeriodsPage() {
 
   return (
     <Layout>
-      <div className="space-y-6 max-w-5xl mx-auto">
+      <div className="space-y-6 max-w-5xl mx-auto bg-gray-50 dark:bg-slate-900 min-h-screen p-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+            <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2 dark:text-white">
               <Calendar className="h-8 w-8" />
               Accounting Periods
             </h1>
-            <p className="text-muted-foreground mt-1">Manage fiscal periods — open, close, lock, and year-end close</p>
+            <p className="text-muted-foreground mt-1 dark:text-slate-400">Manage fiscal periods — open, close, lock, and year-end close</p>
           </div>
         </div>
 
         {/* Generate & Filter */}
-        <Card>
+        <Card className="dark:bg-slate-800">
           <CardContent className="pt-6">
             <div className="flex items-end gap-4 flex-wrap">
               <div className="space-y-2">
-                <Label>Fiscal Year</Label>
+                <Label className="dark:text-slate-200">Fiscal Year</Label>
                 <Input
                   type="number"
                   value={fiscalYear}
                   onChange={e => setFiscalYear(parseInt(e.target.value) || new Date().getFullYear())}
-                  className="w-28"
+                  className="w-28 dark:bg-slate-700 dark:text-white dark:border-slate-600"
                 />
               </div>
-              <Button onClick={fetchPeriods} disabled={loading} variant="outline">
+              <Button onClick={fetchPeriods} disabled={loading} variant="outline" className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
                 {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
                 Load
               </Button>
               <div className="ml-auto flex items-end gap-2">
                 <div className="space-y-2">
-                  <Label>Generate FY</Label>
+                  <Label className="dark:text-slate-200">Generate FY</Label>
                   <Input
                     type="number"
                     value={generateYear}
                     onChange={e => setGenerateYear(parseInt(e.target.value) || new Date().getFullYear())}
-                    className="w-28"
+                    className="w-28 dark:bg-slate-700 dark:text-white dark:border-slate-600"
                   />
                 </div>
                 <Button onClick={handleGenerate} disabled={actionLoading === 'generate'}>
@@ -175,7 +175,7 @@ export default function AccountingPeriodsPage() {
               </div>
             </div>
             {companyName && (
-              <p className="text-sm text-muted-foreground mt-3">
+              <p className="text-sm text-muted-foreground mt-3 dark:text-slate-400">
                 {companyName} — FY{fiscalYear} — {periods.length} periods
               </p>
             )}
@@ -184,15 +184,15 @@ export default function AccountingPeriodsPage() {
 
         {/* Year-End Close */}
         {periods.length > 0 && periods.some(p => p.is_year_end && p.status !== 'locked') && (
-          <Card className="border-orange-200 dark:border-orange-800">
+          <Card className="border-orange-200 dark:border-orange-800 dark:bg-slate-800">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="font-semibold flex items-center gap-2">
+                  <h3 className="font-semibold flex items-center gap-2 dark:text-white">
                     <AlertTriangle className="h-5 w-5 text-orange-500" />
                     Year-End Close FY{fiscalYear}
                   </h3>
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <p className="text-sm text-muted-foreground mt-1 dark:text-slate-400">
                     Transfer P&L to Retained Earnings and lock all periods. This action cannot be undone.
                   </p>
                 </div>
@@ -207,8 +207,8 @@ export default function AccountingPeriodsPage() {
 
         {/* Periods List */}
         {periods.length === 0 && !loading ? (
-          <Card>
-            <CardContent className="py-12 text-center text-muted-foreground">
+          <Card className="dark:bg-slate-800">
+            <CardContent className="py-12 text-center text-muted-foreground dark:text-slate-400">
               No periods found for FY{fiscalYear}. Click Generate to create 12 monthly periods.
             </CardContent>
           </Card>
@@ -216,21 +216,20 @@ export default function AccountingPeriodsPage() {
           <div className="space-y-2">
             {periods.map((period) => (
               <Card key={period._id} className={
-                period.status === 'locked' ? 'opacity-60' :
-                period.is_year_end ? 'border-orange-200 dark:border-orange-800' : ''
+                `dark:bg-slate-800 ${period.status === 'locked' ? 'opacity-60' : period.is_year_end ? 'border-orange-200 dark:border-orange-800' : ''}`
               }>
                 <CardContent className="py-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="font-semibold">{period.name}</span>
+                          <span className="font-semibold dark:text-white">{period.name}</span>
                           {period.is_year_end && (
-                            <Badge variant="outline" className="text-orange-600 border-orange-300">Year-End</Badge>
+                            <Badge variant="outline" className="text-orange-600 border-orange-300 dark:border-orange-700 dark:text-orange-400">Year-End</Badge>
                           )}
                           {statusBadge(period.status)}
                         </div>
-                        <div className="text-sm text-muted-foreground mt-1">
+                        <div className="text-sm text-muted-foreground mt-1 dark:text-slate-400">
                           {format(new Date(period.start_date), 'dd MMM yyyy')} — {format(new Date(period.end_date), 'dd MMM yyyy')}
                         </div>
                       </div>
@@ -240,9 +239,9 @@ export default function AccountingPeriodsPage() {
                       {/* Stats */}
                       {period.stats && (
                         <div className="text-right text-sm">
-                          <div className="font-mono">{period.stats.entry_count} entries</div>
+                          <div className="font-mono dark:text-slate-200">{period.stats.entry_count} entries</div>
                           {period.stats.entry_count > 0 && (
-                            <div className="text-muted-foreground text-xs">
+                            <div className="text-muted-foreground text-xs dark:text-slate-500">
                               DR: {period.stats.total_debit.toLocaleString()} | CR: {period.stats.total_credit.toLocaleString()}
                             </div>
                           )}
@@ -258,6 +257,7 @@ export default function AccountingPeriodsPage() {
                               size="sm"
                               onClick={() => handleClose(period._id, period.name)}
                               disabled={actionLoading === period._id}
+                              className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
                             >
                               {actionLoading === period._id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Lock className="h-3 w-3 mr-1" />}
                               Close
@@ -267,7 +267,7 @@ export default function AccountingPeriodsPage() {
                               size="sm"
                               onClick={() => handleLock(period._id, period.name)}
                               disabled={actionLoading === period._id}
-                              className="text-red-600 hover:text-red-700"
+                              className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
                             >
                               <Lock className="h-3 w-3 mr-1" />
                               Lock
@@ -281,6 +281,7 @@ export default function AccountingPeriodsPage() {
                               size="sm"
                               onClick={() => handleReopen(period._id, period.name)}
                               disabled={actionLoading === period._id}
+                              className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
                             >
                               {actionLoading === period._id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Unlock className="h-3 w-3 mr-1" />}
                               Reopen
@@ -290,7 +291,7 @@ export default function AccountingPeriodsPage() {
                               size="sm"
                               onClick={() => handleLock(period._id, period.name)}
                               disabled={actionLoading === period._id}
-                              className="text-red-600 hover:text-red-700"
+                              className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
                             >
                               <Lock className="h-3 w-3 mr-1" />
                               Lock
@@ -298,7 +299,7 @@ export default function AccountingPeriodsPage() {
                           </>
                         )}
                         {period.status === 'locked' && (
-                          <span className="text-xs text-muted-foreground flex items-center gap-1">
+                          <span className="text-xs text-muted-foreground flex items-center gap-1 dark:text-slate-500">
                             <Lock className="h-3 w-3" />
                             {period.closed_at ? format(new Date(period.closed_at), 'dd MMM yyyy') : 'Locked'}
                           </span>

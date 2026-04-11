@@ -159,8 +159,8 @@ export default function PurchaseReturnsListPage() {
       <div className="container mx-auto py-6">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-2xl font-bold">{t('purchaseReturn.title', 'Purchase Returns')}</h1>
-            <p className="text-muted-foreground">{t('purchaseReturn.description', 'Manage your purchase returns')}</p>
+            <h1 className="text-2xl font-bold dark:text-gray-100">{t('purchaseReturn.title', 'Purchase Returns')}</h1>
+            <p className="text-muted-foreground dark:text-gray-400">{t('purchaseReturn.description', 'Manage your purchase returns')}</p>
           </div>
           <Button onClick={() => navigate('/purchase-returns/new')}>
             <Plus className="mr-2 h-4 w-4" />
@@ -169,32 +169,32 @@ export default function PurchaseReturnsListPage() {
         </div>
 
         {/* Filters */}
-        <div className="bg-card rounded-lg border p-4 mb-6">
+        <div className="bg-card rounded-lg border p-4 mb-6 dark:border-slate-700 dark:bg-slate-800">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <label className="text-sm font-medium mb-1 block">{t('purchaseReturn.status', 'Status')}</label>
+              <label className="text-sm font-medium mb-1 block dark:text-gray-200">{t('purchaseReturn.status', 'Status')}</label>
               <Select value={statusFilter || 'all'} onValueChange={(value) => setStatusFilter(value === 'all' ? '' : value)}>
-                <SelectTrigger>
+                <SelectTrigger className="dark:bg-slate-700 dark:border-slate-600">
                   <SelectValue placeholder={t('purchaseReturn.allStatuses', 'All Statuses')} />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('purchaseReturn.allStatuses', 'All Statuses')}</SelectItem>
-                  <SelectItem value="draft">{t('purchaseReturn.status.draft', 'Draft')}</SelectItem>
-                  <SelectItem value="confirmed">{t('purchaseReturn.status.confirmed', 'Confirmed')}</SelectItem>
-                  <SelectItem value="cancelled">{t('purchaseReturn.status.cancelled', 'Cancelled')}</SelectItem>
+                <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
+                  <SelectItem value="all" className="dark:text-gray-200">{t('purchaseReturn.allStatuses', 'All Statuses')}</SelectItem>
+                  <SelectItem value="draft" className="dark:text-gray-200">{t('purchaseReturn.status.draft', 'Draft')}</SelectItem>
+                  <SelectItem value="confirmed" className="dark:text-gray-200">{t('purchaseReturn.status.confirmed', 'Confirmed')}</SelectItem>
+                  <SelectItem value="cancelled" className="dark:text-gray-200">{t('purchaseReturn.status.cancelled', 'Cancelled')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">{t('purchaseReturn.supplier', 'Supplier')}</label>
+              <label className="text-sm font-medium mb-1 block dark:text-gray-200">{t('purchaseReturn.supplier', 'Supplier')}</label>
               <Select value={supplierFilter || 'all'} onValueChange={(value) => setSupplierFilter(value === 'all' ? '' : value)}>
-                <SelectTrigger>
+                <SelectTrigger className="dark:bg-slate-700 dark:border-slate-600">
                   <SelectValue placeholder={t('purchaseReturn.allSuppliers', 'All Suppliers')} />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('purchaseReturn.allSuppliers', 'All Suppliers')}</SelectItem>
+                <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
+                  <SelectItem value="all" className="dark:text-gray-200">{t('purchaseReturn.allSuppliers', 'All Suppliers')}</SelectItem>
                   {suppliers.map((supplier) => (
-                    <SelectItem key={supplier._id} value={supplier._id}>
+                    <SelectItem key={supplier._id} value={supplier._id} className="dark:text-gray-200">
                       {supplier.name}
                     </SelectItem>
                   ))}
@@ -202,62 +202,64 @@ export default function PurchaseReturnsListPage() {
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">{t('purchaseReturn.dateFrom', 'Date From')}</label>
+              <label className="text-sm font-medium mb-1 block dark:text-gray-200">{t('purchaseReturn.dateFrom', 'Date From')}</label>
               <Input 
                 type="date" 
                 value={dateFrom}
                 onChange={(e) => setDateFrom(e.target.value)}
+                className="dark:bg-slate-700 dark:border-slate-600 dark:text-gray-200"
               />
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">{t('purchaseReturn.dateTo', 'Date To')}</label>
+              <label className="text-sm font-medium mb-1 block dark:text-gray-200">{t('purchaseReturn.dateTo', 'Date To')}</label>
               <Input 
                 type="date" 
                 value={dateTo}
                 onChange={(e) => setDateTo(e.target.value)}
+                className="dark:bg-slate-700 dark:border-slate-600 dark:text-gray-200"
               />
             </div>
           </div>
         </div>
 
         {/* Table */}
-        <div className="bg-card rounded-lg border">
+        <div className="bg-card rounded-lg border dark:border-slate-700 dark:bg-slate-800">
           {loading ? (
             <div className="flex items-center justify-center p-8">
               <Loader2 className="h-8 w-8 animate-spin" />
             </div>
           ) : (
             <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t('purchaseReturn.reference', 'Reference')}</TableHead>
-                  <TableHead>{t('purchaseReturn.grnReference', 'GRN Reference')}</TableHead>
-                  <TableHead>{t('purchaseReturn.supplier', 'Supplier')}</TableHead>
-                  <TableHead>{t('purchaseReturn.returnDate', 'Return Date')}</TableHead>
-                  <TableHead>{t('purchaseReturn.status', 'Status')}</TableHead>
-                  <TableHead>{t('purchaseReturn.totalAmount', 'Total Amount')}</TableHead>
-                  <TableHead className="text-right">{t('common.actions', 'Actions')}</TableHead>
+              <TableHeader className="dark:bg-slate-800">
+                <TableRow className="dark:hover:bg-slate-700/50">
+                  <TableHead className="dark:text-gray-300">{t('purchaseReturn.reference', 'Reference')}</TableHead>
+                  <TableHead className="dark:text-gray-300">{t('purchaseReturn.grnReference', 'GRN Reference')}</TableHead>
+                  <TableHead className="dark:text-gray-300">{t('purchaseReturn.supplier', 'Supplier')}</TableHead>
+                  <TableHead className="dark:text-gray-300">{t('purchaseReturn.returnDate', 'Return Date')}</TableHead>
+                  <TableHead className="dark:text-gray-300">{t('purchaseReturn.status', 'Status')}</TableHead>
+                  <TableHead className="dark:text-gray-300">{t('purchaseReturn.totalAmount', 'Total Amount')}</TableHead>
+                  <TableHead className="text-right dark:text-gray-300">{t('common.actions', 'Actions')}</TableHead>
                 </TableRow>
               </TableHeader>
-              <TableBody>
+              <TableBody className="dark:bg-slate-800">
                 {returnList.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                  <TableRow className="dark:hover:bg-slate-700/50">
+                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground dark:text-gray-400">
                       {t('purchaseReturn.noReturns', 'No purchase returns found')}
                     </TableCell>
                   </TableRow>
                 ) : (
                   returnList.map((pr) => (
-                    <TableRow key={pr._id}>
-                      <TableCell className="font-medium">
+                    <TableRow key={pr._id} className="dark:hover:bg-slate-700/50">
+                      <TableCell className="font-medium dark:text-gray-200">
                         <FileText className="inline-block mr-2 h-4 w-4" />
                         {pr.referenceNo || 'N/A'}
                       </TableCell>
-                      <TableCell>{pr.grn?.referenceNo || '-'}</TableCell>
-                      <TableCell>{pr.supplier?.name || '-'}</TableCell>
-                      <TableCell>{formatDate(pr.returnDate)}</TableCell>
+                      <TableCell className="dark:text-gray-300">{pr.grn?.referenceNo || '-'}</TableCell>
+                      <TableCell className="dark:text-gray-300">{pr.supplier?.name || '-'}</TableCell>
+                      <TableCell className="dark:text-gray-300">{formatDate(pr.returnDate)}</TableCell>
                       <TableCell>{getStatusBadge(pr.status)}</TableCell>
-                      <TableCell className="font-medium">
+                      <TableCell className="font-medium dark:text-gray-200">
                         {formatCurrency(pr.totalAmount)}
                       </TableCell>
                       <TableCell className="text-right">
@@ -265,8 +267,9 @@ export default function PurchaseReturnsListPage() {
                           variant="ghost" 
                           size="sm"
                           onClick={() => navigate(`/purchase-returns/${pr._id}`)}
+                          className="dark:hover:bg-slate-700"
                         >
-                          <Eye className="h-4 w-4" />
+                          <Eye className="h-4 w-4 dark:text-gray-300" />
                         </Button>
                       </TableCell>
                     </TableRow>

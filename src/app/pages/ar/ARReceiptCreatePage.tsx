@@ -1,7 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useParams } from 'react-router';
-import { arReceiptsApi, clientsApi, bankAccountsApi, invoicesApi } from '@/lib/api';
-import { Layout } from '../../layout/Layout';
+import { useState, useEffect, useCallback } from "react";
+import { useNavigate, useParams } from "react-router";
+import {
+  arReceiptsApi,
+  clientsApi,
+  bankAccountsApi,
+  invoicesApi,
+} from "@/lib/api";
+import { Layout } from "../../layout/Layout";
 import {
   ArrowLeft,
   Save,
@@ -9,35 +14,41 @@ import {
   Loader2,
   Calculator,
   Plus,
-  Trash2
-} from 'lucide-react';
-import { Button } from '@/app/components/ui/button';
-import { Input } from '@/app/components/ui/input';
-import { Textarea } from '@/app/components/ui/textarea';
+  Trash2,
+} from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/app/components/ui/button";
+import { Input } from "@/app/components/ui/input";
+import { Textarea } from "@/app/components/ui/textarea";
 import {
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
-  TableRow
-} from '@/app/components/ui/table';
+  TableRow,
+} from "@/app/components/ui/table";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/app/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
-import { Label } from '@/app/components/ui/label';
+} from "@/app/components/ui/select";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/app/components/ui/card";
+import { Label } from "@/app/components/ui/label";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
   TooltipProvider,
-} from '@/app/components/ui/tooltip';
-import { useTranslation } from 'react-i18next';
+} from "@/app/components/ui/tooltip";
+import { useTranslation } from "react-i18next";
 
 interface Client {
   _id: string;
@@ -78,14 +89,14 @@ interface ARReceiptFormData {
 }
 
 const PAYMENT_METHODS = [
-  { value: 'bank_transfer', label: 'Bank Transfer' },
-  { value: 'cash', label: 'Cash' },
-  { value: 'cheque', label: 'Cheque' },
-  { value: 'card', label: 'Card' },
-  { value: 'other', label: 'Other' },
+  { value: "bank_transfer", label: "Bank Transfer" },
+  { value: "cash", label: "Cash" },
+  { value: "cheque", label: "Cheque" },
+  { value: "card", label: "Card" },
+  { value: "other", label: "Other" },
 ];
 
-const CURRENCIES = ['USD', 'EUR', 'GBP', 'RWF', 'KES', 'UGX', 'TZS'];
+const CURRENCIES = ["USD", "EUR", "GBP", "RWF", "KES", "UGX", "TZS"];
 
 export default function ARReceiptCreatePage() {
   const { t } = useTranslation();
@@ -101,14 +112,14 @@ export default function ARReceiptCreatePage() {
   const [allocations, setAllocations] = useState<Allocation[]>([]);
 
   const [formData, setFormData] = useState<ARReceiptFormData>({
-    client: '',
-    receiptDate: new Date().toISOString().split('T')[0],
-    paymentMethod: 'bank_transfer',
-    bankAccount: '',
+    client: "",
+    receiptDate: new Date().toISOString().split("T")[0],
+    paymentMethod: "bank_transfer",
+    bankAccount: "",
     amountReceived: 0,
-    currencyCode: 'USD',
-    reference: '',
-    notes: '',
+    currencyCode: "USD",
+    reference: "",
+    notes: "",
   });
 
   const fetchClients = useCallback(async () => {
@@ -118,7 +129,7 @@ export default function ARReceiptCreatePage() {
         setClients(response.data as Client[]);
       }
     } catch (error) {
-      console.error('Failed to fetch clients:', error);
+      console.error("Failed to fetch clients:", error);
     }
   }, []);
 
@@ -129,7 +140,7 @@ export default function ARReceiptCreatePage() {
         setBankAccounts(response.data as any[]);
       }
     } catch (error) {
-      console.error('Failed to fetch bank accounts:', error);
+      console.error("Failed to fetch bank accounts:", error);
     }
   }, []);
 
@@ -138,18 +149,18 @@ export default function ARReceiptCreatePage() {
       // Get outstanding invoices for this client
       const response = await invoicesApi.getAll({
         clientId: clientId,
-        status: 'confirmed', // Only confirmed invoices have outstanding balance
-        limit: 100
+        status: "confirmed", // Only confirmed invoices have outstanding balance
+        limit: 100,
       });
       if (response.success && Array.isArray(response.data)) {
         // Filter to only show invoices with outstanding balance
         const outstandingInvoices = (response.data as Invoice[]).filter(
-          (inv) => parseFloat(inv.balance || inv.amountOutstanding || '0') > 0
+          (inv) => parseFloat(inv.balance || inv.amountOutstanding || "0") > 0,
         );
         setInvoices(outstandingInvoices);
       }
     } catch (error) {
-      console.error('Failed to fetch invoices:', error);
+      console.error("Failed to fetch invoices:", error);
     }
   }, []);
 
@@ -161,14 +172,16 @@ export default function ARReceiptCreatePage() {
       if (response.success) {
         const receipt = response.data;
         setFormData({
-          client: receipt.client?._id || '',
-          receiptDate: receipt.receiptDate ? new Date(receipt.receiptDate).toISOString().split('T')[0] : '',
-          paymentMethod: receipt.paymentMethod || 'bank_transfer',
-          bankAccount: receipt.bankAccount?._id || '',
+          client: receipt.client?._id || "",
+          receiptDate: receipt.receiptDate
+            ? new Date(receipt.receiptDate).toISOString().split("T")[0]
+            : "",
+          paymentMethod: receipt.paymentMethod || "bank_transfer",
+          bankAccount: receipt.bankAccount?._id || "",
           amountReceived: parseFloat(receipt.amountReceived) || 0,
-          currencyCode: receipt.currencyCode || 'USD',
-          reference: receipt.reference || '',
-          notes: receipt.notes || '',
+          currencyCode: receipt.currencyCode || "USD",
+          reference: receipt.reference || "",
+          notes: receipt.notes || "",
         });
 
         // Set allocations from response
@@ -177,7 +190,7 @@ export default function ARReceiptCreatePage() {
             response.allocations.map((a) => ({
               invoice: a.invoice._id,
               amount: parseFloat(a.amountAllocated),
-            }))
+            })),
           );
         }
 
@@ -187,7 +200,7 @@ export default function ARReceiptCreatePage() {
         }
       }
     } catch (error) {
-      console.error('Failed to fetch receipt:', error);
+      console.error("Failed to fetch receipt:", error);
     } finally {
       setLoading(false);
     }
@@ -239,7 +252,7 @@ export default function ARReceiptCreatePage() {
 
   const handleSave = async (postImmediately: boolean = false) => {
     if (!formData.client || !formData.amountReceived) {
-      alert(t('arReceipt.fillRequired', 'Please fill in required fields'));
+      alert(t("arReceipt.fillRequired", "Please fill in required fields"));
       return;
     }
 
@@ -276,17 +289,21 @@ export default function ARReceiptCreatePage() {
         await arReceiptsApi.post(receiptId);
       }
 
-      navigate('/ar-receipts');
-    } catch (error) {
-      console.error('Failed to save receipt:', error);
+      navigate("/ar-receipts");
+    } catch (error: any) {
+      toast.error(
+        error?.response?.data?.error ||
+          error?.message ||
+          t("arReceipt.saveFailed", "Failed to save receipt"),
+      );
     } finally {
       setSaving(false);
     }
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
       currency: formData.currencyCode,
     }).format(amount);
   };
@@ -304,258 +321,384 @@ export default function ARReceiptCreatePage() {
   return (
     <TooltipProvider>
       <Layout>
-        <div className="container mx-auto py-6">
-        <div className="flex items-center gap-4 mb-6">
-          <Button variant="ghost" onClick={() => navigate('/ar-receipts')}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            {t('common.back', 'Back')}
-          </Button>
-          <h1 className="text-2xl font-bold">
-            {isEdit
-              ? t('arReceipt.editTitle', 'Edit Receipt')
-              : t('arReceipt.createTitle', 'Create Receipt')}
-          </h1>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Form */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Receipt Details */}
-            <Card>
-              <CardHeader>
-                <CardTitle>{t('arReceipt.details', 'Receipt Details')}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>{t('arReceipt.client', 'Client')} *</Label>
-                    <Select
-                      value={formData.client}
-                      onValueChange={(value) => setFormData({ ...formData, client: value })}
-                      disabled={isEdit}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('arReceipt.selectClient', 'Select client')} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {clients.map((client) => (
-                          <SelectItem key={client._id} value={client._id}>
-                            {client.name} ({client.code})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label>{t('arReceipt.receiptDate', 'Receipt Date')}</Label>
-                    <Input
-                      type="date"
-                      value={formData.receiptDate}
-                      onChange={(e) => setFormData({ ...formData, receiptDate: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <Label>{t('arReceipt.paymentMethod', 'Payment Method')} *</Label>
-                    <Select
-                      value={formData.paymentMethod}
-                      onValueChange={(value) => setFormData({ ...formData, paymentMethod: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {PAYMENT_METHODS.map((method) => (
-                          <SelectItem key={method.value} value={method.value}>
-                            {method.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label>{t('arReceipt.bankAccount', 'Bank Account')}</Label>
-                    <Select
-                      value={formData.bankAccount}
-                      onValueChange={(value) => setFormData({ ...formData, bankAccount: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('arReceipt.selectBank', 'Select bank account')} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {bankAccounts.map((account) => (
-                          <SelectItem key={account._id} value={account._id}>
-                            {account.name} ({account.accountNumber || account.bankName || account.accountType})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label>{t('arReceipt.amount', 'Amount Received')} *</Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={formData.amountReceived}
-                      onChange={(e) => setFormData({ ...formData, amountReceived: parseFloat(e.target.value) || 0 })}
-                    />
-                  </div>
-                  <div>
-                    <Label>{t('arReceipt.currency', 'Currency')}</Label>
-                    <Select
-                      value={formData.currencyCode}
-                      onValueChange={(value) => setFormData({ ...formData, currencyCode: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {CURRENCIES.map((currency) => (
-                          <SelectItem key={currency} value={currency}>
-                            {currency}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label>{t('arReceipt.reference', 'Reference')}</Label>
-                    <Input
-                      value={formData.reference}
-                      onChange={(e) => setFormData({ ...formData, reference: e.target.value })}
-                      placeholder={t('arReceipt.referencePlaceholder', 'Cheque number, bank ref...')}
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label>{t('arReceipt.notes', 'Notes')}</Label>
-                  <Textarea
-                    value={formData.notes}
-                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    placeholder={t('arReceipt.notesPlaceholder', 'Add any notes...')}
-                    rows={3}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Invoice Allocation */}
-            {formData.client && invoices.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>{t('arReceipt.invoiceAllocation', 'Invoice Allocation')}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>{t('arReceipt.invoice', 'Invoice')}</TableHead>
-                        <TableHead>{t('arReceipt.dueDate', 'Due Date')}</TableHead>
-                        <TableHead className="text-right">{t('arReceipt.balance', 'Balance')}</TableHead>
-                        <TableHead className="text-right">{t('arReceipt.allocate', 'Allocate')}</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {invoices.map((invoice) => {
-                        const balance = parseFloat(invoice.balance || invoice.amountOutstanding || '0');
-                        const allocated = allocations.find((a) => a.invoice === invoice._id)?.amount || 0;
-                        return (
-                          <TableRow key={invoice._id}>
-                            <TableCell>
-                              <div className="font-medium">{invoice.invoiceNumber}</div>
-                              <div className="text-sm text-muted-foreground">{invoice.referenceNo}</div>
-                            </TableCell>
-                            <TableCell>{invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : '-'}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(balance)}</TableCell>
-                            <TableCell className="text-right">
-                              <Input
-                                type="number"
-                                min="0"
-                                max={balance}
-                                className="w-28 text-right"
-                                value={allocated || ''}
-                                onChange={(e) => handleAllocationChange(invoice._id, parseFloat(e.target.value) || 0)}
-                              />
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            )}
-
-            {formData.client && invoices.length === 0 && (
-              <Card>
-                <CardContent className="py-8 text-center text-muted-foreground">
-                  <Calculator className="mx-auto h-8 w-8 mb-2" />
-                  <p>{t('arReceipt.noInvoices', 'No outstanding invoices for this client')}</p>
-                </CardContent>
-              </Card>
-            )}
+        <div className="container mx-auto py-6 bg-gray-50 dark:bg-slate-900 min-h-screen p-6">
+          <div className="flex items-center gap-4 mb-6">
+            <Button variant="ghost" onClick={() => navigate("/ar-receipts")} className="dark:text-slate-200">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              {t("common.back", "Back")}
+            </Button>
+            <h1 className="text-2xl font-bold dark:text-white">
+              {isEdit
+                ? t("arReceipt.editTitle", "Edit Receipt")
+                : t("arReceipt.createTitle", "Create Receipt")}
+            </h1>
           </div>
 
-          {/* Summary Sidebar */}
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>{t('arReceipt.summary', 'Summary')}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex justify-between">
-                  <span>{t('arReceipt.amountReceived', 'Amount Received')}</span>
-                  <span className="font-medium">{formatCurrency(formData.amountReceived)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>{t('arReceipt.allocated', 'Allocated')}</span>
-                  <span className="font-medium">{formatCurrency(calculateAllocatedTotal())}</span>
-                </div>
-                <div className="flex justify-between pt-2 border-t">
-                  <span>{t('arReceipt.unallocated', 'Unallocated')}</span>
-                  <span className={`font-bold ${calculateUnallocated() !== 0 ? 'text-amber-600' : 'text-green-600'}`}>
-                    {formatCurrency(calculateUnallocated())}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Main Form */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Receipt Details */}
+              <Card className="dark:bg-slate-800">
+                <CardHeader>
+                  <CardTitle className="dark:text-white">
+                    {t("arReceipt.details", "Receipt Details")}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="dark:text-slate-200">{t("arReceipt.client", "Client")} *</Label>
+                      <Select
+                        value={formData.client}
+                        onValueChange={(value) =>
+                          setFormData({ ...formData, client: value })
+                        }
+                        disabled={isEdit}
+                      >
+                        <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
+                          <SelectValue
+                            placeholder={t(
+                              "arReceipt.selectClient",
+                              "Select client",
+                            )}
+                          />
+                        </SelectTrigger>
+                        <SelectContent className="dark:bg-slate-800">
+                          {clients.map((client) => (
+                            <SelectItem key={client._id} value={client._id} className="dark:text-white">
+                              {client.name} ({client.code})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="dark:text-slate-200">
+                        {t("arReceipt.receiptDate", "Receipt Date")}
+                      </Label>
+                      <Input
+                        type="date"
+                        value={formData.receiptDate}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            receiptDate: e.target.value,
+                          })
+                        }
+                        className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                      />
+                    </div>
+                    <div>
+                      <Label className="dark:text-slate-200">
+                        {t("arReceipt.paymentMethod", "Payment Method")} *
+                      </Label>
+                      <Select
+                        value={formData.paymentMethod}
+                        onValueChange={(value) =>
+                          setFormData({ ...formData, paymentMethod: value })
+                        }
+                      >
+                        <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="dark:bg-slate-800">
+                          {PAYMENT_METHODS.map((method) => (
+                            <SelectItem key={method.value} value={method.value} className="dark:text-white">
+                              {method.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="dark:text-slate-200">
+                        {t("arReceipt.bankAccount", "Bank Account")}
+                      </Label>
+                      <Select
+                        value={formData.bankAccount}
+                        onValueChange={(value) =>
+                          setFormData({ ...formData, bankAccount: value })
+                        }
+                      >
+                        <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
+                          <SelectValue
+                            placeholder={t(
+                              "arReceipt.selectBank",
+                              "Select bank account",
+                            )}
+                          />
+                        </SelectTrigger>
+                        <SelectContent className="dark:bg-slate-800">
+                          {bankAccounts.map((account) => (
+                            <SelectItem key={account._id} value={account._id} className="dark:text-white">
+                              {account.name} (
+                              {account.accountNumber ||
+                                account.bankName ||
+                                account.accountType}
+                              )
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="dark:text-slate-200">
+                        {t("arReceipt.amount", "Amount Received")} *
+                      </Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={formData.amountReceived}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            amountReceived: parseFloat(e.target.value) || 0,
+                          })
+                        }
+                        className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                      />
+                    </div>
+                    <div>
+                      <Label className="dark:text-slate-200">{t("arReceipt.currency", "Currency")}</Label>
+                      <Select
+                        value={formData.currencyCode}
+                        onValueChange={(value) =>
+                          setFormData({ ...formData, currencyCode: value })
+                        }
+                      >
+                        <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="dark:bg-slate-800">
+                          {CURRENCIES.map((currency) => (
+                            <SelectItem key={currency} value={currency} className="dark:text-white">
+                              {currency}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="dark:text-slate-200">{t("arReceipt.reference", "Reference")}</Label>
+                      <Input
+                        value={formData.reference}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            reference: e.target.value,
+                          })
+                        }
+                        placeholder={t(
+                          "arReceipt.referencePlaceholder",
+                          "Cheque number, bank ref...",
+                        )}
+                        className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="dark:text-slate-200">{t("arReceipt.notes", "Notes")}</Label>
+                    <Textarea
+                      value={formData.notes}
+                      onChange={(e) =>
+                        setFormData({ ...formData, notes: e.target.value })
+                      }
+                      placeholder={t(
+                        "arReceipt.notesPlaceholder",
+                        "Add any notes...",
+                      )}
+                      rows={3}
+                      className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
 
-            {/* Actions */}
-            <div className="flex flex-col gap-2">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    onClick={() => handleSave(false)}
-                    disabled={saving || !formData.client || !formData.amountReceived}
-                  >
-                    {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                    {t('arReceipt.saveAsDraft', 'Save as Draft')}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{t('arReceipt.saveAsDraftTooltip', 'Save receipt as draft to edit later')}</p>
-                </TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="default"
-                    onClick={() => handleSave(true)}
-                    disabled={saving || !formData.client || !formData.amountReceived}
-                  >
-                    {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                    {t('arReceipt.saveAndPost', 'Save & Post')}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{t('arReceipt.saveAndPostTooltip', 'Save and post receipt to apply payment')}</p>
-                </TooltipContent>
-              </Tooltip>
+              {/* Invoice Allocation */}
+              {formData.client && invoices.length > 0 && (
+                <Card className="dark:bg-slate-800">
+                  <CardHeader>
+                    <CardTitle className="dark:text-white">
+                      {t("arReceipt.invoiceAllocation", "Invoice Allocation")}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="dark:bg-slate-700/50">
+                          <TableHead className="dark:text-slate-200">
+                            {t("arReceipt.invoice", "Invoice")}
+                          </TableHead>
+                          <TableHead className="dark:text-slate-200">
+                            {t("arReceipt.dueDate", "Due Date")}
+                          </TableHead>
+                          <TableHead className="text-right dark:text-slate-200">
+                            {t("arReceipt.balance", "Balance")}
+                          </TableHead>
+                          <TableHead className="text-right dark:text-slate-200">
+                            {t("arReceipt.allocate", "Allocate")}
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {invoices.map((invoice) => {
+                          const balance = parseFloat(
+                            invoice.balance || invoice.amountOutstanding || "0",
+                          );
+                          const allocated =
+                            allocations.find((a) => a.invoice === invoice._id)
+                              ?.amount || 0;
+                          return (
+                            <TableRow key={invoice._id} className="dark:border-slate-600">
+                              <TableCell>
+                                <div className="font-medium dark:text-white">
+                                  {invoice.invoiceNumber}
+                                </div>
+                                <div className="text-sm text-muted-foreground dark:text-slate-500">
+                                  {invoice.referenceNo}
+                                </div>
+                              </TableCell>
+                              <TableCell className="dark:text-slate-300">
+                                {invoice.dueDate
+                                  ? new Date(
+                                      invoice.dueDate,
+                                    ).toLocaleDateString()
+                                  : "-"}
+                              </TableCell>
+                              <TableCell className="text-right dark:text-slate-300">
+                                {formatCurrency(balance)}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  max={balance}
+                                  className="w-28 text-right dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                                  value={allocated || ""}
+                                  onChange={(e) =>
+                                    handleAllocationChange(
+                                      invoice._id,
+                                      parseFloat(e.target.value) || 0,
+                                    )
+                                  }
+                                />
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+              )}
+
+              {formData.client && invoices.length === 0 && (
+                <Card className="dark:bg-slate-800">
+                  <CardContent className="py-8 text-center text-muted-foreground dark:text-slate-400">
+                    <Calculator className="mx-auto h-8 w-8 mb-2" />
+                    <p>
+                      {t(
+                        "arReceipt.noInvoices",
+                        "No outstanding invoices for this client",
+                      )}
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            {/* Summary Sidebar */}
+            <div className="space-y-6">
+              <Card className="dark:bg-slate-800">
+                <CardHeader>
+                  <CardTitle className="dark:text-white">{t("arReceipt.summary", "Summary")}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex justify-between">
+                    <span className="dark:text-slate-300">
+                      {t("arReceipt.amountReceived", "Amount Received")}
+                    </span>
+                    <span className="font-medium dark:text-white">
+                      {formatCurrency(formData.amountReceived)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="dark:text-slate-300">{t("arReceipt.allocated", "Allocated")}</span>
+                    <span className="font-medium dark:text-white">
+                      {formatCurrency(calculateAllocatedTotal())}
+                    </span>
+                  </div>
+                  <div className="flex justify-between pt-2 border-t dark:border-slate-600">
+                    <span className="dark:text-slate-300">{t("arReceipt.unallocated", "Unallocated")}</span>
+                    <span
+                      className={`font-bold ${calculateUnallocated() !== 0 ? "text-amber-600 dark:text-amber-400" : "text-green-600 dark:text-green-400"}`}
+                    >
+                      {formatCurrency(calculateUnallocated())}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Actions */}
+              <div className="flex flex-col gap-2">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={() => handleSave(false)}
+                      disabled={
+                        saving || !formData.client || !formData.amountReceived
+                      }
+                      className="dark:border-slate-600 dark:text-slate-200"
+                    >
+                      {saving ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Save className="mr-2 h-4 w-4" />
+                      )}
+                      {t("arReceipt.saveAsDraft", "Save as Draft")}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>
+                      {t(
+                        "arReceipt.saveAsDraftTooltip",
+                        "Save receipt as draft to edit later",
+                      )}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="default"
+                      onClick={() => handleSave(true)}
+                      disabled={
+                        saving || !formData.client || !formData.amountReceived
+                      }
+                    >
+                      {saving ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Send className="mr-2 h-4 w-4" />
+                      )}
+                      {t("arReceipt.saveAndPost", "Save & Record")}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>
+                      {t(
+                        "arReceipt.saveAndPostTooltip",
+                        "Save and record receipt as posted",
+                      )}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </Layout>
+      </Layout>
     </TooltipProvider>
   );
 }

@@ -103,16 +103,17 @@ export default function InvoicesListPage() {
       
       if (response.success && response.data) {
         const data = response.data as any;
-        if (Array.isArray(data)) {
-          setInvoices(data);
-          setPagination(prev => ({ ...prev, total: data.length }));
-        } else if (data.invoices) {
-          setInvoices(data.invoices);
-          setPagination(prev => ({ 
-            ...prev, 
-            total: data.total || data.invoices.length,
-            page: data.page || 1 
-          }));
+        console.log('Response data structure:', data);
+        
+        // Backend returns { success, count, total, pages, currentPage, data: [...invoices] }
+        // So response.data is the object containing the invoices array
+        const invoicesData = Array.isArray(data) ? data : (data.data || []);
+        
+        console.log('Extracted invoices:', invoicesData);
+        console.log('Invoices count:', invoicesData?.length || 0);
+        if (Array.isArray(invoicesData)) {
+          setInvoices(invoicesData);
+          setPagination(prev => ({ ...prev, total: data.total || invoicesData.length }));
         } else {
           setInvoices([]);
         }
@@ -140,6 +141,23 @@ export default function InvoicesListPage() {
 
   useEffect(() => {
     fetchClients();
+    
+    // Debug: Check stored companyId and test API directly
+    const storedCompanyId = localStorage.getItem('companyId');
+    console.log('Stored companyId:', storedCompanyId);
+    
+    // Test API call with no filters
+    invoicesApi.getAll({ limit: 100 }).then(response => {
+      console.log('Direct API test - full response:', response);
+      console.log('Direct API test - data:', response.data);
+      const data = response.data as any;
+      if (data?.data) {
+        console.log('Direct API test - invoices count:', data.data.length);
+        console.log('Direct API test - first invoice:', data.data[0]);
+      }
+    }).catch(err => {
+      console.error('Direct API test failed:', err);
+    });
   }, [fetchClients]);
 
   useEffect(() => {
@@ -219,8 +237,8 @@ export default function InvoicesListPage() {
         {/* Page Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold">{t('invoice.title', 'Invoices')}</h1>
-            <p className="text-muted-foreground">{t('invoice.subtitle', 'Manage customer invoices')}</p>
+            <h1 className="text-2xl font-bold dark:text-gray-100">{t('invoice.title', 'Invoices')}</h1>
+            <p className="text-muted-foreground dark:text-gray-400">{t('invoice.subtitle', 'Manage customer invoices')}</p>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={handleExport}>
@@ -235,7 +253,7 @@ export default function InvoicesListPage() {
         </div>
 
         {/* Filters */}
-        <Card className="mb-6">
+        <Card className="mb-6 dark:border-slate-700 dark:bg-slate-800">
           <CardContent className="pt-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
               <div className="relative">
@@ -244,29 +262,29 @@ export default function InvoicesListPage() {
                   placeholder={t('invoice.search', 'Search invoices...')}
                   value={search}
                   onChange={(e) => handleSearch(e.target.value)}
-                  className="pl-9"
+                  className="pl-9 dark:bg-slate-800 dark:border-slate-600 dark:text-gray-200"
                 />
               </div>
               <Select value={statusFilter} onValueChange={handleStatusFilter}>
-                <SelectTrigger>
+                <SelectTrigger className="dark:bg-slate-800 dark:border-slate-600">
                   <SelectValue placeholder={t('invoice.filterStatus', 'Status')} />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
                   {STATUS_OPTIONS.map(option => (
-                    <SelectItem key={option.value} value={option.value}>
+                    <SelectItem key={option.value} value={option.value} className="dark:text-gray-200">
                       {option.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               <Select value={clientFilter} onValueChange={handleClientFilter}>
-                <SelectTrigger>
+                <SelectTrigger className="dark:bg-slate-800 dark:border-slate-600">
                   <SelectValue placeholder={t('invoice.filterClient', 'Client')} />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('common.all', 'All Clients')}</SelectItem>
+                <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
+                  <SelectItem value="all" className="dark:text-gray-200">{t('common.all', 'All Clients')}</SelectItem>
                   {clients.map(client => (
-                    <SelectItem key={client._id} value={client._id}>
+                    <SelectItem key={client._id} value={client._id} className="dark:text-gray-200">
                       {client.name}
                     </SelectItem>
                   ))}
@@ -277,6 +295,7 @@ export default function InvoicesListPage() {
                 value={dateFrom}
                 onChange={(e) => handleDateFromChange(e.target.value)}
                 placeholder={t('invoice.dateFrom', 'From')}
+                className="dark:bg-slate-800 dark:border-slate-600 dark:text-gray-200"
               />
               <Input
                 type="date"
@@ -296,17 +315,17 @@ export default function InvoicesListPage() {
         </Card>
 
         {/* Invoices Table */}
-        <Card>
+        <Card className="dark:border-slate-700 dark:bg-slate-800">
           <CardContent className="p-0">
             {loading ? (
               <div className="flex items-center justify-center p-8">
                 <Loader2 className="h-8 w-8 animate-spin" />
               </div>
             ) : invoices.length === 0 ? (
-              <div className="text-center py-12">
-                <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium">{t('invoice.noInvoices', 'No invoices found')}</h3>
-                <p className="text-muted-foreground mb-4">
+              <div className="text-center py-12 dark:bg-slate-800">
+                <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4 dark:text-gray-400" />
+                <h3 className="text-lg font-medium dark:text-gray-200">{t('invoice.noInvoices', 'No invoices found')}</h3>
+                <p className="text-muted-foreground mb-4 dark:text-gray-400">
                   {t('invoice.noInvoicesDescription', 'Create your first invoice to get started')}
                 </p>
                 <Button onClick={() => navigate('/invoices/new')}>
@@ -316,69 +335,69 @@ export default function InvoicesListPage() {
               </div>
             ) : (
               <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t('invoice.invoiceNumber', 'Invoice #')}</TableHead>
-                    <TableHead>{t('invoice.client', 'Client')}</TableHead>
-                    <TableHead>{t('invoice.invoiceDate', 'Date')}</TableHead>
-                    <TableHead>{t('invoice.dueDate', 'Due Date')}</TableHead>
-                    <TableHead>{t('invoice.status', 'Status')}</TableHead>
-                    <TableHead className="text-right">{t('invoice.total', 'Total')}</TableHead>
-                    <TableHead className="text-right">{t('invoice.balance', 'Balance')}</TableHead>
-                    <TableHead>{t('invoice.source', 'Source')}</TableHead>
-                    <TableHead className="text-right">{t('common.actions', 'Actions')}</TableHead>
+                <TableHeader className="dark:bg-slate-800">
+                  <TableRow className="dark:hover:bg-slate-700/50 dark:border-b dark:border-slate-700">
+                    <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.invoiceNumber', 'Invoice #')}</TableHead>
+                    <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.client', 'Client')}</TableHead>
+                    <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.invoiceDate', 'Date')}</TableHead>
+                    <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.dueDate', 'Due Date')}</TableHead>
+                    <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.status', 'Status')}</TableHead>
+                    <TableHead className="text-right dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.total', 'Total')}</TableHead>
+                    <TableHead className="text-right dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.balance', 'Balance')}</TableHead>
+                    <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.source', 'Source')}</TableHead>
+                    <TableHead className="text-right dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('common.actions', 'Actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
-                <TableBody>
+                <TableBody className="dark:bg-slate-800">
                   {invoices.map((invoice) => (
-                    <TableRow key={invoice._id}>
-                      <TableCell className="font-medium">
+                    <TableRow key={invoice._id} className="dark:hover:bg-slate-700/50 dark:border-b dark:border-slate-700">
+                      <TableCell className="font-medium dark:text-gray-200 dark:bg-slate-800">
                         {invoice.referenceNo || invoice.invoiceNumber || 'N/A'}
                       </TableCell>
-                      <TableCell>{invoice.client?.name || '-'}</TableCell>
-                      <TableCell>{formatDate(invoice.invoiceDate)}</TableCell>
-                      <TableCell>{formatDate(invoice.dueDate)}</TableCell>
-                      <TableCell>{getStatusBadge(invoice.status)}</TableCell>
-                      <TableCell className="text-right font-medium">
+                      <TableCell className="dark:text-gray-300 dark:bg-slate-800">{invoice.client?.name || '-'}</TableCell>
+                      <TableCell className="dark:text-gray-300 dark:bg-slate-800">{formatDate(invoice.invoiceDate)}</TableCell>
+                      <TableCell className="dark:text-gray-300 dark:bg-slate-800">{formatDate(invoice.dueDate)}</TableCell>
+                      <TableCell className="dark:bg-slate-800">{getStatusBadge(invoice.status)}</TableCell>
+                      <TableCell className="text-right font-medium dark:text-gray-200 dark:bg-slate-800">
                         {formatCurrency(invoice.grandTotal, invoice.currencyCode)}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right dark:text-gray-300 dark:bg-slate-800">
                         {formatCurrency(invoice.balance || (invoice.grandTotal - invoice.amountPaid), invoice.currencyCode)}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="dark:bg-slate-800">
                         {invoice.quotation ? (
-                          <span className="text-sm text-muted-foreground">{invoice.quotation.referenceNo}</span>
+                          <span className="text-sm text-muted-foreground dark:text-gray-400">{invoice.quotation.referenceNo}</span>
                         ) : (
-                          <span className="text-sm text-muted-foreground">-</span>
+                          <span className="text-sm text-muted-foreground dark:text-gray-400">-</span>
                         )}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right dark:bg-slate-800">
                         <div className="flex items-center justify-end gap-1">
                           <Button 
                             variant="ghost" 
                             size="sm" 
-                            className="h-8 w-8 p-0 hover:bg-gray-100"
+                            className="h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-slate-700"
                             onClick={() => navigate(`/invoices/${invoice._id}`)}
                             title={t('common.view', 'View')}
                           >
-                            <Eye className="h-4 w-4" />
+                            <Eye className="h-4 w-4 dark:text-gray-300" />
                           </Button>
                           {invoice.status === 'draft' && (
                             <Button 
                               variant="ghost" 
                               size="sm" 
-                              className="h-8 w-8 p-0 hover:bg-gray-100"
+                              className="h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-slate-700"
                               onClick={() => navigate(`/invoices/${invoice._id}/edit`)}
                               title={t('common.edit', 'Edit')}
                             >
-                              <Edit className="h-4 w-4" />
+                              <Edit className="h-4 w-4 dark:text-gray-300" />
                             </Button>
                           )}
                           {invoice.status === 'draft' && (
                             <Button 
                               variant="ghost" 
                               size="sm" 
-                              className="h-8 w-8 p-0 hover:bg-green-100 text-green-600"
+                              className="h-8 w-8 p-0 hover:bg-green-100 dark:hover:bg-slate-700 text-green-600"
                               onClick={async () => {
                                 try {
                                   await invoicesApi.confirm(invoice._id);
@@ -397,7 +416,7 @@ export default function InvoicesListPage() {
                     </TableRow>
                   ))}
                 </TableBody>
-              </Table>
+                </Table>
             )}
           </CardContent>
         </Card>

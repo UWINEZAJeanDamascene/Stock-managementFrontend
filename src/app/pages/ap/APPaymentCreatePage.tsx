@@ -1,7 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useParams } from 'react-router';
-import { apPaymentsApi, suppliersApi, bankAccountsApi, grnApi } from '@/lib/api';
-import { Layout } from '../../layout/Layout';
+import { useState, useEffect, useCallback } from "react";
+import { useNavigate, useParams } from "react-router";
+import {
+  apPaymentsApi,
+  suppliersApi,
+  bankAccountsApi,
+  grnApi,
+} from "@/lib/api";
+import { Layout } from "../../layout/Layout";
 import {
   ArrowLeft,
   Save,
@@ -10,29 +15,34 @@ import {
   Calculator,
   Plus,
   Trash2,
-  CheckCircle
-} from 'lucide-react';
-import { Button } from '@/app/components/ui/button';
-import { Input } from '@/app/components/ui/input';
-import { Textarea } from '@/app/components/ui/textarea';
+} from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/app/components/ui/button";
+import { Input } from "@/app/components/ui/input";
+import { Textarea } from "@/app/components/ui/textarea";
 import {
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
-  TableRow
-} from '@/app/components/ui/table';
+  TableRow,
+} from "@/app/components/ui/table";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/app/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
-import { Label } from '@/app/components/ui/label';
-import { useTranslation } from 'react-i18next';
+} from "@/app/components/ui/select";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/app/components/ui/card";
+import { Label } from "@/app/components/ui/label";
+import { useTranslation } from "react-i18next";
 
 interface Supplier {
   _id: string;
@@ -72,14 +82,14 @@ interface APPaymentFormData {
 }
 
 const PAYMENT_METHODS = [
-  { value: 'bank_transfer', label: 'Bank Transfer' },
-  { value: 'cash', label: 'Cash' },
-  { value: 'cheque', label: 'Cheque' },
-  { value: 'card', label: 'Card' },
-  { value: 'other', label: 'Other' },
+  { value: "bank_transfer", label: "Bank Transfer" },
+  { value: "cash", label: "Cash" },
+  { value: "cheque", label: "Cheque" },
+  { value: "card", label: "Card" },
+  { value: "other", label: "Other" },
 ];
 
-const CURRENCIES = ['USD', 'EUR', 'GBP', 'RWF', 'KES', 'UGX', 'TZS'];
+const CURRENCIES = ["USD", "EUR", "GBP", "RWF", "KES", "UGX", "TZS"];
 
 export default function APPaymentCreatePage() {
   const { t } = useTranslation();
@@ -95,14 +105,14 @@ export default function APPaymentCreatePage() {
   const [allocations, setAllocations] = useState<Allocation[]>([]);
 
   const [formData, setFormData] = useState<APPaymentFormData>({
-    supplierId: '',
-    paymentDate: new Date().toISOString().split('T')[0],
-    paymentMethod: 'bank_transfer',
-    bankAccountId: '',
+    supplierId: "",
+    paymentDate: new Date().toISOString().split("T")[0],
+    paymentMethod: "bank_transfer",
+    bankAccountId: "",
     amountPaid: 0,
-    currencyCode: 'USD',
-    reference: '',
-    notes: '',
+    currencyCode: "USD",
+    reference: "",
+    notes: "",
   });
 
   const fetchSuppliers = useCallback(async () => {
@@ -112,7 +122,7 @@ export default function APPaymentCreatePage() {
         setSuppliers(response.data as Supplier[]);
       }
     } catch (error) {
-      console.error('Failed to fetch suppliers:', error);
+      console.error("Failed to fetch suppliers:", error);
     }
   }, []);
 
@@ -123,67 +133,72 @@ export default function APPaymentCreatePage() {
         setBankAccounts(response.data);
       }
     } catch (error) {
-      console.error('Failed to fetch bank accounts:', error);
+      console.error("Failed to fetch bank accounts:", error);
     }
   }, []);
 
   const fetchGRNs = useCallback(async (supplierId: string) => {
     try {
       // Get GRNs for this supplier with pending balance
-      const response = await grnApi.getAll({ 
-        supplier_id: supplierId, 
-        status: 'received',
-        limit: 100 
+      const response = await grnApi.getAll({
+        supplier_id: supplierId,
+        status: "received",
+        limit: 100,
       });
       if (response.success && Array.isArray(response.data)) {
         // Filter to only show GRNs with balance > 0
         const grnsWithBalance = (response.data as any[]).filter(
-          (grn) => parseFloat(grn.balance || grn.totalAmount) > 0
+          (grn) => parseFloat(grn.balance || grn.totalAmount) > 0,
         );
         setGRNs(grnsWithBalance as GRN[]);
       }
     } catch (error) {
-      console.error('Failed to fetch GRNs:', error);
+      console.error("Failed to fetch GRNs:", error);
     }
   }, []);
 
-  const fetchPayment = useCallback(async (paymentId: string) => {
-    setLoading(true);
-    try {
-      const response = await apPaymentsApi.getById(paymentId);
-      if (response.success && response.data) {
-        const payment = response.data;
-        setFormData({
-          supplierId: payment.supplier?._id || '',
-          paymentDate: payment.paymentDate?.split('T')[0] || new Date().toISOString().split('T')[0],
-          paymentMethod: payment.paymentMethod || 'bank_transfer',
-          bankAccountId: payment.bankAccount?._id || '',
-          amountPaid: parseFloat(payment.amountPaid) || 0,
-          currencyCode: payment.currencyCode || 'USD',
-          reference: payment.reference || '',
-          notes: payment.notes || '',
-        });
-        
-        // Fetch GRNs for this supplier
-        if (payment.supplier?._id) {
-          fetchGRNs(payment.supplier._id);
-        }
+  const fetchPayment = useCallback(
+    async (paymentId: string) => {
+      setLoading(true);
+      try {
+        const response = await apPaymentsApi.getById(paymentId);
+        if (response.success && response.data) {
+          const payment = response.data;
+          setFormData({
+            supplierId: payment.supplier?._id || "",
+            paymentDate:
+              payment.paymentDate?.split("T")[0] ||
+              new Date().toISOString().split("T")[0],
+            paymentMethod: payment.paymentMethod || "bank_transfer",
+            bankAccountId: payment.bankAccount?._id || "",
+            amountPaid: parseFloat(payment.amountPaid) || 0,
+            currencyCode: payment.currencyCode || "USD",
+            reference: payment.reference || "",
+            notes: payment.notes || "",
+          });
 
-        // Fetch existing allocations
-        if (response.allocations && response.allocations.length > 0) {
-          const existingAllocations = response.allocations.map((alloc) => ({
-            grn: alloc.grn._id,
-            amount: parseFloat(alloc.amountAllocated),
-          }));
-          setAllocations(existingAllocations);
+          // Fetch GRNs for this supplier
+          if (payment.supplier?._id) {
+            fetchGRNs(payment.supplier._id);
+          }
+
+          // Fetch existing allocations
+          if (response.allocations && response.allocations.length > 0) {
+            const existingAllocations = response.allocations.map((alloc) => ({
+              grn: alloc.grn._id,
+              amount: parseFloat(alloc.amountAllocated),
+            }));
+            setAllocations(existingAllocations);
+          }
         }
+      } catch (error) {
+        console.error("Failed to fetch payment:", error);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Failed to fetch payment:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [fetchGRNs]);
+    },
+    [fetchGRNs],
+  );
 
   useEffect(() => {
     fetchSuppliers();
@@ -202,7 +217,10 @@ export default function APPaymentCreatePage() {
     }
   }, [formData.supplierId, fetchGRNs]);
 
-  const handleInputChange = (field: keyof APPaymentFormData, value: string | number) => {
+  const handleInputChange = (
+    field: keyof APPaymentFormData,
+    value: string | number,
+  ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -216,9 +234,15 @@ export default function APPaymentCreatePage() {
     setAllocations((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleAllocationChange = (index: number, field: keyof Allocation, value: string | number) => {
+  const handleAllocationChange = (
+    index: number,
+    field: keyof Allocation,
+    value: string | number,
+  ) => {
     setAllocations((prev) =>
-      prev.map((alloc, i) => (i === index ? { ...alloc, [field]: value } : alloc))
+      prev.map((alloc, i) =>
+        i === index ? { ...alloc, [field]: value } : alloc,
+      ),
     );
   };
 
@@ -247,9 +271,9 @@ export default function APPaymentCreatePage() {
         await apPaymentsApi.create(payload);
       }
 
-      navigate('/ap-payments');
+      navigate("/ap-payments");
     } catch (error) {
-      console.error('Failed to save payment:', error);
+      console.error("Failed to save payment:", error);
     } finally {
       setSaving(false);
     }
@@ -257,27 +281,17 @@ export default function APPaymentCreatePage() {
 
   const handlePost = async () => {
     if (!id) return;
-    
+
     setSaving(true);
     try {
       await apPaymentsApi.post(id);
-      navigate('/ap-payments');
-    } catch (error) {
-      console.error('Failed to post payment:', error);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleSaveAndPost = async () => {
-    if (!id) return;
-    
-    setSaving(true);
-    try {
-      await apPaymentsApi.saveAndPost(id);
-      navigate('/ap-payments');
-    } catch (error) {
-      console.error('Failed to save and post payment:', error);
+      navigate("/ap-payments");
+    } catch (error: any) {
+      toast.error(
+        error?.response?.data?.error ||
+          error?.message ||
+          t("apPayment.postError", "Failed to record payment"),
+      );
     } finally {
       setSaving(false);
     }
@@ -297,15 +311,26 @@ export default function APPaymentCreatePage() {
     <Layout>
       <div className="container mx-auto py-6">
         <div className="flex items-center gap-4 mb-6">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/ap-payments')}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/ap-payments")}
+          >
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
             <h1 className="text-2xl font-bold">
-              {isEdit ? t('apPayment.editPayment', 'Edit Payment') : t('apPayment.createPayment', 'New Payment')}
+              {isEdit
+                ? t("apPayment.editPayment", "Edit Payment")
+                : t("apPayment.createPayment", "New Payment")}
             </h1>
             <p className="text-muted-foreground">
-              {isEdit ? t('apPayment.editDescription', 'Update payment details') : t('apPayment.createDescription', 'Create a new supplier payment')}
+              {isEdit
+                ? t("apPayment.editDescription", "Update payment details")
+                : t(
+                    "apPayment.createDescription",
+                    "Create a new supplier payment",
+                  )}
             </p>
           </div>
         </div>
@@ -316,19 +341,28 @@ export default function APPaymentCreatePage() {
             <div className="lg:col-span-2">
               <Card>
                 <CardHeader>
-                  <CardTitle>{t('apPayment.basicInfo', 'Basic Information')}</CardTitle>
+                  <CardTitle>
+                    {t("apPayment.basicInfo", "Basic Information")}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label>{t('apPayment.supplier', 'Supplier')} *</Label>
+                      <Label>{t("apPayment.supplier", "Supplier")} *</Label>
                       <Select
                         value={formData.supplierId}
-                        onValueChange={(value) => handleInputChange('supplierId', value)}
+                        onValueChange={(value) =>
+                          handleInputChange("supplierId", value)
+                        }
                         disabled={isEdit}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder={t('apPayment.selectSupplier', 'Select supplier')} />
+                          <SelectValue
+                            placeholder={t(
+                              "apPayment.selectSupplier",
+                              "Select supplier",
+                            )}
+                          />
                         </SelectTrigger>
                         <SelectContent>
                           {suppliers.map((supplier) => (
@@ -341,19 +375,27 @@ export default function APPaymentCreatePage() {
                     </div>
 
                     <div>
-                      <Label>{t('apPayment.paymentDate', 'Payment Date')}</Label>
+                      <Label>
+                        {t("apPayment.paymentDate", "Payment Date")}
+                      </Label>
                       <Input
                         type="date"
                         value={formData.paymentDate}
-                        onChange={(e) => handleInputChange('paymentDate', e.target.value)}
+                        onChange={(e) =>
+                          handleInputChange("paymentDate", e.target.value)
+                        }
                       />
                     </div>
 
                     <div>
-                      <Label>{t('apPayment.paymentMethod', 'Payment Method')} *</Label>
+                      <Label>
+                        {t("apPayment.paymentMethod", "Payment Method")} *
+                      </Label>
                       <Select
                         value={formData.paymentMethod}
-                        onValueChange={(value) => handleInputChange('paymentMethod', value)}
+                        onValueChange={(value) =>
+                          handleInputChange("paymentMethod", value)
+                        }
                       >
                         <SelectTrigger>
                           <SelectValue />
@@ -361,7 +403,10 @@ export default function APPaymentCreatePage() {
                         <SelectContent>
                           {PAYMENT_METHODS.map((method) => (
                             <SelectItem key={method.value} value={method.value}>
-                              {t(`apPayment.paymentMethods.${method.value}`, method.label)}
+                              {t(
+                                `apPayment.paymentMethods.${method.value}`,
+                                method.label,
+                              )}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -369,13 +414,22 @@ export default function APPaymentCreatePage() {
                     </div>
 
                     <div>
-                      <Label>{t('apPayment.bankAccount', 'Bank Account')} *</Label>
+                      <Label>
+                        {t("apPayment.bankAccount", "Bank Account")} *
+                      </Label>
                       <Select
                         value={formData.bankAccountId}
-                        onValueChange={(value) => handleInputChange('bankAccountId', value)}
+                        onValueChange={(value) =>
+                          handleInputChange("bankAccountId", value)
+                        }
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder={t('apPayment.selectBank', 'Select bank account')} />
+                          <SelectValue
+                            placeholder={t(
+                              "apPayment.selectBank",
+                              "Select bank account",
+                            )}
+                          />
                         </SelectTrigger>
                         <SelectContent>
                           {bankAccounts.map((account) => (
@@ -388,21 +442,28 @@ export default function APPaymentCreatePage() {
                     </div>
 
                     <div>
-                      <Label>{t('apPayment.amount', 'Amount')} *</Label>
+                      <Label>{t("apPayment.amount", "Amount")} *</Label>
                       <Input
                         type="number"
                         step="0.01"
                         min="0"
                         value={formData.amountPaid}
-                        onChange={(e) => handleInputChange('amountPaid', parseFloat(e.target.value) || 0)}
+                        onChange={(e) =>
+                          handleInputChange(
+                            "amountPaid",
+                            parseFloat(e.target.value) || 0,
+                          )
+                        }
                       />
                     </div>
 
                     <div>
-                      <Label>{t('apPayment.currency', 'Currency')}</Label>
+                      <Label>{t("apPayment.currency", "Currency")}</Label>
                       <Select
                         value={formData.currencyCode}
-                        onValueChange={(value) => handleInputChange('currencyCode', value)}
+                        onValueChange={(value) =>
+                          handleInputChange("currencyCode", value)
+                        }
                       >
                         <SelectTrigger>
                           <SelectValue />
@@ -418,11 +479,16 @@ export default function APPaymentCreatePage() {
                     </div>
 
                     <div className="md:col-span-2">
-                      <Label>{t('apPayment.reference', 'Reference')}</Label>
+                      <Label>{t("apPayment.reference", "Reference")}</Label>
                       <Input
                         value={formData.reference}
-                        onChange={(e) => handleInputChange('reference', e.target.value)}
-                        placeholder={t('apPayment.referencePlaceholder', 'Payment reference number')}
+                        onChange={(e) =>
+                          handleInputChange("reference", e.target.value)
+                        }
+                        placeholder={t(
+                          "apPayment.referencePlaceholder",
+                          "Payment reference number",
+                        )}
                       />
                     </div>
                   </div>
@@ -432,24 +498,38 @@ export default function APPaymentCreatePage() {
               {/* GRN Allocations */}
               <Card className="mt-6">
                 <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle>{t('apPayment.allocations', 'GRN Allocations')}</CardTitle>
-                  <Button type="button" variant="outline" size="sm" onClick={handleAddAllocation}>
+                  <CardTitle>
+                    {t("apPayment.allocations", "GRN Allocations")}
+                  </CardTitle>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleAddAllocation}
+                  >
                     <Plus className="h-4 w-4 mr-1" />
-                    {t('apPayment.addAllocation', 'Add Allocation')}
+                    {t("apPayment.addAllocation", "Add Allocation")}
                   </Button>
                 </CardHeader>
                 <CardContent>
                   {allocations.length === 0 ? (
                     <p className="text-muted-foreground text-center py-4">
-                      {t('apPayment.noAllocations', 'No allocations yet. Click "Add Allocation" to allocate payment to GRNs.')}
+                      {t(
+                        "apPayment.noAllocations",
+                        'No allocations yet. Click "Add Allocation" to allocate payment to GRNs.',
+                      )}
                     </p>
                   ) : (
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>{t('apPayment.grn', 'GRN')}</TableHead>
-                          <TableHead>{t('apPayment.balance', 'Balance')}</TableHead>
-                          <TableHead>{t('apPayment.allocatedAmount', 'Allocated Amount')}</TableHead>
+                          <TableHead>{t("apPayment.grn", "GRN")}</TableHead>
+                          <TableHead>
+                            {t("apPayment.balance", "Balance")}
+                          </TableHead>
+                          <TableHead>
+                            {t("apPayment.allocatedAmount", "Allocated Amount")}
+                          </TableHead>
                           <TableHead></TableHead>
                         </TableRow>
                       </TableHeader>
@@ -459,31 +539,53 @@ export default function APPaymentCreatePage() {
                             <TableCell>
                               <Select
                                 value={allocation.grn}
-                                onValueChange={(value) => handleAllocationChange(index, 'grn', value)}
+                                onValueChange={(value) =>
+                                  handleAllocationChange(index, "grn", value)
+                                }
                               >
                                 <SelectTrigger>
-                                  <SelectValue placeholder={t('apPayment.selectGRN', 'Select GRN')} />
+                                  <SelectValue
+                                    placeholder={t(
+                                      "apPayment.selectGRN",
+                                      "Select GRN",
+                                    )}
+                                  />
                                 </SelectTrigger>
                                 <SelectContent>
                                   {grns.map((grn) => (
                                     <SelectItem key={grn._id} value={grn._id}>
-                                      {grn.referenceNo} - {parseFloat(grn.balance || grn.totalAmount).toFixed(2)}
+                                      {grn.referenceNo} -{" "}
+                                      {parseFloat(
+                                        grn.balance || grn.totalAmount,
+                                      ).toFixed(2)}
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
                               </Select>
                             </TableCell>
                             <TableCell>
-                              {allocation.grn ? getGRNBalance(allocation.grn).toFixed(2) : '-'}
+                              {allocation.grn
+                                ? getGRNBalance(allocation.grn).toFixed(2)
+                                : "-"}
                             </TableCell>
                             <TableCell>
                               <Input
                                 type="number"
                                 step="0.01"
                                 min="0"
-                                max={allocation.grn ? getGRNBalance(allocation.grn) : undefined}
+                                max={
+                                  allocation.grn
+                                    ? getGRNBalance(allocation.grn)
+                                    : undefined
+                                }
                                 value={allocation.amount}
-                                onChange={(e) => handleAllocationChange(index, 'amount', parseFloat(e.target.value) || 0)}
+                                onChange={(e) =>
+                                  handleAllocationChange(
+                                    index,
+                                    "amount",
+                                    parseFloat(e.target.value) || 0,
+                                  )
+                                }
                               />
                             </TableCell>
                             <TableCell>
@@ -509,30 +611,47 @@ export default function APPaymentCreatePage() {
             <div>
               <Card>
                 <CardHeader>
-                  <CardTitle>{t('apPayment.summary', 'Summary')}</CardTitle>
+                  <CardTitle>{t("apPayment.summary", "Summary")}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t('apPayment.paymentAmount', 'Payment Amount')}</span>
-                    <span className="font-medium">{formData.amountPaid.toFixed(2)}</span>
+                    <span className="text-muted-foreground">
+                      {t("apPayment.paymentAmount", "Payment Amount")}
+                    </span>
+                    <span className="font-medium">
+                      {formData.amountPaid.toFixed(2)}
+                    </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t('apPayment.totalAllocated', 'Total Allocated')}</span>
-                    <span className="font-medium">{getTotalAllocated().toFixed(2)}</span>
+                    <span className="text-muted-foreground">
+                      {t("apPayment.totalAllocated", "Total Allocated")}
+                    </span>
+                    <span className="font-medium">
+                      {getTotalAllocated().toFixed(2)}
+                    </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t('apPayment.unallocated', 'Unallocated')}</span>
-                    <span className={`font-medium ${formData.amountPaid - getTotalAllocated() < 0 ? 'text-red-500' : ''}`}>
+                    <span className="text-muted-foreground">
+                      {t("apPayment.unallocated", "Unallocated")}
+                    </span>
+                    <span
+                      className={`font-medium ${formData.amountPaid - getTotalAllocated() < 0 ? "text-red-500" : ""}`}
+                    >
                       {(formData.amountPaid - getTotalAllocated()).toFixed(2)}
                     </span>
                   </div>
 
                   <div className="pt-4 border-t">
-                    <Label>{t('apPayment.notes', 'Notes')}</Label>
+                    <Label>{t("apPayment.notes", "Notes")}</Label>
                     <Textarea
                       value={formData.notes}
-                      onChange={(e) => handleInputChange('notes', e.target.value)}
-                      placeholder={t('apPayment.notesPlaceholder', 'Additional notes...')}
+                      onChange={(e) =>
+                        handleInputChange("notes", e.target.value)
+                      }
+                      placeholder={t(
+                        "apPayment.notesPlaceholder",
+                        "Additional notes...",
+                      )}
                       rows={4}
                     />
                   </div>
@@ -540,17 +659,20 @@ export default function APPaymentCreatePage() {
                   <div className="flex flex-col gap-2 pt-4">
                     <Button type="submit" disabled={saving}>
                       <Save className="mr-2 h-4 w-4" />
-                      {saving ? t('common.saving', 'Saving...') : t('apPayment.saveDraft', 'Save Draft')}
+                      {saving
+                        ? t("common.saving", "Saving...")
+                        : t("apPayment.saveDraft", "Save Draft")}
                     </Button>
                     {isEdit && (
                       <>
-                        <Button type="button" variant="default" onClick={handlePost} disabled={saving}>
+                        <Button
+                          type="button"
+                          variant="default"
+                          onClick={handlePost}
+                          disabled={saving}
+                        >
                           <Send className="mr-2 h-4 w-4" />
-                          {t('apPayment.postPayment', 'Post Payment')}
-                        </Button>
-                        <Button type="button" variant="secondary" onClick={handleSaveAndPost} disabled={saving}>
-                          <CheckCircle className="mr-2 h-4 w-4" />
-                          {t('apPayment.saveAndPost', 'Save and Post (No Journal)')}
+                          {t("apPayment.postPayment", "Record Payment")}
                         </Button>
                       </>
                     )}

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
-import { deliveryNotesApi, invoicesApi, clientsApi, productsApi, warehousesApi } from '@/lib/api';
+import { deliveryNotesApi, invoicesApi, clientsApi, productsApi, warehousesApi, stockBatchApi } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
 import { ErrorBoundary } from '../../components/ErrorBoundary';
 import { 
@@ -66,6 +66,137 @@ interface Invoice {
     unitPrice: number;
     lineTotal: number;
   }>;
+}
+
+interface Client {
+  _id: string;
+  name: string;
+  code?: string;
+}
+
+interface Product {
+  _id: string;
+  name: string;
+  sku: string;
+  trackBatches?: boolean;
+  trackSerials?: boolean;
+}
+
+interface DeliveryNoteLine {
+  _id: string;
+  invoiceLineId?: string;
+  product: string;
+  productName: string;
+  productSku: string;
+  qtyOrdered: number;
+  qtyDelivered: number;
+  qtyToDeliver: number;
+  unitPrice: number;
+  lineTotal: number;
+  trackBatches?: boolean;
+  trackSerials?: boolean;
+  batchId?: string;
+  serialNumbers?: string[];
+}
+
+interface DeliveryNoteFormData {
+  invoice: string;
+  client: string;
+  deliveryDate: string;
+  deliveredBy: string;
+  vehicle: string;
+  deliveryAddress: string;
+  carrier: string;
+  trackingNumber: string;
+  notes: string;
+  lines: DeliveryNoteLine[];
+}
+
+interface BatchAutocompleteProps {
+  productId: string;
+  warehouseId: string;
+  value?: string;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+}
+
+function BatchAutocomplete({ productId, warehouseId, value, onChange, disabled }: BatchAutocompleteProps) {
+  const [batches, setBatches] = useState<Array<{ _id: string; batchNo: string; qtyOnHand: string }>>([]);
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (productId && warehouseId) {
+      fetchBatches();
+    } else {
+      setBatches([]);
+    }
+  }, [productId, warehouseId]);
+
+  const fetchBatches = async () => {
+    setLoading(true);
+    try {
+      const response = await stockBatchApi.getAll({
+        product: productId,
+        warehouse: warehouseId,
+        limit: 100
+      });
+      if (response.success && response.data) {
+        setBatches(response.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch batches:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const selectedBatch = batches.find(b => b._id === value);
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => !disabled && setOpen(!open)}
+        className={`w-full px-3 py-2 text-sm border rounded-md text-left flex items-center justify-between dark:bg-slate-700 dark:border-slate-600 dark:text-white ${
+          disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+        }`}
+        disabled={disabled}
+      >
+        <span className="truncate">{selectedBatch?.batchNo || 'Select batch...'}</span>
+        <span className="text-xs text-gray-400">▼</span>
+      </button>
+      
+      {open && !disabled && (
+        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-slate-800 border dark:border-slate-600 rounded-md shadow-lg max-h-60 overflow-auto">
+          {loading ? (
+            <div className="px-3 py-2 text-sm text-gray-500">Loading...</div>
+          ) : batches.length === 0 ? (
+            <div className="px-3 py-2 text-sm text-gray-500">No batches available</div>
+          ) : (
+            batches.map((batch) => (
+              <button
+                key={batch._id}
+                type="button"
+                onClick={() => {
+                  onChange(batch._id);
+                  setOpen(false);
+                }}
+                className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-slate-700 dark:text-white ${
+                  value === batch._id ? 'bg-blue-50 dark:bg-blue-900/30' : ''
+                }`}
+              >
+                <div className="font-medium">{batch.batchNo}</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">
+                  Qty: {batch.qtyOnHand}
+                </div>
+              </button>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 function DeliveryNoteCreatePageContent() {
@@ -135,15 +266,17 @@ function DeliveryNoteCreatePageContent() {
 
   const fetchInvoices = useCallback(async () => {
     try {
-      // Fetch all invoices and filter for confirmed/draft on client side
+      console.log('[DeliveryNote] Fetching invoices...');
       const response = await invoicesApi.getAll({ limit: 100 });
+      console.log('[DeliveryNote] Invoices response:', response);
       if (response.success && response.data) {
         const data = response.data as any;
-        const allInvoices = Array.isArray(data) ? data : (data.invoices || []);
-        // Filter for confirmed and draft status
+        const allInvoices = data.data || data.invoices || [];
+        console.log('[DeliveryNote] All invoices:', allInvoices);
         const filteredInvoices = allInvoices.filter((inv: any) => 
           inv.status === 'confirmed' || inv.status === 'draft'
         );
+        console.log('[DeliveryNote] Filtered invoices:', filteredInvoices);
         setInvoices(filteredInvoices as Invoice[]);
       }
     } catch (error) {
@@ -199,11 +332,33 @@ function DeliveryNoteCreatePageContent() {
   const fetchDeliveryNote = useCallback(async (deliveryNoteId: string) => {
     setLoading(true);
     try {
+      console.log('[Edit Delivery Note] Fetching delivery note:', deliveryNoteId);
       const response = await deliveryNotesApi.getById(deliveryNoteId);
+      console.log('[Edit Delivery Note] Delivery note response:', response);
+      
       if (response.success && response.data) {
         const dn = response.data as any;
+        console.log('[Edit Delivery Note] Delivery note data:', dn);
+        console.log('[Edit Delivery Note] Lines from API:', dn.lines);
+        
+        // First, fetch the linked invoice to get original quantities
+        let invoiceData = null;
+        if (dn.invoice?._id || dn.invoice) {
+          try {
+            const invoiceId = dn.invoice._id || dn.invoice;
+            console.log('[Edit Delivery Note] Fetching linked invoice:', invoiceId);
+            const invoiceResponse = await invoicesApi.getById(invoiceId);
+            if (invoiceResponse.success && invoiceResponse.data) {
+              invoiceData = invoiceResponse.data as any;
+              console.log('[Edit Delivery Note] Invoice data:', invoiceData);
+            }
+          } catch (err) {
+            console.error('[Edit Delivery Note] Failed to fetch invoice:', err);
+          }
+        }
+        
         setFormData({
-          quotation: dn.quotation?._id || '',
+          invoice: dn.invoice?._id || dn.invoice || '',
           client: dn.client?._id || '',
           deliveryDate: dn.deliveryDate ? dn.deliveryDate.split('T')[0] : '',
           deliveredBy: dn.deliveredBy || '',
@@ -212,21 +367,47 @@ function DeliveryNoteCreatePageContent() {
           carrier: dn.carrier || '',
           trackingNumber: dn.trackingNumber || '',
           notes: dn.notes || '',
-          lines: dn.lines ? dn.lines.map((line: any) => ({
-            _id: line._id,
-            invoiceLineId: line.invoiceLineId?._id || line.invoiceLineId || '',
-            product: line.product?._id || line.product || '',
-            productName: line.product?.name || '',
-            productSku: line.product?.sku || '',
-            qtyOrdered: line.qtyOrdered || 0,
-            qtyDelivered: line.qtyDelivered || 0,
-            qtyToDeliver: line.deliveredQty || 0,
-            unitPrice: line.unitPrice || 0,
-            lineTotal: line.lineTotal || 0,
-            trackBatches: line.product?.trackBatches,
-            trackSerials: line.product?.trackSerials,
-          })) : [],
+          lines: dn.lines ? dn.lines.map((line: any) => {
+            // Find the matching invoice line to get ordered quantity
+            const invoiceLine = invoiceData?.lines?.find((il: any) => 
+              il._id === (line.invoiceLineId?._id || line.invoiceLineId) ||
+              il.lineId === (line.invoiceLineId?._id || line.invoiceLineId)
+            );
+            
+            const qtyOrdered = invoiceLine 
+              ? (parseFloat(invoiceLine.qty) || parseFloat(invoiceLine.quantity) || 0)
+              : (line.qtyOrdered || line.orderedQty || 0);
+            
+            const qtyDelivered = line.qtyDelivered || line.deliveredQty || 0;
+            const qtyToDeliver = line.deliveredQty || line.qtyToDeliver || 0;
+            
+            console.log('[Edit Delivery Note] Processing line:', {
+              lineId: line._id,
+              invoiceLineId: line.invoiceLineId?._id || line.invoiceLineId,
+              productName: line.product?.name || line.productName,
+              qtyOrdered,
+              qtyDelivered,
+              qtyToDeliver,
+              invoiceLineFound: !!invoiceLine
+            });
+            
+            return {
+              _id: line._id,
+              invoiceLineId: line.invoiceLineId?._id || line.invoiceLineId || '',
+              product: line.product?._id || line.product || '',
+              productName: line.product?.name || line.productName || '',
+              productSku: line.product?.sku || line.productSku || '',
+              qtyOrdered,
+              qtyDelivered,
+              qtyToDeliver,
+              unitPrice: parseFloat(line.unitPrice) || 0,
+              lineTotal: parseFloat(line.lineTotal) || (qtyToDeliver * parseFloat(line.unitPrice || 0)),
+              trackBatches: line.product?.trackBatches,
+              trackSerials: line.product?.trackSerials,
+            };
+          }) : [],
         });
+        
         if (dn.warehouse) {
           setWarehouse(dn.warehouse._id || dn.warehouse);
         }
@@ -258,7 +439,7 @@ function DeliveryNoteCreatePageContent() {
       const lines = invoice.lines.map(line => ({
         _id: line._id,
         invoiceLineId: line._id,
-        product: line.product?._id || line.product || '',
+        product: line.product?._id || (typeof line.product === 'string' ? line.product : ''),
         productName: line.product?.name || '',
         productSku: line.product?.sku || '',
         qtyOrdered: parseFloat(line.qty as any) || parseFloat(line.quantity as any) || 0,
@@ -396,7 +577,7 @@ function DeliveryNoteCreatePageContent() {
             <ArrowLeft className="mr-2 h-4 w-4" />
             {t('common.back', 'Back')}
           </Button>
-          <h1 className="text-2xl font-bold">
+          <h1 className="text-2xl font-bold dark:text-white">
             {isEditMode ? t('deliveryNote.editDeliveryNote', 'Edit Delivery Note') : t('deliveryNote.newDeliveryNote', 'New Delivery Note')}
           </h1>
         </div>
@@ -404,29 +585,29 @@ function DeliveryNoteCreatePageContent() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            <Card>
+            <Card className="dark:bg-slate-800">
               <CardHeader>
-                <CardTitle>{t('deliveryNote.basicInfo', 'Basic Information')}</CardTitle>
+                <CardTitle className="dark:text-white">{t('deliveryNote.basicInfo', 'Basic Information')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label>{t('deliveryNote.invoice')} *</Label>
+                  <Label className="dark:text-gray-200">{t('deliveryNote.invoice')} *</Label>
                   <Select 
                     value={formData.invoice} 
                     onValueChange={(value) => handleInvoiceChange(value)}
                     disabled={isEditMode || !!invoiceId}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="dark:bg-slate-700 dark:border-slate-600 dark:text-white">
                       <SelectValue placeholder={t('deliveryNote.selectInvoice')} />
                     </SelectTrigger>
-                    <SelectContent className="max-h-96 overflow-y-auto">
+                    <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
                       {invoices.length === 0 ? (
                         <div className="p-4 text-center text-muted-foreground">
                           No invoices available
                         </div>
                       ) : (
                         invoices.map(inv => (
-                          <SelectItem key={inv._id} value={inv._id}>
+                          <SelectItem key={inv._id} value={inv._id} className="dark:text-white">
                             {inv.referenceNo || inv.invoiceNumber} - {inv.client?.name || 'No client'}
                           </SelectItem>
                         ))
@@ -436,18 +617,18 @@ function DeliveryNoteCreatePageContent() {
                 </div>
 
                 <div>
-                  <Label>Warehouse *</Label>
+                  <Label className="dark:text-gray-200">Warehouse *</Label>
                   <Select 
                     value={warehouse} 
                     onValueChange={(value) => setWarehouse(value)}
                     disabled={isEditMode}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="dark:bg-slate-700 dark:border-slate-600 dark:text-white">
                       <SelectValue placeholder="Select warehouse" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
                       {warehouses.map(wh => (
-                        <SelectItem key={wh._id} value={wh._id}>
+                        <SelectItem key={wh._id} value={wh._id} className="dark:text-white">
                           {wh.name}
                         </SelectItem>
                       ))}
@@ -457,13 +638,14 @@ function DeliveryNoteCreatePageContent() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label>{t('deliveryNote.client')}</Label>
-                    <Input value={formData.client ? clients.find(c => c._id === formData.client)?.name || '' : ''} disabled />
+                    <Label className="dark:text-gray-200">{t('deliveryNote.client')}</Label>
+                    <Input className="dark:bg-slate-700 dark:border-slate-600 dark:text-white" value={formData.client ? clients.find(c => c._id === formData.client)?.name || '' : ''} disabled />
                   </div>
                   <div>
-                    <Label>{t('deliveryNote.deliveryDate')}</Label>
+                    <Label className="dark:text-gray-200">{t('deliveryNote.deliveryDate')}</Label>
                     <Input
                       type="date"
+                      className="dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                       value={formData.deliveryDate}
                       onChange={(e) => setFormData(prev => ({ ...prev, deliveryDate: e.target.value }))}
                     />
@@ -472,16 +654,18 @@ function DeliveryNoteCreatePageContent() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label>{t('deliveryNote.deliveredBy')}</Label>
+                    <Label className="dark:text-gray-200">{t('deliveryNote.deliveredBy')}</Label>
                     <Input
+                      className="dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                       value={formData.deliveredBy}
                       onChange={(e) => setFormData(prev => ({ ...prev, deliveredBy: e.target.value }))}
                       placeholder={t('deliveryNote.deliveredByPlaceholder', 'Driver name')}
                     />
                   </div>
                   <div>
-                    <Label>{t('deliveryNote.vehicle')}</Label>
+                    <Label className="dark:text-gray-200">{t('deliveryNote.vehicle')}</Label>
                     <Input
+                      className="dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                       value={formData.vehicle}
                       onChange={(e) => setFormData(prev => ({ ...prev, vehicle: e.target.value }))}
                       placeholder={t('deliveryNote.vehiclePlaceholder', 'Vehicle plate number')}
@@ -490,8 +674,9 @@ function DeliveryNoteCreatePageContent() {
                 </div>
 
                 <div>
-                  <Label>{t('deliveryNote.deliveryAddress')}</Label>
+                  <Label className="dark:text-gray-200">{t('deliveryNote.deliveryAddress')}</Label>
                   <Textarea
+                    className="dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                     value={formData.deliveryAddress}
                     onChange={(e) => setFormData(prev => ({ ...prev, deliveryAddress: e.target.value }))}
                     placeholder={t('deliveryNote.deliveryAddressPlaceholder', 'Delivery address')}
@@ -501,16 +686,18 @@ function DeliveryNoteCreatePageContent() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label>{t('deliveryNote.carrier')}</Label>
+                    <Label className="dark:text-gray-200">{t('deliveryNote.carrier')}</Label>
                     <Input
+                      className="dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                       value={formData.carrier}
                       onChange={(e) => setFormData(prev => ({ ...prev, carrier: e.target.value }))}
                       placeholder={t('deliveryNote.carrierPlaceholder', 'Carrier name')}
                     />
                   </div>
                   <div>
-                    <Label>{t('deliveryNote.trackingNumber')}</Label>
+                    <Label className="dark:text-gray-200">{t('deliveryNote.trackingNumber')}</Label>
                     <Input
+                      className="dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                       value={formData.trackingNumber}
                       onChange={(e) => setFormData(prev => ({ ...prev, trackingNumber: e.target.value }))}
                       placeholder={t('deliveryNote.trackingNumberPlaceholder', 'Tracking number')}
@@ -521,9 +708,9 @@ function DeliveryNoteCreatePageContent() {
             </Card>
 
             {/* Line Items */}
-            <Card>
+            <Card className="dark:bg-slate-800">
               <CardHeader>
-                <CardTitle>{t('deliveryNote.lineItems', 'Line Items')}</CardTitle>
+                <CardTitle className="dark:text-white">{t('deliveryNote.lineItems', 'Line Items')}</CardTitle>
               </CardHeader>
               <CardContent>
                 {formData.lines.length === 0 ? (
@@ -534,24 +721,25 @@ function DeliveryNoteCreatePageContent() {
                 ) : (
                   <Table>
                     <TableHeader>
-                      <TableRow>
-                        <TableHead>{t('deliveryNote.product', 'Product')}</TableHead>
-                        <TableHead className="text-right">{t('deliveryNote.qtyOrdered', 'Qty Ordered')}</TableHead>
-                        <TableHead className="text-right">{t('deliveryNote.qtyDelivered', 'Delivered')}</TableHead>
-                        <TableHead className="text-right">{t('deliveryNote.qtyToDeliver', 'To Deliver')}</TableHead>
-                        <TableHead className="text-right">{t('deliveryNote.unitPrice', 'Unit Price')}</TableHead>
-                        <TableHead className="text-right">{t('deliveryNote.total', 'Total')}</TableHead>
+                      <TableRow className="dark:hover:bg-slate-700">
+                        <TableHead className="dark:text-gray-300">{t('deliveryNote.product', 'Product')}</TableHead>
+                        <TableHead className="text-right dark:text-gray-300">{t('deliveryNote.qtyOrdered', 'Qty Ordered')}</TableHead>
+                        <TableHead className="text-right dark:text-gray-300">{t('deliveryNote.qtyDelivered', 'Delivered')}</TableHead>
+                        <TableHead className="text-right dark:text-gray-300">{t('deliveryNote.qtyToDeliver', 'To Deliver')}</TableHead>
+                        <TableHead className="dark:text-gray-300">{t('deliveryNote.batch', 'Batch')}</TableHead>
+                        <TableHead className="text-right dark:text-gray-300">{t('deliveryNote.unitPrice', 'Unit Price')}</TableHead>
+                        <TableHead className="text-right dark:text-gray-300">{t('deliveryNote.total', 'Total')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {formData.lines.map((line, index) => (
-                        <TableRow key={index}>
+                        <TableRow key={index} className="dark:hover:bg-slate-700">
                           <TableCell>
-                            <div className="font-medium">{line.productName}</div>
+                            <div className="font-medium dark:text-white">{line.productName}</div>
                             <div className="text-sm text-muted-foreground">{line.productSku}</div>
                           </TableCell>
-                          <TableCell className="text-right">{line.qtyOrdered}</TableCell>
-                          <TableCell className="text-right">{line.qtyDelivered}</TableCell>
+                          <TableCell className="text-right dark:text-white">{line.qtyOrdered}</TableCell>
+                          <TableCell className="text-right dark:text-white">{line.qtyDelivered}</TableCell>
                           <TableCell>
                             <Input
                               type="number"
@@ -559,15 +747,26 @@ function DeliveryNoteCreatePageContent() {
                               max={line.qtyOrdered - line.qtyDelivered}
                               value={line.qtyToDeliver}
                               onChange={(e) => handleLineChange(index, 'qtyToDeliver', e.target.value)}
-                              className="w-20 text-right"
+                              className="w-20 text-right dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                               disabled={line.qtyOrdered - line.qtyDelivered === 0}
                             />
                             <div className="text-xs text-muted-foreground mt-1">
                               Max: {line.qtyOrdered - line.qtyDelivered}
                             </div>
                           </TableCell>
-                          <TableCell className="text-right">{formatCurrency(line.unitPrice)}</TableCell>
-                          <TableCell className="text-right font-medium">
+                          <TableCell>
+                            {line.trackBatches && (
+                              <BatchAutocomplete
+                                productId={line.product}
+                                warehouseId={warehouse}
+                                value={line.batchId}
+                                onChange={(value) => handleLineChange(index, 'batchId', value)}
+                                disabled={!warehouse || !line.product || line.qtyToDeliver === 0}
+                              />
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right dark:text-white">{formatCurrency(line.unitPrice)}</TableCell>
+                          <TableCell className="text-right font-medium dark:text-white">
                             {formatCurrency(line.lineTotal)}
                           </TableCell>
                         </TableRow>
@@ -581,28 +780,29 @@ function DeliveryNoteCreatePageContent() {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            <Card>
+            <Card className="dark:bg-slate-800">
               <CardHeader>
-                <CardTitle>{t('deliveryNote.summary', 'Summary')}</CardTitle>
+                <CardTitle className="dark:text-white">{t('deliveryNote.summary', 'Summary')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="flex justify-between">
+                <div className="flex justify-between dark:text-white">
                   <span>{t('deliveryNote.itemsToDeliver', 'Items to Deliver')}</span>
                   <span>{formData.lines.filter(l => l.qtyToDeliver > 0).length}</span>
                 </div>
-                <div className="flex justify-between text-lg font-bold pt-3 border-t">
+                <div className="flex justify-between text-lg font-bold pt-3 border-t dark:text-white">
                   <span>{t('deliveryNote.total', 'Total')}</span>
                   <span>{formatCurrency(calculateTotal())}</span>
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="dark:bg-slate-800">
               <CardHeader>
-                <CardTitle>{t('deliveryNote.notes', 'Notes')}</CardTitle>
+                <CardTitle className="dark:text-white">{t('deliveryNote.notes', 'Notes')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <Textarea
+                  className="dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                   value={formData.notes}
                   onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
                   placeholder={t('deliveryNote.notesPlaceholder', 'Add notes...')}

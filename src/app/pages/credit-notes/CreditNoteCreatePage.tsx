@@ -132,18 +132,28 @@ export default function CreditNoteCreatePage() {
 
   const fetchInvoices = useCallback(async () => {
     try {
-      // Fetch invoices that can have credit notes: confirmed, partially_paid, fully_paid
       const response = await invoicesApi.getAll({ 
-        status: 'confirmed,partially_paid,fully_paid', 
-        limit: 100 
+        status: 'confirmed,partially_paid,fully_paid,posted', 
+        limit: 200 
       });
+      console.log('[CreditNoteCreate] Invoices API response:', response);
+      
       if (response.success && response.data) {
         const data = response.data as any;
-        const invoiceData = Array.isArray(data) ? data : (data.invoices || []);
-        console.log(`[CreditNoteCreate] Fetched ${invoiceData.length} invoices`);
+        // Handle various response structures
+        let invoiceData = [];
+        if (Array.isArray(data)) {
+          invoiceData = data;
+        } else if (data.data && Array.isArray(data.data)) {
+          invoiceData = data.data;
+        } else if (data.invoices && Array.isArray(data.invoices)) {
+          invoiceData = data.invoices;
+        } else if (data.results && Array.isArray(data.results)) {
+          invoiceData = data.results;
+        }
+        
+        console.log('[CreditNoteCreate] Extracted invoices:', invoiceData.length);
         setInvoices(invoiceData as Invoice[]);
-      } else {
-        console.error('[CreditNoteCreate] Failed to fetch invoices:', response);
       }
     } catch (error) {
       console.error('[CreditNoteCreate] Error fetching invoices:', error);
@@ -404,21 +414,21 @@ export default function CreditNoteCreatePage() {
           {/* Main Form */}
           <div className="lg:col-span-2 space-y-6">
             {/* Basic Info */}
-            <Card>
+            <Card className="dark:bg-slate-800">
               <CardHeader>
-                <CardTitle>{t('creditNotes.basicInfo', 'Basic Information')}</CardTitle>
+                <CardTitle className="dark:text-white">{t('creditNotes.basicInfo', 'Basic Information')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label>{t('creditNotes.invoice', 'Invoice')} *</Label>
+                    <Label className="dark:text-gray-200">{t('creditNotes.invoice', 'Invoice')} *</Label>
                     <Select value={selectedInvoice} onValueChange={handleInvoiceSelect} disabled={isEdit}>
-                      <SelectTrigger className="mt-2">
+                      <SelectTrigger className="mt-2 dark:bg-slate-700 dark:border-slate-600 dark:text-white">
                         <SelectValue placeholder={t('creditNotes.selectInvoice', 'Select Invoice')} />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
                         {invoices.map(inv => (
-                          <SelectItem key={inv._id} value={inv._id}>
+                          <SelectItem key={inv._id} value={inv._id} className="dark:text-white">
                             {inv.referenceNo} - {inv.client?.name}
                           </SelectItem>
                         ))}
@@ -426,14 +436,14 @@ export default function CreditNoteCreatePage() {
                     </Select>
                   </div>
                   <div>
-                    <Label>{t('creditNotes.typeLabel', 'Type')} *</Label>
+                    <Label className="dark:text-gray-200">{t('creditNotes.typeLabel', 'Type')} *</Label>
                     <Select value={type} onValueChange={(v) => setType(v as any)}>
-                      <SelectTrigger className="mt-2">
+                      <SelectTrigger className="mt-2 dark:bg-slate-700 dark:border-slate-600 dark:text-white">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
                         {TYPE_OPTIONS.map(opt => (
-                          <SelectItem key={opt.value} value={opt.value}>
+                          <SelectItem key={opt.value} value={opt.value} className="dark:text-white">
                             {opt.label}
                           </SelectItem>
                         ))}
@@ -441,31 +451,31 @@ export default function CreditNoteCreatePage() {
                     </Select>
                   </div>
                   <div>
-                    <Label>{t('creditNotes.date', 'Credit Date')}</Label>
+                    <Label className="dark:text-gray-200">{t('creditNotes.date', 'Credit Date')}</Label>
                     <Input
                       type="date"
                       value={creditDate}
                       onChange={(e) => setCreditDate(e.target.value)}
-                      className="mt-2"
+                      className="mt-2 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                     />
                   </div>
                   <div>
-                    <Label>{t('creditNotes.reason', 'Reason')} *</Label>
+                    <Label className="dark:text-gray-200">{t('creditNotes.reason', 'Reason')} *</Label>
                     <Input
                       value={reason}
                       onChange={(e) => setReason(e.target.value)}
                       placeholder={t('creditNotes.reasonPlaceholder', 'Enter reason for credit note')}
-                      className="mt-2"
+                      className="mt-2 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                     />
                   </div>
                 </div>
                 <div>
-                  <Label>{t('creditNotes.notes', 'Notes')}</Label>
+                  <Label className="dark:text-gray-200">{t('creditNotes.notes', 'Notes')}</Label>
                   <Textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder={t('creditNotes.notesPlaceholder', 'Additional notes')}
-                    className="mt-2"
+                    className="mt-2 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                   />
                 </div>
               </CardContent>
@@ -473,9 +483,9 @@ export default function CreditNoteCreatePage() {
 
             {/* Line Items */}
             {type === 'goods_return' && (
-              <Card>
+              <Card className="dark:bg-slate-800">
                 <CardHeader>
-                  <CardTitle>{t('creditNotes.lineItems', 'Line Items')}</CardTitle>
+                  <CardTitle className="dark:text-white">{t('creditNotes.lineItems', 'Line Items')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {lines.length === 0 ? (
@@ -485,30 +495,30 @@ export default function CreditNoteCreatePage() {
                   ) : (
                     <Table>
                       <TableHeader>
-                        <TableRow>
-                          <TableHead>{t('creditNotes.product', 'Product')}</TableHead>
-                          <TableHead className="text-right">{t('creditNotes.invoiceQty', 'Invoiced Qty')}</TableHead>
-                          <TableHead className="text-right">{t('creditNotes.unitPrice', 'Unit Price')}</TableHead>
-                          <TableHead className="text-right">{t('creditNotes.taxRate', 'Tax')}</TableHead>
-                          <TableHead className="text-right">{t('creditNotes.qtyToCredit', 'Qty to Credit')}</TableHead>
-                          <TableHead>{t('creditNotes.returnToWarehouse', 'Return To')}</TableHead>
-                          <TableHead className="text-right">{t('creditNotes.lineTotal', 'Total')}</TableHead>
+                        <TableRow className="dark:hover:bg-slate-700">
+                          <TableHead className="dark:text-gray-300">{t('creditNotes.product', 'Product')}</TableHead>
+                          <TableHead className="text-right dark:text-gray-300">{t('creditNotes.invoiceQty', 'Invoiced Qty')}</TableHead>
+                          <TableHead className="text-right dark:text-gray-300">{t('creditNotes.unitPrice', 'Unit Price')}</TableHead>
+                          <TableHead className="text-right dark:text-gray-300">{t('creditNotes.taxRate', 'Tax')}</TableHead>
+                          <TableHead className="text-right dark:text-gray-300">{t('creditNotes.qtyToCredit', 'Qty to Credit')}</TableHead>
+                          <TableHead className="dark:text-gray-300">{t('creditNotes.returnToWarehouse', 'Return To')}</TableHead>
+                          <TableHead className="text-right dark:text-gray-300">{t('creditNotes.lineTotal', 'Total')}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {lines.map((line, index) => (
-                          <TableRow key={line.invoiceLineId}>
+                          <TableRow key={line.invoiceLineId} className="dark:hover:bg-slate-700">
                             <TableCell>
-                              <div className="font-medium">{line.productName}</div>
+                              <div className="font-medium dark:text-white">{line.productName}</div>
                               <div className="text-sm text-muted-foreground">{line.productCode}</div>
                             </TableCell>
-                            <TableCell className="text-right font-medium text-muted-foreground">
+                            <TableCell className="text-right font-medium text-muted-foreground dark:text-gray-400">
                               {toNumber(line.originalQty)}
                             </TableCell>
-                            <TableCell className="text-right">
+                            <TableCell className="text-right dark:text-white">
                               {formatCurrency(line.unitPrice)}
                             </TableCell>
-                            <TableCell className="text-right">
+                            <TableCell className="text-right dark:text-white">
                               {toNumber(line.taxRate)}%
                             </TableCell>
                             <TableCell className="w-28">
@@ -518,7 +528,7 @@ export default function CreditNoteCreatePage() {
                                 max={toNumber(line.originalQty)}
                                 value={line.quantity}
                                 onChange={(e) => handleLineChange(index, 'quantity', e.target.value)}
-                                className="text-right"
+                                className="text-right dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                                 placeholder={`Max: ${toNumber(line.originalQty)}`}
                               />
                             </TableCell>
@@ -527,19 +537,19 @@ export default function CreditNoteCreatePage() {
                                 value={line.returnToWarehouse || ''} 
                                 onValueChange={(v) => handleLineChange(index, 'returnToWarehouse', v)}
                               >
-                                <SelectTrigger>
+                                <SelectTrigger className="dark:bg-slate-700 dark:border-slate-600 dark:text-white">
                                   <SelectValue placeholder={t('creditNotes.selectWarehouse', 'Select')} />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
                                   {warehouses.map(wh => (
-                                    <SelectItem key={wh._id} value={wh._id}>
+                                    <SelectItem key={wh._id} value={wh._id} className="dark:text-white">
                                       {wh.name}
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
                               </Select>
                             </TableCell>
-                            <TableCell className="text-right font-medium">
+                            <TableCell className="text-right font-medium dark:text-white">
                               {formatCurrency(line.lineTotal)}
                             </TableCell>
                           </TableRow>
@@ -552,9 +562,9 @@ export default function CreditNoteCreatePage() {
             )}
 
             {type === 'price_adjustment' && (
-              <Card>
+              <Card className="dark:bg-slate-800">
                 <CardHeader>
-                  <CardTitle>{t('creditNotes.priceAdjustments', 'Price Adjustments')}</CardTitle>
+                  <CardTitle className="dark:text-white">{t('creditNotes.priceAdjustments', 'Price Adjustments')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-center py-8 text-muted-foreground">
@@ -567,28 +577,28 @@ export default function CreditNoteCreatePage() {
 
           {/* Summary */}
           <div>
-            <Card>
+            <Card className="dark:bg-slate-800">
               <CardHeader>
-                <CardTitle>{t('creditNotes.summary', 'Summary')}</CardTitle>
+                <CardTitle className="dark:text-white">{t('creditNotes.summary', 'Summary')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">{t('creditNotes.subtotal', 'Subtotal')}</span>
-                  <span className="font-medium">{formatCurrency(subtotal)}</span>
+                  <span className="text-muted-foreground dark:text-gray-400">{t('creditNotes.subtotal', 'Subtotal')}</span>
+                  <span className="font-medium dark:text-white">{formatCurrency(subtotal)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">{t('creditNotes.tax', 'Tax')}</span>
-                  <span className="font-medium">{formatCurrency(taxAmount)}</span>
+                  <span className="text-muted-foreground dark:text-gray-400">{t('creditNotes.tax', 'Tax')}</span>
+                  <span className="font-medium dark:text-white">{formatCurrency(taxAmount)}</span>
                 </div>
                 <div className="border-t pt-4 flex justify-between">
-                  <span className="font-bold">{t('creditNotes.total', 'Total')}</span>
-                  <span className="font-bold text-lg">{formatCurrency(totalAmount)}</span>
+                  <span className="font-bold dark:text-white">{t('creditNotes.total', 'Total')}</span>
+                  <span className="font-bold text-lg dark:text-white">{formatCurrency(totalAmount)}</span>
                 </div>
                 
                 {creditNote && (
                   <div className="mt-4 pt-4 border-t">
                     <div className="flex justify-between mb-2">
-                      <span className="text-muted-foreground">{t('creditNotes.statusLabel', 'Status')}</span>
+                      <span className="text-muted-foreground dark:text-gray-400">{t('creditNotes.statusLabel', 'Status')}</span>
                       <Badge variant={creditNote.status === 'draft' ? 'secondary' : 'default'}>
                         {creditNote.status}
                       </Badge>

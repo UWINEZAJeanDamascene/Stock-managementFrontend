@@ -207,28 +207,28 @@ export default function CreditNoteDetailPage() {
   };
 
   const getStatusBadge = (status: string) => {
-    const statusConfig: Record<string, { variant: 'default' | 'secondary' | 'outline' | 'destructive'; label: string }> = {
-      draft: { variant: 'secondary', label: t('creditNotes.statusList.draft', 'Draft') },
-      confirmed: { variant: 'default', label: t('creditNotes.statusList.confirmed', 'Confirmed') },
-      issued: { variant: 'default', label: t('creditNotes.statusList.issued', 'Issued') },
-      applied: { variant: 'outline', label: t('creditNotes.statusList.applied', 'Applied') },
-      refunded: { variant: 'outline', label: t('creditNotes.statusList.refunded', 'Refunded') },
-      cancelled: { variant: 'destructive', label: t('creditNotes.statusList.cancelled', 'Cancelled') },
+    const statusConfig: Record<string, { variant: 'default' | 'secondary' | 'outline' | 'destructive'; label: string; className?: string }> = {
+      draft: { variant: 'secondary', label: t('creditNotes.statusList.draft', 'Draft'), className: 'dark:bg-slate-700 dark:text-gray-200' },
+      confirmed: { variant: 'default', label: t('creditNotes.statusList.confirmed', 'Confirmed'), className: 'dark:bg-blue-900 dark:text-blue-200' },
+      issued: { variant: 'default', label: t('creditNotes.statusList.issued', 'Issued'), className: 'dark:bg-green-900 dark:text-green-200' },
+      applied: { variant: 'outline', label: t('creditNotes.statusList.applied', 'Applied'), className: 'dark:text-yellow-300 dark:border-yellow-600' },
+      refunded: { variant: 'outline', label: t('creditNotes.statusList.refunded', 'Refunded'), className: 'dark:text-purple-300 dark:border-purple-600' },
+      cancelled: { variant: 'destructive', label: t('creditNotes.statusList.cancelled', 'Cancelled'), className: 'dark:bg-red-900 dark:text-red-200' },
     };
     
-    const config = statusConfig[status] || { variant: 'outline', label: status };
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+    const config = statusConfig[status] || { variant: 'outline', label: status, className: 'dark:text-gray-300 dark:border-gray-600' };
+    return <Badge variant={config.variant} className={config.className}>{config.label}</Badge>;
   };
 
   const getTypeBadge = (type: string) => {
-    const typeConfig: Record<string, { variant: 'default' | 'secondary' | 'outline'; label: string }> = {
-      goods_return: { variant: 'outline', label: t('creditNotes.typeList.goods_return', 'Goods Return') },
-      price_adjustment: { variant: 'secondary', label: t('creditNotes.typeList.price_adjustment', 'Price Adjustment') },
-      cancelled_order: { variant: 'outline', label: t('creditNotes.typeList.cancelled_order', 'Cancelled Order') },
+    const typeConfig: Record<string, { variant: 'default' | 'secondary' | 'outline'; label: string; className?: string }> = {
+      goods_return: { variant: 'outline', label: t('creditNotes.typeList.goods_return', 'Goods Return'), className: 'dark:text-gray-300 dark:border-gray-600' },
+      price_adjustment: { variant: 'secondary', label: t('creditNotes.typeList.price_adjustment', 'Price Adjustment'), className: 'dark:bg-slate-700 dark:text-gray-200' },
+      cancelled_order: { variant: 'outline', label: t('creditNotes.typeList.cancelled_order', 'Cancelled Order'), className: 'dark:text-gray-300 dark:border-gray-600' },
     };
     
-    const config = typeConfig[type] || { variant: 'outline', label: type };
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+    const config = typeConfig[type] || { variant: 'outline', label: type, className: 'dark:text-gray-300 dark:border-gray-600' };
+    return <Badge variant={config.variant} className={config.className}>{config.label}</Badge>;
   };
 
   const handlePrint = () => {
@@ -285,7 +285,7 @@ export default function CreditNoteDetailPage() {
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>
-              <h1 className="text-2xl font-bold">
+              <h1 className="text-2xl font-bold dark:text-white">
                 {creditNote.referenceNo || creditNote.creditNoteNumber}
               </h1>
               <div className="flex items-center gap-2 mt-1">
@@ -322,9 +322,9 @@ export default function CreditNoteDetailPage() {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Credit Note Details */}
-            <Card>
+            <Card className="dark:bg-slate-800">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white">
                   <FileText className="h-5 w-5" />
                   {t('creditNotes.details', 'Credit Note Details')}
                 </CardTitle>
@@ -332,8 +332,8 @@ export default function CreditNoteDetailPage() {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm text-muted-foreground">{t('creditNotes.invoice', 'Invoice')}</label>
-                    <p className="font-medium">
+                    <label className="text-sm text-muted-foreground dark:text-gray-400">{t('creditNotes.invoice', 'Invoice')}</label>
+                    <p className="font-medium dark:text-white">
                       {creditNote.invoice?.referenceNo || '-'}
                       {creditNote.invoice && (
                         <Button 
@@ -347,36 +347,36 @@ export default function CreditNoteDetailPage() {
                     </p>
                   </div>
                   <div>
-                    <label className="text-sm text-muted-foreground">{t('creditNotes.client', 'Client')}</label>
-                    <p className="font-medium">{creditNote.client?.name || '-'}</p>
+                    <label className="text-sm text-muted-foreground dark:text-gray-400">{t('creditNotes.client', 'Client')}</label>
+                    <p className="font-medium dark:text-white">{creditNote.client?.name || '-'}</p>
                   </div>
                   <div>
-                    <label className="text-sm text-muted-foreground">{t('creditNotes.date', 'Credit Date')}</label>
-                    <p className="font-medium">{formatDate(creditNote.creditDate)}</p>
+                    <label className="text-sm text-muted-foreground dark:text-gray-400">{t('creditNotes.date', 'Credit Date')}</label>
+                    <p className="font-medium dark:text-white">{formatDate(creditNote.creditDate)}</p>
                   </div>
                   <div>
-                    <label className="text-sm text-muted-foreground">{t('creditNotes.created', 'Created')}</label>
-                    <p className="font-medium">{formatDate(creditNote.createdAt)}</p>
+                    <label className="text-sm text-muted-foreground dark:text-gray-400">{t('creditNotes.created', 'Created')}</label>
+                    <p className="font-medium dark:text-white">{formatDate(creditNote.createdAt)}</p>
                   </div>
                 </div>
                 <Separator />
                 <div>
-                  <label className="text-sm text-muted-foreground">{t('creditNotes.reason', 'Reason')}</label>
-                  <p className="font-medium mt-1">{creditNote.reason}</p>
+                  <label className="text-sm text-muted-foreground dark:text-gray-400">{t('creditNotes.reason', 'Reason')}</label>
+                  <p className="font-medium mt-1 dark:text-white">{creditNote.reason}</p>
                 </div>
                 {creditNote.notes && (
                   <div>
-                    <label className="text-sm text-muted-foreground">{t('creditNotes.notes', 'Notes')}</label>
-                    <p className="mt-1">{creditNote.notes}</p>
+                    <label className="text-sm text-muted-foreground dark:text-gray-400">{t('creditNotes.notes', 'Notes')}</label>
+                    <p className="mt-1 dark:text-gray-300">{creditNote.notes}</p>
                   </div>
                 )}
               </CardContent>
             </Card>
 
             {/* Line Items */}
-            <Card>
+            <Card className="dark:bg-slate-800">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white">
                   <Package className="h-5 w-5" />
                   {t('creditNotes.lineItems', 'Line Items')}
                 </CardTitle>
@@ -384,27 +384,27 @@ export default function CreditNoteDetailPage() {
               <CardContent>
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>{t('creditNotes.product', 'Product')}</TableHead>
-                      <TableHead className="text-right">{t('creditNotes.quantity', 'Qty')}</TableHead>
-                      <TableHead className="text-right">{t('creditNotes.unitPrice', 'Unit Price')}</TableHead>
-                      <TableHead className="text-right">{t('creditNotes.taxRate', 'Tax Rate')}</TableHead>
-                      <TableHead className="text-right">{t('creditNotes.lineTax', 'Tax Amount')}</TableHead>
-                      <TableHead className="text-right">{t('creditNotes.lineTotal', 'Total')}</TableHead>
+                    <TableRow className="dark:hover:bg-slate-700">
+                      <TableHead className="dark:text-gray-300">{t('creditNotes.product', 'Product')}</TableHead>
+                      <TableHead className="text-right dark:text-gray-300">{t('creditNotes.quantity', 'Qty')}</TableHead>
+                      <TableHead className="text-right dark:text-gray-300">{t('creditNotes.unitPrice', 'Unit Price')}</TableHead>
+                      <TableHead className="text-right dark:text-gray-300">{t('creditNotes.taxRate', 'Tax Rate')}</TableHead>
+                      <TableHead className="text-right dark:text-gray-300">{t('creditNotes.lineTax', 'Tax Amount')}</TableHead>
+                      <TableHead className="text-right dark:text-gray-300">{t('creditNotes.lineTotal', 'Total')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {creditNote.lines.map((line) => (
-                      <TableRow key={line._id}>
+                      <TableRow key={line._id} className="dark:hover:bg-slate-700">
                         <TableCell>
-                          <div className="font-medium">{line.productName}</div>
+                          <div className="font-medium dark:text-white">{line.productName}</div>
                           <div className="text-sm text-muted-foreground">{line.productCode}</div>
                         </TableCell>
-                        <TableCell className="text-right">{toNumber(line.quantity)}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(line.unitPrice, creditNote.currencyCode)}</TableCell>
-                        <TableCell className="text-right">{toNumber(line.taxRate)}%</TableCell>
-                        <TableCell className="text-right">{formatCurrency(line.lineTax, creditNote.currencyCode)}</TableCell>
-                        <TableCell className="text-right font-medium">{formatCurrency(line.lineTotal, creditNote.currencyCode)}</TableCell>
+                        <TableCell className="text-right dark:text-white">{toNumber(line.quantity)}</TableCell>
+                        <TableCell className="text-right dark:text-white">{formatCurrency(line.unitPrice, creditNote.currencyCode)}</TableCell>
+                        <TableCell className="text-right dark:text-white">{toNumber(line.taxRate)}%</TableCell>
+                        <TableCell className="text-right dark:text-white">{formatCurrency(line.lineTax, creditNote.currencyCode)}</TableCell>
+                        <TableCell className="text-right font-medium dark:text-white">{formatCurrency(line.lineTotal, creditNote.currencyCode)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -414,39 +414,39 @@ export default function CreditNoteDetailPage() {
 
             {/* Journal Entries */}
             {(creditNote.revenueReversalEntry || creditNote.cogsReversalEntry) && (
-              <Card>
+              <Card className="dark:bg-slate-800">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white">
                     <Receipt className="h-5 w-5" />
                     {t('creditNotes.journalEntries', 'Journal Entries')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {creditNote.revenueReversalEntry && (
-                    <div className="p-4 bg-muted rounded-lg">
+                    <div className="p-4 bg-muted dark:bg-slate-700 rounded-lg">
                       <div className="flex justify-between items-start">
                         <div>
-                          <h4 className="font-medium">Revenue Reversal Entry</h4>
+                          <h4 className="font-medium dark:text-white">Revenue Reversal Entry</h4>
                           <p className="text-sm text-muted-foreground">
                             {creditNote.revenueReversalEntry.entryNumber} • {formatDate(creditNote.revenueReversalEntry.date)}
                           </p>
-                          <p className="text-sm mt-1">{creditNote.revenueReversalEntry.description}</p>
+                          <p className="text-sm mt-1 dark:text-gray-300">{creditNote.revenueReversalEntry.description}</p>
                         </div>
-                        <Badge variant="outline">{formatCurrency(creditNote.revenueReversalEntry.totalDebit, creditNote.currencyCode)}</Badge>
+                        <Badge variant="outline" className="dark:border-slate-500 dark:text-white">{formatCurrency(creditNote.revenueReversalEntry.totalDebit, creditNote.currencyCode)}</Badge>
                       </div>
                     </div>
                   )}
                   {creditNote.cogsReversalEntry && (
-                    <div className="p-4 bg-muted rounded-lg">
+                    <div className="p-4 bg-muted dark:bg-slate-700 rounded-lg">
                       <div className="flex justify-between items-start">
                         <div>
-                          <h4 className="font-medium">COGS Reversal Entry</h4>
+                          <h4 className="font-medium dark:text-white">COGS Reversal Entry</h4>
                           <p className="text-sm text-muted-foreground">
                             {creditNote.cogsReversalEntry.entryNumber} • {formatDate(creditNote.cogsReversalEntry.date)}
                           </p>
-                          <p className="text-sm mt-1">{creditNote.cogsReversalEntry.description}</p>
+                          <p className="text-sm mt-1 dark:text-gray-300">{creditNote.cogsReversalEntry.description}</p>
                         </div>
-                        <Badge variant="outline">{formatCurrency(creditNote.cogsReversalEntry.totalDebit, creditNote.currencyCode)}</Badge>
+                        <Badge variant="outline" className="dark:border-slate-500 dark:text-white">{formatCurrency(creditNote.cogsReversalEntry.totalDebit, creditNote.currencyCode)}</Badge>
                       </div>
                     </div>
                   )}
@@ -458,39 +458,39 @@ export default function CreditNoteDetailPage() {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Summary */}
-            <Card>
+            <Card className="dark:bg-slate-800">
               <CardHeader>
-                <CardTitle>{t('creditNotes.summary', 'Summary')}</CardTitle>
+                <CardTitle className="dark:text-white">{t('creditNotes.summary', 'Summary')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">{t('creditNotes.subtotal', 'Subtotal')}</span>
-                  <span className="font-medium">{formatCurrency(displaySubtotal, creditNote.currencyCode)}</span>
+                  <span className="text-muted-foreground dark:text-gray-400">{t('creditNotes.subtotal', 'Subtotal')}</span>
+                  <span className="font-medium dark:text-white">{formatCurrency(displaySubtotal, creditNote.currencyCode)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">{t('creditNotes.tax', 'Tax')}</span>
-                  <span className="font-medium">{formatCurrency(displayTax, creditNote.currencyCode)}</span>
+                  <span className="text-muted-foreground dark:text-gray-400">{t('creditNotes.tax', 'Tax')}</span>
+                  <span className="font-medium dark:text-white">{formatCurrency(displayTax, creditNote.currencyCode)}</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between">
-                  <span className="font-bold">{t('creditNotes.total', 'Total')}</span>
-                  <span className="font-bold text-lg">{formatCurrency(displayTotal, creditNote.currencyCode)}</span>
+                  <span className="font-bold dark:text-white">{t('creditNotes.total', 'Total')}</span>
+                  <span className="font-bold text-lg dark:text-white">{formatCurrency(displayTotal, creditNote.currencyCode)}</span>
                 </div>
               </CardContent>
             </Card>
 
             {/* Stock Status */}
             {creditNote.type === 'goods_return' && (
-              <Card>
+              <Card className="dark:bg-slate-800">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white">
                     <ArrowRightLeft className="h-5 w-5" />
                     {t('creditNotes.stockStatus', 'Stock Status')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Stock Reversed</span>
+                    <span className="text-muted-foreground dark:text-gray-400">Stock Reversed</span>
                     <Badge variant={creditNote.stockReversed ? 'default' : 'secondary'}>
                       {creditNote.stockReversed ? 'Yes' : 'No'}
                     </Badge>
@@ -501,38 +501,38 @@ export default function CreditNoteDetailPage() {
 
             {/* Confirmation Info */}
             {creditNote.confirmedBy && (
-              <Card>
+              <Card className="dark:bg-slate-800">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white">
                     <Calendar className="h-5 w-5" />
                     {t('creditNotes.confirmation', 'Confirmation')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Confirmed By</span>
-                    <span className="font-medium">{creditNote.confirmedBy?.name}</span>
+                    <span className="text-muted-foreground dark:text-gray-400">Confirmed By</span>
+                    <span className="font-medium dark:text-white">{creditNote.confirmedBy?.name}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Confirmed At</span>
-                    <span className="font-medium">{formatDate(creditNote.confirmedAt || '')}</span>
+                    <span className="text-muted-foreground dark:text-gray-400">Confirmed At</span>
+                    <span className="font-medium dark:text-white">{formatDate(creditNote.confirmedAt || '')}</span>
                   </div>
                 </CardContent>
               </Card>
             )}
 
             {/* Created By */}
-            <Card>
+            <Card className="dark:bg-slate-800">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white">
                   <User className="h-5 w-5" />
                   {t('creditNotes.createdBy', 'Created By')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">User</span>
-                  <span className="font-medium">{creditNote.createdBy?.name || '-'}</span>
+                  <span className="text-muted-foreground dark:text-gray-400">User</span>
+                  <span className="font-medium dark:text-white">{creditNote.createdBy?.name || '-'}</span>
                 </div>
               </CardContent>
             </Card>

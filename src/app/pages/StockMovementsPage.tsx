@@ -31,10 +31,12 @@ import {
   SwapVert as SwapVertIcon,
   TrendingUp as TrendingUpIcon,
   TrendingDown as TrendingDownIcon,
-  Balance as BalanceIcon
+  Balance as BalanceIcon,
+  Add as AddIcon
 } from '@mui/icons-material';
-import { stockApi } from '@/lib/api';
+import { stockApi, warehousesApi } from '@/lib/api';
 import { Layout } from '../layout/Layout';
+import { StockAdjustmentDialog } from '@/app/components/StockAdjustmentDialog';
 
 interface StockMovement {
   _id: string;
@@ -60,6 +62,11 @@ interface StockMovement {
   notes?: string;
 }
 
+interface Warehouse {
+  _id: string;
+  name: string;
+}
+
 interface PaginationInfo {
   total: number;
   page: number;
@@ -70,8 +77,18 @@ interface PaginationInfo {
 export default function StockMovementsPage() {
   const { t } = useTranslation();
   const [movements, setMovements] = useState<StockMovement[]>([]);
+  const [warehouses, setWarehouses] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  const isDark = () => document.documentElement.classList.contains('dark');
+  const [dark, setDark] = useState(isDark());
+  
+  useEffect(() => {
+    const observer = new MutationObserver(() => setDark(isDark()));
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
   const [pagination, setPagination] = useState<PaginationInfo>({
     total: 0,
     page: 1,
@@ -86,6 +103,7 @@ export default function StockMovementsPage() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [showAdjustmentDialog, setShowAdjustmentDialog] = useState(false);
 
   // Debounce search
   useEffect(() => {
@@ -94,6 +112,26 @@ export default function StockMovementsPage() {
     }, 500);
     return () => clearTimeout(timer);
   }, [search]);
+
+  // Fetch warehouses for name lookup
+  const fetchWarehouses = async () => {
+    try {
+      const response = await warehousesApi.getAll();
+      if (response && response.success) {
+        const warehouseMap: Record<string, string> = {};
+        (response.data as Warehouse[]).forEach((w: Warehouse) => {
+          warehouseMap[w._id] = w.name;
+        });
+        setWarehouses(warehouseMap);
+      }
+    } catch (err) {
+      console.error('[StockMovements] Error fetching warehouses:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchWarehouses();
+  }, []);
 
   // Fetch stock movements
   const fetchMovements = async () => {
@@ -200,7 +238,34 @@ export default function StockMovementsPage() {
       out: 'Stock Out',
       adjustment: 'Adjustment'
     };
-    return <Chip label={typeLabels[type] || type} color={typeColors[type] || 'default'} size="small" />;
+    return (
+      <Chip 
+        label={typeLabels[type] || type} 
+        color={typeColors[type] || 'default'} 
+        size="small"
+        sx={{
+          '& .MuiChip-root': {
+            backgroundColor: type === 'in' ? (dark ? '#166534' : '#dcfce7') :
+                           type === 'out' ? (dark ? '#991b1b' : '#fee2e2') :
+                           (dark ? '#854d0e' : '#fef3c7'),
+            color: type === 'in' ? (dark ? '#4ade80' : '#16a34a') :
+                  type === 'out' ? (dark ? '#f87171' : '#dc2626') :
+                  (dark ? '#fbbf24' : '#d97706'),
+          }
+        }}
+      />
+    );
+  };
+
+  const getWarehouseName = (warehouse: StockMovement['warehouse']): string => {
+    if (typeof warehouse === 'object' && warehouse?.name) {
+      return warehouse.name;
+    }
+    if (typeof warehouse === 'string' && warehouse) {
+      // Look up the name from our warehouses map, fallback to ID if not found
+      return warehouses[warehouse] || warehouse;
+    }
+    return '-';
   };
 
   const toNum = (v: number | string | null | undefined): number => {
@@ -230,211 +295,290 @@ export default function StockMovementsPage() {
 
   return (
     <Layout>
-      <Box sx={{ p: 3 }}>
-        {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-3">
-            <SwapVertIcon className="text-primary" style={{ fontSize: 32 }} />
-            <Typography variant="h5" component="h1">
-              {t('stockMovements.title', 'Stock Movements')}
-            </Typography>
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+        <Box sx={{ p: 3 }} className="dark:text-white">
+          {/* Header */}
+          <div className="flex justify-between items-center mb-6">
+            <div className="flex items-center gap-3">
+              <SwapVertIcon className="text-primary" style={{ fontSize: 32 }} />
+              <Typography variant="h5" component="h1" className="dark:text-white">
+                {t('stockMovements.title', 'Stock Movements')}
+              </Typography>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={() => setShowAdjustmentDialog(true)}
+                startIcon={<AddIcon />}
+                sx={{ mr: 1 }}
+              >
+                {t('stockMovements.adjustStock', 'Adjust Stock')}
+              </Button>
+              <Button
+                variant="outlined"
+                startIcon={<DownloadIcon />}
+                onClick={handleExport}
+                sx={{
+                  borderColor: dark ? '#475569' : '#cbd5e1',
+                  color: dark ? '#e2e8f0' : '#475569',
+                }}
+              >
+                {t('common.export', 'Export')}
+              </Button>
+            </div>
           </div>
-          <Button
-            variant="outlined"
-            startIcon={<DownloadIcon />}
-            onClick={handleExport}
-          >
-            {t('common.export', 'Export')}
-          </Button>
-        </div>
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <Paper className="p-4 flex items-center gap-4">
-            <TrendingUpIcon color="success" />
+          <Paper sx={{ p: 4, display: 'flex', alignItems: 'center', gap: 2, backgroundColor: dark ? '#1e293b' : 'white', border: `1px solid ${dark ? '#334155' : '#e2e8f0'}` }}>
+            <TrendingUpIcon sx={{ color: dark ? '#4ade80' : '#16a34a' }} />
             <div>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" sx={{ color: dark ? '#94a3b8' : '#64748b' }}>
                 {t('stockMovements.totalIn', 'Total Stock In')}
               </Typography>
-              <Typography variant="h6">{formatCurrency(totalIn)}</Typography>
+              <Typography variant="h6" sx={{ color: dark ? '#f1f5f9' : '#1e293b' }}>{formatCurrency(totalIn)}</Typography>
             </div>
           </Paper>
-          <Paper className="p-4 flex items-center gap-4">
-            <TrendingDownIcon color="error" />
-            <div>
-              <Typography variant="body2" color="text.secondary">
-                {t('stockMovements.totalOut', 'Total Stock Out')}
-              </Typography>
-              <Typography variant="h6">{formatCurrency(totalOut)}</Typography>
-            </div>
-          </Paper>
-          <Paper className="p-4 flex items-center gap-4">
-            <BalanceIcon color="warning" />
-            <div>
-              <Typography variant="body2" color="text.secondary">
-                {t('stockMovements.totalAdjustments', 'Total Adjustments')}
-              </Typography>
-              <Typography variant="h6">{formatCurrency(totalAdjustments)}</Typography>
-            </div>
-          </Paper>
-        </div>
-
-        {/* Error Alert */}
-        {error && (
-          <Alert severity="error" className="mb-4" onClose={() => setError(null)}>
-            {error}
-          </Alert>
-        )}
-
-        {/* Filters */}
-        <Paper className="p-4 mb-4">
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-center">
-            <TextField
-              fullWidth
-              size="small"
-              placeholder={t('stockMovements.searchPlaceholder', 'Search product, reference...')}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon />
-                  </InputAdornment>
-                ),
-              }}
-            />
-            <FormControl fullWidth size="small">
-              <InputLabel>{t('stockMovements.movementType', 'Movement Type')}</InputLabel>
-              <Select
-                value={typeFilter}
-                label={t('stockMovements.movementType', 'Movement Type')}
-                onChange={(e) => setTypeFilter(e.target.value)}
-              >
-                <MenuItem value="">{t('common.all', 'All')}</MenuItem>
-                <MenuItem value="in">{t('stockMovements.stockIn', 'Stock In')}</MenuItem>
-                <MenuItem value="out">{t('stockMovements.stockOut', 'Stock Out')}</MenuItem>
-                <MenuItem value="adjustment">{t('stockMovements.adjustment', 'Adjustment')}</MenuItem>
-              </Select>
-            </FormControl>
-            <TextField
-              fullWidth
-              size="small"
-              type="date"
-              label={t('stockMovements.startDate', 'Start Date')}
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              InputLabelProps={{ shrink: true }}
-            />
-            <TextField
-              fullWidth
-              size="small"
-              type="date"
-              label={t('stockMovements.endDate', 'End Date')}
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              InputLabelProps={{ shrink: true }}
-            />
-            <Button 
-              fullWidth 
-              variant="outlined" 
-              onClick={() => {
-                setSearch('');
-                setTypeFilter('');
-                setStartDate('');
-                setEndDate('');
-              }}
-            >
-              {t('common.clear', 'Clear')}
-            </Button>
+            <Paper sx={{ p: 4, display: 'flex', alignItems: 'center', gap: 2, backgroundColor: dark ? '#1e293b' : 'white', border: `1px solid ${dark ? '#334155' : '#e2e8f0'}` }}>
+              <TrendingDownIcon sx={{ color: dark ? '#f87171' : '#dc2626' }} />
+              <div>
+                <Typography variant="body2" sx={{ color: dark ? '#94a3b8' : '#64748b' }}>
+                  {t('stockMovements.totalOut', 'Total Stock Out')}
+                </Typography>
+                <Typography variant="h6" sx={{ color: dark ? '#f1f5f9' : '#1e293b' }}>{formatCurrency(totalOut)}</Typography>
+              </div>
+            </Paper>
+            <Paper sx={{ p: 4, display: 'flex', alignItems: 'center', gap: 2, backgroundColor: dark ? '#1e293b' : 'white', border: `1px solid ${dark ? '#334155' : '#e2e8f0'}` }}>
+              <BalanceIcon sx={{ color: dark ? '#fbbf24' : '#d97706' }} />
+              <div>
+                <Typography variant="body2" sx={{ color: dark ? '#94a3b8' : '#64748b' }}>
+                  {t('stockMovements.totalAdjustments', 'Total Adjustments')}
+                </Typography>
+                <Typography variant="h6" sx={{ color: dark ? '#f1f5f9' : '#1e293b' }}>{formatCurrency(totalAdjustments)}</Typography>
+              </div>
+            </Paper>
           </div>
-        </Paper>
 
-        {/* Table */}
-        <Paper>
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>{t('stockMovements.date', 'Date')}</TableCell>
-                  <TableCell>{t('stockMovements.product', 'Product')}</TableCell>
-                  <TableCell>{t('stockMovements.warehouse', 'Warehouse')}</TableCell>
-                  <TableCell>{t('stockMovements.type', 'Type')}</TableCell>
-                  <TableCell align="right">{t('stockMovements.quantity', 'Qty')}</TableCell>
-                  <TableCell align="right">{t('stockMovements.unitCost', 'Unit Cost')}</TableCell>
-                  <TableCell align="right">{t('stockMovements.totalCost', 'Total Cost')}</TableCell>
-                  <TableCell>{t('stockMovements.sourceType', 'Source Type')}</TableCell>
-                  <TableCell>{t('stockMovements.reference', 'Reference')}</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
-                      <CircularProgress />
-                    </TableCell>
-                </TableRow>
-                ) : movements.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
-                      {t('stockMovements.noData', 'No stock movements found')}
-                    </TableCell>
-                </TableRow>
-                ) : (
-                  movements.map((item) => (
-                    <TableRow key={item._id} hover>
-                      <TableCell>
-                        {item.movementDate || item.date ? new Date(item.movementDate || item.date!).toLocaleDateString() : '-'}
+          {/* Error Alert */}
+          {error && (
+            <Alert severity="error" className="mb-4" onClose={() => setError(null)}>
+              {error}
+            </Alert>
+          )}
+
+          {/* Filters */}
+          <Paper sx={{ p: 4, mb: 4, backgroundColor: dark ? '#1e293b' : 'white', border: `1px solid ${dark ? '#334155' : '#e2e8f0'}` }}>
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-center">
+              <TextField
+                fullWidth
+                size="small"
+                placeholder={t('stockMovements.searchPlaceholder', 'Search product, reference...')}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                sx={{
+                  '& .MuiInputBase-root': {
+                    backgroundColor: dark ? '#0f172a' : 'white',
+                    color: dark ? '#e2e8f0' : '#1e293b',
+                  },
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: dark ? '#334155' : '#cbd5e1',
+                  },
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon className="dark:text-slate-400" />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              <FormControl fullWidth size="small" sx={{
+                '& .MuiInputLabel-root': {
+                  color: dark ? '#94a3b8' : '#64748b',
+                },
+                '& .MuiInputBase-root': {
+                  backgroundColor: dark ? '#0f172a' : 'white',
+                  color: dark ? '#e2e8f0' : '#1e293b',
+                },
+                '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: dark ? '#334155' : '#cbd5e1',
+                },
+              }}>
+                <InputLabel>{t('stockMovements.movementType', 'Movement Type')}</InputLabel>
+                <Select
+                  value={typeFilter}
+                  label={t('stockMovements.movementType', 'Movement Type')}
+                  onChange={(e) => setTypeFilter(e.target.value)}
+                >
+                  <MenuItem value="">{t('common.all', 'All')}</MenuItem>
+                  <MenuItem value="in">{t('stockMovements.stockIn', 'Stock In')}</MenuItem>
+                  <MenuItem value="out">{t('stockMovements.stockOut', 'Stock Out')}</MenuItem>
+                  <MenuItem value="adjustment">{t('stockMovements.adjustment', 'Adjustment')}</MenuItem>
+                </Select>
+              </FormControl>
+              <TextField
+                fullWidth
+                size="small"
+                type="date"
+                label={t('stockMovements.startDate', 'Start Date')}
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+                sx={{
+                  '& .MuiInputBase-root': {
+                    backgroundColor: dark ? '#0f172a' : 'white',
+                    color: dark ? '#e2e8f0' : '#1e293b',
+                  },
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: dark ? '#334155' : '#cbd5e1',
+                  },
+                  '& .MuiInputLabel-root': {
+                    color: dark ? '#94a3b8' : '#64748b',
+                  },
+                }}
+              />
+              <TextField
+                fullWidth
+                size="small"
+                type="date"
+                label={t('stockMovements.endDate', 'End Date')}
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+                sx={{
+                  '& .MuiInputBase-root': {
+                    backgroundColor: dark ? '#0f172a' : 'white',
+                    color: dark ? '#e2e8f0' : '#1e293b',
+                  },
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: dark ? '#334155' : '#cbd5e1',
+                  },
+                  '& .MuiInputLabel-root': {
+                    color: dark ? '#94a3b8' : '#64748b',
+                  },
+                }}
+              />
+              <Button 
+                fullWidth 
+                variant="outlined" 
+                onClick={() => {
+                  setSearch('');
+                  setTypeFilter('');
+                  setStartDate('');
+                  setEndDate('');
+                }}
+                sx={{
+                  borderColor: dark ? '#475569' : '#cbd5e1',
+                  color: dark ? '#e2e8f0' : '#475569',
+                }}
+              >
+                {t('common.clear', 'Clear')}
+              </Button>
+            </div>
+          </Paper>
+
+          {/* Table */}
+          <Paper sx={{ backgroundColor: dark ? '#1e293b' : 'white', border: `1px solid ${dark ? '#334155' : '#e2e8f0'}` }}>
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow sx={{ backgroundColor: dark ? '#0f172a' : '#f1f5f9' }}>
+                    <TableCell sx={{ color: dark ? '#e2e8f0' : '#1e293b', fontWeight: 600 }}>{t('stockMovements.date', 'Date')}</TableCell>
+                    <TableCell sx={{ color: dark ? '#e2e8f0' : '#1e293b', fontWeight: 600 }}>{t('stockMovements.product', 'Product')}</TableCell>
+                    <TableCell sx={{ color: dark ? '#e2e8f0' : '#1e293b', fontWeight: 600 }}>{t('stockMovements.warehouse', 'Warehouse')}</TableCell>
+                    <TableCell sx={{ color: dark ? '#e2e8f0' : '#1e293b', fontWeight: 600 }}>{t('stockMovements.type', 'Type')}</TableCell>
+                    <TableCell align="right" sx={{ color: dark ? '#e2e8f0' : '#1e293b', fontWeight: 600 }}>{t('stockMovements.quantity', 'Qty')}</TableCell>
+                    <TableCell align="right" sx={{ color: dark ? '#e2e8f0' : '#1e293b', fontWeight: 600 }}>{t('stockMovements.unitCost', 'Unit Cost')}</TableCell>
+                    <TableCell align="right" sx={{ color: dark ? '#e2e8f0' : '#1e293b', fontWeight: 600 }}>{t('stockMovements.totalCost', 'Total Cost')}</TableCell>
+                    <TableCell sx={{ color: dark ? '#e2e8f0' : '#1e293b', fontWeight: 600 }}>{t('stockMovements.sourceType', 'Source Type')}</TableCell>
+                    <TableCell sx={{ color: dark ? '#e2e8f0' : '#1e293b', fontWeight: 600 }}>{t('stockMovements.reference', 'Reference')}</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody sx={{ backgroundColor: dark ? '#1e293b' : 'white' }}>
+                  {loading ? (
+                    <TableRow>
+                      <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
+                        <CircularProgress />
                       </TableCell>
-                      <TableCell>
-                        <Typography variant="body2">{item.product?.name || '-'}</Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {item.product?.sku || ''}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        {typeof item.warehouse === 'object' && item.warehouse?.name
-                          ? item.warehouse.name
-                          : typeof item.warehouse === 'string' && item.warehouse
-                            ? item.warehouse
-                            : '-'}
-                      </TableCell>
-                      <TableCell>{getTypeChip(item.type)}</TableCell>
-                      <TableCell 
-                        align="right"
-                        sx={{ 
-                          color: item.type === 'out' ? 'error.main' : 'inherit',
-                          fontWeight: item.type === 'out' ? 'bold' : 'normal'
-                        }}
-                      >
-                        {item.type === 'out' ? '-' : ''}{toNum(item.quantity).toLocaleString()}
-                      </TableCell>
-                      <TableCell align="right">{formatCurrency(item.unitCost)}</TableCell>
-                      <TableCell align="right">{formatCurrency(item.totalCost)}</TableCell>
-                      <TableCell>
-                        <Chip 
-                          label={item.sourceType || item.referenceType || '-'} 
-                          size="small" 
-                          variant="outlined"
-                        />
-                      </TableCell>
-                      <TableCell>{item.referenceNumber || item.reference || '-'}</TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-          <TablePagination
-            component="div"
-            count={pagination.total}
-            page={pagination.page - 1}
-            onPageChange={handlePageChange}
-            rowsPerPage={pagination.limit}
-            onRowsPerPageChange={handleRowsPerPageChange}
-            rowsPerPageOptions={[10, 25, 50, 100]}
-          />
-        </Paper>
-      </Box>
+                  ) : movements.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={9} align="center" sx={{ py: 4, color: dark ? '#94a3b8' : '#64748b' }}>
+                        {t('stockMovements.noData', 'No stock movements found')}
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    movements.map((item) => (
+                      <TableRow key={item._id} hover sx={{ backgroundColor: dark ? '#1e293b' : 'white', '&:hover': { backgroundColor: dark ? '#0f172a' : '#f1f5f9' } }}>
+                        <TableCell sx={{ color: dark ? '#e2e8f0' : '#1e293b' }}>
+                          {item.movementDate || item.date ? new Date(item.movementDate || item.date!).toLocaleDateString() : '-'}
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2" sx={{ color: dark ? '#f1f5f9' : '#1e293b' }}>{item.product?.name || '-'}</Typography>
+                          <Typography variant="caption" sx={{ color: dark ? '#94a3b8' : '#64748b' }}>
+                            {item.product?.sku || ''}
+                          </Typography>
+                        </TableCell>
+                        <TableCell sx={{ color: dark ? '#e2e8f0' : '#1e293b' }}>
+                          {getWarehouseName(item.warehouse)}
+                        </TableCell>
+                        <TableCell>{getTypeChip(item.type)}</TableCell>
+                        <TableCell 
+                          align="right"
+                          sx={{ 
+                            color: item.type === 'out' ? (dark ? '#f87171' : '#ef4444') : (dark ? '#e2e8f0' : '#1e293b'),
+                            fontWeight: item.type === 'out' ? 'bold' : 'normal'
+                          }}
+                        >
+                          {item.type === 'out' ? '-' : ''}{toNum(item.quantity).toLocaleString()}
+                        </TableCell>
+                        <TableCell align="right" sx={{ color: dark ? '#e2e8f0' : '#1e293b' }}>{formatCurrency(item.unitCost)}</TableCell>
+                        <TableCell align="right" sx={{ color: dark ? '#e2e8f0' : '#1e293b' }}>{formatCurrency(item.totalCost)}</TableCell>
+                        <TableCell>
+                          <Chip 
+                            label={item.sourceType || item.referenceType || '-'} 
+                            size="small" 
+                            variant="outlined"
+                            sx={{ borderColor: dark ? '#475569' : '#cbd5e1', color: dark ? '#cbd5e1' : '#475569' }}
+                          />
+                        </TableCell>
+                        <TableCell sx={{ color: dark ? '#e2e8f0' : '#1e293b' }}>{item.referenceNumber || item.reference || '-'}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            <TablePagination
+              component="div"
+              count={pagination.total}
+              page={pagination.page - 1}
+              onPageChange={handlePageChange}
+              rowsPerPage={pagination.limit}
+              onRowsPerPageChange={handleRowsPerPageChange}
+              rowsPerPageOptions={[10, 25, 50, 100]}
+              sx={{
+                backgroundColor: dark ? '#0f172a' : '#f1f5f9',
+                color: dark ? '#e2e8f0' : '#1e293b',
+                borderTop: `1px solid ${dark ? '#334155' : '#e2e8f0'}`,
+                '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
+                  color: 'inherit',
+                },
+              }}
+            />
+          </Paper>
+        </Box>
+      </div>
+
+      {/* Stock Adjustment Dialog */}
+      <StockAdjustmentDialog
+        open={showAdjustmentDialog}
+        onOpenChange={setShowAdjustmentDialog}
+        onSuccess={() => {
+          fetchMovements();
+        }}
+      />
     </Layout>
   );
 }

@@ -282,34 +282,34 @@ export default function SalesOrderCreatePage() {
 
   return (
     <Layout>
-      <div className="container mx-auto p-6">
+      <div className="container mx-auto p-6 min-h-screen bg-slate-50 dark:bg-slate-900">
         <div className="mb-6 flex items-center gap-4">
-          <Button variant="outline" onClick={() => navigate('/sales-orders')}>
+          <Button variant="outline" onClick={() => navigate('/sales-orders')} className="dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
-          <h1 className="text-3xl font-bold text-gray-900">Create Sales Order</h1>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Create Sales Order</h1>
         </div>
 
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
-              <Card>
+              <Card className="dark:bg-slate-800/50 dark:border-slate-700">
                 <CardHeader>
-                  <CardTitle>Order Details</CardTitle>
+                  <CardTitle className="text-slate-900 dark:text-white">Order Details</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Convert from Quotation</Label>
+                      <Label className="text-slate-900 dark:text-white">Convert from Quotation</Label>
                       <Select value={formData.quotation || '_none'} onValueChange={handleQuotationChange}>
-                        <SelectTrigger>
+                        <SelectTrigger className="dark:bg-slate-700 dark:border-slate-600 dark:text-white">
                           <SelectValue placeholder="Select quotation (optional)" />
                         </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="_none">None</SelectItem>
+                        <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
+                          <SelectItem value="_none" className="dark:text-slate-200">None</SelectItem>
                           {quotations.map((quotation) => (
-                            <SelectItem key={quotation._id} value={quotation._id}>
+                            <SelectItem key={quotation._id} value={quotation._id} className="dark:text-slate-200">
                               {quotation.referenceNo} - {quotation.client?.name}
                             </SelectItem>
                           ))}
@@ -318,14 +318,14 @@ export default function SalesOrderCreatePage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Client <span className="text-red-500">*</span></Label>
+                      <Label className="text-slate-900 dark:text-white">Client <span className="text-red-500">*</span></Label>
                       <Select value={formData.client} onValueChange={(value) => setFormData({ ...formData, client: value })}>
-                        <SelectTrigger>
+                        <SelectTrigger className="dark:bg-slate-700 dark:border-slate-600 dark:text-white">
                           <SelectValue placeholder="Select client" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
                           {clients.map((client) => (
-                            <SelectItem key={client._id} value={client._id}>
+                            <SelectItem key={client._id} value={client._id} className="dark:text-slate-200">
                               {client.name}
                             </SelectItem>
                           ))}
@@ -334,64 +334,68 @@ export default function SalesOrderCreatePage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Order Date <span className="text-red-500">*</span></Label>
+                      <Label className="text-slate-900 dark:text-white">Order Date <span className="text-red-500">*</span></Label>
                       <Input
                         type="date"
                         value={formData.orderDate}
                         onChange={(e) => setFormData({ ...formData, orderDate: e.target.value })}
                         required
+                        className="dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Expected Date</Label>
+                      <Label className="text-slate-900 dark:text-white">Expected Date</Label>
                       <Input
                         type="date"
                         value={formData.expectedDate}
                         onChange={(e) => setFormData({ ...formData, expectedDate: e.target.value })}
+                        className="dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Currency</Label>
+                      <Label className="text-slate-900 dark:text-white">Currency</Label>
                       <Select value={formData.currencyCode} onValueChange={(value) => setFormData({ ...formData, currencyCode: value })}>
-                        <SelectTrigger>
+                        <SelectTrigger className="dark:bg-slate-700 dark:border-slate-600 dark:text-white">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="USD">USD</SelectItem>
-                          <SelectItem value="EUR">EUR</SelectItem>
-                          <SelectItem value="GBP">GBP</SelectItem>
-                          <SelectItem value="RWF">RWF</SelectItem>
+                        <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
+                          <SelectItem value="USD" className="dark:text-slate-200">USD</SelectItem>
+                          <SelectItem value="EUR" className="dark:text-slate-200">EUR</SelectItem>
+                          <SelectItem value="GBP" className="dark:text-slate-200">GBP</SelectItem>
+                          <SelectItem value="RWF" className="dark:text-slate-200">RWF</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Terms & Conditions</Label>
+                    <Label className="text-slate-900 dark:text-white">Terms & Conditions</Label>
                     <Textarea
                       value={formData.terms}
                       onChange={(e) => setFormData({ ...formData, terms: e.target.value })}
                       rows={3}
+                      className="dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Notes</Label>
+                    <Label className="text-slate-900 dark:text-white">Notes</Label>
                     <Textarea
                       value={formData.notes}
                       onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                       rows={2}
+                      className="dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                     />
                   </div>
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="dark:bg-slate-800/50 dark:border-slate-700">
                 <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle>Line Items</CardTitle>
-                  <Button type="button" onClick={addLine} variant="outline" size="sm">
+                  <CardTitle className="text-slate-900 dark:text-white">Line Items</CardTitle>
+                  <Button type="button" onClick={addLine} variant="outline" size="sm" className="dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200">
                     <Plus className="h-4 w-4 mr-2" />
                     Add Line
                   </Button>
@@ -399,16 +403,16 @@ export default function SalesOrderCreatePage() {
                 <CardContent>
                   <div className="space-y-4">
                     {lines.map((line, index) => (
-                      <div key={line.id} className="grid grid-cols-12 gap-2 items-end border p-4 rounded-lg">
+                      <div key={line.id} className="grid grid-cols-12 gap-2 items-end border p-4 rounded-lg dark:border-slate-600">
                         <div className="col-span-4">
-                          <Label className="text-xs">Product</Label>
+                          <Label className="text-xs text-slate-900 dark:text-white">Product</Label>
                           <Select value={line.product} onValueChange={(value) => updateLine(line.id, 'product', value)}>
-                            <SelectTrigger>
+                            <SelectTrigger className="dark:bg-slate-700 dark:border-slate-600 dark:text-white">
                               <SelectValue placeholder="Select product" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
                               {products.map((product) => (
-                                <SelectItem key={product._id} value={product._id}>
+                                <SelectItem key={product._id} value={product._id} className="dark:text-slate-200">
                                   {product.name} ({product.sku})
                                 </SelectItem>
                               ))}
@@ -417,43 +421,47 @@ export default function SalesOrderCreatePage() {
                         </div>
 
                         <div className="col-span-2">
-                          <Label className="text-xs">Qty</Label>
+                          <Label className="text-xs text-slate-900 dark:text-white">Qty</Label>
                           <Input
                             type="number"
                             min="1"
                             value={line.qty}
                             onChange={(e) => updateLine(line.id, 'qty', parseFloat(e.target.value) || 0)}
+                            className="dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                           />
                         </div>
 
                         <div className="col-span-2">
-                          <Label className="text-xs">Unit Price</Label>
+                          <Label className="text-xs text-slate-900 dark:text-white">Unit Price</Label>
                           <Input
                             type="number"
                             step="0.01"
                             value={line.unitPrice}
                             onChange={(e) => updateLine(line.id, 'unitPrice', parseFloat(e.target.value) || 0)}
+                            className="dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                           />
                         </div>
 
                         <div className="col-span-2">
-                          <Label className="text-xs">Discount %</Label>
+                          <Label className="text-xs text-slate-900 dark:text-white">Discount %</Label>
                           <Input
                             type="number"
                             min="0"
                             max="100"
                             value={line.discountPct}
                             onChange={(e) => updateLine(line.id, 'discountPct', parseFloat(e.target.value) || 0)}
+                            className="dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                           />
                         </div>
 
                         <div className="col-span-1">
-                          <Label className="text-xs">Tax %</Label>
+                          <Label className="text-xs text-slate-900 dark:text-white">Tax %</Label>
                           <Input
                             type="number"
                             min="0"
                             value={line.taxRate}
                             onChange={(e) => updateLine(line.id, 'taxRate', parseFloat(e.target.value) || 0)}
+                            className="dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                           />
                         </div>
 
@@ -464,13 +472,13 @@ export default function SalesOrderCreatePage() {
                             size="sm"
                             onClick={() => removeLine(line.id)}
                             disabled={lines.length === 1}
-                            className="text-red-500"
+                            className="text-red-500 dark:text-red-400"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
 
-                        <div className="col-span-12 text-right text-sm text-gray-600">
+                        <div className="col-span-12 text-right text-sm text-slate-600 dark:text-slate-400">
                           Line Total: {new Intl.NumberFormat('en-US', { style: 'currency', currency: formData.currencyCode }).format(toNumber(line.lineTotal) || 0)}
                         </div>
                       </div>
@@ -481,29 +489,26 @@ export default function SalesOrderCreatePage() {
             </div>
 
             <div className="space-y-6">
-              <Card>
+              <Card className="dark:bg-slate-800/50 dark:border-slate-700">
                 <CardHeader>
-                  <CardTitle>Summary</CardTitle>
+                  <CardTitle className="text-slate-900 dark:text-white">Summary</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="text-xs text-gray-400 mb-2">
-                    Debug: {JSON.stringify({subtotal, taxTotal, grandTotal, linesCount: lines.length})}
-                  </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Subtotal:</span>
-                    <span className="font-medium">
+                    <span className="text-slate-600 dark:text-slate-400">Subtotal:</span>
+                    <span className="font-medium dark:text-white">
                       {new Intl.NumberFormat('en-US', { style: 'currency', currency: formData.currencyCode || 'RWF' }).format(Number(subtotal) || 0)}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Tax:</span>
-                    <span className="font-medium">
+                    <span className="text-slate-600 dark:text-slate-400">Tax:</span>
+                    <span className="font-medium dark:text-white">
                       {new Intl.NumberFormat('en-US', { style: 'currency', currency: formData.currencyCode || 'RWF' }).format(Number(taxTotal) || 0)}
                     </span>
                   </div>
-                  <div className="border-t pt-4 flex justify-between text-lg font-bold">
-                    <span>Grand Total:</span>
-                    <span>
+                  <div className="border-t pt-4 flex justify-between text-lg font-bold dark:border-slate-600">
+                    <span className="text-slate-900 dark:text-white">Grand Total:</span>
+                    <span className="text-slate-900 dark:text-white">
                       {new Intl.NumberFormat('en-US', { style: 'currency', currency: formData.currencyCode || 'RWF' }).format(Number(grandTotal) || 0)}
                     </span>
                   </div>

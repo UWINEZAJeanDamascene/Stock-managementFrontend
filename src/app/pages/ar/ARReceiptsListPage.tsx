@@ -435,14 +435,14 @@ export default function ARReceiptsListPage() {
   };
 
   const getStatusBadge = (status: string) => {
-    const statusConfig: Record<string, { variant: 'default' | 'secondary' | 'outline' | 'destructive'; label: string }> = {
-      draft: { variant: 'secondary', label: t('arReceipt.status.draft', 'Draft') },
-      posted: { variant: 'default', label: t('arReceipt.status.posted', 'Posted') },
-      reversed: { variant: 'destructive', label: t('arReceipt.status.reversed', 'Reversed') },
+    const statusConfig: Record<string, { variant: 'default' | 'secondary' | 'outline' | 'destructive'; label: string; className: string }> = {
+      draft: { variant: 'secondary', label: t('arReceipt.status.draft', 'Draft'), className: 'dark:bg-slate-600 dark:text-white' },
+      posted: { variant: 'default', label: t('arReceipt.status.posted', 'Posted'), className: 'dark:bg-green-600' },
+      reversed: { variant: 'destructive', label: t('arReceipt.status.reversed', 'Reversed'), className: '' },
     };
 
-    const config = statusConfig[status] || { variant: 'secondary', label: status };
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+    const config = statusConfig[status] || { variant: 'secondary', label: status, className: '' };
+    return <Badge variant={config.variant} className={config.className}>{config.label}</Badge>;
   };
 
   const getPaymentMethodLabel = (method: string) => {
@@ -467,30 +467,30 @@ export default function ARReceiptsListPage() {
   };
 
   const getTransactionTypeBadge = (type: string) => {
-    const config: Record<string, { variant: any; label: string }> = {
-      invoice_created: { variant: 'default', label: 'Invoice' },
-      invoice_cancelled: { variant: 'destructive', label: 'Cancelled' },
-      receipt_posted: { variant: 'secondary', label: 'Receipt' },
-      receipt_reversed: { variant: 'destructive', label: 'Reversed' },
-      credit_note_applied: { variant: 'outline', label: 'Credit Note' },
-      bad_debt_writeoff: { variant: 'destructive', label: 'Write-off' },
-      payment_recorded: { variant: 'default', label: 'Payment' },
-      manual_adjustment: { variant: 'secondary', label: 'Adjustment' },
-      system_correction: { variant: 'outline', label: 'Correction' }
+    const config: Record<string, { variant: any; label: string; className: string }> = {
+      invoice_created: { variant: 'default', label: 'Invoice', className: 'dark:bg-blue-600' },
+      invoice_cancelled: { variant: 'destructive', label: 'Cancelled', className: '' },
+      receipt_posted: { variant: 'secondary', label: 'Receipt', className: 'dark:bg-slate-600 dark:text-white' },
+      receipt_reversed: { variant: 'destructive', label: 'Reversed', className: '' },
+      credit_note_applied: { variant: 'outline', label: 'Credit Note', className: 'dark:bg-slate-700 dark:text-slate-300' },
+      bad_debt_writeoff: { variant: 'destructive', label: 'Write-off', className: '' },
+      payment_recorded: { variant: 'default', label: 'Payment', className: 'dark:bg-green-600' },
+      manual_adjustment: { variant: 'secondary', label: 'Adjustment', className: 'dark:bg-slate-600 dark:text-white' },
+      system_correction: { variant: 'outline', label: 'Correction', className: 'dark:bg-slate-700 dark:text-slate-300' }
     };
-    const c = config[type] || { variant: 'secondary', label: type };
-    return <Badge variant={c.variant}>{c.label}</Badge>;
+    const c = config[type] || { variant: 'secondary', label: type, className: '' };
+    return <Badge variant={c.variant} className={c.className}>{c.label}</Badge>;
   };
 
   const getReconciliationStatusBadge = (status: string) => {
-    const config: Record<string, { variant: any; label: string }> = {
-      pending: { variant: 'secondary', label: t('arReconciliation.pending', 'Pending') },
-      verified: { variant: 'default', label: t('arReconciliation.verified', 'Verified') },
-      discrepancy: { variant: 'destructive', label: t('arReconciliation.discrepancy', 'Discrepancy') },
-      corrected: { variant: 'outline', label: t('arReconciliation.corrected', 'Corrected') }
+    const config: Record<string, { variant: any; label: string; className: string }> = {
+      pending: { variant: 'secondary', label: t('arReconciliation.pending', 'Pending'), className: 'dark:bg-slate-600 dark:text-white' },
+      verified: { variant: 'default', label: t('arReconciliation.verified', 'Verified'), className: 'dark:bg-green-600' },
+      discrepancy: { variant: 'destructive', label: t('arReconciliation.discrepancy', 'Discrepancy'), className: '' },
+      corrected: { variant: 'outline', label: t('arReconciliation.corrected', 'Corrected'), className: 'dark:bg-slate-700 dark:text-slate-300' }
     };
     const c = config[status] || config.pending;
-    return <Badge variant={c.variant}>{c.label}</Badge>;
+    return <Badge variant={c.variant} className={c.className}>{c.label}</Badge>;
   };
 
   const getAgingBadge = (amount: number) => {
@@ -523,25 +523,25 @@ export default function ARReceiptsListPage() {
   };
 
   const getInvoiceStatusBadge = (status: string) => {
-    const statusConfig: Record<string, { variant: 'default' | 'secondary' | 'outline' | 'destructive'; label: string }> = {
-      draft: { variant: 'secondary', label: 'Draft' },
-      confirmed: { variant: 'default', label: 'Confirmed' },
-      partial: { variant: 'outline', label: 'Partial' },
-      paid: { variant: 'default', label: 'Paid' },
-      cancelled: { variant: 'destructive', label: 'Cancelled' },
+    const statusConfig: Record<string, { variant: 'default' | 'secondary' | 'outline' | 'destructive'; label: string; className: string }> = {
+      draft: { variant: 'secondary', label: 'Draft', className: 'dark:bg-slate-600 dark:text-white' },
+      confirmed: { variant: 'default', label: 'Confirmed', className: 'dark:bg-blue-600' },
+      partial: { variant: 'outline', label: 'Partial', className: 'dark:bg-slate-700 dark:text-slate-300' },
+      paid: { variant: 'default', label: 'Paid', className: 'dark:bg-green-600' },
+      cancelled: { variant: 'destructive', label: 'Cancelled', className: '' },
     };
-    const config = statusConfig[status] || { variant: 'outline', label: status };
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+    const config = statusConfig[status] || { variant: 'outline', label: status, className: '' };
+    return <Badge variant={config.variant} className={config.className}>{config.label}</Badge>;
   };
 
   return (
     <TooltipProvider>
       <Layout>
-        <div className="container mx-auto py-6">
+        <div className="container mx-auto py-6 bg-gray-50 dark:bg-slate-900 min-h-screen p-6">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-2xl font-bold">{t('arReceipt.title', 'Customer Payments')}</h1>
-            <p className="text-muted-foreground">{t('arReceipt.description', 'Manage customer receipts and aging')}</p>
+            <h1 className="text-2xl font-bold dark:text-white">{t('arReceipt.title', 'Customer Payments')}</h1>
+            <p className="text-muted-foreground dark:text-slate-400">{t('arReceipt.description', 'Manage customer receipts and aging')}</p>
           </div>
           <div className="flex gap-2">
             {activeTab === 'receipts' && (
@@ -551,7 +551,7 @@ export default function ARReceiptsListPage() {
               </Button>
             )}
             {activeTab === 'aging' && (
-              <Button variant="outline" onClick={exportAgingToCSV}>
+              <Button variant="outline" onClick={exportAgingToCSV} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
                 <Download className="mr-2 h-4 w-4" />
                 {t('common.export', 'Export CSV')}
               </Button>
@@ -579,26 +579,27 @@ export default function ARReceiptsListPage() {
 
           <TabsContent value="receipts" className="space-y-6">
             {/* Filters */}
-            <div className="bg-card rounded-lg border p-4">
+            <div className="bg-card rounded-lg border p-4 dark:bg-slate-800 dark:border-slate-700">
               <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                 <div>
-                  <label className="text-sm font-medium mb-1 block">{t('arReceipt.search', 'Search')}</label>
+                  <label className="text-sm font-medium mb-1 block dark:text-slate-200">{t('arReceipt.search', 'Search')}</label>
                   <Input
                     placeholder={t('arReceipt.searchPlaceholder', 'Search by reference...')}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
+                    className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium mb-1 block">{t('arReceipt.client', 'Client')}</label>
+                  <label className="text-sm font-medium mb-1 block dark:text-slate-200">{t('arReceipt.client', 'Client')}</label>
                   <Select value={clientFilter || 'all'} onValueChange={(value) => setClientFilter(value === 'all' ? '' : value)}>
-                    <SelectTrigger>
+                    <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
                       <SelectValue placeholder={t('arReceipt.allClients', 'All Clients')} />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">{t('arReceipt.allClients', 'All Clients')}</SelectItem>
+                    <SelectContent className="dark:bg-slate-800">
+                      <SelectItem value="all" className="dark:text-white">{t('arReceipt.allClients', 'All Clients')}</SelectItem>
                       {clients.map((client) => (
-                        <SelectItem key={client._id} value={client._id}>
+                        <SelectItem key={client._id} value={client._id} className="dark:text-white">
                           {client.name}
                         </SelectItem>
                       ))}
@@ -606,40 +607,42 @@ export default function ARReceiptsListPage() {
                   </Select>
                 </div>
                 <div>
-                  <label className="text-sm font-medium mb-1 block">{t('arReceipt.status', 'Status')}</label>
+                  <label className="text-sm font-medium mb-1 block dark:text-slate-200">{t('arReceipt.status', 'Status')}</label>
                   <Select value={statusFilter || 'all'} onValueChange={(value) => setStatusFilter(value === 'all' ? '' : value)}>
-                    <SelectTrigger>
+                    <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
                       <SelectValue placeholder={t('arReceipt.allStatuses', 'All Statuses')} />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">{t('arReceipt.allStatuses', 'All Statuses')}</SelectItem>
-                      <SelectItem value="draft">{t('arReceipt.status.draft', 'Draft')}</SelectItem>
-                      <SelectItem value="posted">{t('arReceipt.status.posted', 'Posted')}</SelectItem>
-                      <SelectItem value="reversed">{t('arReceipt.status.reversed', 'Reversed')}</SelectItem>
+                    <SelectContent className="dark:bg-slate-800">
+                      <SelectItem value="all" className="dark:text-white">{t('arReceipt.allStatuses', 'All Statuses')}</SelectItem>
+                      <SelectItem value="draft" className="dark:text-white">{t('arReceipt.status.draft', 'Draft')}</SelectItem>
+                      <SelectItem value="posted" className="dark:text-white">{t('arReceipt.status.posted', 'Posted')}</SelectItem>
+                      <SelectItem value="reversed" className="dark:text-white">{t('arReceipt.status.reversed', 'Reversed')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <label className="text-sm font-medium mb-1 block">{t('arReceipt.dateFrom', 'Date From')}</label>
+                  <label className="text-sm font-medium mb-1 block dark:text-slate-200">{t('arReceipt.dateFrom', 'Date From')}</label>
                   <Input
                     type="date"
                     value={dateFrom}
                     onChange={(e) => setDateFrom(e.target.value)}
+                    className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium mb-1 block">{t('arReceipt.dateTo', 'Date To')}</label>
+                  <label className="text-sm font-medium mb-1 block dark:text-slate-200">{t('arReceipt.dateTo', 'Date To')}</label>
                   <Input
                     type="date"
                     value={dateTo}
                     onChange={(e) => setDateTo(e.target.value)}
+                    className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                   />
                 </div>
               </div>
             </div>
 
             {/* Table */}
-            <div className="bg-card rounded-lg border">
+            <div className="bg-card rounded-lg border dark:bg-slate-800 dark:border-slate-700">
               {loading ? (
                 <div className="flex items-center justify-center p-8">
                   <Loader2 className="h-8 w-8 animate-spin" />
@@ -647,34 +650,34 @@ export default function ARReceiptsListPage() {
               ) : (
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>{t('arReceipt.reference', 'Reference')}</TableHead>
-                      <TableHead>{t('arReceipt.client', 'Client')}</TableHead>
-                      <TableHead>{t('arReceipt.date', 'Date')}</TableHead>
-                      <TableHead>{t('arReceipt.paymentMethod', 'Payment Method')}</TableHead>
-                      <TableHead>{t('arReceipt.amount', 'Amount')}</TableHead>
-                      <TableHead>{t('arReceipt.status', 'Status')}</TableHead>
-                      <TableHead className="text-right">{t('common.actions', 'Actions')}</TableHead>
+                    <TableRow className="dark:bg-slate-700/50">
+                      <TableHead className="dark:text-slate-200">{t('arReceipt.reference', 'Reference')}</TableHead>
+                      <TableHead className="dark:text-slate-200">{t('arReceipt.client', 'Client')}</TableHead>
+                      <TableHead className="dark:text-slate-200">{t('arReceipt.date', 'Date')}</TableHead>
+                      <TableHead className="dark:text-slate-200">{t('arReceipt.paymentMethod', 'Payment Method')}</TableHead>
+                      <TableHead className="dark:text-slate-200">{t('arReceipt.amount', 'Amount')}</TableHead>
+                      <TableHead className="dark:text-slate-200">{t('arReceipt.status', 'Status')}</TableHead>
+                      <TableHead className="text-right dark:text-slate-200">{t('common.actions', 'Actions')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {receiptList.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground dark:text-slate-400">
                           {t('arReceipt.noReceipts', 'No receipts found')}
                         </TableCell>
                       </TableRow>
                     ) : (
                       receiptList.map((receipt) => (
-                        <TableRow key={receipt._id}>
-                          <TableCell className="font-medium">
+                        <TableRow key={receipt._id} className="dark:border-slate-600">
+                          <TableCell className="font-medium dark:text-white">
                             <FileText className="inline-block mr-2 h-4 w-4" />
                             {receipt.referenceNo || 'N/A'}
                           </TableCell>
-                          <TableCell>{receipt.client?.name || '-'}</TableCell>
-                          <TableCell>{formatDate(receipt.receiptDate)}</TableCell>
-                          <TableCell>{getPaymentMethodLabel(receipt.paymentMethod)}</TableCell>
-                          <TableCell className="font-medium">
+                          <TableCell className="dark:text-slate-300">{receipt.client?.name || '-'}</TableCell>
+                          <TableCell className="dark:text-slate-300">{formatDate(receipt.receiptDate)}</TableCell>
+                          <TableCell className="dark:text-slate-300">{getPaymentMethodLabel(receipt.paymentMethod)}</TableCell>
+                          <TableCell className="font-medium dark:text-slate-200">
                             {formatCurrency(receipt.amountReceived, receipt.currencyCode)}
                           </TableCell>
                           <TableCell>{getStatusBadge(receipt.status)}</TableCell>
@@ -686,6 +689,7 @@ export default function ARReceiptsListPage() {
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => navigate(`/ar-receipts/${receipt._id}`)}
+                                    className="dark:text-slate-300"
                                   >
                                     <Eye className="h-4 w-4" />
                                   </Button>
@@ -702,6 +706,7 @@ export default function ARReceiptsListPage() {
                                         variant="ghost"
                                         size="sm"
                                         onClick={() => navigate(`/ar-receipts/${receipt._id}/edit`)}
+                                        className="dark:text-slate-300"
                                       >
                                         <Send className="h-4 w-4 text-green-500" />
                                       </Button>
@@ -716,6 +721,7 @@ export default function ARReceiptsListPage() {
                                         variant="ghost"
                                         size="sm"
                                         onClick={() => handlePost(receipt._id)}
+                                        className="dark:text-slate-300"
                                       >
                                         <Send className="h-4 w-4" />
                                       </Button>
@@ -733,6 +739,7 @@ export default function ARReceiptsListPage() {
                                       variant="ghost"
                                       size="sm"
                                       onClick={() => handleReverse(receipt._id)}
+                                      className="dark:text-slate-300"
                                     >
                                       <Undo2 className="h-4 w-4 text-red-500" />
                                     </Button>
@@ -760,7 +767,7 @@ export default function ARReceiptsListPage() {
                     <PaginationItem>
                       <PaginationPrevious
                         onClick={() => setPage(Math.max(1, page - 1))}
-                        className={page === 1 ? 'pointer-events-none opacity-50' : ''}
+                        className={page === 1 ? 'pointer-events-none opacity-50 dark:text-slate-400' : 'dark:text-slate-200 dark:hover:bg-slate-700'}
                       />
                     </PaginationItem>
                     {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
@@ -768,6 +775,7 @@ export default function ARReceiptsListPage() {
                         <PaginationLink
                           onClick={() => setPage(p)}
                           isActive={page === p}
+                          className="dark:text-slate-200 dark:hover:bg-slate-700"
                         >
                           {p}
                         </PaginationLink>
@@ -776,7 +784,7 @@ export default function ARReceiptsListPage() {
                     <PaginationItem>
                       <PaginationNext
                         onClick={() => setPage(Math.min(totalPages, page + 1))}
-                        className={page === totalPages ? 'pointer-events-none opacity-50' : ''}
+                        className={page === totalPages ? 'pointer-events-none opacity-50 dark:text-slate-400' : 'dark:text-slate-200 dark:hover:bg-slate-700'}
                       />
                     </PaginationItem>
                   </PaginationContent>
@@ -787,18 +795,18 @@ export default function ARReceiptsListPage() {
 
           <TabsContent value="aging" className="space-y-6">
             {/* Aging Filters */}
-            <div className="bg-card rounded-lg border p-4">
+            <div className="bg-card rounded-lg border p-4 dark:bg-slate-800 dark:border-slate-700">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="text-sm font-medium mb-1 block">{t('arAging.client', 'Client')}</label>
+                  <label className="text-sm font-medium mb-1 block dark:text-slate-200">{t('arAging.client', 'Client')}</label>
                   <Select value={agingClientFilter || 'all'} onValueChange={(value) => setAgingClientFilter(value === 'all' ? '' : value)}>
-                    <SelectTrigger>
+                    <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
                       <SelectValue placeholder={t('arAging.allClients', 'All Clients')} />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">{t('arAging.allClients', 'All Clients')}</SelectItem>
+                    <SelectContent className="dark:bg-slate-800">
+                      <SelectItem value="all" className="dark:text-white">{t('arAging.allClients', 'All Clients')}</SelectItem>
                       {clients.map((client) => (
-                        <SelectItem key={client._id} value={client._id}>
+                        <SelectItem key={client._id} value={client._id} className="dark:text-white">
                           {client.name} ({client.code})
                         </SelectItem>
                       ))}
@@ -806,11 +814,12 @@ export default function ARReceiptsListPage() {
                   </Select>
                 </div>
                 <div>
-                  <label className="text-sm font-medium mb-1 block">{t('arAging.asOfDate', 'As of Date')}</label>
+                  <label className="text-sm font-medium mb-1 block dark:text-slate-200">{t('arAging.asOfDate', 'As of Date')}</label>
                   <Input
                     type="date"
                     value={agingAsOfDate}
                     onChange={(e) => setAgingAsOfDate(e.target.value)}
+                    className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                   />
                 </div>
                 <div className="flex items-end">
@@ -825,46 +834,46 @@ export default function ARReceiptsListPage() {
               /* Drill-down view */
               <div className="space-y-4">
                 <div className="flex items-center gap-4 mb-4">
-                  <Button variant="ghost" onClick={() => setSelectedClient(null)}>
+                  <Button variant="ghost" onClick={() => setSelectedClient(null)} className="dark:text-slate-200">
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     {t('common.back', 'Back')}
                   </Button>
-                  <h2 className="text-xl font-bold">
+                  <h2 className="text-xl font-bold dark:text-white">
                     {selectedClient.name} - {t('arAging.invoices', 'Invoices')}
                   </h2>
                 </div>
 
-                <Card>
+                <Card className="dark:bg-slate-800">
                   <CardContent className="p-0">
                     {loadingInvoices ? (
                       <div className="flex items-center justify-center p-8">
                         <Loader2 className="h-8 w-8 animate-spin" />
                       </div>
                     ) : clientInvoices.length === 0 ? (
-                      <div className="text-center py-8 text-muted-foreground">
+                      <div className="text-center py-8 text-muted-foreground dark:text-slate-400">
                         <FileText className="mx-auto h-8 w-8 mb-2" />
                         <p>{t('arAging.noInvoices', 'No invoices found')}</p>
                       </div>
                     ) : (
                       <Table>
                         <TableHeader>
-                          <TableRow>
-                            <TableHead>{t('arAging.invoiceNumber', 'Invoice #')}</TableHead>
-                            <TableHead>{t('arAging.reference', 'Reference')}</TableHead>
-                            <TableHead>{t('arAging.invoiceDate', 'Invoice Date')}</TableHead>
-                            <TableHead>{t('arAging.dueDate', 'Due Date')}</TableHead>
-                            <TableHead className="text-right">{t('arAging.balance', 'Balance')}</TableHead>
-                            <TableHead>{t('arAging.status', 'Status')}</TableHead>
+                          <TableRow className="dark:bg-slate-700/50">
+                            <TableHead className="dark:text-slate-200">{t('arAging.invoiceNumber', 'Invoice #')}</TableHead>
+                            <TableHead className="dark:text-slate-200">{t('arAging.reference', 'Reference')}</TableHead>
+                            <TableHead className="dark:text-slate-200">{t('arAging.invoiceDate', 'Invoice Date')}</TableHead>
+                            <TableHead className="dark:text-slate-200">{t('arAging.dueDate', 'Due Date')}</TableHead>
+                            <TableHead className="text-right dark:text-slate-200">{t('arAging.balance', 'Balance')}</TableHead>
+                            <TableHead className="dark:text-slate-200">{t('arAging.status', 'Status')}</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {clientInvoices.map((invoice) => (
-                            <TableRow key={invoice._id}>
-                              <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
-                              <TableCell>{invoice.referenceNo || '-'}</TableCell>
-                              <TableCell>{formatDate(invoice.invoiceDate)}</TableCell>
-                              <TableCell>{formatDate(invoice.dueDate)}</TableCell>
-                              <TableCell className="text-right font-medium">
+                            <TableRow key={invoice._id} className="dark:border-slate-600">
+                              <TableCell className="font-medium dark:text-white">{invoice.invoiceNumber}</TableCell>
+                              <TableCell className="dark:text-slate-300">{invoice.referenceNo || '-'}</TableCell>
+                              <TableCell className="dark:text-slate-300">{formatDate(invoice.invoiceDate)}</TableCell>
+                              <TableCell className="dark:text-slate-300">{formatDate(invoice.dueDate)}</TableCell>
+                              <TableCell className="text-right font-medium dark:text-slate-200">
                                 {formatCurrency(parseFloat(invoice.balance || invoice.amountOutstanding || '0'))}
                               </TableCell>
                               <TableCell>{getInvoiceStatusBadge(invoice.status)}</TableCell>
@@ -881,47 +890,47 @@ export default function ARReceiptsListPage() {
               <>
                 {/* Summary Cards */}
                 <div className="grid grid-cols-6 gap-4">
-                  <Card>
+                  <Card className="dark:bg-slate-800">
                     <CardHeader className="py-3">
-                      <CardTitle className="text-sm">{t('arAging.current', 'Current')}</CardTitle>
+                      <CardTitle className="text-sm dark:text-slate-400">{t('arAging.current', 'Current')}</CardTitle>
                     </CardHeader>
                     <CardContent className="py-2">
-                      <p className="text-2xl font-bold">{formatCurrency(agingSummary.current)}</p>
+                      <p className="text-2xl font-bold dark:text-white">{formatCurrency(agingSummary.current)}</p>
                     </CardContent>
                   </Card>
-                  <Card>
+                  <Card className="dark:bg-slate-800">
                     <CardHeader className="py-3">
-                      <CardTitle className="text-sm">1-30 {t('arAging.days', 'Days')}</CardTitle>
+                      <CardTitle className="text-sm dark:text-slate-400">1-30 {t('arAging.days', 'Days')}</CardTitle>
                     </CardHeader>
                     <CardContent className="py-2">
-                      <p className="text-2xl font-bold">{formatCurrency(agingSummary['1-30'])}</p>
+                      <p className="text-2xl font-bold dark:text-white">{formatCurrency(agingSummary['1-30'])}</p>
                     </CardContent>
                   </Card>
-                  <Card>
+                  <Card className="dark:bg-slate-800">
                     <CardHeader className="py-3">
-                      <CardTitle className="text-sm">31-60 {t('arAging.days', 'Days')}</CardTitle>
+                      <CardTitle className="text-sm dark:text-slate-400">31-60 {t('arAging.days', 'Days')}</CardTitle>
                     </CardHeader>
                     <CardContent className="py-2">
-                      <p className="text-2xl font-bold">{formatCurrency(agingSummary['31-60'])}</p>
+                      <p className="text-2xl font-bold dark:text-white">{formatCurrency(agingSummary['31-60'])}</p>
                     </CardContent>
                   </Card>
-                  <Card>
+                  <Card className="dark:bg-slate-800">
                     <CardHeader className="py-3">
-                      <CardTitle className="text-sm">61-90 {t('arAging.days', 'Days')}</CardTitle>
+                      <CardTitle className="text-sm dark:text-slate-400">61-90 {t('arAging.days', 'Days')}</CardTitle>
                     </CardHeader>
                     <CardContent className="py-2">
-                      <p className="text-2xl font-bold">{formatCurrency(agingSummary['61-90'])}</p>
+                      <p className="text-2xl font-bold dark:text-white">{formatCurrency(agingSummary['61-90'])}</p>
                     </CardContent>
                   </Card>
-                  <Card>
+                  <Card className="dark:bg-slate-800">
                     <CardHeader className="py-3">
-                      <CardTitle className="text-sm">90+ {t('arAging.days', 'Days')}</CardTitle>
+                      <CardTitle className="text-sm dark:text-slate-400">90+ {t('arAging.days', 'Days')}</CardTitle>
                     </CardHeader>
                     <CardContent className="py-2">
-                      <p className="text-2xl font-bold text-red-600">{formatCurrency(agingSummary['90+'])}</p>
+                      <p className="text-2xl font-bold text-red-600 dark:text-red-400">{formatCurrency(agingSummary['90+'])}</p>
                     </CardContent>
                   </Card>
-                  <Card className="bg-primary text-primary-foreground">
+                  <Card className="bg-primary text-primary-foreground dark:bg-slate-900">
                     <CardHeader className="py-3">
                       <CardTitle className="text-sm">{t('arAging.total', 'Total')}</CardTitle>
                     </CardHeader>
@@ -932,27 +941,27 @@ export default function ARReceiptsListPage() {
                 </div>
 
                 {/* Detailed Table */}
-                <Card>
+                <Card className="dark:bg-slate-800">
                   <CardContent className="p-0">
                     {loadingAging ? (
                       <div className="flex items-center justify-center p-8">
                         <Loader2 className="h-8 w-8 animate-spin" />
                       </div>
                     ) : agingData.length === 0 ? (
-                      <div className="text-center py-8 text-muted-foreground">
+                      <div className="text-center py-8 text-muted-foreground dark:text-slate-400">
                         <p>{t('arAging.noData', 'No aging data found')}</p>
                       </div>
                     ) : (
                       <Table>
                         <TableHeader>
-                          <TableRow>
-                            <TableHead>{t('arAging.client', 'Client')}</TableHead>
-                            <TableHead className="text-right">{t('arAging.current', 'Current')}</TableHead>
-                            <TableHead className="text-right">1-30</TableHead>
-                            <TableHead className="text-right">31-60</TableHead>
-                            <TableHead className="text-right">61-90</TableHead>
-                            <TableHead className="text-right">90+</TableHead>
-                            <TableHead className="text-right">{t('arAging.total', 'Total')}</TableHead>
+                          <TableRow className="dark:bg-slate-700/50">
+                            <TableHead className="dark:text-slate-200">{t('arAging.client', 'Client')}</TableHead>
+                            <TableHead className="text-right dark:text-slate-200">{t('arAging.current', 'Current')}</TableHead>
+                            <TableHead className="text-right dark:text-slate-200">1-30</TableHead>
+                            <TableHead className="text-right dark:text-slate-200">31-60</TableHead>
+                            <TableHead className="text-right dark:text-slate-200">61-90</TableHead>
+                            <TableHead className="text-right dark:text-slate-200">90+</TableHead>
+                            <TableHead className="text-right dark:text-slate-200">{t('arAging.total', 'Total')}</TableHead>
                             <TableHead></TableHead>
                           </TableRow>
                         </TableHeader>
@@ -960,21 +969,21 @@ export default function ARReceiptsListPage() {
                           {agingData.map((item) => (
                             <TableRow
                               key={item.client._id}
-                              className="cursor-pointer hover:bg-muted/50"
+                              className="cursor-pointer hover:bg-muted/50 dark:border-slate-600"
                               onClick={() => handleClientClick(item)}
                             >
-                              <TableCell className="font-medium">
+                              <TableCell className="font-medium dark:text-white">
                                 <div>{item.client.name}</div>
-                                <div className="text-sm text-muted-foreground">{item.client.code}</div>
+                                <div className="text-sm text-muted-foreground dark:text-slate-500">{item.client.code}</div>
                               </TableCell>
-                              <TableCell className="text-right">{formatCurrency(item.current)}</TableCell>
-                              <TableCell className="text-right">{formatCurrency(item['1-30'])}</TableCell>
-                              <TableCell className="text-right">{formatCurrency(item['31-60'])}</TableCell>
-                              <TableCell className="text-right">{formatCurrency(item['61-90'])}</TableCell>
-                              <TableCell className="text-right text-red-600">{formatCurrency(item['90+'])}</TableCell>
-                              <TableCell className="text-right font-medium">{formatCurrency(item.totalBalance)}</TableCell>
+                              <TableCell className="text-right dark:text-slate-300">{formatCurrency(item.current)}</TableCell>
+                              <TableCell className="text-right dark:text-slate-300">{formatCurrency(item['1-30'])}</TableCell>
+                              <TableCell className="text-right dark:text-slate-300">{formatCurrency(item['31-60'])}</TableCell>
+                              <TableCell className="text-right dark:text-slate-300">{formatCurrency(item['61-90'])}</TableCell>
+                              <TableCell className="text-right text-red-600 dark:text-red-400">{formatCurrency(item['90+'])}</TableCell>
+                              <TableCell className="text-right font-medium dark:text-slate-200">{formatCurrency(item.totalBalance)}</TableCell>
                               <TableCell>
-                                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                <ChevronRight className="h-4 w-4 text-muted-foreground dark:text-slate-500" />
                               </TableCell>
                             </TableRow>
                           ))}
@@ -990,7 +999,7 @@ export default function ARReceiptsListPage() {
           {/* Reconciliation Dashboard Tab */}
           <TabsContent value="reconciliation" className="space-y-6">
             <div className="flex justify-end gap-2">
-              <Button onClick={handleVerify} disabled={loadingRec.verify} variant="outline">
+              <Button onClick={handleVerify} disabled={loadingRec.verify} variant="outline" className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
                 {loadingRec.verify ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
                 {t('arReconciliation.verifyIntegrity', 'Verify Integrity')}
               </Button>
@@ -998,18 +1007,18 @@ export default function ARReceiptsListPage() {
                 {loadingRec.reconcile ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
                 {t('arReconciliation.reconcile', 'Reconcile & Correct')}
               </Button>
-              <Button onClick={handleVerifyAll} disabled={loadingRec.reconcile} variant="outline">
+              <Button onClick={handleVerifyAll} disabled={loadingRec.reconcile} variant="outline" className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
                 <CheckCircle className="mr-2 h-4 w-4" />
                 {t('arReconciliation.verifyAll', 'Verify All Pending')}
               </Button>
             </div>
 
             {loadingRec.dashboard ? (
-              <div className="flex justify-center py-8"><RefreshCw className="w-8 h-8 animate-spin text-muted-foreground" /></div>
+              <div className="flex justify-center py-8"><RefreshCw className="w-8 h-8 animate-spin text-muted-foreground dark:text-slate-500" /></div>
             ) : !dashboardData ? (
-              <div className="text-center py-8 text-muted-foreground">
+              <div className="text-center py-8 text-muted-foreground dark:text-slate-400">
                 <p>{t('arReconciliation.noData', 'No dashboard data available')}</p>
-                <Button onClick={fetchDashboard} variant="outline" className="mt-4">
+                <Button onClick={fetchDashboard} variant="outline" className="mt-4 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
                   <RefreshCw className="mr-2 h-4 w-4" />
                   {t('common.retry', 'Retry')}
                 </Button>
@@ -1017,59 +1026,59 @@ export default function ARReceiptsListPage() {
             ) : (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <Card>
+                  <Card className="dark:bg-slate-800">
                     <CardHeader className="pb-2">
-                      <CardDescription>{t('arReconciliation.totalTransactions', 'Total Transactions')}</CardDescription>
-                      <CardTitle className="text-3xl">{((dashboardData.stats?.totalTransactions) || 0).toLocaleString()}</CardTitle>
+                      <CardDescription className="dark:text-slate-400">{t('arReconciliation.totalTransactions', 'Total Transactions')}</CardDescription>
+                      <CardTitle className="text-3xl dark:text-white">{((dashboardData.stats?.totalTransactions) || 0).toLocaleString()}</CardTitle>
                     </CardHeader>
                   </Card>
-                  <Card>
+                  <Card className="dark:bg-slate-800">
                     <CardHeader className="pb-2">
-                      <CardDescription>{t('arReconciliation.recentTransactions', 'Recent (30 Days)')}</CardDescription>
-                      <CardTitle className="text-3xl">{((dashboardData.stats?.recentTransactions) || 0).toLocaleString()}</CardTitle>
+                      <CardDescription className="dark:text-slate-400">{t('arReconciliation.recentTransactions', 'Recent (30 Days)')}</CardDescription>
+                      <CardTitle className="text-3xl dark:text-white">{((dashboardData.stats?.recentTransactions) || 0).toLocaleString()}</CardTitle>
                     </CardHeader>
                   </Card>
-                  <Card>
+                  <Card className="dark:bg-slate-800">
                     <CardHeader className="pb-2">
-                      <CardDescription>{t('arReconciliation.pendingReconciliation', 'Pending Reconciliation')}</CardDescription>
-                      <CardTitle className="text-3xl text-yellow-600">{((dashboardData.stats?.pendingReconciliation) || 0).toLocaleString()}</CardTitle>
+                      <CardDescription className="dark:text-slate-400">{t('arReconciliation.pendingReconciliation', 'Pending Reconciliation')}</CardDescription>
+                      <CardTitle className="text-3xl text-yellow-600 dark:text-yellow-400">{((dashboardData.stats?.pendingReconciliation) || 0).toLocaleString()}</CardTitle>
                     </CardHeader>
                   </Card>
-                  <Card>
+                  <Card className="dark:bg-slate-800">
                     <CardHeader className="pb-2">
-                      <CardDescription>{t('arReconciliation.discrepancies', 'Discrepancies')}</CardDescription>
-                      <CardTitle className={`text-3xl ${(dashboardData.stats?.discrepancyCount || 0) > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                      <CardDescription className="dark:text-slate-400">{t('arReconciliation.discrepancies', 'Discrepancies')}</CardDescription>
+                      <CardTitle className={`text-3xl ${(dashboardData.stats?.discrepancyCount || 0) > 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
                         {((dashboardData.stats?.discrepancyCount) || 0).toLocaleString()}
                       </CardTitle>
                     </CardHeader>
                   </Card>
                 </div>
 
-                <Card>
+                <Card className="dark:bg-slate-800">
                   <CardHeader>
-                    <CardTitle>{t('arReconciliation.recentActivity', 'Recent Activity')}</CardTitle>
+                    <CardTitle className="dark:text-white">{t('arReconciliation.recentActivity', 'Recent Activity')}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <Table>
                       <TableHeader>
-                        <TableRow>
-                          <TableHead>{t('arReconciliation.date', 'Date')}</TableHead>
-                          <TableHead>{t('arReconciliation.type', 'Type')}</TableHead>
-                          <TableHead>{t('arReconciliation.client', 'Client')}</TableHead>
-                          <TableHead>{t('arReconciliation.description', 'Description')}</TableHead>
-                          <TableHead className="text-right">{t('arReconciliation.amount', 'Amount')}</TableHead>
-                          <TableHead>{t('arReconciliation.status', 'Status')}</TableHead>
+                        <TableRow className="dark:bg-slate-700/50">
+                          <TableHead className="dark:text-slate-200">{t('arReconciliation.date', 'Date')}</TableHead>
+                          <TableHead className="dark:text-slate-200">{t('arReconciliation.type', 'Type')}</TableHead>
+                          <TableHead className="dark:text-slate-200">{t('arReconciliation.client', 'Client')}</TableHead>
+                          <TableHead className="dark:text-slate-200">{t('arReconciliation.description', 'Description')}</TableHead>
+                          <TableHead className="text-right dark:text-slate-200">{t('arReconciliation.amount', 'Amount')}</TableHead>
+                          <TableHead className="dark:text-slate-200">{t('arReconciliation.status', 'Status')}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {dashboardData.recentActivity?.slice(0, 5).map((tx: ARTransaction) => (
-                          <TableRow key={tx._id}>
-                            <TableCell>{formatDate(tx.transactionDate)}</TableCell>
+                          <TableRow key={tx._id} className="dark:border-slate-600">
+                            <TableCell className="dark:text-slate-300">{formatDate(tx.transactionDate)}</TableCell>
                             <TableCell>{getTransactionTypeBadge(tx.transactionType)}</TableCell>
-                            <TableCell>{tx.client?.name || '-'}</TableCell>
-                            <TableCell className="max-w-xs truncate">{tx.description}</TableCell>
+                            <TableCell className="dark:text-slate-300">{tx.client?.name || '-'}</TableCell>
+                            <TableCell className="max-w-xs truncate dark:text-slate-300">{tx.description}</TableCell>
                             <TableCell className="text-right">
-                              <span className={tx.direction === 'increase' ? 'text-green-600' : 'text-red-600'}>
+                              <span className={tx.direction === 'increase' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
                                 {tx.direction === 'increase' ? '+' : '-'}{formatCurrency(tx.amount)}
                               </span>
                             </TableCell>
@@ -1086,38 +1095,38 @@ export default function ARReceiptsListPage() {
 
           {/* Receivables Tab */}
           <TabsContent value="receivables" className="space-y-6">
-            <Card>
+            <Card className="dark:bg-slate-800">
               <CardHeader>
-                <CardTitle>{t('arReconciliation.outstandingReceivables', 'Outstanding Receivables')}</CardTitle>
+                <CardTitle className="dark:text-white">{t('arReconciliation.outstandingReceivables', 'Outstanding Receivables')}</CardTitle>
               </CardHeader>
               <CardContent>
                 {loadingRec.receivables ? (
-                  <div className="flex justify-center py-8"><RefreshCw className="w-8 h-8 animate-spin text-muted-foreground" /></div>
+                  <div className="flex justify-center py-8"><RefreshCw className="w-8 h-8 animate-spin text-muted-foreground dark:text-slate-500" /></div>
                 ) : (
                   <Table>
                     <TableHeader>
-                      <TableRow>
-                        <TableHead>{t('arReconciliation.invoiceNumber', 'Invoice #')}</TableHead>
-                        <TableHead>{t('arReconciliation.client', 'Client')}</TableHead>
-                        <TableHead>{t('arReconciliation.date', 'Date')}</TableHead>
-                        <TableHead className="text-right">{t('arReconciliation.total', 'Total')}</TableHead>
-                        <TableHead className="text-right">{t('arReconciliation.paid', 'Paid')}</TableHead>
-                        <TableHead className="text-right">{t('arReconciliation.balance', 'Balance')}</TableHead>
-                        <TableHead>{t('arReconciliation.status', 'Status')}</TableHead>
+                      <TableRow className="dark:bg-slate-700/50">
+                        <TableHead className="dark:text-slate-200">{t('arReconciliation.invoiceNumber', 'Invoice #')}</TableHead>
+                        <TableHead className="dark:text-slate-200">{t('arReconciliation.client', 'Client')}</TableHead>
+                        <TableHead className="dark:text-slate-200">{t('arReconciliation.date', 'Date')}</TableHead>
+                        <TableHead className="text-right dark:text-slate-200">{t('arReconciliation.total', 'Total')}</TableHead>
+                        <TableHead className="text-right dark:text-slate-200">{t('arReconciliation.paid', 'Paid')}</TableHead>
+                        <TableHead className="text-right dark:text-slate-200">{t('arReconciliation.balance', 'Balance')}</TableHead>
+                        <TableHead className="dark:text-slate-200">{t('arReconciliation.status', 'Status')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {currentReceivables.length === 0 ? (
-                        <TableRow><TableCell colSpan={7} className="text-center py-8">{t('arReconciliation.noReceivables', 'No outstanding receivables')}</TableCell></TableRow>
+                        <TableRow><TableCell colSpan={7} className="text-center py-8 dark:text-slate-400">{t('arReconciliation.noReceivables', 'No outstanding receivables')}</TableCell></TableRow>
                       ) : (
                         currentReceivables.map((inv) => (
-                          <TableRow key={inv._id} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/invoices/${inv._id}`)}>
-                            <TableCell>{inv.invoiceNumber || inv.referenceNo || '-'}</TableCell>
-                            <TableCell>{inv.client?.name || '-'}</TableCell>
-                            <TableCell>{formatDate(inv.invoiceDate)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(inv.totalAmount)}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(inv.amountPaid)}</TableCell>
-                            <TableCell className="text-right font-medium text-blue-600">{formatCurrency(inv.balance)}</TableCell>
+                          <TableRow key={inv._id} className="cursor-pointer hover:bg-muted/50 dark:border-slate-600" onClick={() => navigate(`/invoices/${inv._id}`)}>
+                            <TableCell className="dark:text-slate-300">{inv.invoiceNumber || inv.referenceNo || '-'}</TableCell>
+                            <TableCell className="dark:text-slate-300">{inv.client?.name || '-'}</TableCell>
+                            <TableCell className="dark:text-slate-300">{formatDate(inv.invoiceDate)}</TableCell>
+                            <TableCell className="text-right dark:text-slate-300">{formatCurrency(inv.totalAmount)}</TableCell>
+                            <TableCell className="text-right dark:text-slate-300">{formatCurrency(inv.amountPaid)}</TableCell>
+                            <TableCell className="text-right font-medium text-blue-600 dark:text-blue-400">{formatCurrency(inv.balance)}</TableCell>
                             <TableCell>
                               <Badge variant={inv.status === 'paid' ? 'default' : inv.status === 'partially_paid' ? 'secondary' : 'outline'}>
                                 {inv.status}
@@ -1135,68 +1144,68 @@ export default function ARReceiptsListPage() {
 
           {/* Reconciliation Transactions Tab */}
           <TabsContent value="reconciliation-transactions" className="space-y-6">
-            <Card>
+            <Card className="dark:bg-slate-800">
               <CardContent className="pt-6">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <Select value={recFilters.transactionType || 'all'} onValueChange={(v) => setRecFilters(p => ({ ...p, transactionType: v === 'all' ? '' : v, page: 1 }))}>
-                    <SelectTrigger><SelectValue placeholder={t('arReconciliation.allTypes', 'All Types')} /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">{t('arReconciliation.allTypes', 'All Types')}</SelectItem>
-                      {transactionTypes.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+                    <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600"><SelectValue placeholder={t('arReconciliation.allTypes', 'All Types')} /></SelectTrigger>
+                    <SelectContent className="dark:bg-slate-800">
+                      <SelectItem value="all" className="dark:text-white">{t('arReconciliation.allTypes', 'All Types')}</SelectItem>
+                      {transactionTypes.map(t => <SelectItem key={t.value} value={t.value} className="dark:text-white">{t.label}</SelectItem>)}
                     </SelectContent>
                   </Select>
                   <Select value={recFilters.reconciliationStatus || 'all'} onValueChange={(v) => setRecFilters(p => ({ ...p, reconciliationStatus: v === 'all' ? '' : v, page: 1 }))}>
-                    <SelectTrigger><SelectValue placeholder={t('arReconciliation.allStatuses', 'All Statuses')} /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">{t('arReconciliation.allStatuses', 'All Statuses')}</SelectItem>
-                      <SelectItem value="pending">{t('arReconciliation.pending', 'Pending')}</SelectItem>
-                      <SelectItem value="verified">{t('arReconciliation.verified', 'Verified')}</SelectItem>
-                      <SelectItem value="discrepancy">{t('arReconciliation.discrepancy', 'Discrepancy')}</SelectItem>
+                    <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600"><SelectValue placeholder={t('arReconciliation.allStatuses', 'All Statuses')} /></SelectTrigger>
+                    <SelectContent className="dark:bg-slate-800">
+                      <SelectItem value="all" className="dark:text-white">{t('arReconciliation.allStatuses', 'All Statuses')}</SelectItem>
+                      <SelectItem value="pending" className="dark:text-white">{t('arReconciliation.pending', 'Pending')}</SelectItem>
+                      <SelectItem value="verified" className="dark:text-white">{t('arReconciliation.verified', 'Verified')}</SelectItem>
+                      <SelectItem value="discrepancy" className="dark:text-white">{t('arReconciliation.discrepancy', 'Discrepancy')}</SelectItem>
                     </SelectContent>
                   </Select>
-                  <Input type="date" value={recFilters.startDate} onChange={(e) => setRecFilters(p => ({ ...p, startDate: e.target.value, page: 1 }))} placeholder={t('arReconciliation.startDate', 'Start Date')} />
-                  <Input type="date" value={recFilters.endDate} onChange={(e) => setRecFilters(p => ({ ...p, endDate: e.target.value, page: 1 }))} placeholder={t('arReconciliation.endDate', 'End Date')} />
+                  <Input type="date" value={recFilters.startDate} onChange={(e) => setRecFilters(p => ({ ...p, startDate: e.target.value, page: 1 }))} placeholder={t('arReconciliation.startDate', 'Start Date')} className="dark:bg-slate-700 dark:text-white dark:border-slate-600" />
+                  <Input type="date" value={recFilters.endDate} onChange={(e) => setRecFilters(p => ({ ...p, endDate: e.target.value, page: 1 }))} placeholder={t('arReconciliation.endDate', 'End Date')} className="dark:bg-slate-700 dark:text-white dark:border-slate-600" />
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="dark:bg-slate-800">
               <CardHeader>
-                <CardTitle>{t('arReconciliation.transactions', 'Transactions')} ({recPagination.total} total)</CardTitle>
+                <CardTitle className="dark:text-white">{t('arReconciliation.transactions', 'Transactions')} ({recPagination.total} total)</CardTitle>
               </CardHeader>
               <CardContent>
                 {loadingRec.transactions ? (
-                  <div className="flex justify-center py-8"><RefreshCw className="w-8 h-8 animate-spin text-muted-foreground" /></div>
+                  <div className="flex justify-center py-8"><RefreshCw className="w-8 h-8 animate-spin text-muted-foreground dark:text-slate-500" /></div>
                 ) : (
                   <>
                     <Table>
                       <TableHeader>
-                        <TableRow>
-                          <TableHead>{t('arReconciliation.date', 'Date')}</TableHead>
-                          <TableHead>{t('arReconciliation.type', 'Type')}</TableHead>
-                          <TableHead>{t('arReconciliation.reference', 'Reference')}</TableHead>
-                          <TableHead>{t('arReconciliation.client', 'Client')}</TableHead>
-                          <TableHead className="text-right">{t('arReconciliation.amount', 'Amount')}</TableHead>
-                          <TableHead className="text-right">{t('arReconciliation.balance', 'Balance')}</TableHead>
-                          <TableHead>{t('arReconciliation.status', 'Status')}</TableHead>
+                        <TableRow className="dark:bg-slate-700/50">
+                          <TableHead className="dark:text-slate-200">{t('arReconciliation.date', 'Date')}</TableHead>
+                          <TableHead className="dark:text-slate-200">{t('arReconciliation.type', 'Type')}</TableHead>
+                          <TableHead className="dark:text-slate-200">{t('arReconciliation.reference', 'Reference')}</TableHead>
+                          <TableHead className="dark:text-slate-200">{t('arReconciliation.client', 'Client')}</TableHead>
+                          <TableHead className="text-right dark:text-slate-200">{t('arReconciliation.amount', 'Amount')}</TableHead>
+                          <TableHead className="text-right dark:text-slate-200">{t('arReconciliation.balance', 'Balance')}</TableHead>
+                          <TableHead className="dark:text-slate-200">{t('arReconciliation.status', 'Status')}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {transactions.length === 0 ? (
-                          <TableRow><TableCell colSpan={7} className="text-center py-8">{t('arReconciliation.noTransactions', 'No transactions found')}</TableCell></TableRow>
+                          <TableRow><TableCell colSpan={7} className="text-center py-8 dark:text-slate-400">{t('arReconciliation.noTransactions', 'No transactions found')}</TableCell></TableRow>
                         ) : (
                           transactions.map((tx) => (
-                            <TableRow key={tx._id}>
-                              <TableCell>{formatDate(tx.transactionDate)}</TableCell>
+                            <TableRow key={tx._id} className="dark:border-slate-600">
+                              <TableCell className="dark:text-slate-300">{formatDate(tx.transactionDate)}</TableCell>
                               <TableCell>{getTransactionTypeBadge(tx.transactionType)}</TableCell>
-                              <TableCell>{tx.referenceNo || '-'}</TableCell>
-                              <TableCell>{tx.client?.name || '-'}</TableCell>
+                              <TableCell className="dark:text-slate-300">{tx.referenceNo || '-'}</TableCell>
+                              <TableCell className="dark:text-slate-300">{tx.client?.name || '-'}</TableCell>
                               <TableCell className="text-right">
-                                <span className={tx.direction === 'increase' ? 'text-green-600' : 'text-red-600'}>
+                                <span className={tx.direction === 'increase' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
                                   {tx.direction === 'increase' ? '+' : '-'}{formatCurrency(tx.amount)}
                                 </span>
                               </TableCell>
-                              <TableCell className="text-right text-sm text-muted-foreground">{formatCurrency(tx.clientBalanceAfter)}</TableCell>
+                              <TableCell className="text-right text-sm text-muted-foreground dark:text-slate-500">{formatCurrency(tx.clientBalanceAfter)}</TableCell>
                               <TableCell>{getReconciliationStatusBadge(tx.reconciliationStatus)}</TableCell>
                             </TableRow>
                           ))
@@ -1205,9 +1214,9 @@ export default function ARReceiptsListPage() {
                     </Table>
                     {recPagination.pages > 1 && (
                       <div className="flex justify-center items-center gap-2 mt-6">
-                        <Button variant="outline" size="sm" disabled={recFilters.page === 1} onClick={() => setRecFilters(p => ({ ...p, page: p.page - 1 }))}>{t('common.previous', 'Previous')}</Button>
-                        <span className="text-sm text-muted-foreground">{t('common.pageOf', 'Page {{page}} of {{pages}}', { page: recPagination.currentPage, pages: recPagination.pages })}</span>
-                        <Button variant="outline" size="sm" disabled={recFilters.page >= recPagination.pages} onClick={() => setRecFilters(p => ({ ...p, page: p.page + 1 }))}>{t('common.next', 'Next')}</Button>
+                        <Button variant="outline" size="sm" disabled={recFilters.page === 1} onClick={() => setRecFilters(p => ({ ...p, page: p.page - 1 }))} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">{t('common.previous', 'Previous')}</Button>
+                        <span className="text-sm text-muted-foreground dark:text-slate-400">{t('common.pageOf', 'Page {{page}} of {{pages}}', { page: recPagination.currentPage, pages: recPagination.pages })}</span>
+                        <Button variant="outline" size="sm" disabled={recFilters.page >= recPagination.pages} onClick={() => setRecFilters(p => ({ ...p, page: p.page + 1 }))} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">{t('common.next', 'Next')}</Button>
                       </div>
                     )}
                   </>
@@ -1219,28 +1228,28 @@ export default function ARReceiptsListPage() {
 
         {/* Verification Dialog */}
         <Dialog open={isVerifyDialogOpen} onOpenChange={setIsVerifyDialogOpen}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl dark:bg-slate-800">
             <DialogHeader>
-              <DialogTitle>{t('arReconciliation.integrityCheck', 'Data Integrity Check')}</DialogTitle>
+              <DialogTitle className="dark:text-white">{t('arReconciliation.integrityCheck', 'Data Integrity Check')}</DialogTitle>
             </DialogHeader>
             {verificationResult && (
               <div className="space-y-4">
                 {verificationResult.verified ? (
-                  <Alert className="bg-green-50 border-green-200">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    <AlertTitle className="text-green-800">{t('arReconciliation.dataVerified', 'Data Verified')}</AlertTitle>
-                    <AlertDescription className="text-green-700">{t('arReconciliation.noDiscrepancies', 'No discrepancies found.')}</AlertDescription>
+                  <Alert className="bg-green-50 border-green-200 dark:bg-green-900/30 dark:border-green-800">
+                    <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
+                    <AlertTitle className="text-green-800 dark:text-green-400">{t('arReconciliation.dataVerified', 'Data Verified')}</AlertTitle>
+                    <AlertDescription className="text-green-700 dark:text-green-500">{t('arReconciliation.noDiscrepancies', 'No discrepancies found.')}</AlertDescription>
                   </Alert>
                 ) : (
-                  <Alert variant="destructive">
+                  <Alert variant="destructive" className="dark:bg-red-900/30">
                     <AlertTriangle className="w-4 h-4" />
-                    <AlertTitle>{t('arReconciliation.discrepanciesFound', 'Discrepancies Found')}</AlertTitle>
-                    <AlertDescription>{t('arReconciliation.discrepancyCount', '{{count}} discrepancies found.', { count: verificationResult.discrepancies?.length || 0 })}</AlertDescription>
+                    <AlertTitle className="dark:text-red-400">{t('arReconciliation.discrepanciesFound', 'Discrepancies Found')}</AlertTitle>
+                    <AlertDescription className="dark:text-red-300">{t('arReconciliation.discrepancyCount', '{{count}} discrepancies found.', { count: verificationResult.discrepancies?.length || 0 })}</AlertDescription>
                   </Alert>
                 )}
                 <div className="flex justify-end gap-2">
                   {!verificationResult.verified && <Button onClick={() => { setIsVerifyDialogOpen(false); handleReconcile(); }}>{t('arReconciliation.reconcileNow', 'Reconcile Now')}</Button>}
-                  <Button variant="outline" onClick={() => setIsVerifyDialogOpen(false)}>{t('common.close', 'Close')}</Button>
+                  <Button variant="outline" onClick={() => setIsVerifyDialogOpen(false)} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">{t('common.close', 'Close')}</Button>
                 </div>
               </div>
             )}

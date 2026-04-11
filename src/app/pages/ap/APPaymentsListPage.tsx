@@ -463,11 +463,11 @@ export default function APPaymentsListPage() {
       <div className="container mx-auto py-6">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-2xl font-bold">{t('apPayment.title', 'Supplier Payments')}</h1>
-            <p className="text-muted-foreground">{t('apPayment.description', 'Manage supplier payments and reconciliation')}</p>
+            <h1 className="text-2xl font-bold dark:text-white">{t('apPayment.title', 'Supplier Payments')}</h1>
+            <p className="text-muted-foreground dark:text-slate-400">{t('apPayment.description', 'Manage supplier payments and reconciliation')}</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline">
+            <Button variant="outline" className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
               <Download className="mr-2 h-4 w-4" />
               {t('common.export', 'Export')}
             </Button>
@@ -479,24 +479,24 @@ export default function APPaymentsListPage() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="payments">
+          <TabsList className="grid w-full grid-cols-5 dark:bg-slate-800">
+            <TabsTrigger value="payments" className="dark:text-slate-200 dark:data-[state=active]:bg-slate-700">
               <Wallet className="w-4 h-4 mr-2" />
               {t('apPayment.payments', 'Payments')}
             </TabsTrigger>
-            <TabsTrigger value="reconciliation">
+            <TabsTrigger value="reconciliation" className="dark:text-slate-200 dark:data-[state=active]:bg-slate-700">
               <Activity className="w-4 h-4 mr-2" />
               {t('apReconciliation.dashboard', 'Dashboard')}
             </TabsTrigger>
-            <TabsTrigger value="payables">
+            <TabsTrigger value="payables" className="dark:text-slate-200 dark:data-[state=active]:bg-slate-700">
               <TrendingUp className="w-4 h-4 mr-2" />
               {t('apReconciliation.payables', 'Payables')}
             </TabsTrigger>
-            <TabsTrigger value="aging">
+            <TabsTrigger value="aging" className="dark:text-slate-200 dark:data-[state=active]:bg-slate-700">
               <Clock className="w-4 h-4 mr-2" />
               {t('apReconciliation.aging', 'Aging')}
             </TabsTrigger>
-            <TabsTrigger value="reconciliation-transactions">
+            <TabsTrigger value="reconciliation-transactions" className="dark:text-slate-200 dark:data-[state=active]:bg-slate-700">
               <FileText className="w-4 h-4 mr-2" />
               {t('apReconciliation.transactions', 'Transactions')}
             </TabsTrigger>
@@ -506,26 +506,27 @@ export default function APPaymentsListPage() {
           <TabsContent value="payments" className="space-y-6">
 
         {/* Filters */}
-        <div className="bg-card rounded-lg border p-4 mb-6">
+        <div className="bg-card rounded-lg border p-4 mb-6 dark:bg-slate-800 dark:border-slate-700">
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div>
-              <label className="text-sm font-medium mb-1 block">{t('apPayment.search', 'Search')}</label>
+              <label className="text-sm font-medium mb-1 block dark:text-slate-200">{t('apPayment.search', 'Search')}</label>
               <Input
                 placeholder={t('apPayment.searchPlaceholder', 'Search by reference...')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                className="dark:bg-slate-700 dark:text-white dark:border-slate-600 dark:placeholder:text-slate-400"
               />
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">{t('apPayment.supplier', 'Supplier')}</label>
+              <label className="text-sm font-medium mb-1 block dark:text-slate-200">{t('apPayment.supplier', 'Supplier')}</label>
               <Select value={supplierFilter || 'all'} onValueChange={(value) => setSupplierFilter(value === 'all' ? '' : value)}>
-                <SelectTrigger>
+                <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
                   <SelectValue placeholder={t('apPayment.allSuppliers', 'All Suppliers')} />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('apPayment.allSuppliers', 'All Suppliers')}</SelectItem>
+                <SelectContent className="dark:bg-slate-800">
+                  <SelectItem value="all" className="dark:text-slate-200">{t('apPayment.allSuppliers', 'All Suppliers')}</SelectItem>
                   {suppliers.map((supplier) => (
-                    <SelectItem key={supplier._id} value={supplier._id}>
+                    <SelectItem key={supplier._id} value={supplier._id} className="dark:text-slate-200">
                       {supplier.name}
                     </SelectItem>
                   ))}
@@ -533,75 +534,77 @@ export default function APPaymentsListPage() {
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">{t('apPayment.statusLabel', 'Status')}</label>
+              <label className="text-sm font-medium mb-1 block dark:text-slate-200">{t('apPayment.statusLabel', 'Status')}</label>
               <Select value={statusFilter || 'all'} onValueChange={(value) => setStatusFilter(value === 'all' ? '' : value)}>
-                <SelectTrigger>
+                <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
                   <SelectValue placeholder={t('apPayment.allStatuses', 'All Statuses')} />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('apPayment.allStatuses', 'All Statuses')}</SelectItem>
-                  <SelectItem value="draft">{t('apPayment.status.draft', 'Draft')}</SelectItem>
-                  <SelectItem value="posted">{t('apPayment.status.posted', 'Posted')}</SelectItem>
-                  <SelectItem value="reversed">{t('apPayment.status.reversed', 'Reversed')}</SelectItem>
+                <SelectContent className="dark:bg-slate-800">
+                  <SelectItem value="all" className="dark:text-slate-200">{t('apPayment.allStatuses', 'All Statuses')}</SelectItem>
+                  <SelectItem value="draft" className="dark:text-slate-200">{t('apPayment.status.draft', 'Draft')}</SelectItem>
+                  <SelectItem value="posted" className="dark:text-slate-200">{t('apPayment.status.posted', 'Posted')}</SelectItem>
+                  <SelectItem value="reversed" className="dark:text-slate-200">{t('apPayment.status.reversed', 'Reversed')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">{t('apPayment.dateFrom', 'Date From')}</label>
+              <label className="text-sm font-medium mb-1 block dark:text-slate-200">{t('apPayment.dateFrom', 'Date From')}</label>
               <Input
                 type="date"
                 value={dateFrom}
                 onChange={(e) => setDateFrom(e.target.value)}
+                className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
               />
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">{t('apPayment.dateTo', 'Date To')}</label>
+              <label className="text-sm font-medium mb-1 block dark:text-slate-200">{t('apPayment.dateTo', 'Date To')}</label>
               <Input
                 type="date"
                 value={dateTo}
                 onChange={(e) => setDateTo(e.target.value)}
+                className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
               />
             </div>
           </div>
         </div>
 
         {/* Table */}
-        <div className="bg-card rounded-lg border">
+        <div className="bg-card rounded-lg border dark:bg-slate-800 dark:border-slate-700">
           {loading ? (
             <div className="flex items-center justify-center p-8">
-              <Loader2 className="h-8 w-8 animate-spin" />
+              <Loader2 className="h-8 w-8 animate-spin dark:text-slate-400" />
             </div>
           ) : (
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>{t('apPayment.reference', 'Reference')}</TableHead>
-                  <TableHead>{t('apPayment.supplier', 'Supplier')}</TableHead>
-                  <TableHead>{t('apPayment.date', 'Date')}</TableHead>
-                  <TableHead>{t('apPayment.paymentMethod', 'Payment Method')}</TableHead>
-                  <TableHead>{t('apPayment.amount', 'Amount')}</TableHead>
-                  <TableHead>{t('apPayment.statusLabel', 'Status')}</TableHead>
-                  <TableHead className="text-right">{t('common.actions', 'Actions')}</TableHead>
+                <TableRow className="dark:bg-slate-700/50">
+                  <TableHead className="dark:text-slate-200">{t('apPayment.reference', 'Reference')}</TableHead>
+                  <TableHead className="dark:text-slate-200">{t('apPayment.supplier', 'Supplier')}</TableHead>
+                  <TableHead className="dark:text-slate-200">{t('apPayment.date', 'Date')}</TableHead>
+                  <TableHead className="dark:text-slate-200">{t('apPayment.paymentMethod', 'Payment Method')}</TableHead>
+                  <TableHead className="dark:text-slate-200">{t('apPayment.amount', 'Amount')}</TableHead>
+                  <TableHead className="dark:text-slate-200">{t('apPayment.statusLabel', 'Status')}</TableHead>
+                  <TableHead className="text-right dark:text-slate-200">{t('common.actions', 'Actions')}</TableHead>
                 </TableRow>
               </TableHeader>
-              <TableBody>
+              <TableBody className="dark:bg-slate-800">
                 {paymentList.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground dark:text-slate-400">
                       {t('apPayment.noPayments', 'No payments found')}
                     </TableCell>
                   </TableRow>
                 ) : (
                   paymentList.map((payment) => (
-                    <TableRow key={payment._id}>
-                      <TableCell className="font-medium">
+                    <TableRow key={payment._id} className="dark:hover:bg-slate-700/30">
+                      <TableCell className="font-medium dark:text-slate-200">
                         <FileText className="inline-block mr-2 h-4 w-4" />
                         {payment.referenceNo || 'N/A'}
                       </TableCell>
-                      <TableCell>{payment.supplier?.name || '-'}</TableCell>
-                      <TableCell>{formatDate(payment.paymentDate)}</TableCell>
-                      <TableCell>{getPaymentMethodLabel(payment.paymentMethod)}</TableCell>
-                      <TableCell className="font-medium">
+                      <TableCell className="dark:text-slate-300">{payment.supplier?.name || '-'}</TableCell>
+                      <TableCell className="dark:text-slate-300">{formatDate(payment.paymentDate)}</TableCell>
+                      <TableCell className="dark:text-slate-300">{getPaymentMethodLabel(payment.paymentMethod)}</TableCell>
+                      <TableCell className="font-medium dark:text-slate-200">
                         {formatCurrency(payment.amountPaid, payment.currencyCode)}
                       </TableCell>
                       <TableCell>{getStatusBadge(payment.status)}</TableCell>
@@ -611,6 +614,7 @@ export default function APPaymentsListPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => navigate(`/ap-payments/${payment._id}`)}
+                            className="dark:text-slate-300 dark:hover:bg-slate-700"
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
@@ -620,6 +624,7 @@ export default function APPaymentsListPage() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => navigate(`/ap-payments/${payment._id}/edit`)}
+                                className="dark:text-slate-300 dark:hover:bg-slate-700"
                               >
                                 <Send className="h-4 w-4 text-green-500" />
                               </Button>
@@ -627,6 +632,7 @@ export default function APPaymentsListPage() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handlePost(payment._id)}
+                                className="dark:text-slate-300 dark:hover:bg-slate-700"
                               >
                                 <Send className="h-4 w-4" />
                               </Button>
@@ -637,6 +643,7 @@ export default function APPaymentsListPage() {
                               variant="ghost"
                               size="sm"
                               onClick={() => handleReverse(payment._id)}
+                              className="dark:hover:bg-slate-700"
                             >
                               <Undo2 className="h-4 w-4 text-red-500" />
                             </Button>
@@ -687,7 +694,7 @@ export default function APPaymentsListPage() {
       {/* Reconciliation Dashboard Tab */}
       <TabsContent value="reconciliation" className="space-y-6">
         <div className="flex justify-end gap-2">
-          <Button onClick={handleVerify} disabled={loadingRec.verify} variant="outline">
+          <Button onClick={handleVerify} disabled={loadingRec.verify} variant="outline" className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
             {loadingRec.verify ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
             {t('apReconciliation.verifyIntegrity', 'Verify Integrity')}
           </Button>
@@ -695,7 +702,7 @@ export default function APPaymentsListPage() {
             {loadingRec.reconcile ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
             {t('apReconciliation.reconcile', 'Reconcile & Correct')}
           </Button>
-          <Button onClick={handleVerifyAll} disabled={loadingRec.reconcile} variant="outline">
+          <Button onClick={handleVerifyAll} disabled={loadingRec.reconcile} variant="outline" className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
             <CheckCircle className="mr-2 h-4 w-4" />
             {t('apReconciliation.verifyAll', 'Verify All Pending')}
           </Button>
@@ -704,9 +711,9 @@ export default function APPaymentsListPage() {
         {loadingRec.dashboard ? (
           <div className="flex justify-center py-8"><RefreshCw className="w-8 h-8 animate-spin text-muted-foreground" /></div>
         ) : !dashboardData ? (
-          <div className="text-center py-8 text-muted-foreground">
+          <div className="text-center py-8 text-muted-foreground dark:text-slate-400">
             <p>{t('apReconciliation.noData', 'No dashboard data available')}</p>
-            <Button onClick={fetchDashboard} variant="outline" className="mt-4">
+            <Button onClick={fetchDashboard} variant="outline" className="mt-4 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
               <RefreshCw className="mr-2 h-4 w-4" />
               {t('common.retry', 'Retry')}
             </Button>
@@ -714,59 +721,59 @@ export default function APPaymentsListPage() {
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Card>
+              <Card className="dark:bg-slate-800 dark:border-slate-700">
                 <CardHeader className="pb-2">
-                  <CardDescription>{t('apReconciliation.totalTransactions', 'Total Transactions')}</CardDescription>
-                  <CardTitle className="text-3xl">{((dashboardData.stats?.totalTransactions) || 0).toLocaleString()}</CardTitle>
+                  <CardDescription className="dark:text-slate-400">{t('apReconciliation.totalTransactions', 'Total Transactions')}</CardDescription>
+                  <CardTitle className="text-3xl dark:text-white">{((dashboardData.stats?.totalTransactions) || 0).toLocaleString()}</CardTitle>
                 </CardHeader>
               </Card>
-              <Card>
+              <Card className="dark:bg-slate-800 dark:border-slate-700">
                 <CardHeader className="pb-2">
-                  <CardDescription>{t('apReconciliation.recentTransactions', 'Recent (30 Days)')}</CardDescription>
-                  <CardTitle className="text-3xl">{((dashboardData.stats?.recentTransactions) || 0).toLocaleString()}</CardTitle>
+                  <CardDescription className="dark:text-slate-400">{t('apReconciliation.recentTransactions', 'Recent (30 Days)')}</CardDescription>
+                  <CardTitle className="text-3xl dark:text-white">{((dashboardData.stats?.recentTransactions) || 0).toLocaleString()}</CardTitle>
                 </CardHeader>
               </Card>
-              <Card>
+              <Card className="dark:bg-slate-800 dark:border-slate-700">
                 <CardHeader className="pb-2">
-                  <CardDescription>{t('apReconciliation.pendingReconciliation', 'Pending Reconciliation')}</CardDescription>
-                  <CardTitle className="text-3xl text-yellow-600">{((dashboardData.stats?.pendingReconciliation) || 0).toLocaleString()}</CardTitle>
+                  <CardDescription className="dark:text-slate-400">{t('apReconciliation.pendingReconciliation', 'Pending Reconciliation')}</CardDescription>
+                  <CardTitle className="text-3xl text-yellow-600 dark:text-yellow-400">{((dashboardData.stats?.pendingReconciliation) || 0).toLocaleString()}</CardTitle>
                 </CardHeader>
               </Card>
-              <Card>
+              <Card className="dark:bg-slate-800 dark:border-slate-700">
                 <CardHeader className="pb-2">
-                  <CardDescription>{t('apReconciliation.discrepancies', 'Discrepancies')}</CardDescription>
-                  <CardTitle className={`text-3xl ${(dashboardData.stats?.discrepancyCount || 0) > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                  <CardDescription className="dark:text-slate-400">{t('apReconciliation.discrepancies', 'Discrepancies')}</CardDescription>
+                  <CardTitle className={`text-3xl ${(dashboardData.stats?.discrepancyCount || 0) > 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
                     {((dashboardData.stats?.discrepancyCount) || 0).toLocaleString()}
                   </CardTitle>
                 </CardHeader>
               </Card>
             </div>
 
-            <Card>
+            <Card className="dark:bg-slate-800 dark:border-slate-700">
               <CardHeader>
-                <CardTitle>{t('apReconciliation.recentActivity', 'Recent Activity')}</CardTitle>
+                <CardTitle className="dark:text-white">{t('apReconciliation.recentActivity', 'Recent Activity')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>{t('apReconciliation.date', 'Date')}</TableHead>
-                      <TableHead>{t('apReconciliation.type', 'Type')}</TableHead>
-                      <TableHead>{t('apReconciliation.supplier', 'Supplier')}</TableHead>
-                      <TableHead>{t('apReconciliation.description', 'Description')}</TableHead>
-                      <TableHead className="text-right">{t('apReconciliation.amount', 'Amount')}</TableHead>
-                      <TableHead>{t('apReconciliation.status', 'Status')}</TableHead>
+                    <TableRow className="dark:bg-slate-700/50">
+                      <TableHead className="dark:text-slate-200">{t('apReconciliation.date', 'Date')}</TableHead>
+                      <TableHead className="dark:text-slate-200">{t('apReconciliation.type', 'Type')}</TableHead>
+                      <TableHead className="dark:text-slate-200">{t('apReconciliation.supplier', 'Supplier')}</TableHead>
+                      <TableHead className="dark:text-slate-200">{t('apReconciliation.description', 'Description')}</TableHead>
+                      <TableHead className="text-right dark:text-slate-200">{t('apReconciliation.amount', 'Amount')}</TableHead>
+                      <TableHead className="dark:text-slate-200">{t('apReconciliation.status', 'Status')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {dashboardData.recentActivity?.slice(0, 5).map((tx: APTransaction) => (
-                      <TableRow key={tx._id}>
-                        <TableCell>{formatDate(tx.transactionDate)}</TableCell>
+                      <TableRow key={tx._id} className="dark:hover:bg-slate-700/30">
+                        <TableCell className="dark:text-slate-300">{formatDate(tx.transactionDate)}</TableCell>
                         <TableCell>{getTransactionTypeBadge(tx.transactionType)}</TableCell>
-                        <TableCell>{tx.supplier?.name || '-'}</TableCell>
-                        <TableCell className="max-w-xs truncate">{tx.description}</TableCell>
+                        <TableCell className="dark:text-slate-300">{tx.supplier?.name || '-'}</TableCell>
+                        <TableCell className="max-w-xs truncate dark:text-slate-300">{tx.description}</TableCell>
                         <TableCell className="text-right">
-                          <span className={tx.direction === 'increase' ? 'text-red-600' : 'text-green-600'}>
+                          <span className={tx.direction === 'increase' ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}>
                             {tx.direction === 'increase' ? '+' : '-'}{formatCurrency(tx.amount)}
                           </span>
                         </TableCell>
@@ -785,7 +792,7 @@ export default function APPaymentsListPage() {
       <TabsContent value="payables" className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>{t('apReconciliation.outstandingPayables', 'Outstanding Payables')}</CardTitle>
+            <CardTitle className="dark:text-white">{t('apReconciliation.outstandingPayables', 'Outstanding Payables')}</CardTitle>
           </CardHeader>
           <CardContent>
             {loadingRec.payables ? (
@@ -793,28 +800,28 @@ export default function APPaymentsListPage() {
             ) : (
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>{t('apReconciliation.grnNumber', 'GRN #')}</TableHead>
-                    <TableHead>{t('apReconciliation.supplier', 'Supplier')}</TableHead>
-                    <TableHead>{t('apReconciliation.date', 'Date')}</TableHead>
-                    <TableHead className="text-right">{t('apReconciliation.total', 'Total')}</TableHead>
-                    <TableHead className="text-right">{t('apReconciliation.paid', 'Paid')}</TableHead>
-                    <TableHead className="text-right">{t('apReconciliation.balance', 'Balance')}</TableHead>
-                    <TableHead>{t('apReconciliation.status', 'Status')}</TableHead>
+                  <TableRow className="dark:bg-slate-700/50">
+                    <TableHead className="dark:text-slate-200">{t('apReconciliation.grnNumber', 'GRN #')}</TableHead>
+                    <TableHead className="dark:text-slate-200">{t('apReconciliation.supplier', 'Supplier')}</TableHead>
+                    <TableHead className="dark:text-slate-200">{t('apReconciliation.date', 'Date')}</TableHead>
+                    <TableHead className="text-right dark:text-slate-200">{t('apReconciliation.total', 'Total')}</TableHead>
+                    <TableHead className="text-right dark:text-slate-200">{t('apReconciliation.paid', 'Paid')}</TableHead>
+                    <TableHead className="text-right dark:text-slate-200">{t('apReconciliation.balance', 'Balance')}</TableHead>
+                    <TableHead className="dark:text-slate-200">{t('apReconciliation.status', 'Status')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {payables.length === 0 ? (
-                    <TableRow><TableCell colSpan={7} className="text-center py-8">{t('apReconciliation.noPayables', 'No outstanding payables')}</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={7} className="text-center py-8 dark:text-slate-400">{t('apReconciliation.noPayables', 'No outstanding payables')}</TableCell></TableRow>
                   ) : (
                     payables.map((grn) => (
-                      <TableRow key={grn._id} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/grns/${grn._id}`)}>
-                        <TableCell>{grn.referenceNo || grn.grnNumber || '-'}</TableCell>
-                        <TableCell>{grn.supplier?.name || '-'}</TableCell>
-                        <TableCell>{formatDate(grn.receivedDate)}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(grn.totalAmount)}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(grn.amountPaid)}</TableCell>
-                        <TableCell className="text-right font-medium text-blue-600">{formatCurrency(grn.balance)}</TableCell>
+                      <TableRow key={grn._id} className="cursor-pointer hover:bg-muted/50 dark:hover:bg-slate-700/30" onClick={() => navigate(`/grns/${grn._id}`)}>
+                        <TableCell className="dark:text-slate-300">{grn.referenceNo || grn.grnNumber || '-'}</TableCell>
+                        <TableCell className="dark:text-slate-300">{grn.supplier?.name || '-'}</TableCell>
+                        <TableCell className="dark:text-slate-300">{formatDate(grn.receivedDate)}</TableCell>
+                        <TableCell className="text-right dark:text-slate-300">{formatCurrency(grn.totalAmount)}</TableCell>
+                        <TableCell className="text-right dark:text-slate-300">{formatCurrency(grn.amountPaid)}</TableCell>
+                        <TableCell className="text-right font-medium text-blue-600 dark:text-blue-400">{formatCurrency(grn.balance)}</TableCell>
                         <TableCell>
                           <Badge variant={grn.paymentStatus === 'paid' ? 'default' : grn.paymentStatus === 'partially_paid' ? 'secondary' : 'outline'}>
                             {grn.paymentStatus}
@@ -833,25 +840,25 @@ export default function APPaymentsListPage() {
       {/* Aging Tab */}
       <TabsContent value="aging" className="space-y-6">
         {agingVerification && (
-          <Card className={agingVerification.verified ? 'border-green-200 bg-green-50' : 'border-yellow-200 bg-yellow-50'}>
+          <Card className={agingVerification.verified ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20' : 'border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-900/20'}>
             <CardContent className="flex items-center gap-4 py-4">
               {agingVerification.verified ? (
-                <CheckCircle className="h-6 w-6 text-green-600" />
+                <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
               ) : (
-                <AlertTriangle className="h-6 w-6 text-yellow-600" />
+                <AlertTriangle className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
               )}
               <div>
-                <p className="font-medium">
+                <p className="font-medium dark:text-white">
                   {agingVerification.verified ? t('apAging.dataVerified', 'Data Verified') : t('apAging.discrepanciesFound', 'Discrepancies Found')}
                 </p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground dark:text-slate-400">
                   {agingVerification.verified
                     ? t('apAging.allBalancesMatch', 'All balances match between ledger and actual documents')
                     : t('apAging.discrepancyCount', '{{count}} discrepancies require attention', { count: agingVerification.discrepancyCount })}
                 </p>
               </div>
               {!agingVerification.verified && (
-                <Button variant="outline" className="ml-auto" onClick={handleReconcile}>
+                <Button variant="outline" className="ml-auto dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700" onClick={handleReconcile}>
                   {t('apAging.reconcileNow', 'Reconcile Now')}
                 </Button>
               )}
@@ -859,26 +866,26 @@ export default function APPaymentsListPage() {
           </Card>
         )}
 
-        <Card>
+        <Card className="dark:bg-slate-800 dark:border-slate-700">
           <CardContent className="py-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="text-sm font-medium mb-1 block">{t('apAging.supplier', 'Supplier')}</label>
+                <label className="text-sm font-medium mb-1 block dark:text-slate-200">{t('apAging.supplier', 'Supplier')}</label>
                 <Select value={selectedSupplier || 'all'} onValueChange={setSelectedSupplier}>
-                  <SelectTrigger><SelectValue placeholder={t('apAging.allSuppliers', 'All Suppliers')} /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">{t('apAging.allSuppliers', 'All Suppliers')}</SelectItem>
+                  <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600"><SelectValue placeholder={t('apAging.allSuppliers', 'All Suppliers')} /></SelectTrigger>
+                  <SelectContent className="dark:bg-slate-800">
+                    <SelectItem value="all" className="dark:text-slate-200">{t('apAging.allSuppliers', 'All Suppliers')}</SelectItem>
                     {suppliers.map((supplier) => (
-                      <SelectItem key={supplier._id} value={supplier._id}>{supplier.name}</SelectItem>
+                      <SelectItem key={supplier._id} value={supplier._id} className="dark:text-slate-200">{supplier.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <label className="text-sm font-medium mb-1 block">{t('apAging.asOfDate', 'As of Date')}</label>
+                <label className="text-sm font-medium mb-1 block dark:text-slate-200">{t('apAging.asOfDate', 'As of Date')}</label>
                 <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <Input type="date" value={asOfDate} onChange={(e) => setAsOfDate(e.target.value)} />
+                  <Calendar className="h-4 w-4 text-muted-foreground dark:text-slate-400" />
+                  <Input type="date" value={asOfDate} onChange={(e) => setAsOfDate(e.target.value)} className="dark:bg-slate-700 dark:text-white dark:border-slate-600" />
                 </div>
               </div>
               <div className="flex items-end">
@@ -895,23 +902,23 @@ export default function APPaymentsListPage() {
           const totals = calculateAgingTotals();
           return (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              <Card><CardHeader className="pb-2"><CardDescription>{t('apAging.notYetDue', 'Not Yet Due')}</CardDescription><CardTitle className="text-xl text-green-600">{formatCurrency(totals.notYetDue)}</CardTitle></CardHeader></Card>
-              <Card><CardHeader className="pb-2"><CardDescription>{t('apAging.days1_30', '1-30 Days')}</CardDescription><CardTitle className="text-xl">{formatCurrency(totals.days1_30)}</CardTitle></CardHeader></Card>
-              <Card><CardHeader className="pb-2"><CardDescription>{t('apAging.days31_60', '31-60 Days')}</CardDescription><CardTitle className="text-xl text-yellow-600">{formatCurrency(totals.days31_60)}</CardTitle></CardHeader></Card>
-              <Card><CardHeader className="pb-2"><CardDescription>{t('apAging.days61_90', '61-90 Days')}</CardDescription><CardTitle className="text-xl text-orange-600">{formatCurrency(totals.days61_90)}</CardTitle></CardHeader></Card>
-              <Card><CardHeader className="pb-2"><CardDescription>{t('apAging.days90Plus', '90+ Days')}</CardDescription><CardTitle className="text-xl text-red-600">{formatCurrency(totals.days90Plus)}</CardTitle></CardHeader></Card>
-              <Card className="bg-muted"><CardHeader className="pb-2"><CardDescription>{t('apAging.totalOutstanding', 'Total Outstanding')}</CardDescription><CardTitle className="text-xl font-bold">{formatCurrency(totals.total)}</CardTitle></CardHeader></Card>
+              <Card className="dark:bg-slate-800 dark:border-slate-700"><CardHeader className="pb-2"><CardDescription className="dark:text-slate-400">{t('apAging.notYetDue', 'Not Yet Due')}</CardDescription><CardTitle className="text-xl text-green-600 dark:text-green-400">{formatCurrency(totals.notYetDue)}</CardTitle></CardHeader></Card>
+              <Card className="dark:bg-slate-800 dark:border-slate-700"><CardHeader className="pb-2"><CardDescription className="dark:text-slate-400">{t('apAging.days1_30', '1-30 Days')}</CardDescription><CardTitle className="text-xl dark:text-white">{formatCurrency(totals.days1_30)}</CardTitle></CardHeader></Card>
+              <Card className="dark:bg-slate-800 dark:border-slate-700"><CardHeader className="pb-2"><CardDescription className="dark:text-slate-400">{t('apAging.days31_60', '31-60 Days')}</CardDescription><CardTitle className="text-xl text-yellow-600 dark:text-yellow-400">{formatCurrency(totals.days31_60)}</CardTitle></CardHeader></Card>
+              <Card className="dark:bg-slate-800 dark:border-slate-700"><CardHeader className="pb-2"><CardDescription className="dark:text-slate-400">{t('apAging.days61_90', '61-90 Days')}</CardDescription><CardTitle className="text-xl text-orange-600 dark:text-orange-400">{formatCurrency(totals.days61_90)}</CardTitle></CardHeader></Card>
+              <Card className="dark:bg-slate-800 dark:border-slate-700"><CardHeader className="pb-2"><CardDescription className="dark:text-slate-400">{t('apAging.days90Plus', '90+ Days')}</CardDescription><CardTitle className="text-xl text-red-600 dark:text-red-400">{formatCurrency(totals.days90Plus)}</CardTitle></CardHeader></Card>
+              <Card className="bg-muted dark:bg-slate-700"><CardHeader className="pb-2"><CardDescription className="dark:text-slate-300">{t('apAging.totalOutstanding', 'Total Outstanding')}</CardDescription><CardTitle className="text-xl font-bold dark:text-white">{formatCurrency(totals.total)}</CardTitle></CardHeader></Card>
             </div>
           );
         })()}
 
-        <Card>
-          <CardHeader><CardTitle>{t('apAging.detailedBreakdown', 'Detailed Breakdown')}</CardTitle></CardHeader>
+        <Card className="dark:bg-slate-800 dark:border-slate-700">
+          <CardHeader><CardTitle className="dark:text-white">{t('apAging.detailedBreakdown', 'Detailed Breakdown')}</CardTitle></CardHeader>
           <CardContent>
             {loadingRec.aging ? (
               <div className="flex items-center justify-center py-8"><RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" /></div>
             ) : agingData.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
+              <div className="text-center py-8 text-muted-foreground dark:text-slate-400">
                 <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>{t('apAging.noData', 'No aging data available')}</p>
               </div>
@@ -919,34 +926,34 @@ export default function APPaymentsListPage() {
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>{t('apAging.supplier', 'Supplier')}</TableHead>
-                      <TableHead className="text-right">{t('apAging.notYetDue', 'Not Yet Due')}</TableHead>
-                      <TableHead className="text-right">{t('apAging.days1_30', '1-30 Days')}</TableHead>
-                      <TableHead className="text-right">{t('apAging.days31_60', '31-60 Days')}</TableHead>
-                      <TableHead className="text-right">{t('apAging.days61_90', '61-90 Days')}</TableHead>
-                      <TableHead className="text-right">{t('apAging.days90Plus', '90+ Days')}</TableHead>
-                      <TableHead className="text-right">{t('apAging.total', 'Total')}</TableHead>
+                    <TableRow className="dark:bg-slate-700/50">
+                      <TableHead className="dark:text-slate-200">{t('apAging.supplier', 'Supplier')}</TableHead>
+                      <TableHead className="text-right dark:text-slate-200">{t('apAging.notYetDue', 'Not Yet Due')}</TableHead>
+                      <TableHead className="text-right dark:text-slate-200">{t('apAging.days1_30', '1-30 Days')}</TableHead>
+                      <TableHead className="text-right dark:text-slate-200">{t('apAging.days31_60', '31-60 Days')}</TableHead>
+                      <TableHead className="text-right dark:text-slate-200">{t('apAging.days61_90', '61-90 Days')}</TableHead>
+                      <TableHead className="text-right dark:text-slate-200">{t('apAging.days90Plus', '90+ Days')}</TableHead>
+                      <TableHead className="text-right dark:text-slate-200">{t('apAging.total', 'Total')}</TableHead>
                       <TableHead></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {agingData.map((row) => (
-                      <TableRow key={row.supplier._id}>
+                      <TableRow key={row.supplier._id} className="dark:hover:bg-slate-700/30">
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Building2 className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-medium">{row.supplier.name}</span>
+                            <span className="font-medium dark:text-slate-200">{row.supplier.name}</span>
                           </div>
                         </TableCell>
-                        <TableCell className="text-right">{getAgingBadge(parseFloat(row.current || '0'))}</TableCell>
-                        <TableCell className="text-right">{getAgingBadge(parseFloat(row['1-30'] || '0'))}</TableCell>
-                        <TableCell className="text-right">{getAgingBadge(parseFloat(row['31-60'] || '0'))}</TableCell>
-                        <TableCell className="text-right">{getAgingBadge(parseFloat(row['61-90'] || '0'))}</TableCell>
-                        <TableCell className="text-right">{getAgingBadge(parseFloat(row['90+'] || '0'))}</TableCell>
-                        <TableCell className="text-right font-bold">{formatCurrency(row.totalBalance)}</TableCell>
+                        <TableCell className="text-right dark:text-slate-300">{getAgingBadge(parseFloat(row.current || '0'))}</TableCell>
+                        <TableCell className="text-right dark:text-slate-300">{getAgingBadge(parseFloat(row['1-30'] || '0'))}</TableCell>
+                        <TableCell className="text-right dark:text-slate-300">{getAgingBadge(parseFloat(row['31-60'] || '0'))}</TableCell>
+                        <TableCell className="text-right dark:text-slate-300">{getAgingBadge(parseFloat(row['61-90'] || '0'))}</TableCell>
+                        <TableCell className="text-right dark:text-slate-300">{getAgingBadge(parseFloat(row['90+'] || '0'))}</TableCell>
+                        <TableCell className="text-right font-bold dark:text-white">{formatCurrency(row.totalBalance)}</TableCell>
                         <TableCell>
-                          <Button variant="ghost" size="sm" onClick={() => navigate(`/ap-reconciliation/suppliers/${row.supplier._id}/statement`)}>
+                          <Button variant="ghost" size="sm" onClick={() => navigate(`/ap-reconciliation/suppliers/${row.supplier._id}/statement`)} className="dark:text-slate-300 dark:hover:bg-slate-700">
                             <ChevronRight className="h-4 w-4" />
                           </Button>
                         </TableCell>
@@ -955,14 +962,14 @@ export default function APPaymentsListPage() {
                     {(() => {
                       const totals = calculateAgingTotals();
                       return (
-                        <TableRow className="bg-muted font-bold">
-                          <TableCell>{t('apAging.total', 'Total')}</TableCell>
-                          <TableCell className="text-right">{formatCurrency(totals.notYetDue)}</TableCell>
-                          <TableCell className="text-right">{formatCurrency(totals.days1_30)}</TableCell>
-                          <TableCell className="text-right">{formatCurrency(totals.days31_60)}</TableCell>
-                          <TableCell className="text-right">{formatCurrency(totals.days61_90)}</TableCell>
-                          <TableCell className="text-right">{formatCurrency(totals.days90Plus)}</TableCell>
-                          <TableCell className="text-right">{formatCurrency(totals.total)}</TableCell>
+                        <TableRow className="bg-muted font-bold dark:bg-slate-700">
+                          <TableCell className="dark:text-white">{t('apAging.total', 'Total')}</TableCell>
+                          <TableCell className="text-right dark:text-slate-200">{formatCurrency(totals.notYetDue)}</TableCell>
+                          <TableCell className="text-right dark:text-slate-200">{formatCurrency(totals.days1_30)}</TableCell>
+                          <TableCell className="text-right dark:text-slate-200">{formatCurrency(totals.days31_60)}</TableCell>
+                          <TableCell className="text-right dark:text-slate-200">{formatCurrency(totals.days61_90)}</TableCell>
+                          <TableCell className="text-right dark:text-slate-200">{formatCurrency(totals.days90Plus)}</TableCell>
+                          <TableCell className="text-right dark:text-white">{formatCurrency(totals.total)}</TableCell>
                           <TableCell></TableCell>
                         </TableRow>
                       );
@@ -977,34 +984,34 @@ export default function APPaymentsListPage() {
 
       {/* Reconciliation Transactions Tab */}
       <TabsContent value="reconciliation-transactions" className="space-y-6">
-        <Card>
+        <Card className="dark:bg-slate-800 dark:border-slate-700">
           <CardContent className="pt-6">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <Select value={filters.transactionType || 'all'} onValueChange={(v) => setFilters(p => ({ ...p, transactionType: v === 'all' ? '' : v, page: 1 }))}>
-                <SelectTrigger><SelectValue placeholder={t('apReconciliation.allTypes', 'All Types')} /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('apReconciliation.allTypes', 'All Types')}</SelectItem>
-                  {transactionTypes.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+                <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600"><SelectValue placeholder={t('apReconciliation.allTypes', 'All Types')} /></SelectTrigger>
+                <SelectContent className="dark:bg-slate-800">
+                  <SelectItem value="all" className="dark:text-slate-200">{t('apReconciliation.allTypes', 'All Types')}</SelectItem>
+                  {transactionTypes.map(t => <SelectItem key={t.value} value={t.value} className="dark:text-slate-200">{t.label}</SelectItem>)}
                 </SelectContent>
               </Select>
               <Select value={filters.reconciliationStatus || 'all'} onValueChange={(v) => setFilters(p => ({ ...p, reconciliationStatus: v === 'all' ? '' : v, page: 1 }))}>
-                <SelectTrigger><SelectValue placeholder={t('apReconciliation.allStatuses', 'All Statuses')} /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('apReconciliation.allStatuses', 'All Statuses')}</SelectItem>
-                  <SelectItem value="pending">{t('apReconciliation.pending', 'Pending')}</SelectItem>
-                  <SelectItem value="verified">{t('apReconciliation.verified', 'Verified')}</SelectItem>
-                  <SelectItem value="discrepancy">{t('apReconciliation.discrepancy', 'Discrepancy')}</SelectItem>
+                <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600"><SelectValue placeholder={t('apReconciliation.allStatuses', 'All Statuses')} /></SelectTrigger>
+                <SelectContent className="dark:bg-slate-800">
+                  <SelectItem value="all" className="dark:text-slate-200">{t('apReconciliation.allStatuses', 'All Statuses')}</SelectItem>
+                  <SelectItem value="pending" className="dark:text-slate-200">{t('apReconciliation.pending', 'Pending')}</SelectItem>
+                  <SelectItem value="verified" className="dark:text-slate-200">{t('apReconciliation.verified', 'Verified')}</SelectItem>
+                  <SelectItem value="discrepancy" className="dark:text-slate-200">{t('apReconciliation.discrepancy', 'Discrepancy')}</SelectItem>
                 </SelectContent>
               </Select>
-              <Input type="date" value={filters.startDate} onChange={(e) => setFilters(p => ({ ...p, startDate: e.target.value, page: 1 }))} placeholder={t('apReconciliation.startDate', 'Start Date')} />
-              <Input type="date" value={filters.endDate} onChange={(e) => setFilters(p => ({ ...p, endDate: e.target.value, page: 1 }))} placeholder={t('apReconciliation.endDate', 'End Date')} />
+              <Input type="date" value={filters.startDate} onChange={(e) => setFilters(p => ({ ...p, startDate: e.target.value, page: 1 }))} placeholder={t('apReconciliation.startDate', 'Start Date')} className="dark:bg-slate-700 dark:text-white dark:border-slate-600" />
+              <Input type="date" value={filters.endDate} onChange={(e) => setFilters(p => ({ ...p, endDate: e.target.value, page: 1 }))} placeholder={t('apReconciliation.endDate', 'End Date')} className="dark:bg-slate-700 dark:text-white dark:border-slate-600" />
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="dark:bg-slate-800 dark:border-slate-700">
           <CardHeader>
-            <CardTitle>{t('apReconciliation.transactions', 'Transactions')} ({pagination.total} total)</CardTitle>
+            <CardTitle className="dark:text-white">{t('apReconciliation.transactions', 'Transactions')} ({pagination.total} total)</CardTitle>
           </CardHeader>
           <CardContent>
             {loadingRec.transactions ? (
@@ -1013,32 +1020,32 @@ export default function APPaymentsListPage() {
               <>
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>{t('apReconciliation.date', 'Date')}</TableHead>
-                      <TableHead>{t('apReconciliation.type', 'Type')}</TableHead>
-                      <TableHead>{t('apReconciliation.reference', 'Reference')}</TableHead>
-                      <TableHead>{t('apReconciliation.supplier', 'Supplier')}</TableHead>
-                      <TableHead className="text-right">{t('apReconciliation.amount', 'Amount')}</TableHead>
-                      <TableHead className="text-right">{t('apReconciliation.balance', 'Balance')}</TableHead>
-                      <TableHead>{t('apReconciliation.status', 'Status')}</TableHead>
+                    <TableRow className="dark:bg-slate-700/50">
+                      <TableHead className="dark:text-slate-200">{t('apReconciliation.date', 'Date')}</TableHead>
+                      <TableHead className="dark:text-slate-200">{t('apReconciliation.type', 'Type')}</TableHead>
+                      <TableHead className="dark:text-slate-200">{t('apReconciliation.reference', 'Reference')}</TableHead>
+                      <TableHead className="dark:text-slate-200">{t('apReconciliation.supplier', 'Supplier')}</TableHead>
+                      <TableHead className="text-right dark:text-slate-200">{t('apReconciliation.amount', 'Amount')}</TableHead>
+                      <TableHead className="text-right dark:text-slate-200">{t('apReconciliation.balance', 'Balance')}</TableHead>
+                      <TableHead className="dark:text-slate-200">{t('apReconciliation.status', 'Status')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {transactions.length === 0 ? (
-                      <TableRow><TableCell colSpan={7} className="text-center py-8">{t('apReconciliation.noTransactions', 'No transactions found')}</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={7} className="text-center py-8 dark:text-slate-400">{t('apReconciliation.noTransactions', 'No transactions found')}</TableCell></TableRow>
                     ) : (
                       transactions.map((tx) => (
-                        <TableRow key={tx._id}>
-                          <TableCell>{formatDate(tx.transactionDate)}</TableCell>
+                        <TableRow key={tx._id} className="dark:hover:bg-slate-700/30">
+                          <TableCell className="dark:text-slate-300">{formatDate(tx.transactionDate)}</TableCell>
                           <TableCell>{getTransactionTypeBadge(tx.transactionType)}</TableCell>
-                          <TableCell>{tx.referenceNo || '-'}</TableCell>
-                          <TableCell>{tx.supplier?.name || '-'}</TableCell>
+                          <TableCell className="dark:text-slate-300">{tx.referenceNo || '-'}</TableCell>
+                          <TableCell className="dark:text-slate-300">{tx.supplier?.name || '-'}</TableCell>
                           <TableCell className="text-right">
-                            <span className={tx.direction === 'increase' ? 'text-red-600' : 'text-green-600'}>
+                            <span className={tx.direction === 'increase' ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}>
                               {tx.direction === 'increase' ? '+' : '-'}{formatCurrency(tx.amount)}
                             </span>
                           </TableCell>
-                          <TableCell className="text-right text-sm text-muted-foreground">{formatCurrency(tx.supplierBalanceAfter)}</TableCell>
+                          <TableCell className="text-right text-sm text-muted-foreground dark:text-slate-400">{formatCurrency(tx.supplierBalanceAfter)}</TableCell>
                           <TableCell>{getReconciliationStatusBadge(tx.reconciliationStatus)}</TableCell>
                         </TableRow>
                       ))
@@ -1047,9 +1054,9 @@ export default function APPaymentsListPage() {
                 </Table>
                 {pagination.pages > 1 && (
                   <div className="flex justify-center items-center gap-2 mt-6">
-                    <Button variant="outline" size="sm" disabled={filters.page === 1} onClick={() => setFilters(p => ({ ...p, page: p.page - 1 }))}>{t('common.previous', 'Previous')}</Button>
-                    <span className="text-sm text-muted-foreground">{t('common.pageOf', 'Page {{page}} of {{pages}}', { page: pagination.currentPage, pages: pagination.pages })}</span>
-                    <Button variant="outline" size="sm" disabled={filters.page >= pagination.pages} onClick={() => setFilters(p => ({ ...p, page: p.page + 1 }))}>{t('common.next', 'Next')}</Button>
+                    <Button variant="outline" size="sm" disabled={filters.page === 1} onClick={() => setFilters(p => ({ ...p, page: p.page - 1 }))} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">{t('common.previous', 'Previous')}</Button>
+                    <span className="text-sm text-muted-foreground dark:text-slate-400">{t('common.pageOf', 'Page {{page}} of {{pages}}', { page: pagination.currentPage, pages: pagination.pages })}</span>
+                    <Button variant="outline" size="sm" disabled={filters.page >= pagination.pages} onClick={() => setFilters(p => ({ ...p, page: p.page + 1 }))} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">{t('common.next', 'Next')}</Button>
                   </div>
                 )}
               </>

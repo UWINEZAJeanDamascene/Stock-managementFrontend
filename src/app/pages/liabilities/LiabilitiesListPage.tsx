@@ -54,11 +54,11 @@ export default function LiabilitiesListPage() {
 
   const getStatusBadge = (status: string) => {
     const config: Record<string, { variant: string; className: string }> = {
-      active: { variant: 'default', className: 'bg-green-500' },
-      fully_repaid: { variant: 'secondary', className: 'bg-blue-500' },
-      'paid-off': { variant: 'secondary', className: 'bg-blue-500' },
-      closed: { variant: 'outline', className: 'bg-gray-500' },
-      cancelled: { variant: 'outline', className: 'bg-gray-400' },
+      active: { variant: 'default', className: 'bg-green-500 dark:bg-green-600' },
+      fully_repaid: { variant: 'secondary', className: 'bg-blue-500 dark:bg-blue-600' },
+      'paid-off': { variant: 'secondary', className: 'bg-blue-500 dark:bg-blue-600' },
+      closed: { variant: 'outline', className: 'bg-gray-500 dark:bg-gray-600' },
+      cancelled: { variant: 'outline', className: 'bg-gray-400 dark:bg-gray-500' },
       defaulted: { variant: 'destructive', className: '' },
       default: { variant: 'destructive', className: '' },
     };
@@ -79,13 +79,13 @@ export default function LiabilitiesListPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-6">
+      <div className="container mx-auto py-6 bg-gray-50 dark:bg-slate-900 min-h-screen p-6">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-3xl font-bold">{t('liabilities.title')}</h1>
-            <p className="text-muted-foreground">{t('liabilities.subtitle')}</p>
+            <h1 className="text-3xl font-bold dark:text-white">{t('liabilities.title')}</h1>
+            <p className="text-muted-foreground dark:text-slate-400">{t('liabilities.subtitle')}</p>
           </div>
-          <Button onClick={() => navigate('/liabilities/new')}>
+          <Button onClick={() => navigate('/liabilities/new')} className="dark:bg-primary dark:text-primary-foreground">
             <Plus className="mr-2 h-4 w-4" />
             {t('liabilities.addLiability')}
           </Button>
@@ -93,28 +93,28 @@ export default function LiabilitiesListPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <Card>
+          <Card className="dark:bg-slate-800">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">{t('liabilities.totalLiabilities')}</CardTitle>
+              <CardTitle className="text-sm font-medium dark:text-slate-400">{t('liabilities.totalLiabilities')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{liabilities.length}</div>
+              <div className="text-2xl font-bold dark:text-white">{liabilities.length}</div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="dark:bg-slate-800">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">{t('liabilities.totalPrincipal')}</CardTitle>
+              <CardTitle className="text-sm font-medium dark:text-slate-400">{t('liabilities.totalPrincipal')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(totalPrincipal)}</div>
+              <div className="text-2xl font-bold dark:text-white">{formatCurrency(totalPrincipal)}</div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="dark:bg-slate-800">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">{t('liabilities.totalOutstanding')}</CardTitle>
+              <CardTitle className="text-sm font-medium dark:text-slate-400">{t('liabilities.totalOutstanding')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600">{formatCurrency(totalOutstanding)}</div>
+              <div className="text-2xl font-bold text-red-600 dark:text-red-400">{formatCurrency(totalOutstanding)}</div>
             </CardContent>
           </Card>
         </div>
@@ -124,7 +124,7 @@ export default function LiabilitiesListPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 border rounded-md"
+            className="px-3 py-2 border rounded-md dark:bg-slate-700 dark:text-white dark:border-slate-600"
           >
             <option value="all">{t('liabilities.allStatuses')}</option>
             <option value="active">{t('liabilities.status.active')}</option>
@@ -134,25 +134,25 @@ export default function LiabilitiesListPage() {
         </div>
 
         {/* Table */}
-        <Card>
+        <Card className="dark:bg-slate-800">
           <CardContent className="p-0">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Reference</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Lender</TableHead>
-                  <TableHead className="text-right">Principal</TableHead>
-                  <TableHead className="text-right">Outstanding Balance</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                <TableRow className="dark:bg-slate-700/50 dark:border-slate-600">
+                  <TableHead className="dark:text-slate-200">Reference</TableHead>
+                  <TableHead className="dark:text-slate-200">Name</TableHead>
+                  <TableHead className="dark:text-slate-200">Type</TableHead>
+                  <TableHead className="dark:text-slate-200">Lender</TableHead>
+                  <TableHead className="text-right dark:text-slate-200">Principal</TableHead>
+                  <TableHead className="text-right dark:text-slate-200">Outstanding Balance</TableHead>
+                  <TableHead className="dark:text-slate-200">Status</TableHead>
+                  <TableHead className="text-right"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8">
+                    <TableCell colSpan={8} className="text-center py-8 dark:text-slate-400">
                       {t('common.loading')}
                     </TableCell>
                   </TableRow>
@@ -160,20 +160,20 @@ export default function LiabilitiesListPage() {
                   <TableRow>
                     <TableCell colSpan={8} className="text-center py-8">
                       <div className="flex flex-col items-center">
-                        <AlertCircle className="h-12 w-12 mb-4 text-muted-foreground" />
-                        <p>{t('liabilities.noLiabilities')}</p>
+                        <AlertCircle className="h-12 w-12 mb-4 text-muted-foreground dark:text-slate-500" />
+                        <p className="dark:text-slate-400">{t('liabilities.noLiabilities')}</p>
                       </div>
                     </TableCell>
                   </TableRow>
                 ) : (
                   liabilities.map((liability) => (
-                    <TableRow key={liability._id}>
-                      <TableCell className="font-medium">{liability.loanNumber}</TableCell>
-                      <TableCell>{liability.name}</TableCell>
-                      <TableCell>{(liability as any).loanType ? t(`liabilities.types.${liability.loanType}`) : t(`liabilities.types.${liability.type || 'other'}`)}</TableCell>
-                      <TableCell>{liability.lenderName}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(liability.originalAmount)}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(liability.outstandingBalance)}</TableCell>
+                    <TableRow key={liability._id} className="dark:border-slate-600">
+                      <TableCell className="font-medium dark:text-white">{liability.loanNumber}</TableCell>
+                      <TableCell className="dark:text-slate-300">{liability.name}</TableCell>
+                      <TableCell className="dark:text-slate-300">{(liability as any).loanType ? t(`liabilities.types.${liability.loanType}`) : t(`liabilities.types.${liability.type || 'other'}`)}</TableCell>
+                      <TableCell className="dark:text-slate-300">{liability.lenderName}</TableCell>
+                      <TableCell className="text-right dark:text-slate-300">{formatCurrency(liability.originalAmount)}</TableCell>
+                      <TableCell className="text-right dark:text-slate-300">{formatCurrency(liability.outstandingBalance)}</TableCell>
                       <TableCell>{getStatusBadge(liability.status)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex gap-1 justify-end">
@@ -182,6 +182,7 @@ export default function LiabilitiesListPage() {
                             size="sm"
                             onClick={() => navigate(`/liabilities/${liability._id}`)}
                             title="View"
+                            className="dark:text-slate-300"
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
@@ -190,6 +191,7 @@ export default function LiabilitiesListPage() {
                             size="sm"
                             onClick={() => navigate(`/liabilities/${liability._id}?action=repayment`)}
                             title="Record Repayment"
+                            className="dark:text-slate-300"
                           >
                             <RefreshCcw className="h-4 w-4" />
                           </Button>
@@ -198,6 +200,7 @@ export default function LiabilitiesListPage() {
                             size="sm"
                             onClick={() => navigate(`/liabilities/${liability._id}?action=interest`)}
                             title="Record Interest"
+                            className="dark:text-slate-300"
                           >
                             <TrendingUp className="h-4 w-4" />
                           </Button>

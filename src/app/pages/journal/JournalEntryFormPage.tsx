@@ -151,52 +151,53 @@ export default function JournalEntryFormPage() {
 
   return (
     <Layout>
-      <div className="space-y-6">
+      <div className="space-y-6 bg-gray-50 dark:bg-slate-900 min-h-screen p-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="outline" size="sm" onClick={() => navigate('/journal')}>
+            <Button variant="outline" size="sm" onClick={() => navigate('/journal')} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>
-              <h1 className="text-2xl font-bold flex items-center gap-2">
-                <BookOpen className="h-6 w-6" />
+              <h1 className="text-2xl font-bold flex items-center gap-2 dark:text-white">
+                <BookOpen className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
                 New Journal Entry
               </h1>
-              <p className="text-muted-foreground">Create a manual journal entry</p>
+              <p className="text-muted-foreground dark:text-slate-400">Create a manual journal entry</p>
             </div>
           </div>
-          <Button onClick={handleSubmit} disabled={saving}>
+          <Button onClick={handleSubmit} disabled={saving} className="dark:bg-primary dark:text-primary-foreground">
             {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
             Save as Draft
           </Button>
         </div>
 
         {/* Entry Details */}
-        <Card>
-          <CardHeader><CardTitle>Entry Details</CardTitle></CardHeader>
+        <Card className="dark:bg-slate-800">
+          <CardHeader><CardTitle className="dark:text-white">Entry Details</CardTitle></CardHeader>
           <CardContent className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Date *</Label>
-              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+              <Label className="dark:text-slate-200">Date *</Label>
+              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="dark:bg-slate-700 dark:text-white dark:border-slate-600" />
             </div>
             <div className="space-y-2">
-              <Label>Description *</Label>
+              <Label className="dark:text-slate-200">Description *</Label>
               <Input
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="e.g., Monthly adjustment entry"
+                className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
               />
             </div>
           </CardContent>
         </Card>
 
         {/* Journal Lines */}
-        <Card>
+        <Card className="dark:bg-slate-800">
           <CardHeader>
-            <CardTitle className="flex items-center justify-between">
+            <CardTitle className="flex items-center justify-between dark:text-white">
               <span>Journal Lines</span>
-              <Button variant="outline" size="sm" onClick={addLine}>
+              <Button variant="outline" size="sm" onClick={addLine} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Line
               </Button>
@@ -205,28 +206,28 @@ export default function JournalEntryFormPage() {
           <CardContent>
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[200px]">Account</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead className="w-[150px] text-right">Debit</TableHead>
-                  <TableHead className="w-[150px] text-right">Credit</TableHead>
+                <TableRow className="dark:bg-slate-700/50 dark:border-slate-600">
+                  <TableHead className="w-[200px] dark:text-slate-200">Account</TableHead>
+                  <TableHead className="dark:text-slate-200">Description</TableHead>
+                  <TableHead className="w-[150px] text-right dark:text-slate-200">Debit</TableHead>
+                  <TableHead className="w-[150px] text-right dark:text-slate-200">Credit</TableHead>
                   <TableHead className="w-[60px]"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {lines.map((line, idx) => (
-                  <TableRow key={idx}>
+                  <TableRow key={idx} className="dark:border-slate-600">
                     <TableCell>
                       <Select
                         value={line.accountCode}
                         onValueChange={(value) => updateLine(idx, 'accountCode', value)}
                       >
-                        <SelectTrigger className="font-mono text-sm">
+                        <SelectTrigger className="font-mono text-sm dark:bg-slate-700 dark:text-white dark:border-slate-600">
                           <SelectValue placeholder="Select account" />
                         </SelectTrigger>
-                        <SelectContent className="max-h-[300px]">
+                        <SelectContent className="dark:bg-slate-800">
                           {accounts.map(acc => (
-                            <SelectItem key={acc.code} value={acc.code}>
+                            <SelectItem key={acc.code} value={acc.code} className="dark:text-slate-200">
                               {acc.code} - {acc.name}
                             </SelectItem>
                           ))}
@@ -238,6 +239,7 @@ export default function JournalEntryFormPage() {
                         value={line.description}
                         onChange={(e) => updateLine(idx, 'description', e.target.value)}
                         placeholder="Line description"
+                        className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                       />
                     </TableCell>
                     <TableCell>
@@ -247,7 +249,7 @@ export default function JournalEntryFormPage() {
                         min="0"
                         value={line.debit || ''}
                         onChange={(e) => updateLine(idx, 'debit', parseFloat(e.target.value) || 0)}
-                        className="text-right font-mono"
+                        className="text-right font-mono dark:bg-slate-700 dark:text-white dark:border-slate-600"
                         placeholder="0.00"
                       />
                     </TableCell>
@@ -258,7 +260,7 @@ export default function JournalEntryFormPage() {
                         min="0"
                         value={line.credit || ''}
                         onChange={(e) => updateLine(idx, 'credit', parseFloat(e.target.value) || 0)}
-                        className="text-right font-mono"
+                        className="text-right font-mono dark:bg-slate-700 dark:text-white dark:border-slate-600"
                         placeholder="0.00"
                       />
                     </TableCell>
@@ -268,8 +270,9 @@ export default function JournalEntryFormPage() {
                         size="sm"
                         onClick={() => removeLine(idx)}
                         disabled={lines.length <= 2}
+                        className="dark:hover:bg-slate-700"
                       >
-                        <Trash2 className="h-4 w-4 text-red-500" />
+                        <Trash2 className="h-4 w-4 text-red-500 dark:text-red-400" />
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -278,18 +281,18 @@ export default function JournalEntryFormPage() {
             </Table>
 
             {/* Totals */}
-            <div className="flex justify-end gap-8 pt-4 border-t mt-4">
+            <div className="flex justify-end gap-8 pt-4 border-t mt-4 dark:border-slate-600">
               <div className="text-right">
-                <p className="text-sm text-slate-500">Total Debit</p>
-                <p className="text-xl font-bold font-mono">{totalDebit.toLocaleString()}</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Total Debit</p>
+                <p className="text-xl font-bold font-mono dark:text-white">{totalDebit.toLocaleString()}</p>
               </div>
               <div className="text-right">
-                <p className="text-sm text-slate-500">Total Credit</p>
-                <p className="text-xl font-bold font-mono">{totalCredit.toLocaleString()}</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Total Credit</p>
+                <p className="text-xl font-bold font-mono dark:text-white">{totalCredit.toLocaleString()}</p>
               </div>
               <div className="text-right">
-                <p className="text-sm text-slate-500">Difference</p>
-                <p className={`text-xl font-bold font-mono ${isBalanced ? 'text-green-600' : 'text-red-600'}`}>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Difference</p>
+                <p className={`text-xl font-bold font-mono ${isBalanced ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                   {Math.abs(totalDebit - totalCredit).toLocaleString()}
                 </p>
               </div>
@@ -298,14 +301,15 @@ export default function JournalEntryFormPage() {
         </Card>
 
         {/* Notes */}
-        <Card>
-          <CardHeader><CardTitle>Notes</CardTitle></CardHeader>
+        <Card className="dark:bg-slate-800">
+          <CardHeader><CardTitle className="dark:text-white">Notes</CardTitle></CardHeader>
           <CardContent>
             <Textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Optional notes..."
               rows={3}
+              className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
             />
           </CardContent>
         </Card>
