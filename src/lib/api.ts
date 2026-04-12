@@ -1500,7 +1500,7 @@ export const creditNotesApi = {
   },
   getById: (id: string) =>
     request<{ success: boolean; data: unknown }>(`/credit-notes/${id}`),
-  create: (data: unknown, sendEmail?: boolean) =>
+  create: (data: Record<string, any>, sendEmail?: boolean) =>
     request<{ success: boolean; data: unknown }>("/credit-notes", {
       method: "POST",
       body: { ...data, sendEmail },
@@ -1911,12 +1911,12 @@ export const purchasesApi = {
   },
   getById: (id: string) =>
     request<{ success: boolean; data: unknown }>(`/purchases/${id}`),
-  create: (purchase: unknown, sendEmail?: boolean) =>
+  create: (purchase: Record<string, any>, sendEmail?: boolean) =>
     request<{ success: boolean; data: unknown }>("/purchases", {
       method: "POST",
       body: { ...purchase, sendEmail },
     }),
-  update: (id: string, purchase: unknown) =>
+  update: (id: string, purchase: Record<string, any>) =>
     request<{ success: boolean; data: unknown }>(`/purchases/${id}`, {
       method: "PUT",
       body: purchase,
@@ -1996,12 +1996,12 @@ export const purchaseOrdersApi = {
       grns?: unknown[];
       message?: string;
     }>(`/stock/advanced/purchase-orders/${id}`),
-  create: (po: unknown, sendEmail?: boolean) =>
+  create: (po: Record<string, any>, sendEmail?: boolean) =>
     request<{ success: boolean; data: unknown }>(
       "/stock/advanced/purchase-orders",
       { method: "POST", body: { ...po, sendEmail } },
     ),
-  update: (id: string, po: unknown) =>
+  update: (id: string, po: Record<string, any>) =>
     request<{ success: boolean; data: unknown }>(
       `/stock/advanced/purchase-orders/${id}`,
       { method: "PUT", body: po },
@@ -8920,12 +8920,12 @@ export const salesOrdersApi = {
   },
   getById: (id: string) =>
     request<{ success: boolean; data: unknown }>(`/sales-orders/${id}`),
-  create: (data: unknown, sendEmail?: boolean) =>
+  create: (data: Record<string, any>, sendEmail?: boolean) =>
     request<{ success: boolean; data: unknown }>("/sales-orders", {
       method: "POST",
       body: { ...data, sendEmail },
     }),
-  update: (id: string, data: unknown) =>
+  update: (id: string, data: Record<string, any>) =>
     request<{ success: boolean; data: unknown }>(`/sales-orders/${id}`, {
       method: "PUT",
       body: data,
