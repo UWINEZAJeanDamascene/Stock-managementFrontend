@@ -1659,18 +1659,20 @@ export const quotationsApi = {
     request<{ success: boolean; message: string }>(`/quotations/${id}`, {
       method: "DELETE",
     }),
-  send: (id: string) =>
+  send: (id: string, sendEmail?: boolean) =>
     request<{ success: boolean; data: unknown }>(`/quotations/${id}/send`, {
       method: "POST",
+      body: sendEmail ? { sendEmail } : undefined,
     }),
-  accept: (id: string) =>
+  accept: (id: string, sendEmail?: boolean) =>
     request<{ success: boolean; data: unknown }>(`/quotations/${id}/accept`, {
       method: "POST",
+      body: sendEmail ? { sendEmail } : undefined,
     }),
-  reject: (id: string, reason?: string) =>
+  reject: (id: string, reason?: string, sendEmail?: boolean) =>
     request<{ success: boolean; data: unknown }>(`/quotations/${id}/reject`, {
       method: "POST",
-      body: reason ? { reason } : undefined,
+      body: reason ? { reason, sendEmail } : sendEmail ? { sendEmail } : undefined,
     }),
 };
 
@@ -1746,6 +1748,7 @@ export const deliveryNotesApi = {
       clientSignature?: string;
       clientStamp?: boolean;
       notes?: string;
+      sendEmail?: boolean;
     },
   ) =>
     request<{ success: boolean; data: unknown; message?: string }>(
@@ -4736,6 +4739,11 @@ export const notificationsApi = {
     request<{ success: boolean; message: string }>(
       "/notifications/send-summary",
       { method: "POST", body: { type } },
+    ),
+  sendPaymentReminder: (invoiceId: string) =>
+    request<{ success: boolean; message: string }>(
+      "/notifications/send-payment-reminder",
+      { method: "POST", body: { invoiceId } },
     ),
 };
 

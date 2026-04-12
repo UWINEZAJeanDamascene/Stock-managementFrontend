@@ -10,11 +10,20 @@ interface SyncMessage {
 }
 
 export default function OfflineSyncBanner() {
+  // OFFLINE SYNC DISABLED - return null to hide all sync notifications
+  return null;
+
+  // Original implementation below (disabled):
+  // eslint-disable-next-line no-unreachable
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  // eslint-disable-next-line no-unreachable
   const [queuedCount, setQueuedCount] = useState(0);
+  // eslint-disable-next-line no-unreachable
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
+  // eslint-disable-next-line no-unreachable
   const [showBanner, setShowBanner] = useState(false);
 
+  // eslint-disable-next-line no-unreachable
   useEffect(() => {
     const handleOnline = () => {
       setIsOffline(false);

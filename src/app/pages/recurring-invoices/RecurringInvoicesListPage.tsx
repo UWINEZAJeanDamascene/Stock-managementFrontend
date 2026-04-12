@@ -282,19 +282,21 @@ export default function RecurringInvoicesListPage() {
     <Layout>
       <div className="container mx-auto py-6">
         {/* Page Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-2xl font-bold dark:text-gray-100">{t('recurringInvoices.title', 'Recurring Invoices')}</h1>
-            <p className="text-muted-foreground dark:text-gray-400">{t('recurringInvoices.subtitle', 'Manage recurring invoice templates')}</p>
+            <h1 className="text-xl sm:text-2xl font-bold dark:text-gray-100">{t('recurringInvoices.title', 'Recurring Invoices')}</h1>
+            <p className="text-sm text-muted-foreground dark:text-gray-400">{t('recurringInvoices.subtitle', 'Manage recurring invoice templates')}</p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={handleExport}>
-              <Download className="mr-2 h-4 w-4" />
-              {t('common.export', 'Export')}
+            <Button variant="outline" onClick={handleExport} size="sm" className="sm:size-default">
+              <Download className="mr-1.5 sm:mr-2 h-4 w-4" />
+              <span className="hidden sm:inline">{t('common.export', 'Export')}</span>
+              <span className="sm:hidden">{t('common.export', 'Export')}</span>
             </Button>
-            <Button onClick={() => navigate('/recurring-invoices/new')}>
-              <Plus className="mr-2 h-4 w-4" />
-              {t('recurringInvoices.newRecurring', 'New Recurring Invoice')}
+            <Button onClick={() => navigate('/recurring-invoices/new')} size="sm" className="sm:size-default">
+              <Plus className="mr-1.5 sm:mr-2 h-4 w-4" />
+              <span className="hidden sm:inline">{t('recurringInvoices.newRecurring', 'New Recurring Invoice')}</span>
+              <span className="sm:hidden">{t('recurringInvoices.new', 'New')}</span>
             </Button>
           </div>
         </div>

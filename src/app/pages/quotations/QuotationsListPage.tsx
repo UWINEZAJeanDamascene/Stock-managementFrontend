@@ -35,6 +35,8 @@ import {
 } from '@/app/components/ui/select';
 import { Badge } from '@/app/components/ui/badge';
 import { useTranslation } from 'react-i18next';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/app/components/ui/dialog';
+import { Label } from '@/app/components/ui/label';
 
 interface Quotation {
   _id: string;
@@ -81,6 +83,9 @@ export default function QuotationsListPage() {
   const [dateTo, setDateTo] = useState<string>('');
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
+  const [sendEmail, setSendEmail] = useState(false);
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [pendingAction, setPendingAction] = useState<{type: 'send' | 'accept' | 'reject', id: string} | null>(null);
 
   const fetchClients = useCallback(async () => {
     try {
@@ -159,7 +164,7 @@ export default function QuotationsListPage() {
 
   const handleSend = async (id: string) => {
     try {
-      await quotationsApi.send(id);
+      await quotationsApi.send(id, sendEmail);
       fetchQuotations();
     } catch (error) {
       console.error('Failed to send quotation:', error);
@@ -168,7 +173,7 @@ export default function QuotationsListPage() {
 
   const handleAccept = async (id: string) => {
     try {
-      await quotationsApi.accept(id);
+      await quotationsApi.accept(id, sendEmail);
       fetchQuotations();
     } catch (error) {
       console.error('Failed to accept quotation:', error);
@@ -177,11 +182,25 @@ export default function QuotationsListPage() {
 
   const handleReject = async (id: string) => {
     try {
-      await quotationsApi.reject(id);
+      await quotationsApi.reject(id, undefined, sendEmail);
       fetchQuotations();
     } catch (error) {
       console.error('Failed to reject quotation:', error);
     }
+  };
+
+  const handleActionWithEmail = (type: 'send' | 'accept' | 'reject', id: string) => {
+    setPendingAction({ type, id });
+    setEmailDialogOpen(true);
+  };
+
+  const executePendingAction = async () => {
+    if (!pendingAction) return;
+    if (pendingAction.type === 'send') await handleSend(pendingAction.id);
+    else if (pendingAction.type === 'accept') await handleAccept(pendingAction.id);
+    else if (pendingAction.type === 'reject') await handleReject(pendingAction.id);
+    setEmailDialogOpen(false);
+    setPendingAction(null);
   };
 
   const handleConvert = async (id: string) => {
@@ -383,7 +402,7 @@ export default function QuotationsListPage() {
                             <Button 
                               variant="ghost" 
                               size="sm"
-                              onClick={() => handleSend(quotation._id)}
+                              onClick={() => handleActionWithEmail('send', quotation._id)}
                               title={t('quotation.send', 'Send')}
                             >
                               <Send className="h-4 w-4" />
@@ -394,7 +413,7 @@ export default function QuotationsListPage() {
                               <Button 
                                 variant="ghost" 
                                 size="sm"
-                                onClick={() => handleAccept(quotation._id)}
+                                onClick={() => handleActionWithEmail('accept', quotation._id)}
                                 title={t('quotation.accept', 'Accept')}
                               >
                                 <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
@@ -402,7 +421,7 @@ export default function QuotationsListPage() {
                               <Button 
                                 variant="ghost" 
                                 size="sm"
-                                onClick={() => handleReject(quotation._id)}
+                                onClick={() => handleActionWithEmail('reject', quotation._id)}
                                 title={t('quotation.reject', 'Reject')}
                               >
                                 <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
@@ -457,9 +476,37 @@ export default function QuotationsListPage() {
                 <ChevronRight className="h-4 w-4" />
               </button>
             </div>
-          </div>
-        )}
-      </div>
-    </Layout>
-  );
-}
+            </div>
+          )}
+        </div>
+
+        <Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Send Email to Customer</DialogTitle>
+            </DialogHeader>
+            <div className="flex items-center gap-2 py-4">
+              <input
+                type="checkbox"
+                id="quotationSendEmail"
+                checked={sendEmail}
+                onChange={(e) => setSendEmail(e.target.checked)}
+                className="w-4 h-4"
+              />
+              <Label htmlFor="quotationSendEmail" className="cursor-pointer">
+                Send quotation details to customer via email
+              </Label>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEmailDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={executePendingAction}>
+                Confirm
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </Layout>
+    );
+  }

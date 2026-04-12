@@ -568,113 +568,115 @@ export default function RecurringInvoiceFormPage() {
                     <p>{t('recurringInvoices.noLineItems', 'No line items yet. Click "Add Line" to add products.')}</p>
                   </div>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>{t('recurringInvoices.product', 'Product')}</TableHead>
-                        <TableHead>{t('recurringInvoices.warehouse', 'Warehouse')}</TableHead>
-                        <TableHead className="text-right">{t('recurringInvoices.qty', 'Qty')}</TableHead>
-                        <TableHead className="text-right">{t('recurringInvoices.unitPrice', 'Unit Price')}</TableHead>
-                        <TableHead className="text-right">{t('recurringInvoices.taxRate', 'Tax %')}</TableHead>
-                        <TableHead className="text-right">{t('recurringInvoices.discount', 'Discount %')}</TableHead>
-                        <TableHead className="text-right">{t('recurringInvoices.total', 'Total')}</TableHead>
-                        <TableHead></TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {lines.map((line) => (
-                        <TableRow key={line.id}>
-                          <TableCell className="w-48">
-                            <Select 
-                              value={line.product?._id || ''} 
-                              onValueChange={(v) => handleLineChange(line.id, 'product', v)}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder={t('recurringInvoices.selectProduct', 'Select Product')} />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {products.map(product => (
-                                  <SelectItem key={product._id} value={product._id}>
-                                    {product.name} ({product.code})
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </TableCell>
-                          <TableCell className="w-40">
-                            <Select 
-                              value={line.warehouse?._id || ''} 
-                              onValueChange={(v) => handleLineChange(line.id, 'warehouse', v)}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder={t('recurringInvoices.selectWarehouse', 'Select')} />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {warehouses.map(warehouse => (
-                                  <SelectItem key={warehouse._id} value={warehouse._id}>
-                                    {warehouse.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </TableCell>
-                          <TableCell className="w-24">
-                            <Input
-                              type="number"
-                              min="0.0001"
-                              step="0.0001"
-                              value={line.qty}
-                              onChange={(e) => handleLineChange(line.id, 'qty', e.target.value)}
-                              className="text-right"
-                            />
-                          </TableCell>
-                          <TableCell className="w-32">
-                            <Input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              value={line.unitPrice}
-                              onChange={(e) => handleLineChange(line.id, 'unitPrice', e.target.value)}
-                              className="text-right"
-                            />
-                          </TableCell>
-                          <TableCell className="w-24">
-                            <Input
-                              type="number"
-                              min="0"
-                              max="100"
-                              value={line.taxRate}
-                              onChange={(e) => handleLineChange(line.id, 'taxRate', e.target.value)}
-                              className="text-right"
-                            />
-                          </TableCell>
-                          <TableCell className="w-24">
-                            <Input
-                              type="number"
-                              min="0"
-                              max="100"
-                              value={line.discountPct}
-                              onChange={(e) => handleLineChange(line.id, 'discountPct', e.target.value)}
-                              className="text-right"
-                            />
-                          </TableCell>
-                          <TableCell className="text-right font-medium">
-                            {formatCurrency(line.lineTotal)}
-                          </TableCell>
-                          <TableCell>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={() => handleRemoveLine(line.id)}
-                              className="text-red-600"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
+                  <div className="overflow-x-auto -mx-2 px-2">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="min-w-[140px] sm:min-w-[180px]">{t('recurringInvoices.product', 'Product')}</TableHead>
+                          <TableHead className="min-w-[100px] sm:min-w-[140px]">{t('recurringInvoices.warehouse', 'Warehouse')}</TableHead>
+                          <TableHead className="text-right min-w-[80px] sm:min-w-[100px]">{t('recurringInvoices.qty', 'Qty')}</TableHead>
+                          <TableHead className="text-right min-w-[100px] sm:min-w-[120px]">{t('recurringInvoices.unitPrice', 'Unit Price')}</TableHead>
+                          <TableHead className="text-right min-w-[70px] sm:min-w-[80px]">{t('recurringInvoices.taxRate', 'Tax %')}</TableHead>
+                          <TableHead className="text-right min-w-[70px] sm:min-w-[80px]">{t('recurringInvoices.discount', 'Discount %')}</TableHead>
+                          <TableHead className="text-right min-w-[100px]">{t('recurringInvoices.total', 'Total')}</TableHead>
+                          <TableHead className="w-[50px]"></TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {lines.map((line) => (
+                          <TableRow key={line.id}>
+                            <TableCell>
+                              <Select
+                                value={line.product?._id || ''}
+                                onValueChange={(v) => handleLineChange(line.id, 'product', v)}
+                              >
+                                <SelectTrigger className="w-full min-w-[140px]">
+                                  <SelectValue placeholder={t('recurringInvoices.selectProduct', 'Select Product')} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {products.map(product => (
+                                    <SelectItem key={product._id} value={product._id}>
+                                      {product.name} ({product.code})
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </TableCell>
+                            <TableCell>
+                              <Select
+                                value={line.warehouse?._id || ''}
+                                onValueChange={(v) => handleLineChange(line.id, 'warehouse', v)}
+                              >
+                                <SelectTrigger className="w-full min-w-[100px]">
+                                  <SelectValue placeholder={t('recurringInvoices.selectWarehouse', 'Select')} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {warehouses.map(warehouse => (
+                                    <SelectItem key={warehouse._id} value={warehouse._id}>
+                                      {warehouse.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </TableCell>
+                            <TableCell>
+                              <Input
+                                type="number"
+                                min="0.0001"
+                                step="0.0001"
+                                value={line.qty}
+                                onChange={(e) => handleLineChange(line.id, 'qty', e.target.value)}
+                                className="text-right w-full min-w-[80px]"
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={line.unitPrice}
+                                onChange={(e) => handleLineChange(line.id, 'unitPrice', e.target.value)}
+                                className="text-right w-full min-w-[100px]"
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Input
+                                type="number"
+                                min="0"
+                                max="100"
+                                value={line.taxRate}
+                                onChange={(e) => handleLineChange(line.id, 'taxRate', e.target.value)}
+                                className="text-right w-full min-w-[70px]"
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Input
+                                type="number"
+                                min="0"
+                                max="100"
+                                value={line.discountPct}
+                                onChange={(e) => handleLineChange(line.id, 'discountPct', e.target.value)}
+                                className="text-right w-full min-w-[70px]"
+                              />
+                            </TableCell>
+                            <TableCell className="text-right font-medium">
+                              {formatCurrency(line.lineTotal)}
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleRemoveLine(line.id)}
+                                className="text-red-600"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 )}
               </CardContent>
             </Card>

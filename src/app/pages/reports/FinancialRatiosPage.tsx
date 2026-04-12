@@ -729,40 +729,42 @@ export default function FinancialRatiosPage() {
           {/* ── Date Filter ──────────────────────────────────────────────────── */}
           <Card>
             <CardContent className="pt-4 pb-4">
-              <div className="flex items-end gap-4 flex-wrap">
-                <div className="space-y-1.5 min-w-[160px]">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="space-y-1.5">
                   <Label className="text-xs text-slate-500 uppercase tracking-wide">As At Date</Label>
                   <Input
                     type="date"
                     value={asOfDate}
                     onChange={e => setAsOfDate(e.target.value)}
-                    className="h-9"
+                    className="h-9 w-full"
                   />
                 </div>
-                <div className="space-y-1.5 min-w-[160px]">
+                <div className="space-y-1.5">
                   <Label className="text-xs text-slate-500 uppercase tracking-wide">Period Start</Label>
                   <Input
                     type="date"
                     value={startDate}
                     onChange={e => setStartDate(e.target.value)}
-                    className="h-9"
+                    className="h-9 w-full"
                   />
                 </div>
-                <div className="space-y-1.5 min-w-[160px]">
+                <div className="space-y-1.5">
                   <Label className="text-xs text-slate-500 uppercase tracking-wide">Period End</Label>
                   <Input
                     type="date"
                     value={endDate}
                     onChange={e => setEndDate(e.target.value)}
-                    className="h-9"
+                    className="h-9 w-full"
                   />
                 </div>
-                <Button onClick={fetchRatios} disabled={loading} size="sm" className="h-9">
-                  {loading
-                    ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
-                    : <CalendarDays className="h-4 w-4 mr-1.5" />}
-                  {loading ? 'Computing…' : 'Compute Ratios'}
-                </Button>
+                <div className="flex items-end">
+                  <Button onClick={fetchRatios} disabled={loading} size="sm" className="h-9 w-full">
+                    {loading
+                      ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                      : <CalendarDays className="h-4 w-4 mr-1.5" />}
+                    {loading ? 'Computing…' : 'Compute Ratios'}
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>

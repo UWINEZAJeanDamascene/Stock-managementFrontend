@@ -99,6 +99,7 @@ export default function DeliveryNoteDetailPage() {
   const navigate = useNavigate();
   const [deliveryNote, setDeliveryNote] = useState<DeliveryNote | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sendEmail, setSendEmail] = useState(false);
 
   useEffect(() => {
     fetchDeliveryNote();
@@ -183,7 +184,7 @@ export default function DeliveryNoteDetailPage() {
       toast.info('Confirming delivery note...');
       console.log('Confirming delivery note:', id);
       
-      const response = await deliveryNotesApi.confirm(id!, {});
+      const response = await deliveryNotesApi.confirm(id!, { sendEmail });
       console.log('Confirm delivery note response:', response);
       
       if (response.success) {
@@ -336,13 +337,27 @@ export default function DeliveryNoteDetailPage() {
         </div>
 
         {/* Action Buttons */}
-        <div className="mb-4 sm:mb-6 flex flex-wrap gap-2">
+        <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row flex-wrap gap-2">
           {deliveryNote.status === 'draft' && (
-            <Button size="sm" onClick={handleConfirm} className="bg-blue-600 flex-1 sm:flex-none justify-center">
-              <CheckCircle className="h-4 w-4 mr-1" />
-              <span className="hidden sm:inline">Confirm</span>
-              <span className="sm:hidden">Confirm</span>
-            </Button>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 mb-2 sm:mb-0">
+                <input
+                  type="checkbox"
+                  id="sendEmailDN"
+                  checked={sendEmail}
+                  onChange={(e) => setSendEmail(e.target.checked)}
+                  className="w-4 h-4"
+                />
+                <label htmlFor="sendEmailDN" className="text-sm cursor-pointer">
+                  Send Email
+                </label>
+              </div>
+              <Button size="sm" onClick={handleConfirm} className="bg-blue-600 flex-1 sm:flex-none justify-center">
+                <CheckCircle className="h-4 w-4 mr-1" />
+                <span className="hidden sm:inline">Confirm</span>
+                <span className="sm:hidden">Confirm</span>
+              </Button>
+            </div>
           )}
           {deliveryNote.status === 'confirmed' && (
             <Button size="sm" onClick={handleDispatch} className="bg-yellow-600 flex-1 sm:flex-none justify-center">

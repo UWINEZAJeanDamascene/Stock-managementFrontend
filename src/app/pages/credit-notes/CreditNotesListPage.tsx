@@ -361,19 +361,21 @@ export default function CreditNotesListPage() {
     <Layout>
       <div className="container mx-auto py-6">
         {/* Page Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-2xl font-bold dark:text-white">{t('creditNotes.title', 'Credit Notes')}</h1>
-            <p className="text-muted-foreground">{t('creditNotes.subtitle', 'Manage customer credit notes')}</p>
+            <h1 className="text-xl sm:text-2xl font-bold dark:text-white">{t('creditNotes.title', 'Credit Notes')}</h1>
+            <p className="text-sm text-muted-foreground">{t('creditNotes.subtitle', 'Manage customer credit notes')}</p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={handleExport}>
-              <Download className="mr-2 h-4 w-4" />
-              {t('common.export', 'Export')}
+            <Button variant="outline" onClick={handleExport} size="sm" className="sm:size-default">
+              <Download className="mr-1.5 sm:mr-2 h-4 w-4" />
+              <span className="hidden sm:inline">{t('common.export', 'Export')}</span>
+              <span className="sm:hidden">{t('common.export', 'Export')}</span>
             </Button>
-            <Button onClick={() => setShowCreateModal(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              {t('creditNotes.newCreditNote', 'New Credit Note')}
+            <Button onClick={() => setShowCreateModal(true)} size="sm" className="sm:size-default">
+              <Plus className="mr-1.5 sm:mr-2 h-4 w-4" />
+              <span className="hidden sm:inline">{t('creditNotes.newCreditNote', 'New Credit Note')}</span>
+              <span className="sm:hidden">{t('creditNotes.new', 'New')}</span>
             </Button>
           </div>
         </div>

@@ -13,9 +13,11 @@ import {
   Plus,
   Truck,
   CreditCard,
-  DollarSign
+  DollarSign,
+  Mail
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
+import { Checkbox } from '@/app/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { Badge } from '@/app/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs';
@@ -138,6 +140,11 @@ export default function PurchaseOrderDetailPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [purchaseOrder, setPurchaseOrder] = useState<PurchaseOrder | null>(null);
   const [grns, setGrns] = useState<GRN[]>([]);
+  
+  // Email notification states
+  const [sendEmailApprove, setSendEmailApprove] = useState(true);
+  const [sendEmailCancel, setSendEmailCancel] = useState(true);
+  const [sendEmailReceive, setSendEmailReceive] = useState(true);
 
   const fetchPurchaseOrder = useCallback(async () => {
     if (!id) {
@@ -195,7 +202,7 @@ export default function PurchaseOrderDetailPage() {
     if (!id) return;
     setActionLoading(true);
     try {
-      await purchaseOrdersApi.approve(id);
+      await purchaseOrdersApi.approve(id, sendEmailApprove);
       fetchPurchaseOrder();
     } catch (error) {
       console.error('Failed to approve:', error);
@@ -208,7 +215,7 @@ export default function PurchaseOrderDetailPage() {
     if (!id) return;
     setActionLoading(true);
     try {
-      await purchaseOrdersApi.cancel(id);
+      await purchaseOrdersApi.cancel(id, sendEmailCancel);
       fetchPurchaseOrder();
     } catch (error) {
       console.error('Failed to cancel:', error);
@@ -434,24 +441,47 @@ export default function PurchaseOrderDetailPage() {
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t dark:border-slate-600 flex flex-wrap gap-2">
+          {/* Email Options & Action Buttons */}
+          <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t dark:border-slate-600 space-y-3">
+            {/* Email Notification Options */}
             {purchaseOrder.status === 'draft' && (
-              <>
-                <Button size="sm" onClick={handleApprove} disabled={actionLoading}>
-                  {actionLoading ? (
-                    <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-                  ) : (
-                    <CheckCircle className="mr-1 h-4 w-4" />
-                  )}
-                  {t('purchase.detail.approve', 'Approve')}
-                </Button>
-                <Button size="sm" variant="destructive" onClick={handleCancel} disabled={actionLoading}>
-                  <XCircle className="mr-1 h-4 w-4" />
-                  {t('purchase.detail.cancel', 'Cancel')}
-                </Button>
-              </>
+              <div className="flex flex-wrap items-center gap-4">
+                <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 cursor-pointer">
+                  <Checkbox
+                    checked={sendEmailApprove}
+                    onCheckedChange={(checked) => setSendEmailApprove(checked === true)}
+                  />
+                  <Mail className="h-4 w-4" />
+                  {t('purchase.detail.sendEmailApprove', 'Send email notification on approve')}
+                </label>
+                <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 cursor-pointer">
+                  <Checkbox
+                    checked={sendEmailCancel}
+                    onCheckedChange={(checked) => setSendEmailCancel(checked === true)}
+                  />
+                  <Mail className="h-4 w-4" />
+                  {t('purchase.detail.sendEmailCancel', 'Send email notification on cancel')}
+                </label>
+              </div>
             )}
+
+            <div className="flex flex-wrap gap-2">
+              {purchaseOrder.status === 'draft' && (
+                <>
+                  <Button size="sm" onClick={handleApprove} disabled={actionLoading}>
+                    {actionLoading ? (
+                      <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                    ) : (
+                      <CheckCircle className="mr-1 h-4 w-4" />
+                    )}
+                    {t('purchase.detail.approve', 'Approve')}
+                  </Button>
+                  <Button size="sm" variant="destructive" onClick={handleCancel} disabled={actionLoading}>
+                    <XCircle className="mr-1 h-4 w-4" />
+                    {t('purchase.detail.cancel', 'Cancel')}
+                  </Button>
+                </>
+              )}
             {purchaseOrder.status === 'approved' && (
               <Button size="sm" onClick={() => navigate('/grn/new', { state: { purchaseOrderId: id } })}>
                 <Package className="mr-1 h-4 w-4" />
@@ -466,6 +496,7 @@ export default function PurchaseOrderDetailPage() {
                 <span className="sm:hidden">{t('purchase.detail.recordPayment', 'Payment')}</span>
               </Button>
             )}
+            </div>
           </div>
         </div>
 

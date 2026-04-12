@@ -222,44 +222,39 @@ export default function SalesOrdersListPage() {
   console.log('[SalesOrdersListPage] About to render Layout');
   return (
     <Layout>
-      <div className="container mx-auto p-4 sm:p-6">
-        {/* Page Header - Responsive */}
+      <div className="container mx-auto p-6">
+        <h1 className="text-2xl font-bold">Sales Orders Debug</h1>
+        <p>If you see this, the page is rendering correctly.</p>
         <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-start gap-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 flex-shrink-0 mt-0.5">
-              <Package className="h-5 w-5 text-primary" />
-            </div>
-            <div className="min-w-0">
-              <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white leading-tight">Sales Orders</h1>
-              <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5">Manage sales orders and fulfillment workflow</p>
-            </div>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Sales Orders</h1>
+            <p className="text-gray-500 mt-1">Manage sales orders and fulfillment workflow</p>
           </div>
-          <Button onClick={() => navigate('/sales-orders/create')} className="flex items-center gap-2 self-start sm:self-auto bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white shadow-sm">
+          <Button onClick={() => navigate('/sales-orders/create')} className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Create Sales Order</span>
-            <span className="sm:hidden">New Order</span>
+            Create Sales Order
           </Button>
         </div>
 
         <Card className="mb-6">
           <CardContent className="p-4">
-            <div className="flex flex-col gap-4">
-              <div className="w-full">
+            <div className="flex flex-col lg:flex-row gap-4">
+              <div className="flex-1">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                   <Input
                     placeholder="Search by reference or client..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="pl-10 w-full"
+                    className="pl-10"
                   />
                 </div>
               </div>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="flex flex-col sm:flex-row gap-4">
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-full">
-                    <Filter className="h-4 w-4 mr-2 flex-shrink-0" />
+                  <SelectTrigger className="w-[180px]">
+                    <Filter className="h-4 w-4 mr-2" />
                     <SelectValue placeholder="Filter by status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -272,8 +267,8 @@ export default function SalesOrdersListPage() {
                 </Select>
 
                 <Select value={clientFilter} onValueChange={setClientFilter}>
-                  <SelectTrigger className="w-full">
-                    <User className="h-4 w-4 mr-2 flex-shrink-0" />
+                  <SelectTrigger className="w-[180px]">
+                    <User className="h-4 w-4 mr-2" />
                     <SelectValue placeholder="Filter by client" />
                   </SelectTrigger>
                   <SelectContent>
@@ -286,20 +281,22 @@ export default function SalesOrdersListPage() {
                   </SelectContent>
                 </Select>
 
-                <Input
-                  type="date"
-                  placeholder="From"
-                  value={dateFrom}
-                  onChange={(e) => setDateFrom(e.target.value)}
-                  className="w-full"
-                />
-                <Input
-                  type="date"
-                  placeholder="To"
-                  value={dateTo}
-                  onChange={(e) => setDateTo(e.target.value)}
-                  className="w-full"
-                />
+                <div className="flex gap-2">
+                  <Input
+                    type="date"
+                    placeholder="From"
+                    value={dateFrom}
+                    onChange={(e) => setDateFrom(e.target.value)}
+                    className="w-[140px]"
+                  />
+                  <Input
+                    type="date"
+                    placeholder="To"
+                    value={dateTo}
+                    onChange={(e) => setDateTo(e.target.value)}
+                    className="w-[140px]"
+                  />
+                </div>
               </div>
             </div>
           </CardContent>

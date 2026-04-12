@@ -307,14 +307,14 @@ export default function RecurringInvoiceDetailPage() {
     <Layout>
       <div className="container mx-auto py-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" onClick={() => navigate('/recurring-invoices')}>
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <Button variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0" onClick={() => navigate('/recurring-invoices')}>
               <ArrowLeft className="h-4 w-4" />
             </Button>
-            <div>
-              <h1 className="text-2xl font-bold">{recurringInvoice.referenceNo}</h1>
-              <div className="flex items-center gap-2 mt-1">
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="text-xl sm:text-2xl font-bold">{recurringInvoice.referenceNo}</h1>
+              <div className="flex items-center gap-2">
                 {getStatusBadge(recurringInvoice.status)}
                 {recurringInvoice.autoConfirm && (
                   <Badge variant="outline">{t('recurringInvoices.autoConfirm', 'Auto-Confirm')}</Badge>
@@ -324,32 +324,32 @@ export default function RecurringInvoiceDetailPage() {
           </div>
           <div className="flex items-center gap-2">
             {(recurringInvoice.status === 'active' || recurringInvoice.status === 'paused') && (
-              <Button variant="outline" onClick={() => navigate(`/recurring-invoices/${id}/edit`)}>
-                <Edit className="mr-2 h-4 w-4" />
-                {t('common.edit', 'Edit')}
+              <Button variant="outline" size="sm" className="px-2 sm:px-3" onClick={() => navigate(`/recurring-invoices/${id}/edit`)}>
+                <Edit className="h-4 w-4 sm:mr-1.5" />
+                <span className="hidden sm:inline">{t('common.edit', 'Edit')}</span>
               </Button>
             )}
             {recurringInvoice.status === 'active' && (
-              <Button variant="outline" onClick={handlePause} disabled={processing}>
-                <Pause className="mr-2 h-4 w-4" />
-                {t('recurringInvoices.pause', 'Pause')}
+              <Button variant="outline" size="sm" className="px-2 sm:px-3" onClick={handlePause} disabled={processing}>
+                <Pause className="h-4 w-4 sm:mr-1.5" />
+                <span className="hidden sm:inline">{t('recurringInvoices.pause', 'Pause')}</span>
               </Button>
             )}
             {recurringInvoice.status === 'paused' && (
-              <Button variant="outline" onClick={handleResume} disabled={processing}>
-                <Play className="mr-2 h-4 w-4" />
-                {t('recurringInvoices.resume', 'Resume')}
+              <Button variant="outline" size="sm" className="px-2 sm:px-3" onClick={handleResume} disabled={processing}>
+                <Play className="h-4 w-4 sm:mr-1.5" />
+                <span className="hidden sm:inline">{t('recurringInvoices.resume', 'Resume')}</span>
               </Button>
             )}
             {(recurringInvoice.status === 'active' || recurringInvoice.status === 'paused') && (
               <>
-                <Button variant="outline" onClick={() => setShowTriggerDialog(true)} disabled={processing}>
-                  <Zap className="mr-2 h-4 w-4" />
-                  {t('recurringInvoices.trigger', 'Trigger Now')}
+                <Button variant="outline" size="sm" className="px-2 sm:px-3" onClick={() => setShowTriggerDialog(true)} disabled={processing}>
+                  <Zap className="h-4 w-4 sm:mr-1.5" />
+                  <span className="hidden sm:inline">{t('recurringInvoices.trigger', 'Trigger')}</span>
                 </Button>
-                <Button variant="destructive" onClick={handleCancel} disabled={processing}>
-                  <XCircle className="mr-2 h-4 w-4" />
-                  {t('recurringInvoices.cancel', 'Cancel')}
+                <Button variant="destructive" size="sm" className="px-2 sm:px-3" onClick={handleCancel} disabled={processing}>
+                  <XCircle className="h-4 w-4 sm:mr-1.5" />
+                  <span className="hidden sm:inline">{t('recurringInvoices.cancel', 'Cancel')}</span>
                 </Button>
               </>
             )}
@@ -357,18 +357,18 @@ export default function RecurringInvoiceDetailPage() {
         </div>
 
         <Tabs defaultValue="details" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="details">
-              <FileText className="mr-2 h-4 w-4" />
-              {t('recurringInvoices.details', 'Details')}
+          <TabsList className="w-full overflow-x-auto flex-nowrap">
+            <TabsTrigger value="details" className="px-2 sm:px-3 whitespace-nowrap">
+              <FileText className="mr-1.5 sm:mr-2 h-4 w-4" />
+              <span className="text-sm">{t('recurringInvoices.details', 'Details')}</span>
             </TabsTrigger>
-            <TabsTrigger value="lines">
-              <Package className="mr-2 h-4 w-4" />
-              {t('recurringInvoices.lineItems', 'Line Items')}
+            <TabsTrigger value="lines" className="px-2 sm:px-3 whitespace-nowrap">
+              <Package className="mr-1.5 sm:mr-2 h-4 w-4" />
+              <span className="text-sm">{t('recurringInvoices.lineItems', 'Line Items')}</span>
             </TabsTrigger>
-            <TabsTrigger value="runs">
-              <Repeat className="mr-2 h-4 w-4" />
-              {t('recurringInvoices.runHistory', 'Run History')} ({runs.length})
+            <TabsTrigger value="runs" className="px-2 sm:px-3 whitespace-nowrap">
+              <Repeat className="mr-1.5 sm:mr-2 h-4 w-4" />
+              <span className="text-sm">{t('recurringInvoices.runHistory', 'Run History')} ({runs.length})</span>
             </TabsTrigger>
           </TabsList>
 
