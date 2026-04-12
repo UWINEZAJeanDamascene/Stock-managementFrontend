@@ -35,6 +35,16 @@ import {
 } from '@/app/components/ui/select';
 import { toast } from "sonner";
 
+// Helper to convert MongoDB Decimal128 to number
+const toNumber = (value: any): number => {
+  if (typeof value === 'number') return value;
+  if (value && typeof value === 'object' && '$numberDecimal' in value) {
+    return parseFloat(value.$numberDecimal);
+  }
+  if (typeof value === 'string') return parseFloat(value) || 0;
+  return 0;
+};
+
 interface PickPackLine {
   _id: string;
   product: {
@@ -228,34 +238,35 @@ export default function PickPacksListPage() {
   };
 
   const getProgress = (task: PickPack) => {
-    const total = task.lines.reduce((sum, line) => sum + line.qtyToPick, 0);
-    const picked = task.lines.reduce((sum, line) => sum + line.qtyPicked, 0);
-    const packed = task.lines.reduce((sum, line) => sum + line.qtyPacked, 0);
+    const total = task.lines.reduce((sum, line) => sum + toNumber(line.qtyToPick), 0);
+    const picked = task.lines.reduce((sum, line) => sum + toNumber(line.qtyPicked), 0);
+    const packed = task.lines.reduce((sum, line) => sum + toNumber(line.qtyPacked), 0);
     
     if (task.status === 'ready_for_delivery' || task.status === 'packed') {
-      return { text: `${packed}/${total} packed`, percent: (packed / total) * 100 };
+      return { text: `${packed}/${total} packed`, percent: total > 0 ? (packed / total) * 100 : 0 };
     }
-    return { text: `${picked}/${total} picked`, percent: (picked / total) * 100 };
+    return { text: `${picked}/${total} picked`, percent: total > 0 ? (picked / total) * 100 : 0 };
   };
 
   return (
     <Layout>
-      <div className="container mx-auto p-6">
-        <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="container mx-auto py-4 sm:py-6 px-3 sm:px-4">
+        <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Pick & Pack</h1>
-            <p className="text-gray-500 dark:text-gray-400 mt-1">Manage picking and packing tasks</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Pick & Pack</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage picking and packing tasks</p>
           </div>
-          <Button onClick={() => navigate('/pick-packs/create')} className="flex items-center gap-2">
+          <Button size="sm" onClick={() => navigate('/pick-packs/create')} className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
-            Create Pick & Pack
+            <span className="hidden sm:inline">Create Pick & Pack</span>
+            <span className="sm:hidden">Create</span>
           </Button>
         </div>
 
         {/* Filters */}
-        <Card className="mb-6">
-          <CardContent className="p-4">
-            <div className="flex flex-col lg:flex-row gap-4">
+        <Card className="mb-4 sm:mb-6 dark:border-slate-700 dark:bg-slate-800">
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex flex-col sm:flex-row gap-3">
               <div className="flex-1">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
@@ -269,13 +280,13 @@ export default function PickPacksListPage() {
               </div>
               
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[200px]">
+                <SelectTrigger className="w-full sm:w-[180px] dark:bg-slate-700 dark:border-slate-600">
                   <Filter className="h-4 w-4 mr-2" />
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
                   {STATUS_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
+                    <SelectItem key={option.value} value={option.value} className="dark:text-gray-200">
                       {option.label}
                     </SelectItem>
                   ))}
@@ -286,19 +297,19 @@ export default function PickPacksListPage() {
         </Card>
 
         {/* Pick Packs Table */}
-        <Card>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Reference</TableHead>
-                  <TableHead>Sales Order</TableHead>
-                  <TableHead>Client</TableHead>
-                  <TableHead>Warehouse</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Priority</TableHead>
-                  <TableHead>Progress</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+        <Card className="dark:border-slate-700 dark:bg-slate-800">
+          <CardContent className="p-0 overflow-x-auto">
+            <Table className="min-w-[700px]">
+              <TableHeader className="dark:bg-slate-800">
+                <TableRow className="dark:hover:bg-slate-700/50 dark:border-b dark:border-slate-700">
+                  <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">Reference</TableHead>
+                  <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">Sales Order</TableHead>
+                  <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">Client</TableHead>
+                  <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">Warehouse</TableHead>
+                  <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">Status</TableHead>
+                  <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">Priority</TableHead>
+                  <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">Progress</TableHead>
+                  <TableHead className="text-right dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

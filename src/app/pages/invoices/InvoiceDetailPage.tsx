@@ -13,8 +13,7 @@ import {
   CreditCard,
   Download,
   Send,
-  DollarSign,
-  X
+  DollarSign
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
@@ -331,34 +330,35 @@ export default function InvoiceDetailPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-6">
-          {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
-          <Button variant="ghost" onClick={() => navigate('/invoices')} className="dark:text-gray-300">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            {t('common.back', 'Back')}
+      <div className="container mx-auto py-4 sm:py-6 px-3 sm:px-4">
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-4 sm:mb-6">
+          <Button variant="outline" size="sm" onClick={() => navigate('/invoices')} className="dark:text-gray-300 px-2">
+            <ArrowLeft className="mr-1 h-4 w-4" />
+            <span className="hidden sm:inline">{t('common.back', 'Back')}</span>
           </Button>
         </div>
 
         {/* Document Header */}
-        <div className="bg-card rounded-lg border p-6 mb-6 dark:border-slate-700 dark:bg-slate-800">
-          <div className="flex justify-between items-start">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <FileText className="h-8 w-8 text-primary" />
-                <h1 className="text-2xl font-bold dark:text-gray-100">
+        <div className="bg-card rounded-lg border p-4 sm:p-6 mb-4 sm:mb-6 dark:border-slate-700 dark:bg-slate-800">
+          <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-2 flex-wrap">
+                <FileText className="h-6 w-6 sm:h-8 sm:w-8 text-primary flex-shrink-0" />
+                <h1 className="text-xl sm:text-2xl font-bold dark:text-gray-100 truncate">
                   {invoice.referenceNo || invoice.invoiceNumber || 'N/A'}
                 </h1>
-                {getStatusBadge(invoice.status)}
+                <div className="flex-shrink-0">
+                  {getStatusBadge(invoice.status)}
+                </div>
               </div>
-              <div className="grid grid-cols-2 gap-4 mt-4 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4 text-sm">
                 <div>
                   <p className="text-muted-foreground dark:text-gray-400">{t('invoice.client', 'Client')}</p>
                   <p className="font-medium dark:text-gray-200">{invoice.client?.name || '-'}</p>
-                  {invoice.client?.contact?.phone && <p className="text-muted-foreground dark:text-gray-400">{invoice.client.contact.phone}</p>}
-                  {invoice.client?.contact?.email && <p className="text-muted-foreground dark:text-gray-400">{invoice.client.contact.email}</p>}
-                  {invoice.client?.contact?.address && <p className="text-muted-foreground dark:text-gray-400">{invoice.client.contact.address}</p>}
-                  {invoice.client?.taxId && <p className="text-muted-foreground dark:text-gray-400">TIN: {invoice.client.taxId}</p>}
+                  {invoice.client?.contact?.phone && <p className="text-muted-foreground dark:text-gray-400 text-xs">{invoice.client.contact.phone}</p>}
+                  {invoice.client?.contact?.email && <p className="text-muted-foreground dark:text-gray-400 text-xs">{invoice.client.contact.email}</p>}
+                  {invoice.client?.contact?.address && <p className="text-muted-foreground dark:text-gray-400 text-xs">{invoice.client.contact.address}</p>}
                 </div>
                 <div>
                   <p className="text-muted-foreground dark:text-gray-400">{t('invoice.paymentTerms', 'Payment Terms')}</p>
@@ -374,43 +374,44 @@ export default function InvoiceDetailPage() {
                 </div>
               </div>
             </div>
-            <div className="text-right">
-              <p className="text-muted-foreground text-sm dark:text-gray-400">{t('invoice.total', 'Total Amount')}</p>
-              <p className="text-2xl font-bold dark:text-gray-100">
+            <div className="text-left sm:text-right flex-shrink-0">
+              <p className="text-muted-foreground text-sm dark:text-gray-400">{t('invoice.total', 'Total')}</p>
+              <p className="text-xl sm:text-2xl font-bold dark:text-gray-100 whitespace-nowrap">
                 {formatCurrency(invoice.grandTotal, invoice.currencyCode)}
               </p>
             </div>
           </div>
 
           {/* Status Timeline */}
-          <div className="mt-6 pt-6 border-t dark:border-slate-700">
+          <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t dark:border-slate-700">
             <p className="text-sm font-medium mb-3 dark:text-gray-300">{t('invoice.statusTimeline', 'Status Timeline')}</p>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto pb-2">
               {STATUS_FLOW.map((step, index) => (
-                <div key={step.status} className="flex items-center">
-                  <div className={`flex items-center gap-2 px-3 py-2 rounded-full ${
+                <div key={step.status} className="flex items-center flex-shrink-0">
+                  <div className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm ${
                     index <= currentStatusStep 
                       ? 'bg-primary text-primary-foreground' 
                       : 'bg-muted text-muted-foreground dark:bg-slate-700 dark:text-gray-400'
                   }`}>
                     {index < currentStatusStep ? (
-                      <CheckCircle className="h-4 w-4" />
+                      <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" />
                     ) : index === currentStatusStep ? (
-                      <Clock className="h-4 w-4" />
+                      <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
                     ) : (
-                      <div className="h-4 w-4" />
+                      <div className="h-3 w-3 sm:h-4 sm:w-4" />
                     )}
-                    <span className="text-sm">{step.label}</span>
+                    <span className="hidden sm:inline">{step.label}</span>
+                    <span className="sm:hidden">{step.label.split(' ')[0]}</span>
                   </div>
                   {index < STATUS_FLOW.length - 1 && (
-                    <div className={`w-8 h-0.5 mx-2 ${
+                    <div className={`w-4 sm:w-8 h-0.5 mx-1 sm:mx-2 ${
                       index < currentStatusStep ? 'bg-primary' : 'bg-muted'
                     }`} />
                   )}
                 </div>
               ))}
               {invoice.status === 'cancelled' && (
-                <Badge variant="destructive" className="ml-4">
+                <Badge variant="destructive" className="ml-2 sm:ml-4 flex-shrink-0">
                   {t('invoice.status.cancelled', 'Cancelled')}
                 </Badge>
               )}
@@ -418,33 +419,38 @@ export default function InvoiceDetailPage() {
           </div>
 
           {/* Action Buttons */}
-          <div className="mt-6 pt-6 border-t dark:border-slate-700 flex gap-2">
+          <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t dark:border-slate-700 flex flex-wrap gap-2">
             {invoice.status === 'draft' && (
               <>
-                <Button onClick={handleConfirm} disabled={actionLoading}>
-                  <CheckCircle className="mr-2 h-4 w-4" />
-                  {t('invoice.confirm', 'Confirm')}
+                <Button size="sm" onClick={handleConfirm} disabled={actionLoading} className="flex-1 sm:flex-none justify-center">
+                  <CheckCircle className="mr-1 sm:mr-2 h-4 w-4" />
+                  <span className="hidden sm:inline">{t('invoice.confirm', 'Confirm')}</span>
+                  <span className="sm:hidden">Confirm</span>
                 </Button>
-                <Button variant="destructive" onClick={handleCancel} disabled={actionLoading}>
-                  <XCircle className="mr-2 h-4 w-4" />
-                  {t('invoice.cancel', 'Cancel')}
+                <Button size="sm" variant="destructive" onClick={handleCancel} disabled={actionLoading} className="flex-1 sm:flex-none justify-center">
+                  <XCircle className="mr-1 sm:mr-2 h-4 w-4" />
+                  <span className="hidden sm:inline">{t('invoice.cancel', 'Cancel')}</span>
+                  <span className="sm:hidden">Cancel</span>
                 </Button>
               </>
             )}
             {(invoice.status === 'confirmed' || invoice.status === 'partially_paid' || invoice.status === 'partial') && (
-              <Button onClick={handleRecordPayment} disabled={actionLoading}>
-                <DollarSign className="mr-2 h-4 w-4" />
-                {t('invoice.recordPayment', 'Record Payment')}
+              <Button size="sm" onClick={handleRecordPayment} disabled={actionLoading} className="flex-1 sm:flex-none justify-center">
+                <DollarSign className="mr-1 sm:mr-2 h-4 w-4" />
+                <span className="hidden sm:inline">{t('invoice.recordPayment', 'Record Payment')}</span>
+                <span className="sm:hidden">Pay</span>
               </Button>
             )}
-            <Button variant="outline" onClick={handleDownloadPDF}>
-              <Download className="mr-2 h-4 w-4" />
-              {t('invoice.downloadPDF', 'Download PDF')}
+            <Button size="sm" variant="outline" onClick={handleDownloadPDF} className="flex-1 sm:flex-none justify-center">
+              <Download className="mr-1 sm:mr-2 h-4 w-4" />
+              <span className="hidden sm:inline">{t('invoice.downloadPDF', 'Download PDF')}</span>
+              <span className="sm:hidden">PDF</span>
             </Button>
             {invoice.status !== 'draft' && invoice.status !== 'cancelled' && (
-              <Button variant="outline" onClick={handleSendEmail}>
-                <Send className="mr-2 h-4 w-4" />
-                {t('invoice.sendEmail', 'Send by Email')}
+              <Button size="sm" variant="outline" onClick={handleSendEmail} className="flex-1 sm:flex-none justify-center">
+                <Send className="mr-1 sm:mr-2 h-4 w-4" />
+                <span className="hidden sm:inline">{t('invoice.sendEmail', 'Send by Email')}</span>
+                <span className="sm:hidden">Email</span>
               </Button>
             )}
           </div>
@@ -452,17 +458,29 @@ export default function InvoiceDetailPage() {
 
         {/* Tabs */}
         <Tabs defaultValue="details" className="w-full">
-          <TabsList className="dark:bg-slate-800">
-            <TabsTrigger value="details" className="dark:data-[state=active]:bg-slate-700 dark:data-[state=active]:text-gray-100 dark:text-gray-300">{t('invoice.tabs.details', 'Details')}</TabsTrigger>
-            <TabsTrigger value="payments" className="dark:data-[state=active]:bg-slate-700 dark:data-[state=active]:text-gray-100 dark:text-gray-300">
-              {t('invoice.tabs.payments', 'Payments')}
+          <TabsList className="dark:bg-slate-800 grid grid-cols-5 w-full h-auto p-1 gap-1">
+            <TabsTrigger value="details" className="dark:data-[state=active]:bg-slate-700 dark:data-[state=active]:text-gray-100 dark:text-gray-300 text-xs sm:text-sm px-2 sm:px-3 py-1.5 w-full">
+              {t('invoice.tabs.details', 'Details') || 'Details'}
+            </TabsTrigger>
+            <TabsTrigger value="payments" className="dark:data-[state=active]:bg-slate-700 dark:data-[state=active]:text-gray-100 dark:text-gray-300 text-xs sm:text-sm px-2 sm:px-3 py-1.5 w-full">
+              <span className="hidden sm:inline">{t('invoice.tabs.payments', 'Payments') || 'Payments'}</span>
+              <span className="sm:hidden">Pay</span>
               {invoice.payments && invoice.payments.length > 0 && (
-                <Badge variant="secondary" className="ml-2">{invoice.payments.length}</Badge>
+                <Badge variant="secondary" className="ml-1 text-xs">{invoice.payments.length}</Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="creditNotes" className="dark:data-[state=active]:bg-slate-700 dark:data-[state=active]:text-gray-100 dark:text-gray-300">{t('invoice.tabs.creditNotes', 'Credit Notes')}</TabsTrigger>
-            <TabsTrigger value="deliveries" className="dark:data-[state=active]:bg-slate-700 dark:data-[state=active]:text-gray-100 dark:text-gray-300">{t('invoice.tabs.deliveries', 'Deliveries')}</TabsTrigger>
-            <TabsTrigger value="journal" className="dark:data-[state=active]:bg-slate-700 dark:data-[state=active]:text-gray-100 dark:text-gray-300">{t('invoice.tabs.journal', 'Journal Entries')}</TabsTrigger>
+            <TabsTrigger value="creditNotes" className="dark:data-[state=active]:bg-slate-700 dark:data-[state=active]:text-gray-100 dark:text-gray-300 text-xs sm:text-sm px-2 sm:px-3 py-1.5 w-full">
+              <span className="hidden sm:inline">{t('invoice.tabs.creditNotes', 'Credit Notes') || 'Credit Notes'}</span>
+              <span className="sm:hidden">Credit</span>
+            </TabsTrigger>
+            <TabsTrigger value="deliveries" className="dark:data-[state=active]:bg-slate-700 dark:data-[state=active]:text-gray-100 dark:text-gray-300 text-xs sm:text-sm px-2 sm:px-3 py-1.5 w-full">
+              <span className="hidden sm:inline">{t('invoice.tabs.deliveries', 'Deliveries') || 'Deliveries'}</span>
+              <span className="sm:hidden">Deliv</span>
+            </TabsTrigger>
+            <TabsTrigger value="journal" className="dark:data-[state=active]:bg-slate-700 dark:data-[state=active]:text-gray-100 dark:text-gray-300 text-xs sm:text-sm px-2 sm:px-3 py-1.5 w-full">
+              <span className="hidden sm:inline">{t('invoice.tabs.journal', 'Journal') || 'Journal'}</span>
+              <span className="sm:hidden">Jrnl</span>
+            </TabsTrigger>
           </TabsList>
 
           {/* Details Tab */}
@@ -488,11 +506,11 @@ export default function InvoiceDetailPage() {
                           <div className="font-medium dark:text-gray-200">{line.product?.name || '-'}</div>
                           <div className="text-sm text-muted-foreground dark:text-gray-400">{line.product?.sku}</div>
                         </TableCell>
-                        <TableCell className="text-right dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{line.qty || line.quantity || 0}</TableCell>
-                        <TableCell className="text-right dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{formatCurrency(line.unitPrice || 0, invoice.currencyCode)}</TableCell>
-                        <TableCell className="text-right dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{(line.discountPct || line.discount || 0)}%</TableCell>
-                        <TableCell className="text-right dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{formatCurrency(line.lineTax || line.taxAmount || 0, invoice.currencyCode)}</TableCell>
-                        <TableCell className="text-right font-medium dark:text-gray-200 dark:bg-slate-800 dark:border-b dark:border-slate-700">{formatCurrency(line.lineTotal || line.totalWithTax || 0, invoice.currencyCode)}</TableCell>
+                        <TableCell className="text-right dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{line.qtyOrdered || 0}</TableCell>
+                        <TableCell className="text-right dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{formatCurrency(line.unitCost || 0, invoice.currencyCode)}</TableCell>
+                        <TableCell className="text-right dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">-</TableCell>
+                        <TableCell className="text-right dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{formatCurrency(line.taxAmount || 0, invoice.currencyCode)}</TableCell>
+                        <TableCell className="text-right font-medium dark:text-gray-200 dark:bg-slate-800 dark:border-b dark:border-slate-700">{formatCurrency(line.lineTotal || 0, invoice.currencyCode)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -506,7 +524,7 @@ export default function InvoiceDetailPage() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground dark:text-gray-400">{t('invoice.tax', 'Tax')}</span>
-                      <span className="font-medium dark:text-gray-200">{formatCurrency(invoice.taxAmount || 0, invoice.currencyCode)}</span>
+                      <span className="font-medium dark:text-gray-200">{formatCurrency(invoice.totalTax || 0, invoice.currencyCode)}</span>
                     </div>
                     <div className="flex justify-between border-t pt-2 dark:border-slate-700">
                       <span className="font-bold dark:text-gray-100">{t('invoice.total', 'Total')}</span>
@@ -544,19 +562,19 @@ export default function InvoiceDetailPage() {
                 {invoice.payments && invoice.payments.length > 0 ? (
                   <Table>
                     <TableRow className="dark:hover:bg-slate-700/50 dark:border-b dark:border-slate-700">
-                      <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.paymentDate', 'Date')}</TableHead>
-                      <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.paymentMethod', 'Method')}</TableHead>
-                      <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.reference', 'Reference')}</TableHead>
-                      <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.recordedBy', 'Recorded By')}</TableHead>
-                      <TableHead className="text-right dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.amount', 'Amount')}</TableHead>
+                      <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.paymentDate', 'Date') || 'Date'}</TableHead>
+                      <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.paymentMethod', 'Method') || 'Method'}</TableHead>
+                      <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.reference', 'Reference') || 'Reference'}</TableHead>
+                      <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.recordedBy', 'Recorded By') || 'Recorded By'}</TableHead>
+                      <TableHead className="text-right dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.amount', 'Amount') || 'Amount'}</TableHead>
                     </TableRow>
                     <TableBody className="dark:bg-slate-800">
                       {invoice.payments.map((payment) => (
                         <TableRow key={payment._id} className="dark:hover:bg-slate-700/50 dark:border-b dark:border-slate-700">
-                          <TableCell className="dark:text-gray-300 dark:bg-slate-800">{formatDate(payment.paidDate || payment.recordedAt)}</TableCell>
+                          <TableCell className="dark:text-gray-300 dark:bg-slate-800">{formatDate(payment.paidDate || payment.recordedAt || '')}</TableCell>
                           <TableCell className="capitalize dark:text-gray-300">{payment.paymentMethod?.replace('_', ' ')}</TableCell>
                           <TableCell className="dark:text-gray-300">{payment.reference || '-'}</TableCell>
-                          <TableCell className="dark:text-gray-300">{payment.recordedBy?.name || '-'}</TableCell>
+                          <TableCell className="dark:text-gray-300">{payment.recordedBy?.name ?? '-'}</TableCell>
                           <TableCell className="text-right font-medium dark:text-gray-200">
                             {formatCurrency(payment.amount, invoice.currencyCode)}
                           </TableCell>

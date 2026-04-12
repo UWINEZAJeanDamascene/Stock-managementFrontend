@@ -247,25 +247,26 @@ export default function ClientDetailPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-6 min-h-screen bg-slate-50 dark:bg-slate-900">
+      <div className="container mx-auto py-4 sm:py-6 px-3 sm:px-4 min-h-screen bg-slate-50 dark:bg-slate-900">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={() => navigate('/clients')}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              {t('common.back', 'Back')}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <Button variant="ghost" size="sm" onClick={() => navigate('/clients')} className="px-2">
+              <ArrowLeft className="mr-1 sm:mr-2 h-4 w-4" />
+              <span className="hidden sm:inline">{t('common.back', 'Back')}</span>
             </Button>
             <div>
-              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{client.name}</h1>
-              <p className="text-muted-foreground dark:text-slate-400">{client.code}</p>
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white truncate">{client.name}</h1>
+              <p className="text-sm text-muted-foreground dark:text-slate-400">{client.code}</p>
             </div>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={handleDownloadStatement}>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button variant="outline" size="sm" onClick={handleDownloadStatement} className="flex-1 sm:flex-none justify-center">
               <FileText className="mr-2 h-4 w-4" />
-              {t('clients.downloadStatement', 'Download Statement')}
+              <span className="hidden sm:inline">{t('clients.downloadStatement', 'Download Statement')}</span>
+              <span className="sm:hidden">Statement</span>
             </Button>
-            <Button onClick={() => navigate(`/clients/${id}/edit`)}>
+            <Button size="sm" onClick={() => navigate(`/clients/${id}/edit`)} className="flex-1 sm:flex-none justify-center">
               <Pencil className="mr-2 h-4 w-4" />
               {t('common.edit', 'Edit')}
             </Button>
@@ -273,108 +274,110 @@ export default function ClientDetailPage() {
         </div>
 
         {/* Client Info Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
           <Card className="dark:bg-slate-800">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-slate-900 dark:text-white">{t('clients.outstandingBalance', 'Outstanding Balance')}</CardTitle>
+            <CardHeader className="pb-2 px-3 sm:px-6">
+              <CardTitle className="text-xs sm:text-sm font-medium text-slate-900 dark:text-white">{t('clients.outstandingBalance', 'Outstanding')}</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold dark:text-slate-200">{formatCurrency(client.outstandingBalance || 0)}</div>
+            <CardContent className="px-3 sm:px-6">
+              <div className="text-lg sm:text-2xl font-bold dark:text-slate-200">{formatCurrency(client.outstandingBalance || 0)}</div>
             </CardContent>
           </Card>
           <Card className="dark:bg-slate-800">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-slate-900 dark:text-white">{t('clients.totalInvoiced', 'Total Invoiced')}</CardTitle>
+            <CardHeader className="pb-2 px-3 sm:px-6">
+              <CardTitle className="text-xs sm:text-sm font-medium text-slate-900 dark:text-white">{t('clients.totalInvoiced', 'Total Invoiced')}</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold dark:text-slate-200">{formatCurrency(invoiceSummary.totalAmount)}</div>
+            <CardContent className="px-3 sm:px-6">
+              <div className="text-lg sm:text-2xl font-bold dark:text-slate-200">{formatCurrency(invoiceSummary.totalAmount)}</div>
             </CardContent>
           </Card>
           <Card className="dark:bg-slate-800">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-slate-900 dark:text-white">{t('clients.totalPaid', 'Total Paid')}</CardTitle>
+            <CardHeader className="pb-2 px-3 sm:px-6">
+              <CardTitle className="text-xs sm:text-sm font-medium text-slate-900 dark:text-white">{t('clients.totalPaid', 'Total Paid')}</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold dark:text-slate-200">{formatCurrency(invoiceSummary.totalPaid)}</div>
+            <CardContent className="px-3 sm:px-6">
+              <div className="text-lg sm:text-2xl font-bold dark:text-slate-200">{formatCurrency(invoiceSummary.totalPaid)}</div>
             </CardContent>
           </Card>
           <Card className="dark:bg-slate-800">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-slate-900 dark:text-white">{t('clients.creditLimit', 'Credit Limit')}</CardTitle>
+            <CardHeader className="pb-2 px-3 sm:px-6">
+              <CardTitle className="text-xs sm:text-sm font-medium text-slate-900 dark:text-white">{t('clients.creditLimit', 'Credit Limit')}</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold dark:text-slate-200">{formatCurrency(client.creditLimit || 0)}</div>
+            <CardContent className="px-3 sm:px-6">
+              <div className="text-lg sm:text-2xl font-bold dark:text-slate-200">{formatCurrency(client.creditLimit || 0)}</div>
             </CardContent>
           </Card>
         </div>
 
         {/* Tabs */}
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="dark:bg-slate-700">
-            <TabsTrigger value="overview" className="dark:data-[state=active]:bg-slate-600 dark:data-[state=active]:text-white">{t('clients.tabs.overview', 'Overview')}</TabsTrigger>
-            <TabsTrigger value="quotations" className="dark:data-[state=active]:bg-slate-600 dark:data-[state=active]:text-white">{t('clients.tabs.quotations', 'Quotations')}</TabsTrigger>
-            <TabsTrigger value="invoices" className="dark:data-[state=active]:bg-slate-600 dark:data-[state=active]:text-white">{t('clients.tabs.invoices', 'Invoices')}</TabsTrigger>
-            <TabsTrigger value="receipts" className="dark:data-[state=active]:bg-slate-600 dark:data-[state=active]:text-white">{t('clients.tabs.receipts', 'Receipts')}</TabsTrigger>
-            <TabsTrigger value="creditNotes" className="dark:data-[state=active]:bg-slate-600 dark:data-[state=active]:text-white">{t('clients.tabs.creditNotes', 'Credit Notes')}</TabsTrigger>
+          <TabsList className="dark:bg-slate-700 flex flex-wrap h-auto p-1 gap-1">
+            <TabsTrigger value="overview" className="dark:data-[state=active]:bg-slate-600 dark:data-[state=active]:text-white text-xs sm:text-sm px-2 sm:px-3 py-1.5">{t('clients.tabs.overview', 'Overview')}</TabsTrigger>
+            <TabsTrigger value="quotations" className="dark:data-[state=active]:bg-slate-600 dark:data-[state=active]:text-white text-xs sm:text-sm px-2 sm:px-3 py-1.5">{t('clients.tabs.quotations', 'Quotations')}</TabsTrigger>
+            <TabsTrigger value="invoices" className="dark:data-[state=active]:bg-slate-600 dark:data-[state=active]:text-white text-xs sm:text-sm px-2 sm:px-3 py-1.5">{t('clients.tabs.invoices', 'Invoices')}</TabsTrigger>
+            <TabsTrigger value="receipts" className="dark:data-[state=active]:bg-slate-600 dark:data-[state=active]:text-white text-xs sm:text-sm px-2 sm:px-3 py-1.5">{t('clients.tabs.receipts', 'Receipts')}</TabsTrigger>
+            <TabsTrigger value="creditNotes" className="dark:data-[state=active]:bg-slate-600 dark:data-[state=active]:text-white text-xs sm:text-sm px-2 sm:px-3 py-1.5">{t('clients.tabs.creditNotes', 'Credit')}</TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
           <TabsContent value="overview">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-4 sm:gap-6">
               <Card className="dark:bg-slate-800">
-                <CardHeader>
-                  <CardTitle className="text-slate-900 dark:text-white">{t('clients.contactInfo', 'Contact Information')}</CardTitle>
+                <CardHeader className="px-4 sm:px-6">
+                  <CardTitle className="text-base sm:text-lg text-slate-900 dark:text-white">{t('clients.contactInfo', 'Contact Information')}</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground dark:text-slate-400">{t('clients.email', 'Email')}</span>
-                    <span className="dark:text-slate-200">{client.contact?.email || '-'}</span>
+                <CardContent className="px-4 sm:px-6 space-y-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <span className="text-sm text-muted-foreground dark:text-slate-400">{t('clients.email', 'Email')}</span>
+                    <span className="text-sm dark:text-slate-200 text-right">{client.contact?.email || '-'}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground dark:text-slate-400">{t('clients.phone', 'Phone')}</span>
-                    <span className="dark:text-slate-200">{client.contact?.phone || '-'}</span>
+                  <div className="grid grid-cols-2 gap-2">
+                    <span className="text-sm text-muted-foreground dark:text-slate-400">{t('clients.phone', 'Phone')}</span>
+                    <span className="text-sm dark:text-slate-200 text-right">{client.contact?.phone || '-'}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground dark:text-slate-400">{t('clients.address', 'Address')}</span>
-                    <span className="dark:text-slate-200">{client.contact?.address || '-'}</span>
+                  <div className="grid grid-cols-2 gap-2">
+                    <span className="text-sm text-muted-foreground dark:text-slate-400">{t('clients.address', 'Address')}</span>
+                    <span className="text-sm dark:text-slate-200 text-right">{client.contact?.address || '-'}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground dark:text-slate-400">{t('clients.city', 'City')}</span>
-                    <span className="dark:text-slate-200">{client.contact?.city || '-'}</span>
+                  <div className="grid grid-cols-2 gap-2">
+                    <span className="text-sm text-muted-foreground dark:text-slate-400">{t('clients.city', 'City')}</span>
+                    <span className="text-sm dark:text-slate-200 text-right">{client.contact?.city || '-'}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground dark:text-slate-400">{t('clients.country', 'Country')}</span>
-                    <span className="dark:text-slate-200">{client.contact?.country || '-'}</span>
+                  <div className="grid grid-cols-2 gap-2">
+                    <span className="text-sm text-muted-foreground dark:text-slate-400">{t('clients.country', 'Country')}</span>
+                    <span className="text-sm dark:text-slate-200 text-right">{client.contact?.country || '-'}</span>
                   </div>
                 </CardContent>
               </Card>
 
               <Card className="dark:bg-slate-800">
-                <CardHeader>
-                  <CardTitle className="text-slate-900 dark:text-white">{t('clients.accountInfo', 'Account Information')}</CardTitle>
+                <CardHeader className="px-4 sm:px-6">
+                  <CardTitle className="text-base sm:text-lg text-slate-900 dark:text-white">{t('clients.accountInfo', 'Account Information')}</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground dark:text-slate-400">{t('clients.type', 'Type')}</span>
-                    <span className="capitalize dark:text-slate-200">{client.type}</span>
+                <CardContent className="px-4 sm:px-6 space-y-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <span className="text-sm text-muted-foreground dark:text-slate-400">{t('clients.type', 'Type')}</span>
+                    <span className="text-sm capitalize dark:text-slate-200 text-right">{client.type}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground dark:text-slate-400">{t('clients.paymentTerms', 'Payment Terms')}</span>
-                    <span className="dark:text-slate-200">{getPaymentTermsLabel(client.paymentTerms)}</span>
+                  <div className="grid grid-cols-2 gap-2">
+                    <span className="text-sm text-muted-foreground dark:text-slate-400">{t('clients.paymentTerms', 'Payment Terms')}</span>
+                    <span className="text-sm dark:text-slate-200 text-right">{getPaymentTermsLabel(client.paymentTerms)}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground dark:text-slate-400">{t('clients.status', 'Status')}</span>
-                    <Badge variant={client.isActive ? 'default' : 'secondary'}>
-                      {client.isActive ? t('common.active', 'Active') : t('common.inactive', 'Inactive')}
-                    </Badge>
+                  <div className="grid grid-cols-2 gap-2">
+                    <span className="text-sm text-muted-foreground dark:text-slate-400">{t('clients.status', 'Status')}</span>
+                    <div className="text-right">
+                      <Badge variant={client.isActive ? 'default' : 'secondary'}>
+                        {client.isActive ? t('common.active', 'Active') : t('common.inactive', 'Inactive')}
+                      </Badge>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground dark:text-slate-400">{t('clients.lastPurchase', 'Last Purchase')}</span>
-                    <span className="dark:text-slate-200">{formatDate(client.lastPurchaseDate)}</span>
+                  <div className="grid grid-cols-2 gap-2">
+                    <span className="text-sm text-muted-foreground dark:text-slate-400">{t('clients.lastPurchase', 'Last Purchase')}</span>
+                    <span className="text-sm dark:text-slate-200 text-right">{formatDate(client.lastPurchaseDate)}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground dark:text-slate-400">{t('clients.createdAt', 'Created')}</span>
-                    <span className="dark:text-slate-200">{formatDate(client.createdAt)}</span>
+                  <div className="grid grid-cols-2 gap-2">
+                    <span className="text-sm text-muted-foreground dark:text-slate-400">{t('clients.createdAt', 'Created')}</span>
+                    <span className="text-sm dark:text-slate-200 text-right">{formatDate(client.createdAt)}</span>
                   </div>
                 </CardContent>
               </Card>
@@ -384,17 +387,17 @@ export default function ClientDetailPage() {
           {/* Quotations Tab */}
           <TabsContent value="quotations">
             <Card className="dark:bg-slate-800">
-              <CardHeader>
-                <CardTitle className="text-slate-900 dark:text-white">{t('clients.quotations', 'Quotations')}</CardTitle>
+              <CardHeader className="px-4 sm:px-6">
+                <CardTitle className="text-base sm:text-lg text-slate-900 dark:text-white">{t('clients.quotations', 'Quotations')}</CardTitle>
               </CardHeader>
-              <CardContent>
-                <Table>
+              <CardContent className="px-0 sm:px-6 overflow-x-auto">
+                <Table className="min-w-[600px]">
                   <TableHeader>
                     <TableRow className="dark:bg-slate-700">
-                      <TableHead className="dark:text-white">{t('clients.quotationNumber', 'Quotation #')}</TableHead>
+                      <TableHead className="dark:text-white whitespace-nowrap">{t('clients.quotationNumber', 'Quotation #')}</TableHead>
                       <TableHead className="dark:text-white">{t('clients.date', 'Date')}</TableHead>
-                      <TableHead className="dark:text-white">{t('clients.expiryDate', 'Expiry Date')}</TableHead>
-                      <TableHead className="text-right dark:text-white">{t('clients.total', 'Total')}</TableHead>
+                      <TableHead className="dark:text-white hidden sm:table-cell">{t('clients.expiryDate', 'Expiry')}</TableHead>
+                      <TableHead className="text-right dark:text-white whitespace-nowrap">{t('clients.total', 'Total')}</TableHead>
                       <TableHead className="dark:text-white">{t('clients.status', 'Status')}</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -412,10 +415,10 @@ export default function ClientDetailPage() {
                           className="cursor-pointer hover:bg-muted/50 dark:hover:bg-slate-700/50"
                           onClick={() => navigate(`/client/quotations/${quotation._id}`)}
                         >
-                          <TableCell className="font-medium dark:text-slate-200">{quotation.referenceNo || '-'}</TableCell>
+                          <TableCell className="font-medium dark:text-slate-200 whitespace-nowrap">{quotation.referenceNo || '-'}</TableCell>
                           <TableCell className="dark:text-slate-300">{formatDate(quotation.quotationDate)}</TableCell>
-                          <TableCell className="dark:text-slate-300">{formatDate(quotation.expiryDate)}</TableCell>
-                          <TableCell className="text-right dark:text-slate-200">{formatCurrency(quotation.totalAmount)}</TableCell>
+                          <TableCell className="dark:text-slate-300 hidden sm:table-cell">{formatDate(quotation.expiryDate)}</TableCell>
+                          <TableCell className="text-right dark:text-slate-200 whitespace-nowrap">{formatCurrency(quotation.totalAmount)}</TableCell>
                           <TableCell>{getStatusBadge(quotation.status)}</TableCell>
                         </TableRow>
                       ))
@@ -429,19 +432,19 @@ export default function ClientDetailPage() {
           {/* Invoices Tab */}
           <TabsContent value="invoices">
             <Card className="dark:bg-slate-800">
-              <CardHeader>
-                <CardTitle className="text-slate-900 dark:text-white">{t('clients.invoices', 'Invoices')}</CardTitle>
+              <CardHeader className="px-4 sm:px-6">
+                <CardTitle className="text-base sm:text-lg text-slate-900 dark:text-white">{t('clients.invoices', 'Invoices')}</CardTitle>
               </CardHeader>
-              <CardContent>
-                <Table>
+              <CardContent className="px-0 sm:px-6 overflow-x-auto">
+                <Table className="min-w-[700px]">
                   <TableHeader>
                     <TableRow className="dark:bg-slate-700">
-                      <TableHead className="dark:text-white">{t('clients.invoiceNumber', 'Invoice #')}</TableHead>
+                      <TableHead className="dark:text-white whitespace-nowrap">{t('clients.invoiceNumber', 'Invoice #')}</TableHead>
                       <TableHead className="dark:text-white">{t('clients.date', 'Date')}</TableHead>
-                      <TableHead className="dark:text-white">{t('clients.dueDate', 'Due Date')}</TableHead>
-                      <TableHead className="text-right dark:text-white">{t('clients.total', 'Total')}</TableHead>
-                      <TableHead className="text-right dark:text-white">{t('clients.paid', 'Paid')}</TableHead>
-                      <TableHead className="text-right dark:text-white">{t('clients.balance', 'Balance')}</TableHead>
+                      <TableHead className="dark:text-white hidden sm:table-cell">{t('clients.dueDate', 'Due')}</TableHead>
+                      <TableHead className="text-right dark:text-white whitespace-nowrap">{t('clients.total', 'Total')}</TableHead>
+                      <TableHead className="text-right dark:text-white hidden md:table-cell whitespace-nowrap">{t('clients.paid', 'Paid')}</TableHead>
+                      <TableHead className="text-right dark:text-white hidden sm:table-cell whitespace-nowrap">{t('clients.balance', 'Balance')}</TableHead>
                       <TableHead className="dark:text-white">{t('clients.status', 'Status')}</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -455,12 +458,12 @@ export default function ClientDetailPage() {
                     ) : (
                       invoices.map((invoice) => (
                         <TableRow key={invoice._id} className="dark:hover:bg-slate-700/50">
-                          <TableCell className="font-medium dark:text-slate-200">{invoice.referenceNo || '-'}</TableCell>
+                          <TableCell className="font-medium dark:text-slate-200 whitespace-nowrap">{invoice.referenceNo || '-'}</TableCell>
                           <TableCell className="dark:text-slate-300">{formatDate(invoice.invoiceDate)}</TableCell>
-                          <TableCell className="dark:text-slate-300">{formatDate(invoice.dueDate)}</TableCell>
-                          <TableCell className="text-right dark:text-slate-200">{formatCurrency(invoice.grandTotal)}</TableCell>
-                          <TableCell className="text-right dark:text-slate-200">{formatCurrency(invoice.amountPaid)}</TableCell>
-                          <TableCell className="text-right dark:text-slate-200">{formatCurrency(invoice.balance)}</TableCell>
+                          <TableCell className="dark:text-slate-300 hidden sm:table-cell">{formatDate(invoice.dueDate)}</TableCell>
+                          <TableCell className="text-right dark:text-slate-200 whitespace-nowrap">{formatCurrency(invoice.grandTotal)}</TableCell>
+                          <TableCell className="text-right dark:text-slate-200 hidden md:table-cell whitespace-nowrap">{formatCurrency(invoice.amountPaid)}</TableCell>
+                          <TableCell className="text-right dark:text-slate-200 hidden sm:table-cell whitespace-nowrap">{formatCurrency(invoice.balance)}</TableCell>
                           <TableCell>{getStatusBadge(invoice.status)}</TableCell>
                         </TableRow>
                       ))
@@ -474,17 +477,17 @@ export default function ClientDetailPage() {
           {/* Receipts Tab */}
           <TabsContent value="receipts">
             <Card className="dark:bg-slate-800">
-              <CardHeader>
-                <CardTitle className="text-slate-900 dark:text-white">{t('clients.receipts', 'Receipts')}</CardTitle>
+              <CardHeader className="px-4 sm:px-6">
+                <CardTitle className="text-base sm:text-lg text-slate-900 dark:text-white">{t('clients.receipts', 'Receipts')}</CardTitle>
               </CardHeader>
-              <CardContent>
-                <Table>
+              <CardContent className="px-0 sm:px-6 overflow-x-auto">
+                <Table className="min-w-[500px]">
                   <TableHeader>
                     <TableRow className="dark:bg-slate-700">
-                      <TableHead className="dark:text-white">{t('clients.receiptNumber', 'Receipt #')}</TableHead>
+                      <TableHead className="dark:text-white whitespace-nowrap">{t('clients.receiptNumber', 'Receipt #')}</TableHead>
                       <TableHead className="dark:text-white">{t('clients.date', 'Date')}</TableHead>
-                      <TableHead className="text-right dark:text-white">{t('clients.amount', 'Amount')}</TableHead>
-                      <TableHead className="dark:text-white">{t('clients.paymentMethod', 'Payment Method')}</TableHead>
+                      <TableHead className="text-right dark:text-white whitespace-nowrap">{t('clients.amount', 'Amount')}</TableHead>
+                      <TableHead className="dark:text-white hidden sm:table-cell">{t('clients.paymentMethod', 'Method')}</TableHead>
                       <TableHead className="dark:text-white">{t('clients.status', 'Status')}</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -498,10 +501,10 @@ export default function ClientDetailPage() {
                     ) : (
                       receipts.map((receipt) => (
                         <TableRow key={receipt._id} className="dark:hover:bg-slate-700/50">
-                          <TableCell className="font-medium dark:text-slate-200">{receipt.referenceNo || '-'}</TableCell>
+                          <TableCell className="font-medium dark:text-slate-200 whitespace-nowrap">{receipt.referenceNo || '-'}</TableCell>
                           <TableCell className="dark:text-slate-300">{formatDate(receipt.receiptDate)}</TableCell>
-                          <TableCell className="text-right dark:text-slate-200">{formatCurrency(receipt.amount)}</TableCell>
-                          <TableCell className="dark:text-slate-300">{receipt.paymentMethod || '-'}</TableCell>
+                          <TableCell className="text-right dark:text-slate-200 whitespace-nowrap">{formatCurrency(receipt.amount)}</TableCell>
+                          <TableCell className="dark:text-slate-300 hidden sm:table-cell">{receipt.paymentMethod || '-'}</TableCell>
                           <TableCell>{getStatusBadge(receipt.status)}</TableCell>
                         </TableRow>
                       ))
@@ -515,16 +518,16 @@ export default function ClientDetailPage() {
           {/* Credit Notes Tab */}
           <TabsContent value="creditNotes">
             <Card className="dark:bg-slate-800">
-              <CardHeader>
-                <CardTitle className="text-slate-900 dark:text-white">{t('clients.creditNotes', 'Credit Notes')}</CardTitle>
+              <CardHeader className="px-4 sm:px-6">
+                <CardTitle className="text-base sm:text-lg text-slate-900 dark:text-white">{t('clients.creditNotes', 'Credit Notes')}</CardTitle>
               </CardHeader>
-              <CardContent>
-                <Table>
+              <CardContent className="px-0 sm:px-6 overflow-x-auto">
+                <Table className="min-w-[450px]">
                   <TableHeader>
                     <TableRow className="dark:bg-slate-700">
-                      <TableHead className="dark:text-white">{t('clients.creditNoteNumber', 'Credit Note #')}</TableHead>
+                      <TableHead className="dark:text-white whitespace-nowrap">{t('clients.creditNoteNumber', 'Credit Note #')}</TableHead>
                       <TableHead className="dark:text-white">{t('clients.date', 'Date')}</TableHead>
-                      <TableHead className="text-right dark:text-white">{t('clients.amount', 'Amount')}</TableHead>
+                      <TableHead className="text-right dark:text-white whitespace-nowrap">{t('clients.amount', 'Amount')}</TableHead>
                       <TableHead className="dark:text-white">{t('clients.status', 'Status')}</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -538,9 +541,9 @@ export default function ClientDetailPage() {
                     ) : (
                       creditNotes.map((cn) => (
                         <TableRow key={cn._id} className="dark:hover:bg-slate-700/50">
-                          <TableCell className="font-medium dark:text-slate-200">{cn.referenceNo || '-'}</TableCell>
+                          <TableCell className="font-medium dark:text-slate-200 whitespace-nowrap">{cn.referenceNo || '-'}</TableCell>
                           <TableCell className="dark:text-slate-300">{formatDate(cn.creditNoteDate)}</TableCell>
-                          <TableCell className="text-right dark:text-slate-200">{formatCurrency(cn.grandTotal)}</TableCell>
+                          <TableCell className="text-right dark:text-slate-200 whitespace-nowrap">{formatCurrency(cn.grandTotal)}</TableCell>
                           <TableCell>{getStatusBadge(cn.status)}</TableCell>
                         </TableRow>
                       ))

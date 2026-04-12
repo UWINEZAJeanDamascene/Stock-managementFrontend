@@ -129,6 +129,7 @@ export default function CreditNoteCreatePage() {
   const [reason, setReason] = useState('');
   const [notes, setNotes] = useState('');
   const [lines, setLines] = useState<CreditNoteLine[]>([]);
+  const [sendEmail, setSendEmail] = useState(false);
 
   const fetchInvoices = useCallback(async () => {
     try {
@@ -330,7 +331,7 @@ export default function CreditNoteCreatePage() {
       if (isEdit) {
         response = await creditNotesApi.update(id!, payload);
       } else {
-        response = await creditNotesApi.create(payload);
+        response = await creditNotesApi.create(payload, sendEmail);
       }
 
       if (response.success && response.data) {
@@ -353,7 +354,7 @@ export default function CreditNoteCreatePage() {
 
     setConfirming(true);
     try {
-      const response = await creditNotesApi.confirm(id);
+      const response = await creditNotesApi.confirm(id, sendEmail);
       if (response.success) {
         navigate(`/credit-notes/${id}`);
       }
@@ -401,11 +402,25 @@ export default function CreditNoteCreatePage() {
               {t('creditNotes.saveDraft', 'Save Draft')}
             </Button>
             {isEdit && creditNote?.status === 'draft' && (
-              <Button onClick={handleConfirm} disabled={confirming || !reason || lines.every(l => l.quantity === 0)}>
-                {confirming && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                <CheckCircle className="mr-2 h-4 w-4" />
-                {t('creditNotes.confirm', 'Confirm')}
-              </Button>
+              <>
+                <div className="flex items-center gap-2 mb-2">
+                  <input
+                    type="checkbox"
+                    id="sendEmailConfirm"
+                    checked={sendEmail}
+                    onChange={(e) => setSendEmail(e.target.checked)}
+                    className="w-4 h-4"
+                  />
+                  <Label htmlFor="sendEmailConfirm" className="text-sm dark:text-gray-200 cursor-pointer">
+                    {t('common.sendEmail', 'Send Email to Customer')}
+                  </Label>
+                </div>
+                <Button onClick={handleConfirm} disabled={confirming || !reason || lines.every(l => l.quantity === 0)}>
+                  {confirming && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  {t('creditNotes.confirm', 'Confirm')}
+                </Button>
+              </>
             )}
           </div>
         </div>

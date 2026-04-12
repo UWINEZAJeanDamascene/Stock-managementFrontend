@@ -174,27 +174,29 @@ export default function ClientsListPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-6 min-h-screen bg-slate-50 dark:bg-slate-900">
-        <div className="flex justify-between items-center mb-6">
+      <div className="container mx-auto py-4 sm:py-6 px-3 sm:px-4 min-h-screen bg-slate-50 dark:bg-slate-900">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t('clients.title', 'Clients')}</h1>
-            <p className="text-muted-foreground dark:text-slate-400">{t('clients.description', 'Manage your clients')}</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">{t('clients.title', 'Clients')}</h1>
+            <p className="text-sm text-muted-foreground dark:text-slate-400">{t('clients.description', 'Manage your clients')}</p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => navigate('/bulk-data')}>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button variant="outline" size="sm" onClick={() => navigate('/bulk-data')} className="flex-1 sm:flex-none justify-center">
               <FileText className="mr-2 h-4 w-4" />
-              {t('clients.import', 'Import CSV')}
+              <span className="hidden sm:inline">{t('clients.import', 'Import CSV')}</span>
+              <span className="sm:hidden">Import</span>
             </Button>
-            <Button onClick={() => navigate('/clients/new')}>
+            <Button size="sm" onClick={() => navigate('/clients/new')} className="flex-1 sm:flex-none justify-center">
               <Plus className="mr-2 h-4 w-4" />
-              {t('clients.addClient', 'Add Client')}
+              <span className="hidden sm:inline">{t('clients.addClient', 'Add Client')}</span>
+              <span className="sm:hidden">Add</span>
             </Button>
           </div>
         </div>
 
         {/* Search Bar */}
-        <div className="bg-card dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4 mb-6">
-          <form onSubmit={handleSearch} className="flex gap-4">
+        <div className="bg-card dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-3 sm:p-4 mb-4 sm:mb-6">
+          <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-2 sm:gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground dark:text-slate-400" />
               <Input 
@@ -204,29 +206,29 @@ export default function ClientsListPage() {
                 className="pl-10 bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
               />
             </div>
-            <Button type="submit" variant="secondary">
+            <Button type="submit" variant="secondary" size="sm" className="w-full sm:w-auto">
               {t('common.search', 'Search')}
             </Button>
           </form>
         </div>
 
         {/* Table */}
-        <div className="bg-card dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+        <div className="bg-card dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-x-auto">
           {loading ? (
             <div className="flex items-center justify-center p-8">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground dark:text-slate-400" />
             </div>
           ) : (
-            <Table>
+            <Table className="min-w-[800px]">
               <TableHeader>
                 <TableRow className="dark:bg-slate-700">
-                  <TableHead className="dark:text-white">{t('clients.name', 'Name')}</TableHead>
-                  <TableHead className="dark:text-white">{t('clients.email', 'Email')}</TableHead>
-                  <TableHead className="dark:text-white">{t('clients.phone', 'Phone')}</TableHead>
-                  <TableHead className="dark:text-white">{t('clients.outstandingBalance', 'Outstanding Balance')}</TableHead>
-                  <TableHead className="dark:text-white">{t('clients.overdueAmount', 'Overdue Amount')}</TableHead>
+                  <TableHead className="dark:text-white whitespace-nowrap">{t('clients.name', 'Name')}</TableHead>
+                  <TableHead className="dark:text-white hidden sm:table-cell">{t('clients.email', 'Email')}</TableHead>
+                  <TableHead className="dark:text-white hidden md:table-cell">{t('clients.phone', 'Phone')}</TableHead>
+                  <TableHead className="dark:text-white whitespace-nowrap">{t('clients.outstandingBalance', 'Outstanding')}</TableHead>
+                  <TableHead className="dark:text-white hidden lg:table-cell whitespace-nowrap">{t('clients.overdueAmount', 'Overdue')}</TableHead>
                   <TableHead className="dark:text-white">{t('clients.status', 'Status')}</TableHead>
-                  <TableHead className="text-right dark:text-white">{t('common.actions', 'Actions')}</TableHead>
+                  <TableHead className="text-right dark:text-white whitespace-nowrap">{t('common.actions', 'Actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -241,14 +243,15 @@ export default function ClientsListPage() {
                     <TableRow key={client._id} className="dark:hover:bg-slate-700/50">
                       <TableCell className="font-medium dark:text-slate-200">
                         <div>{client.name}</div>
-                        <div className="text-xs text-muted-foreground dark:text-slate-400">{client.code}</div>
+                        <div className="text-xs text-muted-foreground dark:text-slate-400 sm:hidden">{client.code}</div>
+                        <div className="text-xs text-muted-foreground dark:text-slate-400 sm:hidden">{client.contact?.email || client.contact?.phone || '-'}</div>
                       </TableCell>
-                      <TableCell className="dark:text-slate-300">{client.contact?.email || '-'}</TableCell>
-                      <TableCell className="dark:text-slate-300">{client.contact?.phone || '-'}</TableCell>
-                      <TableCell className="font-medium dark:text-slate-200">
+                      <TableCell className="dark:text-slate-300 hidden sm:table-cell">{client.contact?.email || '-'}</TableCell>
+                      <TableCell className="dark:text-slate-300 hidden md:table-cell">{client.contact?.phone || '-'}</TableCell>
+                      <TableCell className="font-medium dark:text-slate-200 whitespace-nowrap">
                         {formatCurrency(client.totalOutstanding || client.outstandingBalance)}
                       </TableCell>
-                      <TableCell className="font-medium dark:text-slate-200">
+                      <TableCell className="font-medium dark:text-slate-200 hidden lg:table-cell whitespace-nowrap">
                         {formatCurrency(client.overdueAmount || 0)}
                       </TableCell>
                       <TableCell>
@@ -256,13 +259,14 @@ export default function ClientsListPage() {
                           {client.isActive ? t('common.active', 'Active') : t('common.inactive', 'Inactive')}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right whitespace-nowrap">
                         <div className="flex justify-end gap-1">
                           <Button 
                             variant="ghost" 
                             size="sm"
                             onClick={() => navigate(`/clients/${client._id}`)}
                             title={t('common.view', 'View')}
+                            className="h-8 w-8 p-0"
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
@@ -271,6 +275,7 @@ export default function ClientsListPage() {
                             size="sm"
                             onClick={() => navigate(`/clients/${client._id}/edit`)}
                             title={t('common.edit', 'Edit')}
+                            className="h-8 w-8 p-0 hidden sm:flex"
                           >
                             <Pencil className="h-4 w-4" />
                           </Button>
@@ -279,6 +284,7 @@ export default function ClientsListPage() {
                             size="sm"
                             onClick={() => handleStatement(client._id)}
                             title={t('clients.statement', 'Statement')}
+                            className="h-8 w-8 p-0 hidden md:flex"
                           >
                             <FileText className="h-4 w-4" />
                           </Button>
@@ -287,6 +293,7 @@ export default function ClientsListPage() {
                             size="sm"
                             onClick={() => handleToggleStatus(client._id)}
                             title={client.isActive ? t('common.deactivate', 'Deactivate') : t('common.activate', 'Activate')}
+                            className="h-8 w-8 p-0"
                           >
                             {client.isActive ? <UserX className="h-4 w-4 text-destructive" /> : <UserCheck className="h-4 w-4 text-green-600 dark:text-green-400" />}
                           </Button>
@@ -295,6 +302,7 @@ export default function ClientsListPage() {
                             size="sm"
                             onClick={() => setDeleteTarget({ id: client._id, name: client.name })}
                             title={t('common.delete', 'Delete')}
+                            className="h-8 w-8 p-0"
                           >
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>

@@ -90,6 +90,7 @@ export default function PurchaseReturnCreatePage() {
   const [supplierCreditNoteNo, setSupplierCreditNoteNo] = useState<string>('');
   
   const [lines, setLines] = useState<ReturnLine[]>([]);
+  const [sendEmail, setSendEmail] = useState(false);
 
   const fetchGRNs = useCallback(async () => {
     try {
@@ -223,7 +224,7 @@ export default function PurchaseReturnCreatePage() {
 
       console.log('[PurchaseReturnCreatePage] Creating return with data:', returnData);
       
-      const response = await purchaseReturnsApi.create(returnData as any);
+      const response = await purchaseReturnsApi.create(returnData as any, sendEmail);
       console.log('[PurchaseReturnCreatePage] Create response:', response);
       
       if (response.success && response.data) {
@@ -231,7 +232,7 @@ export default function PurchaseReturnCreatePage() {
         const returnId = (response.data as { _id: string })._id;
         if (confirmImmediately && returnId) {
           console.log('[PurchaseReturnCreatePage] Confirming return:', returnId);
-          await purchaseReturnsApi.confirm(returnId);
+          await purchaseReturnsApi.confirm(returnId, sendEmail);
         }
         navigate('/purchase-returns');
       }
@@ -420,6 +421,18 @@ export default function PurchaseReturnCreatePage() {
 
             {/* Actions */}
             <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2 mb-2">
+                <input
+                  type="checkbox"
+                  id="sendEmailPRCreate"
+                  checked={sendEmail}
+                  onChange={(e) => setSendEmail(e.target.checked)}
+                  className="h-4 w-4"
+                />
+                <Label htmlFor="sendEmailPRCreate" className="cursor-pointer text-sm dark:text-gray-300">
+                  Send email notification to supplier
+                </Label>
+              </div>
               <Button 
                 onClick={() => handleSave(false)}
                 disabled={saving || !selectedGRNId || lines.filter(l => l.qtyToReturn > 0).length === 0 || !reason.trim()}

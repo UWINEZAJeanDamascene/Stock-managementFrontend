@@ -239,17 +239,17 @@ export default function ClientQuotationViewPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-6 max-w-5xl min-h-screen bg-slate-50 dark:bg-slate-900">
+      <div className="container mx-auto py-4 sm:py-6 px-3 sm:px-4 max-w-5xl min-h-screen bg-slate-50 dark:bg-slate-900">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={() => navigate(-1)}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
+          <div className="flex items-center gap-3">
+            <Button variant="outline" size="sm" onClick={() => navigate(-1)} className="px-2">
+              <ArrowLeft className="mr-1 h-4 w-4" />
+              <span className="hidden sm:inline">Back</span>
             </Button>
             <div>
-              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Quotation {quotation.referenceNo}</h1>
-              <p className="text-muted-foreground dark:text-slate-400">Review your quotation details</p>
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">Quotation {quotation.referenceNo}</h1>
+              <p className="text-sm text-muted-foreground dark:text-slate-400">Review your quotation details</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -259,31 +259,36 @@ export default function ClientQuotationViewPage() {
 
         {/* Action Buttons - Only show for 'sent' status */}
         {canTakeAction && (
-          <Card className="mb-6 border-primary/20 bg-primary/5 dark:bg-slate-800">
-            <CardContent className="py-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-medium text-lg dark:text-white">Action Required</h3>
+          <Card className="mb-4 sm:mb-6 border-primary/20 bg-primary/5 dark:bg-slate-800 dark:border-slate-700">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                <div className="flex-1">
+                  <h3 className="font-medium text-base sm:text-lg dark:text-white">Action Required</h3>
                   <p className="text-muted-foreground dark:text-slate-400 text-sm">
-                    Please review this quotation and choose to accept or reject it
+                    Please review and accept or reject this quotation
                   </p>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex gap-2 sm:gap-3">
                   <Button 
                     variant="outline" 
+                    size="sm"
                     onClick={() => setShowRejectDialog(true)}
                     disabled={processing}
+                    className="flex-1 sm:flex-none"
                   >
-                    <XCircle className="mr-2 h-4 w-4 text-red-600 dark:text-red-400" />
-                    Reject
+                    <XCircle className="mr-1 h-4 w-4 text-red-600 dark:text-red-400" />
+                    <span className="hidden sm:inline">Reject</span>
+                    <span className="sm:hidden">Reject</span>
                   </Button>
                   <Button 
+                    size="sm"
                     onClick={handleAccept}
                     disabled={processing}
-                    className="bg-green-600 hover:bg-green-700"
+                    className="bg-green-600 hover:bg-green-700 flex-1 sm:flex-none"
                   >
-                    {processing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
-                    Accept Quotation
+                    {processing ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-1 h-4 w-4" />}
+                    <span className="hidden sm:inline">Accept Quotation</span>
+                    <span className="sm:hidden">Accept</span>
                   </Button>
                 </div>
               </div>
@@ -331,40 +336,40 @@ export default function ClientQuotationViewPage() {
           </Card>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-4 sm:space-y-6">
             {/* Basic Information */}
-            <Card className="dark:bg-slate-800">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white">
+            <Card className="dark:bg-slate-800 dark:border-slate-700">
+              <CardHeader className="px-4 sm:px-6">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg text-slate-900 dark:text-white">
                   <FileText className="h-5 w-5" />
                   Quotation Details
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+              <CardContent className="px-4 sm:px-6 space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="flex items-center gap-2">
-                    <User className="h-4 w-4 text-muted-foreground dark:text-slate-400" />
-                    <span className="text-muted-foreground dark:text-slate-400">Client:</span>
-                    <span className="font-medium dark:text-slate-200">{quotation.client?.name || clientName}</span>
+                    <User className="h-4 w-4 text-muted-foreground dark:text-slate-400 flex-shrink-0" />
+                    <span className="text-sm text-muted-foreground dark:text-slate-400">Client:</span>
+                    <span className="text-sm font-medium dark:text-slate-200">{quotation.client?.name || clientName}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <DollarSign className="h-4 w-4 text-muted-foreground dark:text-slate-400" />
-                    <span className="text-muted-foreground dark:text-slate-400">Currency:</span>
-                    <span className="font-medium dark:text-slate-200">{quotation.currency}</span>
+                    <DollarSign className="h-4 w-4 text-muted-foreground dark:text-slate-400 flex-shrink-0" />
+                    <span className="text-sm text-muted-foreground dark:text-slate-400">Currency:</span>
+                    <span className="text-sm font-medium dark:text-slate-200">{quotation.currency}</span>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground dark:text-slate-400" />
-                    <span className="text-muted-foreground dark:text-slate-400">Quotation Date:</span>
-                    <span className="font-medium dark:text-slate-200">{formatDate(quotation.quotationDate)}</span>
+                    <Calendar className="h-4 w-4 text-muted-foreground dark:text-slate-400 flex-shrink-0" />
+                    <span className="text-sm text-muted-foreground dark:text-slate-400">Quotation Date:</span>
+                    <span className="text-sm font-medium dark:text-slate-200">{formatDate(quotation.quotationDate)}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground dark:text-slate-400" />
-                    <span className="text-muted-foreground dark:text-slate-400">Expiry Date:</span>
-                    <span className="font-medium dark:text-slate-200">{formatDate(quotation.expiryDate)}</span>
+                    <Calendar className="h-4 w-4 text-muted-foreground dark:text-slate-400 flex-shrink-0" />
+                    <span className="text-sm text-muted-foreground dark:text-slate-400">Expiry Date:</span>
+                    <span className="text-sm font-medium dark:text-slate-200">{formatDate(quotation.expiryDate)}</span>
                   </div>
                 </div>
               </CardContent>

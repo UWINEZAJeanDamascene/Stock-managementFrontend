@@ -669,7 +669,7 @@ export function Sidebar({
   return (
     <div
       className={cn(
-        "flex h-screen flex-col bg-slate-900 transition-all duration-200",
+        "flex h-screen flex-col bg-slate-900 transition-all duration-200 overflow-y-auto",
         collapsed ? "w-16" : "w-64",
       )}
     >

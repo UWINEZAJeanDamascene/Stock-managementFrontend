@@ -606,30 +606,32 @@ export default function PurchaseDetailPage() {
                 </div>
 
                 {/* Summary */}
-                <div className="mt-4 pt-4 border-t dark:border-slate-600 flex flex-wrap justify-end gap-4 sm:gap-8">
-                  <div className="text-right">
-                    <p className="text-muted-foreground dark:text-slate-400">
-                      {t('purchases.detail.subtotal', 'Subtotal')}
-                    </p>
-                    <p className="font-medium dark:text-slate-200">{formatCurrency(purchase.subtotal)}</p>
-                  </div>
-                  {parseFloat(purchase.totalDiscount) > 0 && (
-                    <div className="text-right">
-                      <p className="text-muted-foreground dark:text-slate-400">
-                        {t('purchases.detail.discount', 'Discount')}
+                <div className="mt-4 pt-4 border-t dark:border-slate-600">
+                  <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:justify-end gap-3 sm:gap-6 lg:gap-8">
+                    <div className="text-left sm:text-right">
+                      <p className="text-muted-foreground text-xs sm:text-sm dark:text-slate-400">
+                        {t('purchases.detail.subtotal', 'Subtotal')}
                       </p>
-                      <p className="font-medium dark:text-slate-200">-{formatCurrency(purchase.totalDiscount)}</p>
+                      <p className="font-medium text-sm sm:text-base dark:text-slate-200">{formatCurrency(purchase.subtotal)}</p>
                     </div>
-                  )}
-                  <div className="text-right">
-                    <p className="text-muted-foreground dark:text-slate-400">{t('purchases.detail.tax', 'Tax')}</p>
-                    <p className="font-medium dark:text-slate-200">{formatCurrency(purchase.totalTax)}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold text-slate-900 dark:text-white">
-                      {t('purchases.detail.grandTotal', 'Grand Total')}
-                    </p>
-                    <p className="font-bold text-lg text-slate-900 dark:text-white">{formatCurrency(purchase.grandTotal)}</p>
+                    {parseFloat(purchase.totalDiscount) > 0 && (
+                      <div className="text-left sm:text-right">
+                        <p className="text-muted-foreground text-xs sm:text-sm dark:text-slate-400">
+                          {t('purchases.detail.discount', 'Discount')}
+                        </p>
+                        <p className="font-medium text-sm sm:text-base dark:text-slate-200">-{formatCurrency(purchase.totalDiscount)}</p>
+                      </div>
+                    )}
+                    <div className="text-left sm:text-right">
+                      <p className="text-muted-foreground text-xs sm:text-sm dark:text-slate-400">{t('purchases.detail.tax', 'Tax')}</p>
+                      <p className="font-medium text-sm sm:text-base dark:text-slate-200">{formatCurrency(purchase.totalTax)}</p>
+                    </div>
+                    <div className="col-span-2 sm:col-auto text-right">
+                      <p className="font-bold text-slate-900 dark:text-white text-sm sm:text-base">
+                        {t('purchases.detail.grandTotal', 'Grand Total')}
+                      </p>
+                      <p className="font-bold text-base sm:text-lg text-slate-900 dark:text-white">{formatCurrency(purchase.grandTotal)}</p>
+                    </div>
                   </div>
                 </div>
 

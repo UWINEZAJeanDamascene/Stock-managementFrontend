@@ -211,55 +211,59 @@ export default function PickPackDetailPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto p-6">
-        {/* Header */}
-        <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <Button variant="outline" onClick={() => navigate('/pick-packs')}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{pickPack.referenceNo}</h1>
-              <p className="text-gray-500 dark:text-gray-400">Pick & Pack Task</p>
-            </div>
+      <div className="container mx-auto p-3 sm:p-4">
+        {/* Header - All buttons on one line */}
+        <div className="mb-4 flex items-center gap-2">
+          {/* Back Button */}
+          <Button variant="outline" size="sm" onClick={() => navigate('/pick-packs')} className="px-2 flex-shrink-0">
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            <span className="hidden sm:inline">Back</span>
+          </Button>
+          
+          {/* Title */}
+          <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">{pickPack.referenceNo}</h1>
+          
+          {/* Status Badges */}
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <Badge className={`${STATUS_COLORS[pickPack.status]} text-xs px-2 py-1 capitalize`}>
+              {pickPack.status.replace(/_/g, ' ')}
+            </Badge>
+            <Badge className={`${PRIORITY_COLORS[pickPack.priority]} text-xs px-2 py-1 capitalize`}>
+              {pickPack.priority}
+            </Badge>
           </div>
-          <div className="flex gap-2">
+          
+          {/* Action Button */}
+          <div className="flex items-center gap-1 ml-auto flex-shrink-0">
             {pickPack.status === 'draft' && (
-              <Button onClick={handleStartPicking}>
-                <Play className="h-4 w-4 mr-2" />
-                Start Picking
+              <Button size="sm" onClick={handleStartPicking}>
+                <Play className="h-4 w-4 mr-1" />
+                <span className="hidden sm:inline">Start Picking</span>
+                <span className="sm:hidden">Start</span>
               </Button>
             )}
             {pickPack.status === 'picking' && (
-              <Button onClick={handleCompletePicking}>
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Complete Picking
+              <Button size="sm" onClick={handleCompletePicking}>
+                <CheckCircle className="h-4 w-4 mr-1" />
+                <span className="hidden sm:inline">Complete Picking</span>
+                <span className="sm:hidden">Complete</span>
               </Button>
             )}
             {pickPack.status === 'picked' && (
-              <Button onClick={handleStartPacking}>
-                <Play className="h-4 w-4 mr-2" />
-                Start Packing
+              <Button size="sm" onClick={handleStartPacking}>
+                <Play className="h-4 w-4 mr-1" />
+                <span className="hidden sm:inline">Start Packing</span>
+                <span className="sm:hidden">Pack</span>
               </Button>
             )}
             {pickPack.status === 'packed' && (
-              <Button onClick={handleCompletePacking}>
-                <Truck className="h-4 w-4 mr-2" />
-                Complete Packing
+              <Button size="sm" onClick={handleCompletePacking}>
+                <Truck className="h-4 w-4 mr-1" />
+                <span className="hidden sm:inline">Complete Packing</span>
+                <span className="sm:hidden">Done</span>
               </Button>
             )}
           </div>
-        </div>
-
-        {/* Status */}
-        <div className="mb-6 flex gap-2">
-          <Badge className={`${STATUS_COLORS[pickPack.status]} text-lg px-4 py-2 capitalize`}>
-            {pickPack.status.replace(/_/g, ' ')}
-          </Badge>
-          <Badge className={`${PRIORITY_COLORS[pickPack.priority]} capitalize`}>
-            {pickPack.priority} Priority
-          </Badge>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

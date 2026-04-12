@@ -591,14 +591,14 @@ function DeliveryNoteCreatePageContent() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label className="dark:text-gray-200">{t('deliveryNote.invoice')} *</Label>
+                  <Label className="dark:text-gray-200">{t('deliveryNote.invoice', 'Invoice')} *</Label>
                   <Select 
                     value={formData.invoice} 
                     onValueChange={(value) => handleInvoiceChange(value)}
                     disabled={isEditMode || !!invoiceId}
                   >
                     <SelectTrigger className="dark:bg-slate-700 dark:border-slate-600 dark:text-white">
-                      <SelectValue placeholder={t('deliveryNote.selectInvoice')} />
+                      <SelectValue placeholder={t('deliveryNote.selectInvoice', 'Select Invoice')} />
                     </SelectTrigger>
                     <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
                       {invoices.length === 0 ? (
@@ -638,11 +638,11 @@ function DeliveryNoteCreatePageContent() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label className="dark:text-gray-200">{t('deliveryNote.client')}</Label>
+                    <Label className="dark:text-gray-200">{t('deliveryNote.client', 'Client')}</Label>
                     <Input className="dark:bg-slate-700 dark:border-slate-600 dark:text-white" value={formData.client ? clients.find(c => c._id === formData.client)?.name || '' : ''} disabled />
                   </div>
                   <div>
-                    <Label className="dark:text-gray-200">{t('deliveryNote.deliveryDate')}</Label>
+                    <Label className="dark:text-gray-200">{t('deliveryNote.deliveryDate', 'Delivery Date')}</Label>
                     <Input
                       type="date"
                       className="dark:bg-slate-700 dark:border-slate-600 dark:text-white"
@@ -654,7 +654,7 @@ function DeliveryNoteCreatePageContent() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label className="dark:text-gray-200">{t('deliveryNote.deliveredBy')}</Label>
+                    <Label className="dark:text-gray-200">{t('deliveryNote.deliveredBy', 'Delivered By')}</Label>
                     <Input
                       className="dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                       value={formData.deliveredBy}
@@ -663,7 +663,7 @@ function DeliveryNoteCreatePageContent() {
                     />
                   </div>
                   <div>
-                    <Label className="dark:text-gray-200">{t('deliveryNote.vehicle')}</Label>
+                    <Label className="dark:text-gray-200">{t('deliveryNote.vehicle', 'Vehicle')}</Label>
                     <Input
                       className="dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                       value={formData.vehicle}
@@ -674,7 +674,7 @@ function DeliveryNoteCreatePageContent() {
                 </div>
 
                 <div>
-                  <Label className="dark:text-gray-200">{t('deliveryNote.deliveryAddress')}</Label>
+                  <Label className="dark:text-gray-200">{t('deliveryNote.deliveryAddress', 'Delivery Address')}</Label>
                   <Textarea
                     className="dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                     value={formData.deliveryAddress}
@@ -686,7 +686,7 @@ function DeliveryNoteCreatePageContent() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label className="dark:text-gray-200">{t('deliveryNote.carrier')}</Label>
+                    <Label className="dark:text-gray-200">{t('deliveryNote.carrier', 'Carrier')}</Label>
                     <Input
                       className="dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                       value={formData.carrier}
@@ -695,7 +695,7 @@ function DeliveryNoteCreatePageContent() {
                     />
                   </div>
                   <div>
-                    <Label className="dark:text-gray-200">{t('deliveryNote.trackingNumber')}</Label>
+                    <Label className="dark:text-gray-200">{t('deliveryNote.trackingNumber', 'Tracking Number')}</Label>
                     <Input
                       className="dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                       value={formData.trackingNumber}

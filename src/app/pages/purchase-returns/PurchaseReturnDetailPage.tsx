@@ -103,6 +103,7 @@ export default function PurchaseReturnDetailPage() {
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [purchaseReturn, setPurchaseReturn] = useState<PurchaseReturnDetail | null>(null);
+  const [sendEmail, setSendEmail] = useState(false);
   
   // Refund dialog state
   const [showRefundDialog, setShowRefundDialog] = useState(false);
@@ -138,7 +139,7 @@ export default function PurchaseReturnDetailPage() {
 
     setConfirming(true);
     try {
-      await purchaseReturnsApi.confirm(id);
+      await purchaseReturnsApi.confirm(id, sendEmail);
       fetchPurchaseReturn();
     } catch (err: any) {
       setError(err.message || 'Failed to confirm purchase return');
@@ -167,7 +168,7 @@ export default function PurchaseReturnDetailPage() {
         refundMethod,
         bankAccountId: refundMethod === 'bank_transfer' ? bankAccountId : undefined,
         reference: refundReference || undefined,
-      });
+      }, sendEmail);
       setShowRefundDialog(false);
       fetchPurchaseReturn();
     } catch (err: any) {
@@ -422,6 +423,18 @@ export default function PurchaseReturnDetailPage() {
             {purchaseReturn.status === 'draft' && (
               <Card className="dark:border-slate-700 dark:bg-slate-800">
                 <CardContent className="pt-6">
+                  <div className="flex items-center gap-2 mb-3">
+                    <input
+                      type="checkbox"
+                      id="sendEmailPR"
+                      checked={sendEmail}
+                      onChange={(e) => setSendEmail(e.target.checked)}
+                      className="h-4 w-4"
+                    />
+                    <Label htmlFor="sendEmailPR" className="cursor-pointer text-sm">
+                      Send email notification to supplier
+                    </Label>
+                  </div>
                   <div className="flex flex-col gap-2">
                     <Button
                       onClick={handleConfirm}
@@ -444,6 +457,18 @@ export default function PurchaseReturnDetailPage() {
             {purchaseReturn.status === 'confirmed' && (!purchaseReturn.refundMethod || purchaseReturn.refundMethod === 'none') && (
               <Card className="dark:border-slate-700 dark:bg-slate-800">
                 <CardContent className="pt-6">
+                  <div className="flex items-center gap-2 mb-3">
+                    <input
+                      type="checkbox"
+                      id="sendEmailPRRefund"
+                      checked={sendEmail}
+                      onChange={(e) => setSendEmail(e.target.checked)}
+                      className="h-4 w-4"
+                    />
+                    <Label htmlFor="sendEmailPRRefund" className="cursor-pointer text-sm">
+                      Send email notification to supplier
+                    </Label>
+                  </div>
                   <div className="flex flex-col gap-2">
                     <Button
                       onClick={openRefundDialog}

@@ -127,6 +127,7 @@ export default function CreditNoteDetailPage() {
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const [sendEmail, setSendEmail] = useState(false);
 
   const fetchCreditNote = useCallback(async () => {
     if (!id) return;
@@ -154,7 +155,7 @@ export default function CreditNoteDetailPage() {
     if (!id) return;
     setProcessing(true);
     try {
-      const response = await creditNotesApi.confirm(id);
+      const response = await creditNotesApi.confirm(id, sendEmail);
       if (response.success) {
         toast.success('Credit note confirmed successfully');
         setConfirmDialogOpen(false);
@@ -564,15 +565,29 @@ export default function CreditNoteDetailPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmDialogOpen(false)} disabled={processing}>
-              <X className="mr-2 h-4 w-4" />
-              {t('common.cancel', 'Cancel')}
-            </Button>
-            <Button onClick={handleConfirm} disabled={processing}>
-              {processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              <CheckCircle className="mr-2 h-4 w-4" />
-              {t('creditNotes.confirm', 'Confirm')}
-            </Button>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="sendEmailCN"
+                  checked={sendEmail}
+                  onChange={(e) => setSendEmail(e.target.checked)}
+                  className="w-4 h-4"
+                />
+                <label htmlFor="sendEmailCN" className="text-sm cursor-pointer">
+                  {t('common.sendEmail', 'Send Email to Customer')}
+                </label>
+              </div>
+              <Button variant="outline" onClick={() => setConfirmDialogOpen(false)} disabled={processing}>
+                <X className="mr-2 h-4 w-4" />
+                {t('common.cancel', 'Cancel')}
+              </Button>
+              <Button onClick={handleConfirm} disabled={processing}>
+                {processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <CheckCircle className="mr-2 h-4 w-4" />
+                {t('creditNotes.confirm', 'Confirm')}
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -1500,10 +1500,10 @@ export const creditNotesApi = {
   },
   getById: (id: string) =>
     request<{ success: boolean; data: unknown }>(`/credit-notes/${id}`),
-  create: (data: unknown) =>
+  create: (data: unknown, sendEmail?: boolean) =>
     request<{ success: boolean; data: unknown }>("/credit-notes", {
       method: "POST",
-      body: data,
+      body: { ...data, sendEmail },
     }),
   approve: (
     id: string,
@@ -1535,10 +1535,10 @@ export const creditNotesApi = {
       method: "PUT",
       body: data,
     }),
-  confirm: (id: string) =>
+  confirm: (id: string, sendEmail?: boolean) =>
     request<{ success: boolean; data: unknown }>(
       `/credit-notes/${id}/confirm`,
-      { method: "POST" },
+      { method: "POST", body: { sendEmail } },
     ),
 };
 
@@ -2127,20 +2127,20 @@ export const purchaseReturnsApi = {
       qtyReturned: number;
       unitCost: number;
     }>;
-  }) =>
+  }, sendEmail?: boolean) =>
     request<{ success: boolean; data: unknown }>(
       "/stock/advanced/purchase-returns",
-      { method: "POST", body: data },
+      { method: "POST", body: { ...data, sendEmail } },
     ),
   update: (id: string, data: unknown) =>
     request<{ success: boolean; data: unknown }>(
       `/stock/advanced/purchase-returns/${id}`,
       { method: "PUT", body: data },
     ),
-  confirm: (id: string) =>
+  confirm: (id: string, sendEmail?: boolean) =>
     request<{ success: boolean; data: unknown }>(
       `/stock/advanced/purchase-returns/${id}/confirm`,
-      { method: "PUT" },
+      { method: "PUT", body: { sendEmail } },
     ),
   processRefund: (
     id: string,
@@ -2149,10 +2149,11 @@ export const purchaseReturnsApi = {
       bankAccountId?: string;
       reference?: string;
     },
+    sendEmail?: boolean,
   ) =>
     request<{ success: boolean; data: unknown }>(
       `/stock/advanced/purchase-returns/${id}/refund`,
-      { method: "POST", body: data },
+      { method: "POST", body: { ...data, sendEmail } },
     ),
 };
 

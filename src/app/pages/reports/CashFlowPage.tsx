@@ -62,21 +62,21 @@ function SectionRow({
       : null;
   return (
     <div
-      className={`flex items-center py-1.5 text-sm ${bold ? "font-semibold border-t border-b bg-muted/50" : ""} ${className}`}
+      className={`flex items-start sm:items-center py-1.5 text-sm ${bold ? "font-semibold border-t border-b bg-muted/50" : ""} ${className}`}
       style={{ paddingLeft: `${indent * 24}px` }}
     >
       <span
-        className={`flex-1 ${bold ? "font-semibold" : ""} ${isNegative ? "text-destructive" : ""}`}
+        className={`flex-1 min-w-0 pr-2 ${bold ? "font-semibold" : ""} ${isNegative ? "text-destructive" : ""}`}
       >
         {label}
       </span>
       <span
-        className={`w-36 text-right font-mono tabular-nums ${isNegative ? "text-destructive" : ""}`}
+        className={`w-24 sm:w-36 text-right font-mono tabular-nums text-xs sm:text-sm shrink-0 ${isNegative ? "text-destructive" : ""}`}
       >
         {currentStr}
       </span>
       {compStr !== null && (
-        <span className="w-36 text-right font-mono tabular-nums text-muted-foreground">
+        <span className="w-24 sm:w-36 text-right font-mono tabular-nums text-muted-foreground text-xs sm:text-sm shrink-0">
           {compStr}
         </span>
       )}
@@ -233,55 +233,58 @@ export default function CashFlowPage() {
 
   return (
     <Layout>
-      <div className="space-y-6 max-w-5xl mx-auto">
+      <div className="space-y-4 sm:space-y-6 max-w-5xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-              <Waves className="h-8 w-8" />
-              Cash Flow Statement
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight flex items-center gap-2">
+              <Waves className="h-6 w-6 sm:h-8 sm:w-8 flex-shrink-0" />
+              <span className="truncate">Cash Flow Statement</span>
             </h1>
-            <p className="text-muted-foreground mt-1">
+            <p className="text-muted-foreground mt-1 text-sm">
               Statement of Cash Flows — IAS 7 (Direct Method)
             </p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={handlePrint}>
-              <Printer className="h-4 w-4 mr-2" />
-              Print
+          <div className="flex gap-2 flex-shrink-0">
+            <Button variant="outline" size="sm" onClick={handlePrint}>
+              <Printer className="h-4 w-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Print</span>
             </Button>
           </div>
         </div>
 
         {/* Filters */}
         <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-end gap-4 flex-wrap">
-              <div className="space-y-2">
-                <Label>Start Date</Label>
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-end gap-3 sm:gap-4">
+              <div className="space-y-1.5 w-full sm:w-auto">
+                <Label className="text-sm">Start Date</Label>
                 <Input
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full sm:w-auto"
                 />
               </div>
-              <div className="space-y-2">
-                <Label>End Date</Label>
+              <div className="space-y-1.5 w-full sm:w-auto">
+                <Label className="text-sm">End Date</Label>
                 <Input
                   type="date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
+                  className="w-full sm:w-auto"
                 />
               </div>
-              <Button onClick={fetchCF} disabled={loading}>
+              <Button onClick={fetchCF} disabled={loading} size="sm" className="w-full sm:w-auto">
                 {loading ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="h-4 w-4 mr-1 sm:mr-2 animate-spin" />
                 ) : (
-                  <CalendarDays className="h-4 w-4 mr-2" />
+                  <CalendarDays className="h-4 w-4 mr-1 sm:mr-2" />
                 )}
-                Generate
+                <span className="hidden sm:inline">Generate</span>
+                <span className="sm:hidden">Gen</span>
               </Button>
-              <div className="flex items-center gap-2 ml-auto">
+              <div className="flex items-center gap-2 sm:ml-auto pt-2 sm:pt-0">
                 <label className="flex items-center gap-2 text-sm cursor-pointer">
                   <input
                     type="checkbox"
@@ -289,26 +292,29 @@ export default function CashFlowPage() {
                     onChange={(e) => setShowComparative(e.target.checked)}
                     className="h-4 w-4 rounded border-slate-300"
                   />
-                  Compare Period
+                  <span className="hidden sm:inline">Compare Period</span>
+                  <span className="sm:hidden">Compare</span>
                 </label>
               </div>
             </div>
             {showComparative && (
-              <div className="flex items-end gap-4 mt-4 pt-4 border-t">
-                <div className="space-y-2">
-                  <Label>Compare Start</Label>
+              <div className="flex flex-col sm:flex-row items-start sm:items-end gap-3 sm:gap-4 mt-4 pt-4 border-t">
+                <div className="space-y-1.5 w-full sm:w-auto">
+                  <Label className="text-sm">Compare Start</Label>
                   <Input
                     type="date"
                     value={compStartDate}
                     onChange={(e) => setCompStartDate(e.target.value)}
+                    className="w-full sm:w-auto"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label>Compare End</Label>
+                <div className="space-y-1.5 w-full sm:w-auto">
+                  <Label className="text-sm">Compare End</Label>
                   <Input
                     type="date"
                     value={compEndDate}
                     onChange={(e) => setCompEndDate(e.target.value)}
+                    className="w-full sm:w-auto"
                   />
                 </div>
               </div>
@@ -338,8 +344,8 @@ export default function CashFlowPage() {
               {/* Column Headers */}
               <div className="flex items-center py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider border-b mb-2">
                 <span className="flex-1">Description</span>
-                <span className="w-36 text-right">Current Period</span>
-                {comp && <span className="w-36 text-right">Comparative</span>}
+                <span className="w-24 sm:w-36 text-right">Current</span>
+                {comp && <span className="w-24 sm:w-36 text-right hidden sm:inline">Comparative</span>}
               </div>
 
               {/* ── 1. OPERATING ACTIVITIES ──────────────────────────── */}

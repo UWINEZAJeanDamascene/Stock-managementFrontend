@@ -295,7 +295,9 @@ export default function TransfersListPage() {
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <SearchIcon sx={{ color: dark ? '#94a3b8' : '#64748b' }} />
+                      <Box component="span" sx={{ color: dark ? '#94a3b8' : '#64748b', display: 'flex' }}>
+                        <SearchIcon size={20} />
+                      </Box>
                     </InputAdornment>
                   ),
                 }}

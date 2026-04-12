@@ -207,29 +207,34 @@ export default function SalesOrderDetailPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto p-6">
-        <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <Button variant="outline" onClick={() => navigate('/sales-orders')}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
+      <div className="container mx-auto p-3 sm:p-6">
+        {/* Header */}
+        <div className="mb-4 sm:mb-6 flex flex-col gap-3">
+          {/* Top Row: Back button and Order info */}
+          <div className="flex items-center gap-3">
+            <Button variant="outline" size="sm" onClick={() => navigate('/sales-orders')} className="px-2 flex-shrink-0">
+              <ArrowLeft className="h-4 w-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Back</span>
             </Button>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">{order.referenceNo}</h1>
-              <p className="text-gray-500 flex items-center gap-2">
+            <div className="min-w-0">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white truncate">{order.referenceNo}</h1>
+              <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
                 Created {formatDate(order.createdAt)}
               </p>
             </div>
           </div>
-          <div className="flex gap-2">
+          
+          {/* Action Buttons */}
+          <div className="flex flex-wrap gap-2">
             {order.status === 'draft' && (
               <>
-                <Button variant="outline" onClick={() => navigate(`/sales-orders/${id}/edit`)}>
+                <Button variant="outline" size="sm" onClick={() => navigate(`/sales-orders/${id}/edit`)} className="flex-1 sm:flex-none justify-center">
                   <Edit className="h-4 w-4 mr-2" />
-                  Edit
+                  <span className="hidden sm:inline">Edit</span>
+                  <span className="sm:hidden">Edit</span>
                 </Button>
-                <div className="flex items-center gap-2 border rounded px-3">
+                <div className="flex items-center gap-2 border rounded px-3 py-1.5">
                   <input
                     type="checkbox"
                     id="sendEmailSO"
@@ -237,111 +242,111 @@ export default function SalesOrderDetailPage() {
                     onChange={(e) => setSendEmail(e.target.checked)}
                     className="h-4 w-4"
                   />
-                  <Label htmlFor="sendEmailSO" className="text-sm cursor-pointer">
+                  <Label htmlFor="sendEmailSO" className="text-xs sm:text-sm cursor-pointer">
                     Email
                   </Label>
                 </div>
-                <Button onClick={handleConfirm}>
+                <Button size="sm" onClick={handleConfirm} className="flex-1 sm:flex-none justify-center">
                   <CheckCircle className="h-4 w-4 mr-2" />
-                  Confirm
+                  <span className="hidden sm:inline">Confirm</span>
+                  <span className="sm:hidden">Confirm</span>
                 </Button>
-                <Button variant="destructive" onClick={handleCancel}>
+                <Button variant="destructive" size="sm" onClick={handleCancel} className="flex-1 sm:flex-none justify-center">
                   <XCircle className="h-4 w-4 mr-2" />
-                  Cancel
+                  <span className="hidden sm:inline">Cancel</span>
+                  <span className="sm:hidden">Cancel</span>
                 </Button>
               </>
-            )}
-            {order.status === 'confirmed' && (
-              <Button onClick={handleCreatePickPack}>
-                <Package className="h-4 w-4 mr-2" />
-                Create Pick & Pack
-              </Button>
             )}
           </div>
         </div>
 
-        <div className="mb-6">
-          <Badge className={`${STATUS_COLORS[order.status]} text-lg px-4 py-2 capitalize`}>
-            {order.status}
-          </Badge>
-          {order.isBackorder && (
-            <Badge variant="destructive" className="ml-2">
-              Backorder
-            </Badge>
-          )}
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           <div className="lg:col-span-2 space-y-6">
             <Tabs defaultValue="lines">
-              <TabsList>
-                <TabsTrigger value="lines">Line Items</TabsTrigger>
-                <TabsTrigger value="workflow">Workflow</TabsTrigger>
-              </TabsList>
+              <div className="flex items-center gap-1 mb-2">
+                <TabsList>
+                  <TabsTrigger value="lines">Line Items</TabsTrigger>
+                  <TabsTrigger value="workflow">Workflow</TabsTrigger>
+                </TabsList>
+                <Badge className={`${STATUS_COLORS[order.status]} text-xs px-2 py-0.5 capitalize`}>
+                  {order.status}
+                </Badge>
+                {order.isBackorder && (
+                  <Badge variant="destructive" className="hidden sm:inline-flex text-xs">
+                    Backorder
+                  </Badge>
+                )}
+              </div>
 
               <TabsContent value="lines">
                 <Card>
-                  <CardHeader>
-                    <CardTitle>Order Lines</CardTitle>
+                  <CardHeader className="px-4 sm:px-6">
+                    <CardTitle className="text-base sm:text-lg">Order Lines</CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <div className="overflow-x-auto">
-                      <table className="w-full">
-                        <thead className="border-b">
-                          <tr>
-                            <th className="text-left py-2">Product</th>
-                            <th className="text-right py-2">Qty</th>
-                            <th className="text-right py-2">Reserved</th>
-                            <th className="text-right py-2">Unit Price</th>
-                            <th className="text-right py-2">Total</th>
+                  <CardContent className="px-0 sm:px-6 overflow-x-auto">
+                    <table className="w-full min-w-[500px]">
+                      <thead className="border-b">
+                        <tr>
+                          <th className="text-left py-2 px-4 sm:px-0 text-sm">Product</th>
+                          <th className="text-right py-2 px-2 sm:px-0 text-sm">Qty</th>
+                          <th className="text-right py-2 px-2 sm:px-0 text-sm hidden sm:table-cell">Reserved</th>
+                          <th className="text-right py-2 px-2 sm:px-0 text-sm">Unit Price</th>
+                          <th className="text-right py-2 px-4 sm:px-0 text-sm">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {order.lines.map((line) => (
+                          <tr key={line._id} className="border-b last:border-0">
+                            <td className="py-3 px-4 sm:px-0">
+                              <div className="font-medium text-sm">{line.description}</div>
+                              <div className="text-xs text-gray-500">{line.product?.sku}</div>
+                            </td>
+                            <td className="text-right py-3 px-2 sm:px-0 text-sm">{toNumber(line.qty)}</td>
+                            <td className="text-right py-3 px-2 sm:px-0 text-sm hidden sm:table-cell">{toNumber(line.qtyReserved)}</td>
+                            <td className="text-right py-3 px-2 sm:px-0 text-sm whitespace-nowrap">
+                              {formatCurrency(toNumber(line.unitPrice), order.currencyCode)}
+                            </td>
+                            <td className="text-right py-3 px-4 sm:px-0 text-sm font-medium whitespace-nowrap">
+                              {formatCurrency(toNumber(line.lineTotal), order.currencyCode)}
+                            </td>
                           </tr>
-                        </thead>
-                        <tbody>
-                          {order.lines.map((line) => (
-                            <tr key={line._id} className="border-b last:border-0">
-                              <td className="py-3">
-                                <div className="font-medium">{line.description}</div>
-                                <div className="text-sm text-gray-500">{line.product?.sku}</div>
-                              </td>
-                              <td className="text-right py-3">{toNumber(line.qty)}</td>
-                              <td className="text-right py-3">{toNumber(line.qtyReserved)}</td>
-                              <td className="text-right py-3">
-                                {formatCurrency(toNumber(line.unitPrice), order.currencyCode)}
-                              </td>
-                              <td className="text-right py-3 font-medium">
-                                {formatCurrency(toNumber(line.lineTotal), order.currencyCode)}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                        ))}
+                      </tbody>
+                    </table>
                   </CardContent>
                 </Card>
               </TabsContent>
 
               <TabsContent value="workflow">
                 <Card>
-                  <CardHeader>
-                    <CardTitle>Workflow Status</CardTitle>
+                  <CardHeader className="px-4 sm:px-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <CardTitle className="text-base sm:text-lg">Workflow Status</CardTitle>
+                    {order.status === 'confirmed' && (
+                      <Button size="sm" onClick={handleCreatePickPack} className="w-full sm:w-auto justify-center">
+                        <Package className="h-4 w-4 mr-2" />
+                        <span className="hidden sm:inline">Create Pick & Pack</span>
+                        <span className="sm:hidden">Pick & Pack</span>
+                      </Button>
+                    )}
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="px-4 sm:px-6">
                     {workflow ? (
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <span>Current Status:</span>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-600">Current Status:</span>
                           <Badge className={`${STATUS_COLORS[workflow.currentStatus]} capitalize`}>
                             {workflow.currentStatus}
                           </Badge>
                         </div>
-                        <div className="flex items-center justify-between">
-                          <span>Can Edit:</span>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-600">Can Edit:</span>
                           <Badge variant={workflow.canEdit ? 'default' : 'secondary'}>
                             {workflow.canEdit ? 'Yes' : 'No'}
                           </Badge>
                         </div>
-                        <div className="flex items-center justify-between">
-                          <span>Can Cancel:</span>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-600">Can Cancel:</span>
                           <Badge variant={workflow.canCancel ? 'destructive' : 'secondary'}>
                             {workflow.canCancel ? 'Yes' : 'No'}
                           </Badge>
@@ -357,20 +362,20 @@ export default function SalesOrderDetailPage() {
 
             {(order.terms || order.notes) && (
               <Card>
-                <CardHeader>
-                  <CardTitle>Additional Information</CardTitle>
+                <CardHeader className="px-4 sm:px-6">
+                  <CardTitle className="text-base sm:text-lg">Additional Information</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="px-4 sm:px-6 space-y-4">
                   {order.terms && (
                     <div>
-                      <h4 className="font-medium mb-1">Terms & Conditions</h4>
-                      <p className="text-gray-600">{order.terms}</p>
+                      <h4 className="font-medium mb-1 text-sm">Terms & Conditions</h4>
+                      <p className="text-gray-600 text-sm">{order.terms}</p>
                     </div>
                   )}
                   {order.notes && (
                     <div>
-                      <h4 className="font-medium mb-1">Notes</h4>
-                      <p className="text-gray-600">{order.notes}</p>
+                      <h4 className="font-medium mb-1 text-sm">Notes</h4>
+                      <p className="text-gray-600 text-sm">{order.notes}</p>
                     </div>
                   )}
                 </CardContent>
@@ -378,18 +383,18 @@ export default function SalesOrderDetailPage() {
             )}
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             <Card>
-              <CardHeader>
-                <CardTitle>Client Information</CardTitle>
+              <CardHeader className="px-4 sm:px-6">
+                <CardTitle className="text-base sm:text-lg">Client Information</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="px-4 sm:px-6 space-y-3">
                 <div className="flex items-center gap-3">
                   <User className="h-5 w-5 text-gray-400" />
                   <div>
-                    <p className="font-medium">{order.client?.name}</p>
+                    <p className="font-medium text-sm">{order.client?.name}</p>
                     {order.client?.code && (
-                      <p className="text-sm text-gray-500">Code: {order.client.code}</p>
+                      <p className="text-xs text-gray-500">Code: {order.client.code}</p>
                     )}
                   </div>
                 </div>
@@ -397,30 +402,30 @@ export default function SalesOrderDetailPage() {
             </Card>
 
             <Card>
-              <CardHeader>
-                <CardTitle>Order Summary</CardTitle>
+              <CardHeader className="px-4 sm:px-6">
+                <CardTitle className="text-base sm:text-lg">Order Summary</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex justify-between">
+              <CardContent className="px-4 sm:px-6 space-y-3">
+                <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Order Date:</span>
                   <span>{formatDate(order.orderDate)}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Expected Date:</span>
                   <span>{order.expectedDate ? formatDate(order.expectedDate) : '-'}</span>
                 </div>
-                <div className="border-t pt-4 space-y-2">
-                  <div className="flex justify-between">
+                <div className="border-t pt-3 space-y-2">
+                  <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Subtotal:</span>
-                    <span>{formatCurrency(order.subtotal ?? (order as any).subtotal, order.currencyCode)}</span>
+                    <span className="whitespace-nowrap">{formatCurrency(order.subtotal ?? (order as any).subtotal, order.currencyCode)}</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Tax:</span>
-                    <span>{formatCurrency(order.taxTotal ?? (order as any).taxAmount, order.currencyCode)}</span>
+                    <span className="whitespace-nowrap">{formatCurrency(order.taxTotal ?? (order as any).taxAmount, order.currencyCode)}</span>
                   </div>
-                  <div className="flex justify-between text-lg font-bold">
+                  <div className="flex justify-between text-base font-bold">
                     <span>Grand Total:</span>
-                    <span>{formatCurrency(order.grandTotal ?? (order as any).totalAmount, order.currencyCode)}</span>
+                    <span className="whitespace-nowrap">{formatCurrency(order.grandTotal ?? (order as any).totalAmount, order.currencyCode)}</span>
                   </div>
                 </div>
               </CardContent>
@@ -428,17 +433,17 @@ export default function SalesOrderDetailPage() {
 
             {order.quotation && (
               <Card>
-                <CardHeader>
-                  <CardTitle>Linked Quotation</CardTitle>
+                <CardHeader className="px-4 sm:px-6">
+                  <CardTitle className="text-base sm:text-lg">Linked Quotation</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="px-4 sm:px-6">
                   <div className="flex items-center gap-3">
                     <FileText className="h-5 w-5 text-gray-400" />
                     <div>
-                      <p className="font-medium">{order.quotation.referenceNo}</p>
+                      <p className="font-medium text-sm">{order.quotation.referenceNo}</p>
                       <Button 
                         variant="link" 
-                        className="p-0 h-auto text-sm"
+                        className="p-0 h-auto text-xs"
                         onClick={() => navigate(`/quotations/${order.quotation?._id}`)}
                       >
                         View Quotation
@@ -450,10 +455,10 @@ export default function SalesOrderDetailPage() {
             )}
 
             <Card>
-              <CardHeader>
-                <CardTitle>Order Statistics</CardTitle>
+              <CardHeader className="px-4 sm:px-6">
+                <CardTitle className="text-base sm:text-lg">Order Statistics</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="px-4 sm:px-6 space-y-2">
                 <div className="flex items-center gap-2 text-sm">
                   <Package className="h-4 w-4 text-gray-400" />
                   <span>{order.lines.length} line items</span>

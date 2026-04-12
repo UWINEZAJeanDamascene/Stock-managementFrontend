@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { Layout } from '@/app/layout/Layout';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
+import { Label } from '@/app/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { 
   Select,
@@ -350,17 +351,18 @@ export default function SalesLegacyPage() {
   
   return (
     <Layout>
-      <div className="container mx-auto py-6 min-h-screen bg-slate-50 dark:bg-slate-900">
+      <div className="container mx-auto py-4 sm:py-6 px-3 sm:px-4 min-h-screen bg-slate-50 dark:bg-slate-900">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t('salesLegacy.title', 'Direct Sale / POS')}</h1>
-            <p className="text-muted-foreground dark:text-slate-400">{t('salesLegacy.subtitle', 'Quick cash sale - Invoice and payment in one step')}</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">{t('salesLegacy.title', 'Direct Sale / POS')}</h1>
+            <p className="text-sm text-muted-foreground dark:text-slate-400">{t('salesLegacy.subtitle', 'Quick cash sale - Invoice and payment in one step')}</p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => navigate('/invoices')}>
+            <Button variant="outline" size="sm" onClick={() => navigate('/invoices')} className="w-full sm:w-auto">
               <Receipt className="mr-2 h-4 w-4" />
-              View Invoices
+              <span className="hidden sm:inline">View Invoices</span>
+              <span className="sm:hidden">Invoices</span>
             </Button>
           </div>
         </div>
@@ -371,7 +373,7 @@ export default function SalesLegacyPage() {
             {/* Warehouse Selection */}
             <Card className="dark:bg-slate-800">
               <CardContent className="pt-6">
-                <div className="flex gap-4 items-end">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-end">
                   <div className="flex-1">
                     <label className="text-sm font-medium mb-2 block text-slate-900 dark:text-white">Warehouse</label>
                     <Select value={selectedWarehouseId} onValueChange={setSelectedWarehouseId}>
@@ -400,13 +402,13 @@ export default function SalesLegacyPage() {
             
             {/* Products Grid */}
             <Card className="dark:bg-slate-800">
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2 text-slate-900 dark:text-white">
+              <CardHeader className="px-4 sm:px-6">
+                <CardTitle className="text-base sm:text-lg flex items-center gap-2 text-slate-900 dark:text-white">
                   <Package className="h-5 w-5" />
                   Products
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="px-4 sm:px-6">
                 {isLoading ? (
                   <div className="flex items-center justify-center p-8">
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground dark:text-slate-400" />
@@ -416,19 +418,19 @@ export default function SalesLegacyPage() {
                     No products found. Select a warehouse and search.
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                     {products.map(product => (
                       <div
                         key={product._id}
-                        className={`border rounded-lg p-4 cursor-pointer transition-all hover:shadow-md dark:border-slate-600 ${
+                        className={`border rounded-lg p-3 sm:p-4 cursor-pointer transition-all hover:shadow-md dark:border-slate-600 ${
                           !product.isAvailable ? 'opacity-50 cursor-not-allowed' : 'hover:border-primary dark:hover:border-slate-400'
                         }`}
                         onClick={() => product.isAvailable && addToCart(product)}
                       >
-                        <div className="font-medium truncate dark:text-slate-200">{product.name}</div>
-                        <div className="text-sm text-muted-foreground dark:text-slate-400">{product.sku}</div>
+                        <div className="font-medium text-sm sm:text-base truncate dark:text-slate-200">{product.name}</div>
+                        <div className="text-xs sm:text-sm text-muted-foreground dark:text-slate-400">{product.sku}</div>
                         <div className="flex justify-between items-center mt-2">
-                          <span className="font-semibold dark:text-slate-200">{formatCurrency(product.sellingPrice)}</span>
+                          <span className="font-semibold text-sm sm:text-base dark:text-slate-200">{formatCurrency(product.sellingPrice)}</span>
                           <span className={`text-xs ${toNumber(product.currentStock) > 10 ? 'text-green-600 dark:text-green-400' : toNumber(product.currentStock) > 0 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400'}`}>
                             Stock: {toNumber(product.currentStock)}
                           </span>
@@ -445,13 +447,13 @@ export default function SalesLegacyPage() {
           <div className="space-y-4">
             {/* Cart */}
             <Card className="dark:bg-slate-800">
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2 text-slate-900 dark:text-white">
+              <CardHeader className="px-4 sm:px-6">
+                <CardTitle className="text-base sm:text-lg flex items-center gap-2 text-slate-900 dark:text-white">
                   <ShoppingCart className="h-5 w-5" />
                   Cart ({cart.length} items)
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="px-4 sm:px-6">
                 {cart.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground dark:text-slate-400">
                     Cart is empty. Click products to add.
@@ -540,13 +542,13 @@ export default function SalesLegacyPage() {
             
             {/* Customer */}
             <Card className="dark:bg-slate-800">
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2 text-slate-900 dark:text-white">
+              <CardHeader className="px-4 sm:px-6">
+                <CardTitle className="text-base sm:text-lg flex items-center gap-2 text-slate-900 dark:text-white">
                   <User className="h-5 w-5" />
                   Customer
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="px-4 sm:px-6 space-y-4">
                 <Select value={selectedClientId} onValueChange={setSelectedClientId}>
                   <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600">
                     <SelectValue placeholder="Select customer (or walk-in)" />
@@ -572,13 +574,13 @@ export default function SalesLegacyPage() {
             
             {/* Payment */}
             <Card className="dark:bg-slate-800">
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2 text-slate-900 dark:text-white">
+              <CardHeader className="px-4 sm:px-6">
+                <CardTitle className="text-base sm:text-lg flex items-center gap-2 text-slate-900 dark:text-white">
                   <CreditCard className="h-5 w-5" />
                   Payment
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="px-4 sm:px-6 space-y-4">
                 <Select value={paymentMethod} onValueChange={(v: any) => setPaymentMethod(v)}>
                   <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600">
                     <SelectValue placeholder="Payment method" />
@@ -645,7 +647,7 @@ export default function SalesLegacyPage() {
             
             {/* Summary & Submit */}
             <Card className="bg-primary/5 dark:bg-slate-800">
-              <CardContent className="pt-6 space-y-2">
+              <CardContent className="px-4 sm:px-6 pt-6 space-y-2">
                 <div className="flex justify-between dark:text-slate-200">
                   <span>Subtotal:</span>
                   <span>{formatCurrency(cartCalculations.subtotal)}</span>
@@ -683,19 +685,21 @@ export default function SalesLegacyPage() {
                 </div>
                 
                 <Button
-                  className="w-full mt-4 h-12 text-lg"
+                  className="w-full mt-4 h-10 sm:h-12 text-base sm:text-lg"
                   onClick={handleSubmit}
                   disabled={isSubmitting || cart.length === 0 || !selectedWarehouseId}
                 >
                   {isSubmitting ? (
                     <>
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      Processing...
+                      <Loader2 className="mr-2 h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
+                      <span className="hidden sm:inline">Processing...</span>
+                      <span className="sm:hidden">Process...</span>
                     </>
                   ) : (
                     <>
-                      <Calculator className="mr-2 h-5 w-5" />
-                      Complete Sale
+                      <Calculator className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                      <span className="hidden sm:inline">Complete Sale</span>
+                      <span className="sm:hidden">Complete</span>
                     </>
                   )}
                 </Button>

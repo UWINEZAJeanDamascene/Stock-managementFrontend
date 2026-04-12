@@ -43,8 +43,14 @@ interface DeliveryNoteItem {
     sku: string;
   };
   description: string;
-  quantity: number;
+  quantity?: number;
   unit: string;
+  qtyToDeliver?: number;
+  deliveredQty?: number;
+  orderedQty?: number;
+  qty?: number;
+  qtyOrdered?: number;
+  [key: string]: any;
 }
 
 interface DeliveryNote {
@@ -103,6 +109,11 @@ export default function DeliveryNoteDetailPage() {
       setLoading(true);
       const response = await deliveryNotesApi.getById(id!);
       if (response.success) {
+        console.log('Delivery Note Data:', response.data);
+        console.log('Items:', (response.data as any).items);
+        if ((response.data as any).items?.length > 0) {
+          console.log('First item:', (response.data as any).items[0]);
+        }
         setDeliveryNote(response.data as DeliveryNote);
       } else {
         toast.error('Failed to load delivery note');
@@ -296,66 +307,67 @@ export default function DeliveryNoteDetailPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto p-6">
+      <div className="container mx-auto py-4 sm:py-6 px-3 sm:px-4">
         {/* Header */}
-        <div className="mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="outline" onClick={() => navigate('/delivery-notes')}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
+        <div className="mb-4 sm:mb-6 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <Button variant="outline" size="icon" onClick={() => navigate('/delivery-notes')} className="h-8 w-8 flex-shrink-0">
+              <ArrowLeft className="h-4 w-4" />
             </Button>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{deliveryNote.referenceNo}</h1>
-              <div className="flex items-center gap-2 mt-1">
+            <div className="min-w-0 flex items-center gap-2 flex-wrap">
+              <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white truncate">{deliveryNote.referenceNo}</h1>
+              <div className="flex items-center gap-1 sm:gap-2">
                 {getStatusBadge(deliveryNote.status)}
-                <span className="text-gray-500 dark:text-gray-400">•</span>
-                <span className="text-gray-500 dark:text-gray-400">{formatDate(deliveryNote.deliveryDate)}</span>
+                <span className="text-gray-500 dark:text-gray-400 hidden sm:inline">•</span>
+                <span className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm">{formatDate(deliveryNote.deliveryDate)}</span>
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => window.print()}>
-              <Printer className="h-4 w-4 mr-2" />
-              Print
+          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+            <Button variant="outline" size="icon" onClick={() => window.print()} className="h-8 w-8">
+              <Printer className="h-4 w-4" />
             </Button>
             {deliveryNote.status === 'draft' && (
-              <Button onClick={() => navigate(`/delivery-notes/${id}/edit`)}>
-                <Edit className="h-4 w-4 mr-2" />
-                Edit
+              <Button size="icon" onClick={() => navigate(`/delivery-notes/${id}/edit`)} className="h-8 w-8">
+                <Edit className="h-4 w-4" />
               </Button>
             )}
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="mb-6 flex gap-2">
+        <div className="mb-4 sm:mb-6 flex flex-wrap gap-2">
           {deliveryNote.status === 'draft' && (
-            <Button onClick={handleConfirm} className="bg-blue-600">
-              <CheckCircle className="h-4 w-4 mr-2" />
-              Confirm
+            <Button size="sm" onClick={handleConfirm} className="bg-blue-600 flex-1 sm:flex-none justify-center">
+              <CheckCircle className="h-4 w-4 mr-1" />
+              <span className="hidden sm:inline">Confirm</span>
+              <span className="sm:hidden">Confirm</span>
             </Button>
           )}
           {deliveryNote.status === 'confirmed' && (
-            <Button onClick={handleDispatch} className="bg-yellow-600">
-              <Truck className="h-4 w-4 mr-2" />
-              Dispatch
+            <Button size="sm" onClick={handleDispatch} className="bg-yellow-600 flex-1 sm:flex-none justify-center">
+              <Truck className="h-4 w-4 mr-1" />
+              <span className="hidden sm:inline">Dispatch</span>
+              <span className="sm:hidden">Dispatch</span>
             </Button>
           )}
           {deliveryNote.status === 'dispatched' && (
-            <Button onClick={handleMarkDelivered} className="bg-green-600">
-              <CheckCircle className="h-4 w-4 mr-2" />
-              Mark Delivered
+            <Button size="sm" onClick={handleMarkDelivered} className="bg-green-600 flex-1 sm:flex-none justify-center">
+              <CheckCircle className="h-4 w-4 mr-1" />
+              <span className="hidden sm:inline">Mark Delivered</span>
+              <span className="sm:hidden">Delivered</span>
             </Button>
           )}
           {(deliveryNote.status === 'draft' || deliveryNote.status === 'confirmed') && (
-            <Button variant="destructive" onClick={handleCancel}>
-              <XCircle className="h-4 w-4 mr-2" />
-              Cancel
+            <Button size="sm" variant="destructive" onClick={handleCancel} className="flex-1 sm:flex-none justify-center">
+              <XCircle className="h-4 w-4 mr-1" />
+              <span className="hidden sm:inline">Cancel</span>
+              <span className="sm:hidden">Cancel</span>
             </Button>
           )}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Items */}
@@ -378,16 +390,23 @@ export default function DeliveryNoteDetailPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200 dark:divide-slate-600">
-                        {deliveryNote.lines?.map((item) => (
+                        {deliveryNote.items?.map((item: DeliveryNoteItem, idx: number) => (
                         <tr key={item._id}>
                           <td className="px-4 py-3">
                             <div>
                               <div className="font-medium dark:text-white">{item.product?.name}</div>
                               <div className="text-sm text-gray-500 dark:text-gray-400">{item.product?.sku}</div>
+                              {idx === 0 && <div className="text-xs text-red-400 mt-1">{JSON.stringify(item)}</div>}
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{item.productName || '-'}</td>
-                          <td className="px-4 py-3 text-right font-medium dark:text-white">{toNumber(item.qtyToDeliver || item.deliveredQty || item.orderedQty || 0)}</td>
+                          <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{item.description || '-'}</td>
+                          <td className="px-4 py-3 text-right font-medium dark:text-white">{
+                            (() => {
+                              const val = item.quantity ?? item.qtyToDeliver ?? item.deliveredQty ?? item.orderedQty ?? item.qty ?? item.qtyOrdered;
+                              console.log('Item:', item.product?.name, 'Raw qty:', val, 'Type:', typeof val, 'toNumber:', toNumber(val ?? 0));
+                              return toNumber(val ?? 0);
+                            })()
+                          }</td>
                           <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{item.unit || 'pcs'}</td>
                         </tr>
                       ))}
@@ -528,7 +547,7 @@ export default function DeliveryNoteDetailPage() {
                 <Separator />
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600 dark:text-gray-300">Items:</span>
-                  <span className="font-medium dark:text-white">{deliveryNote.lines?.length || 0}</span>
+                  <span className="font-medium dark:text-white">{deliveryNote.items?.length || 0}</span>
                 </div>
                 <div className="flex justify-between text-lg font-bold">
                   <span className="dark:text-white">Total:</span>

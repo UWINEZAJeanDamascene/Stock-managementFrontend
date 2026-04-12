@@ -233,7 +233,7 @@ export default function InvoicesListPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-4 sm:py-6 px-3 sm:px-0">
+      <div className="container mx-auto py-4 sm:py-6 px-3 sm:px-4">
         {/* Page Header - Responsive */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
           <div className="flex items-center gap-3">
@@ -244,23 +244,23 @@ export default function InvoicesListPage() {
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <Button variant="outline" size="sm" onClick={handleExport}>
+            <Button variant="outline" size="sm" onClick={handleExport} className="flex-1 sm:flex-none justify-center">
               <Download className="mr-2 h-4 w-4" />
               <span className="hidden sm:inline">{t('common.export', 'Export')}</span>
-              <span className="sm:hidden">{t('common.export', 'Export')}</span>
+              <span className="sm:hidden">Export</span>
             </Button>
-            <Button size="sm" onClick={() => navigate('/invoices/new')}>
+            <Button size="sm" onClick={() => navigate('/invoices/new')} className="flex-1 sm:flex-none justify-center">
               <Plus className="mr-2 h-4 w-4" />
-              <span className="hidden sm:inline">{t('invoice.newInvoice', 'New Invoice')}</span>
-              <span className="sm:hidden">{t('invoice.newInvoice', 'New')}</span>
+              <span className="hidden sm:inline">{t('invoice.newInvoice', 'Create Invoice')}</span>
+              <span className="sm:hidden">Create</span>
             </Button>
           </div>
         </div>
 
         {/* Filters */}
-        <Card className="mb-6 dark:border-slate-700 dark:bg-slate-800">
-          <CardContent className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <Card className="mb-4 sm:mb-6 dark:border-slate-700 dark:bg-slate-800">
+          <CardContent className="pt-4 sm:pt-6 px-4 sm:px-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -295,23 +295,26 @@ export default function InvoicesListPage() {
                   ))}
                 </SelectContent>
               </Select>
-              <Input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => handleDateFromChange(e.target.value)}
-                placeholder={t('invoice.dateFrom', 'From')}
-                className="dark:bg-slate-800 dark:border-slate-600 dark:text-gray-200"
-              />
-              <Input
-                type="date"
-                value={dateTo}
-                onChange={(e) => handleDateToChange(e.target.value)}
-                placeholder={t('invoice.dateTo', 'To')}
-              />
+              <div className="flex gap-2">
+                <Input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => handleDateFromChange(e.target.value)}
+                  placeholder={t('invoice.dateFrom', 'From')}
+                  className="flex-1 dark:bg-slate-800 dark:border-slate-600 dark:text-gray-200 text-sm"
+                />
+                <Input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => handleDateToChange(e.target.value)}
+                  placeholder={t('invoice.dateTo', 'To')}
+                  className="flex-1 dark:bg-slate-800 dark:border-slate-600 dark:text-gray-200 text-sm"
+                />
+              </div>
             </div>
             {(search || statusFilter !== 'all' || clientFilter !== 'all' || dateFrom || dateTo) && (
-              <div className="mt-4">
-                <Button variant="ghost" onClick={clearFilters}>
+              <div className="mt-3 sm:mt-4">
+                <Button variant="ghost" size="sm" onClick={clearFilters}>
                   {t('invoice.clearFilters', 'Clear Filters')}
                 </Button>
               </div>
@@ -321,7 +324,7 @@ export default function InvoicesListPage() {
 
         {/* Invoices Table */}
         <Card className="dark:border-slate-700 dark:bg-slate-800">
-          <CardContent className="p-0">
+          <CardContent className="p-0 overflow-x-auto">
             {loading ? (
               <div className="flex items-center justify-center p-8">
                 <Loader2 className="h-8 w-8 animate-spin" />
@@ -339,37 +342,37 @@ export default function InvoicesListPage() {
                 </Button>
               </div>
             ) : (
-              <Table>
+              <Table className="min-w-[800px]">
                 <TableHeader className="dark:bg-slate-800">
                   <TableRow className="dark:hover:bg-slate-700/50 dark:border-b dark:border-slate-700">
-                    <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.invoiceNumber', 'Invoice #')}</TableHead>
+                    <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700 whitespace-nowrap">{t('invoice.invoiceNumber', 'Invoice #')}</TableHead>
                     <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.client', 'Client')}</TableHead>
-                    <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.invoiceDate', 'Date')}</TableHead>
-                    <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.dueDate', 'Due Date')}</TableHead>
+                    <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700 hidden sm:table-cell">{t('invoice.invoiceDate', 'Date')}</TableHead>
+                    <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700 hidden md:table-cell">{t('invoice.dueDate', 'Due Date')}</TableHead>
                     <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.status', 'Status')}</TableHead>
-                    <TableHead className="text-right dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.total', 'Total')}</TableHead>
-                    <TableHead className="text-right dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.balance', 'Balance')}</TableHead>
-                    <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.source', 'Source')}</TableHead>
-                    <TableHead className="text-right dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('common.actions', 'Actions')}</TableHead>
+                    <TableHead className="text-right dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700 whitespace-nowrap">{t('invoice.total', 'Total')}</TableHead>
+                    <TableHead className="text-right dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700 hidden sm:table-cell whitespace-nowrap">{t('invoice.balance', 'Balance')}</TableHead>
+                    <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700 hidden lg:table-cell">{t('invoice.source', 'Source')}</TableHead>
+                    <TableHead className="text-right dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700 whitespace-nowrap">{t('common.actions', 'Actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody className="dark:bg-slate-800">
                   {invoices.map((invoice) => (
                     <TableRow key={invoice._id} className="dark:hover:bg-slate-700/50 dark:border-b dark:border-slate-700">
-                      <TableCell className="font-medium dark:text-gray-200 dark:bg-slate-800">
+                      <TableCell className="font-medium dark:text-gray-200 dark:bg-slate-800 whitespace-nowrap">
                         {invoice.referenceNo || invoice.invoiceNumber || 'N/A'}
                       </TableCell>
                       <TableCell className="dark:text-gray-300 dark:bg-slate-800">{invoice.client?.name || '-'}</TableCell>
-                      <TableCell className="dark:text-gray-300 dark:bg-slate-800">{formatDate(invoice.invoiceDate)}</TableCell>
-                      <TableCell className="dark:text-gray-300 dark:bg-slate-800">{formatDate(invoice.dueDate)}</TableCell>
+                      <TableCell className="dark:text-gray-300 dark:bg-slate-800 hidden sm:table-cell">{formatDate(invoice.invoiceDate)}</TableCell>
+                      <TableCell className="dark:text-gray-300 dark:bg-slate-800 hidden md:table-cell">{formatDate(invoice.dueDate)}</TableCell>
                       <TableCell className="dark:bg-slate-800">{getStatusBadge(invoice.status)}</TableCell>
-                      <TableCell className="text-right font-medium dark:text-gray-200 dark:bg-slate-800">
+                      <TableCell className="text-right font-medium dark:text-gray-200 dark:bg-slate-800 whitespace-nowrap">
                         {formatCurrency(invoice.grandTotal, invoice.currencyCode)}
                       </TableCell>
-                      <TableCell className="text-right dark:text-gray-300 dark:bg-slate-800">
+                      <TableCell className="text-right dark:text-gray-300 dark:bg-slate-800 hidden sm:table-cell whitespace-nowrap">
                         {formatCurrency(invoice.balance || (invoice.grandTotal - invoice.amountPaid), invoice.currencyCode)}
                       </TableCell>
-                      <TableCell className="dark:bg-slate-800">
+                      <TableCell className="dark:bg-slate-800 hidden lg:table-cell">
                         {invoice.quotation ? (
                           <span className="text-sm text-muted-foreground dark:text-gray-400">{invoice.quotation.referenceNo}</span>
                         ) : (
@@ -421,7 +424,7 @@ export default function InvoicesListPage() {
                     </TableRow>
                   ))}
                 </TableBody>
-                </Table>
+              </Table>
             )}
           </CardContent>
         </Card>

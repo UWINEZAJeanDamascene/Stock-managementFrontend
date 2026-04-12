@@ -203,55 +203,58 @@ export default function ProfitLossPage() {
 
   return (
     <Layout>
-      <div className="space-y-6 max-w-5xl mx-auto">
+      <div className="space-y-4 sm:space-y-6 max-w-5xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-              <TrendingUp className="h-8 w-8" />
-              Profit &amp; Loss
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight flex items-center gap-2">
+              <TrendingUp className="h-6 w-6 sm:h-8 sm:w-8 flex-shrink-0" />
+              <span className="truncate">Profit &amp; Loss</span>
             </h1>
-            <p className="text-muted-foreground mt-1">
+            <p className="text-muted-foreground mt-1 text-sm">
               Statement of Profit or Loss and Other Comprehensive Income — IAS 1
             </p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={handlePrint}>
-              <Printer className="h-4 w-4 mr-2" />
-              Print
+          <div className="flex gap-2 flex-shrink-0">
+            <Button variant="outline" size="sm" onClick={handlePrint}>
+              <Printer className="h-4 w-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Print</span>
             </Button>
           </div>
         </div>
 
         {/* Filters */}
         <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-end gap-4 flex-wrap">
-              <div className="space-y-2">
-                <Label>Start Date</Label>
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-end gap-3 sm:gap-4">
+              <div className="space-y-1.5 w-full sm:w-auto">
+                <Label className="text-sm">Start Date</Label>
                 <Input
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full sm:w-auto"
                 />
               </div>
-              <div className="space-y-2">
-                <Label>End Date</Label>
+              <div className="space-y-1.5 w-full sm:w-auto">
+                <Label className="text-sm">End Date</Label>
                 <Input
                   type="date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
+                  className="w-full sm:w-auto"
                 />
               </div>
-              <Button onClick={fetchPL} disabled={loading}>
+              <Button onClick={fetchPL} disabled={loading} size="sm" className="w-full sm:w-auto">
                 {loading ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="h-4 w-4 mr-1 sm:mr-2 animate-spin" />
                 ) : (
-                  <CalendarDays className="h-4 w-4 mr-2" />
+                  <CalendarDays className="h-4 w-4 mr-1 sm:mr-2" />
                 )}
-                Generate
+                <span className="hidden sm:inline">Generate</span>
+                <span className="sm:hidden">Gen</span>
               </Button>
-              <div className="flex items-center gap-2 ml-auto">
+              <div className="flex items-center gap-2 sm:ml-auto pt-2 sm:pt-0">
                 <label className="flex items-center gap-2 text-sm cursor-pointer">
                   <input
                     type="checkbox"
@@ -259,26 +262,29 @@ export default function ProfitLossPage() {
                     onChange={(e) => setShowComparative(e.target.checked)}
                     className="h-4 w-4 rounded border-slate-300"
                   />
-                  Compare Period
+                  <span className="hidden sm:inline">Compare Period</span>
+                  <span className="sm:hidden">Compare</span>
                 </label>
               </div>
             </div>
             {showComparative && (
-              <div className="flex items-end gap-4 mt-4 pt-4 border-t">
-                <div className="space-y-2">
-                  <Label>Compare Start</Label>
+              <div className="flex flex-col sm:flex-row items-start sm:items-end gap-3 sm:gap-4 mt-4 pt-4 border-t">
+                <div className="space-y-1.5 w-full sm:w-auto">
+                  <Label className="text-sm">Compare Start</Label>
                   <Input
                     type="date"
                     value={compStartDate}
                     onChange={(e) => setCompStartDate(e.target.value)}
+                    className="w-full sm:w-auto"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label>Compare End</Label>
+                <div className="space-y-1.5 w-full sm:w-auto">
+                  <Label className="text-sm">Compare End</Label>
                   <Input
                     type="date"
                     value={compEndDate}
                     onChange={(e) => setCompEndDate(e.target.value)}
+                    className="w-full sm:w-auto"
                   />
                 </div>
               </div>

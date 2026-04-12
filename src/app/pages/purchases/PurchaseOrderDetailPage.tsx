@@ -557,18 +557,20 @@ export default function PurchaseOrderDetailPage() {
                 </div>
 
                 {/* Summary */}
-                <div className="mt-4 pt-4 border-t dark:border-slate-600 flex flex-wrap justify-end gap-4 sm:gap-8">
-                  <div className="text-right">
-                    <p className="text-muted-foreground dark:text-slate-400">{t('purchase.detail.subtotal', 'Subtotal')}</p>
-                    <p className="font-medium dark:text-slate-200">{formatCurrency(purchaseOrder.subtotal, purchaseOrder.currencyCode)}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-muted-foreground dark:text-slate-400">{t('purchase.detail.tax', 'Tax')}</p>
-                    <p className="font-medium dark:text-slate-200">{formatCurrency(purchaseOrder.taxAmount, purchaseOrder.currencyCode)}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold text-slate-900 dark:text-white">{t('purchase.detail.total', 'Total')}</p>
-                    <p className="font-bold text-lg text-slate-900 dark:text-white">{formatCurrency(purchaseOrder.totalAmount, purchaseOrder.currencyCode)}</p>
+                <div className="mt-4 pt-4 border-t dark:border-slate-600">
+                  <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:justify-end gap-3 sm:gap-6 lg:gap-8">
+                    <div className="text-left sm:text-right">
+                      <p className="text-muted-foreground text-xs sm:text-sm dark:text-slate-400">{t('purchase.detail.subtotal', 'Subtotal')}</p>
+                      <p className="font-medium text-sm sm:text-base dark:text-slate-200">{formatCurrency(purchaseOrder.subtotal, purchaseOrder.currencyCode)}</p>
+                    </div>
+                    <div className="text-left sm:text-right">
+                      <p className="text-muted-foreground text-xs sm:text-sm dark:text-slate-400">{t('purchase.detail.tax', 'Tax')}</p>
+                      <p className="font-medium text-sm sm:text-base dark:text-slate-200">{formatCurrency(purchaseOrder.taxAmount, purchaseOrder.currencyCode)}</p>
+                    </div>
+                    <div className="col-span-2 sm:col-auto text-right">
+                      <p className="font-bold text-slate-900 dark:text-white text-sm sm:text-base">{t('purchase.detail.total', 'Total')}</p>
+                      <p className="font-bold text-base sm:text-lg text-slate-900 dark:text-white">{formatCurrency(purchaseOrder.totalAmount, purchaseOrder.currencyCode)}</p>
+                    </div>
                   </div>
                 </div>
 

@@ -346,7 +346,15 @@ export default function QuotationsListPage() {
                        </TableCell>
                       <TableCell>
                         {quotation.convertedToInvoice ? (
-                          <span className="text-green-600 dark:text-green-400 text-sm">{quotation.convertedToInvoice}</span>
+                          <Button
+                            variant="link"
+                            size="sm"
+                            className="text-green-600 dark:text-green-400 p-0 h-auto"
+                            onClick={() => navigate(`/invoices/${quotation.convertedToInvoice}`)}
+                          >
+                            <FileText className="h-3 w-3 mr-1" />
+                            View Invoice
+                          </Button>
                         ) : (
                           '-'
                         )}

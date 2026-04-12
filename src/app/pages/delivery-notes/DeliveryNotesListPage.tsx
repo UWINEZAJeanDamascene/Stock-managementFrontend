@@ -369,21 +369,23 @@ export default function DeliveryNotesListPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-6">
+      <div className="container mx-auto py-4 sm:py-6 px-3 sm:px-4">
         {/* Page Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
           <div>
-            <h1 className="text-2xl font-bold dark:text-white">{t('deliveryNote.title', 'Delivery Notes')}</h1>
-            <p className="text-muted-foreground dark:text-gray-400">{t('deliveryNote.subtitle', 'Manage delivery notes')}</p>
+            <h1 className="text-xl sm:text-2xl font-bold dark:text-white">{t('deliveryNote.title', 'Delivery Notes')}</h1>
+            <p className="text-sm text-muted-foreground dark:text-gray-400">{t('deliveryNote.subtitle', 'Manage delivery notes')}</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={handleExport}>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button variant="outline" size="sm" onClick={handleExport} className="flex-1 sm:flex-none justify-center">
               <Download className="mr-2 h-4 w-4" />
-              {t('common.export', 'Export')}
+              <span className="hidden sm:inline">{t('common.export', 'Export')}</span>
+              <span className="sm:hidden">Export</span>
             </Button>
-            <Button onClick={() => navigate('/delivery-notes/new')}>
+            <Button size="sm" onClick={() => navigate('/delivery-notes/new')} className="flex-1 sm:flex-none justify-center">
               <Plus className="mr-2 h-4 w-4" />
-              {t('deliveryNote.newDeliveryNote', 'New Delivery Note')}
+              <span className="hidden sm:inline">{t('deliveryNote.newDeliveryNote', 'New Delivery Note')}</span>
+              <span className="sm:hidden">New</span>
             </Button>
           </div>
         </div>
