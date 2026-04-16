@@ -20,7 +20,6 @@ import {
   X,
   PanelLeftClose,
   PanelLeftOpen,
-  Warehouse,
   Package,
   FolderTree,
   WarehouseIcon,
@@ -366,6 +365,12 @@ const financeNav: NavSection = {
 const reportsNav: NavSection = {
   title: "nav.sectionReports",
   items: [
+    {
+      nameKey: "nav.reportsHub",
+      href: "/reports",
+      icon: FileText,
+      permission: "stock:read",
+    },
     {
       nameKey: "nav.profitLoss",
       href: "/reports/profit-loss",

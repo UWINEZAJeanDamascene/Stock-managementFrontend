@@ -1,9 +1,21 @@
 import { BrowserRouter, Routes, Route } from 'react-router';
-import { useState } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { CurrencyProvider } from '@/contexts/CurrencyContext';
+
+// Create a client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 import HomePage from './pages/landing/HomePage';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
@@ -124,6 +136,41 @@ import ProfitLossPage from './pages/reports/ProfitLossPage';
 import BalanceSheetPage from './pages/reports/BalanceSheetPage';
 import CashFlowPage from './pages/reports/CashFlowPage';
 import FinancialRatiosPage from './pages/reports/FinancialRatiosPage';
+import ReportsHubPage from './pages/reports/ReportsHubPage';
+import DailyReportsPage from './pages/reports/DailyReportsPage';
+import DailySalesReportPage from './pages/reports/daily/DailySalesReportPage';
+import DailyPurchasesReportPage from './pages/reports/daily/DailyPurchasesReportPage';
+import DailyCashPositionReportPage from './pages/reports/daily/DailyCashPositionReportPage';
+import DailyStockMovementReportPage from './pages/reports/daily/DailyStockMovementReportPage';
+import DailyARActivityReportPage from './pages/reports/daily/DailyARActivityReportPage';
+import DailyAPActivityReportPage from './pages/reports/daily/DailyAPActivityReportPage';
+import DailyJournalEntriesReportPage from './pages/reports/daily/DailyJournalEntriesReportPage';
+import DailyTaxCollectedReportPage from './pages/reports/daily/DailyTaxCollectedReportPage';
+import WeeklyReportsPage from './pages/reports/WeeklyReportsPage';
+import WeeklySalesPerformanceReportPage from './pages/reports/weekly/WeeklySalesPerformanceReportPage';
+import WeeklyInventoryReorderReportPage from './pages/reports/weekly/WeeklyInventoryReorderReportPage';
+import WeeklySupplierPerformanceReportPage from './pages/reports/weekly/WeeklySupplierPerformanceReportPage';
+import WeeklyReceivablesAgingReportPage from './pages/reports/weekly/WeeklyReceivablesAgingReportPage';
+import WeeklyPayablesAgingReportPage from './pages/reports/weekly/WeeklyPayablesAgingReportPage';
+import WeeklyCashFlowReportPage from './pages/reports/weekly/WeeklyCashFlowReportPage';
+import WeeklyPayrollPreviewReportPage from './pages/reports/weekly/WeeklyPayrollPreviewReportPage';
+// Monthly Reports
+import MonthlyReportsPage from './pages/reports/MonthlyReportsPage';
+import MonthlyPLReportPage from './pages/reports/monthly/MonthlyPLReportPage';
+import MonthlyBalanceSheetPage from './pages/reports/monthly/MonthlyBalanceSheetPage';
+import MonthlyTrialBalancePage from './pages/reports/monthly/MonthlyTrialBalancePage';
+import MonthlyCashFlowPage from './pages/reports/monthly/MonthlyCashFlowPage';
+import MonthlyARAgingPage from './pages/reports/monthly/MonthlyARAgingPage';
+import MonthlyAPAgingPage from './pages/reports/monthly/MonthlyAPAgingPage';
+import MonthlyStockValuationPage from './pages/reports/monthly/MonthlyStockValuationPage';
+import MonthlySalesByCustomerPage from './pages/reports/monthly/MonthlySalesByCustomerPage';
+import MonthlySalesByCategoryPage from './pages/reports/monthly/MonthlySalesByCategoryPage';
+import MonthlyPurchasesBySupplierPage from './pages/reports/monthly/MonthlyPurchasesBySupplierPage';
+import MonthlyPayrollSummaryPage from './pages/reports/monthly/MonthlyPayrollSummaryPage';
+import MonthlyVATReturnPage from './pages/reports/monthly/MonthlyVATReturnPage';
+import MonthlyBankReconciliationPage from './pages/reports/monthly/MonthlyBankReconciliationPage';
+import MonthlyBudgetVsActualPage from './pages/reports/monthly/MonthlyBudgetVsActualPage';
+import MonthlyGeneralLedgerPage from './pages/reports/monthly/MonthlyGeneralLedgerPage';
 import AccountingPeriodsPage from './pages/settings/AccountingPeriodsPage';
 import CompanyProfilePage from './pages/settings/CompanyProfilePage';
 import RolesSettingsPage from './pages/settings/RolesSettingsPage';
@@ -650,6 +697,49 @@ function AppRoutes() {
             <FinancialRatiosPage />
           </ErrorBoundary>
         } />
+        <Route path="/reports" element={
+          <ErrorBoundary>
+            <ReportsHubPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/reports/daily" element={
+          <ErrorBoundary>
+            <DailyReportsPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/reports/daily/sales" element={<ErrorBoundary><DailySalesReportPage /></ErrorBoundary>} />
+        <Route path="/reports/daily/purchases" element={<ErrorBoundary><DailyPurchasesReportPage /></ErrorBoundary>} />
+        <Route path="/reports/daily/cash" element={<ErrorBoundary><DailyCashPositionReportPage /></ErrorBoundary>} />
+        <Route path="/reports/daily/stock" element={<ErrorBoundary><DailyStockMovementReportPage /></ErrorBoundary>} />
+        <Route path="/reports/daily/ar" element={<ErrorBoundary><DailyARActivityReportPage /></ErrorBoundary>} />
+        <Route path="/reports/daily/ap" element={<ErrorBoundary><DailyAPActivityReportPage /></ErrorBoundary>} />
+        <Route path="/reports/daily/journal" element={<ErrorBoundary><DailyJournalEntriesReportPage /></ErrorBoundary>} />
+        <Route path="/reports/daily/tax" element={<ErrorBoundary><DailyTaxCollectedReportPage /></ErrorBoundary>} />
+        <Route path="/reports/weekly" element={<ErrorBoundary><WeeklyReportsPage /></ErrorBoundary>} />
+        <Route path="/reports/weekly/sales-performance" element={<ErrorBoundary><WeeklySalesPerformanceReportPage /></ErrorBoundary>} />
+        <Route path="/reports/weekly/inventory-reorder" element={<ErrorBoundary><WeeklyInventoryReorderReportPage /></ErrorBoundary>} />
+        <Route path="/reports/weekly/supplier-performance" element={<ErrorBoundary><WeeklySupplierPerformanceReportPage /></ErrorBoundary>} />
+        <Route path="/reports/weekly/receivables-aging" element={<ErrorBoundary><WeeklyReceivablesAgingReportPage /></ErrorBoundary>} />
+        <Route path="/reports/weekly/payables-aging" element={<ErrorBoundary><WeeklyPayablesAgingReportPage /></ErrorBoundary>} />
+        <Route path="/reports/weekly/cash-flow" element={<ErrorBoundary><WeeklyCashFlowReportPage /></ErrorBoundary>} />
+        <Route path="/reports/weekly/payroll-preview" element={<ErrorBoundary><WeeklyPayrollPreviewReportPage /></ErrorBoundary>} />
+        {/* Monthly Reports */}
+        <Route path="/reports/monthly" element={<ErrorBoundary><MonthlyReportsPage /></ErrorBoundary>} />
+        <Route path="/reports/monthly/profit-loss" element={<ErrorBoundary><MonthlyPLReportPage /></ErrorBoundary>} />
+        <Route path="/reports/monthly/balance-sheet" element={<ErrorBoundary><MonthlyBalanceSheetPage /></ErrorBoundary>} />
+        <Route path="/reports/monthly/trial-balance" element={<ErrorBoundary><MonthlyTrialBalancePage /></ErrorBoundary>} />
+        <Route path="/reports/monthly/cash-flow" element={<ErrorBoundary><MonthlyCashFlowPage /></ErrorBoundary>} />
+        <Route path="/reports/monthly/stock-valuation" element={<ErrorBoundary><MonthlyStockValuationPage /></ErrorBoundary>} />
+        <Route path="/reports/monthly/sales-by-customer" element={<ErrorBoundary><MonthlySalesByCustomerPage /></ErrorBoundary>} />
+        <Route path="/reports/monthly/sales-by-category" element={<ErrorBoundary><MonthlySalesByCategoryPage /></ErrorBoundary>} />
+        <Route path="/reports/monthly/purchases-by-supplier" element={<ErrorBoundary><MonthlyPurchasesBySupplierPage /></ErrorBoundary>} />
+        <Route path="/reports/monthly/ar-aging" element={<ErrorBoundary><MonthlyARAgingPage /></ErrorBoundary>} />
+        <Route path="/reports/monthly/ap-aging" element={<ErrorBoundary><MonthlyAPAgingPage /></ErrorBoundary>} />
+        <Route path="/reports/monthly/payroll-summary" element={<ErrorBoundary><MonthlyPayrollSummaryPage /></ErrorBoundary>} />
+        <Route path="/reports/monthly/vat-return" element={<ErrorBoundary><MonthlyVATReturnPage /></ErrorBoundary>} />
+        <Route path="/reports/monthly/bank-reconciliation" element={<ErrorBoundary><MonthlyBankReconciliationPage /></ErrorBoundary>} />
+        <Route path="/reports/monthly/budget-vs-actual" element={<ErrorBoundary><MonthlyBudgetVsActualPage /></ErrorBoundary>} />
+        <Route path="/reports/monthly/general-ledger" element={<ErrorBoundary><MonthlyGeneralLedgerPage /></ErrorBoundary>} />
         <Route path="/periods" element={
           <ErrorBoundary>
             <AccountingPeriodsPage />
@@ -694,18 +784,21 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <ThemeProvider>
-        <LanguageProvider>
-          <AuthProvider>
-            <CurrencyProvider>
-              <ChatBot />
-              <Toaster position="top-right" richColors />
-              <AppRoutes />
-            </CurrencyProvider>
-          </AuthProvider>
-        </LanguageProvider>
-      </ThemeProvider>
-    </BrowserRouter>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <ThemeProvider>
+          <LanguageProvider>
+            <AuthProvider>
+              <CurrencyProvider>
+                <ChatBot />
+                <Toaster position="top-right" richColors />
+                <AppRoutes />
+              </CurrencyProvider>
+            </AuthProvider>
+          </LanguageProvider>
+        </ThemeProvider>
+      </BrowserRouter>
+      <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
   );
 }

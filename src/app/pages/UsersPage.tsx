@@ -221,27 +221,29 @@ export default function UsersPage() {
     <Layout>
       <div className="space-y-6 max-w-5xl mx-auto bg-gray-50 dark:bg-slate-900 min-h-screen p-3 md:p-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-4">
             <Button variant="outline" size="sm" onClick={() => navigate('/dashboard')} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>
-              <h1 className="text-2xl font-bold flex items-center gap-2 dark:text-white">
-                <Users className="h-6 w-6" />
+              <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2 dark:text-white">
+                <Users className="h-5 w-5 sm:h-6 sm:w-6" />
                 User Management
               </h1>
-              <p className="text-muted-foreground dark:text-slate-400">Manage team members and their roles</p>
+              <p className="text-sm text-muted-foreground dark:text-slate-400">Manage team members and their roles</p>
             </div>
           </div>
           <div className="flex gap-2">
             <Button onClick={() => setDrawerMode('invite')} variant="outline" className="gap-2 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
               <Mail className="h-4 w-4" />
-              Invite User
+              <span className="hidden sm:inline">Invite User</span>
+              <span className="sm:hidden">Invite</span>
             </Button>
             <Button onClick={() => setDrawerMode('create')} className="gap-2 dark:bg-primary dark:text-primary-foreground">
               <UserPlus className="h-4 w-4" />
-              Create User
+              <span className="hidden sm:inline">Create User</span>
+              <span className="sm:hidden">Create</span>
             </Button>
           </div>
         </div>
@@ -258,8 +260,8 @@ export default function UsersPage() {
         </div>
 
         {/* Users Table */}
-        <Card className="dark:bg-slate-800">
-          <CardContent className="p-0">
+        <Card className="dark:bg-slate-800 overflow-x-auto">
+          <CardContent className="p-0 min-w-[600px]">
             <Table>
               <TableHeader>
                 <TableRow className="dark:border-slate-600 dark:bg-slate-700/50">

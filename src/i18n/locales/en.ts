@@ -56,6 +56,7 @@ const en = {
     payroll: "Payroll",
     taxes: "Taxes",
     accountingPeriods: "Accounting Periods",
+    reportsHub: "Reports Hub",
     profitLoss: "Profit & Loss",
     balanceSheet: "Balance Sheet",
     cashFlow: "Cash Flow",

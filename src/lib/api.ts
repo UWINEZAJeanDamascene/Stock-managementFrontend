@@ -1,4 +1,4 @@
-const API_BASE_URL =
+export const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
   "https://stockmanagementbackend-ikuq.onrender.com/api";
 
@@ -1372,7 +1372,7 @@ export interface SalesLegacyRequest {
   };
   items: SalesLegacyItem[];
   warehouseId: string;
-  paymentMethod?: "cash" | "card" | "bank_transfer" | "mobile_money";
+  paymentMethod?: "cash" | "card" | "bank_transfer" | "cheque" | "mobile_money";
   paymentAmount?: number;
   paymentReference?: string;
   notes?: string;
