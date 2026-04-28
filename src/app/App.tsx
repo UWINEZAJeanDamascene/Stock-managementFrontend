@@ -171,6 +171,16 @@ import MonthlyVATReturnPage from './pages/reports/monthly/MonthlyVATReturnPage';
 import MonthlyBankReconciliationPage from './pages/reports/monthly/MonthlyBankReconciliationPage';
 import MonthlyBudgetVsActualPage from './pages/reports/monthly/MonthlyBudgetVsActualPage';
 import MonthlyGeneralLedgerPage from './pages/reports/monthly/MonthlyGeneralLedgerPage';
+// Semi-Annual Reports
+import SemiAnnualPLReportPage from './pages/reports/semi-annual/SemiAnnualPLReportPage';
+import SemiAnnualBalanceSheetTrendPage from './pages/reports/semi-annual/SemiAnnualBalanceSheetTrendPage';
+import SemiAnnualCashFlowSummaryPage from './pages/reports/semi-annual/SemiAnnualCashFlowSummaryPage';
+import SemiAnnualStockTurnoverPage from './pages/reports/semi-annual/SemiAnnualStockTurnoverPage';
+import SemiAnnualReceivablesCollectionPage from './pages/reports/semi-annual/SemiAnnualReceivablesCollectionPage';
+import SemiAnnualPayrollHRCostPage from './pages/reports/semi-annual/SemiAnnualPayrollHRCostPage';
+import SemiAnnualTaxObligationsPage from './pages/reports/semi-annual/SemiAnnualTaxObligationsPage';
+import SemiAnnualReportsPage from './pages/reports/SemiAnnualReportsPage';
+// Settings
 import AccountingPeriodsPage from './pages/settings/AccountingPeriodsPage';
 import CompanyProfilePage from './pages/settings/CompanyProfilePage';
 import RolesSettingsPage from './pages/settings/RolesSettingsPage';
@@ -740,6 +750,15 @@ function AppRoutes() {
         <Route path="/reports/monthly/bank-reconciliation" element={<ErrorBoundary><MonthlyBankReconciliationPage /></ErrorBoundary>} />
         <Route path="/reports/monthly/budget-vs-actual" element={<ErrorBoundary><MonthlyBudgetVsActualPage /></ErrorBoundary>} />
         <Route path="/reports/monthly/general-ledger" element={<ErrorBoundary><MonthlyGeneralLedgerPage /></ErrorBoundary>} />
+        {/* Semi-Annual Reports */}
+        <Route path="/reports/semi-annual" element={<ErrorBoundary><SemiAnnualReportsPage /></ErrorBoundary>} />
+        <Route path="/reports/semi-annual/profit-loss" element={<ErrorBoundary><SemiAnnualPLReportPage /></ErrorBoundary>} />
+        <Route path="/reports/semi-annual/balance-sheet-trend" element={<ErrorBoundary><SemiAnnualBalanceSheetTrendPage /></ErrorBoundary>} />
+        <Route path="/reports/semi-annual/cash-flow" element={<ErrorBoundary><SemiAnnualCashFlowSummaryPage /></ErrorBoundary>} />
+        <Route path="/reports/semi-annual/stock-turnover" element={<ErrorBoundary><SemiAnnualStockTurnoverPage /></ErrorBoundary>} />
+        <Route path="/reports/semi-annual/receivables-collection" element={<ErrorBoundary><SemiAnnualReceivablesCollectionPage /></ErrorBoundary>} />
+        <Route path="/reports/semi-annual/payroll-hr" element={<ErrorBoundary><SemiAnnualPayrollHRCostPage /></ErrorBoundary>} />
+        <Route path="/reports/semi-annual/tax-obligations" element={<ErrorBoundary><SemiAnnualTaxObligationsPage /></ErrorBoundary>} />
         <Route path="/periods" element={
           <ErrorBoundary>
             <AccountingPeriodsPage />

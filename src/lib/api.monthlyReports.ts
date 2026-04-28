@@ -508,6 +508,248 @@ export interface MonthlyGeneralLedger {
 }
 
 // ============================================
+// SEMI-ANNUAL REPORTS TYPES
+// ============================================
+
+// 1. Semi-Annual P&L
+export interface SemiAnnualPLRow {
+  title: string;
+  isTotal: boolean;
+  isSubtotal: boolean;
+  monthlyValues: number[];
+  total: number;
+}
+
+export interface SemiAnnualProfitAndLoss {
+  reportName: string;
+  period: string;
+  startYear: number;
+  startMonth: number;
+  endYear: number;
+  endMonth: number;
+  months: { year: number; month: number; name: string }[];
+  rows: SemiAnnualPLRow[];
+  generatedAt: string;
+}
+
+// 2. Semi-Annual Balance Sheet Trend
+export interface SemiAnnualBalanceSheetMonth {
+  year: number;
+  month: number;
+  name: string;
+  date: string;
+}
+
+export interface SemiAnnualBalanceSheetTrend {
+  reportName: string;
+  period: string;
+  startYear: number;
+  startMonth: number;
+  endYear: number;
+  endMonth: number;
+  months: SemiAnnualBalanceSheetMonth[];
+  summary: {
+    totalAssets: number[];
+    totalLiabilities: number[];
+    totalEquity: number[];
+    netWorth: number[];
+  };
+  assetDetails: { code: string; name: string; balance: number }[][];
+  liabilityDetails: { code: string; name: string; balance: number }[][];
+  equityDetails: { code: string; name: string; balance: number }[][];
+  generatedAt: string;
+}
+
+// 3. Semi-Annual Cash Flow Summary
+export interface SemiAnnualCashFlowWaterfall {
+  label: string;
+  amount: number;
+  type: 'starting' | 'inflow' | 'net' | 'ending';
+}
+
+export interface SemiAnnualCashFlowMonth {
+  year: number;
+  month: number;
+  monthName: string;
+  operating: number;
+  investing: number;
+  financing: number;
+  net: number;
+}
+
+export interface SemiAnnualCashFlowSummary {
+  reportName: string;
+  period: string;
+  startYear: number;
+  startMonth: number;
+  endYear: number;
+  endMonth: number;
+  summary: {
+    beginningCash: number;
+    cashFromOperations: number;
+    cashFromInvesting: number;
+    cashFromFinancing: number;
+    netCashChange: number;
+    endingCash: number;
+  };
+  waterfall: SemiAnnualCashFlowWaterfall[];
+  monthly: SemiAnnualCashFlowMonth[];
+  generatedAt: string;
+}
+
+// 4. Semi-Annual Stock Turnover
+export interface SemiAnnualCategoryAnalysis {
+  category: string;
+  productCount: number;
+  stockValue: number;
+  cogs: number;
+  turnoverRatio: number;
+  daysInventoryOutstanding: number;
+}
+
+export interface SemiAnnualDeadStockItem {
+  productId: string;
+  name: string;
+  sku: string;
+  quantity: number;
+  unitCost: number;
+  totalValue: number;
+  lastMovementDate?: string;
+}
+
+export interface SemiAnnualStockTurnover {
+  reportName: string;
+  period: string;
+  summary: {
+    totalProducts: number;
+    totalStockValue: number;
+    deadStockItems: number;
+    deadStockValue: number;
+    averageTurnoverRatio: number;
+    averageDaysInventory: number;
+  };
+  categoryAnalysis: SemiAnnualCategoryAnalysis[];
+  deadStock: SemiAnnualDeadStockItem[];
+  generatedAt: string;
+}
+
+// 5. Semi-Annual Receivables Collection
+export interface SemiAnnualCustomerAnalysis {
+  customerId: string;
+  customerName: string;
+  invoiceCount: number;
+  totalRevenue: number;
+  totalCollected: number;
+  outstanding: number;
+  averageDaysToCollect: number;
+  collectionRate: number;
+  badDebts: number;
+}
+
+export interface SemiAnnualReceivablesCollection {
+  reportName: string;
+  period: string;
+  summary: {
+    totalCustomers: number;
+    totalInvoices: number;
+    totalRevenue: number;
+    totalCollected: number;
+    totalOutstanding: number;
+    averageDaysToCollect: number;
+    overallCollectionRate: number;
+    badDebtsWrittenOff: number;
+    amountRecovered: number;
+    recoveryRate: number;
+  };
+  customerAnalysis: SemiAnnualCustomerAnalysis[];
+  generatedAt: string;
+}
+
+// 6. Semi-Annual Payroll & HR
+export interface SemiAnnualMonthlyPayrollData {
+  year: number;
+  month: number;
+  monthName: string;
+  employeeCount: number;
+  grossSalary: number;
+  paye: number;
+  employeeRSSB: number;
+  employerRSSB: number;
+  maternityLeave: number;
+  medicalInsurance: number;
+  otherBenefits: number;
+  otherStaffExpenses: number;
+  totalEmploymentCost: number;
+  netPay: number;
+}
+
+export interface SemiAnnualEmployeeDetail {
+  employeeId: string;
+  employeeName: string;
+  employeeNumber?: string;
+  grossSalary: number;
+  paye: number;
+  rssbEmployee: number;
+  rssbEmployer: number;
+  otherDeductions: number;
+  netPay: number;
+}
+
+export interface SemiAnnualPayrollHRCost {
+  reportName: string;
+  period: string;
+  startYear: number;
+  startMonth: number;
+  endYear: number;
+  endMonth: number;
+  summary: {
+    grossSalary: number;
+    employerRSSB: number;
+    maternityLeave: number;
+    medicalInsurance: number;
+    otherBenefits: number;
+    otherStaffExpenses: number;
+    totalEmploymentCost: number;
+    paye: number;
+    employeeRSSB: number;
+    averageMonthlyEmployees: number;
+    costPerEmployee: number;
+  };
+  monthlyData: SemiAnnualMonthlyPayrollData[];
+  employeeDetails: SemiAnnualEmployeeDetail[];
+  generatedAt: string;
+}
+
+// 7. Semi-Annual Tax Obligations
+export interface SemiAnnualTaxItem {
+  type: string;
+  declared: number;
+  remitted: number;
+  balance: number;
+}
+
+export interface SemiAnnualTaxObligations {
+  reportName: string;
+  period: string;
+  startYear: number;
+  startMonth: number;
+  endYear: number;
+  endMonth: number;
+  summary: {
+    totalTaxesDeclared: number;
+    totalTaxesRemitted: number;
+    balanceOutstanding: number;
+    complianceRate: number;
+    vatPayable: number;
+    payePayable: number;
+    rssbPayable: number;
+    withholdingPayable: number;
+  };
+  taxes: SemiAnnualTaxItem[];
+  generatedAt: string;
+}
+
+// ============================================
 // API FUNCTIONS
 // ============================================
 
@@ -667,6 +909,64 @@ export const monthlyReportsApi = {
     downloadFile(`${API_BASE_URL}/reports/monthly/general-ledger/pdf?year=${year}&month=${month}`, `monthly-gl-${year}-${month}.pdf`),
   downloadGeneralLedgerExcel: (year: number, month: number) =>
     downloadFile(`${API_BASE_URL}/reports/monthly/general-ledger/excel?year=${year}&month=${month}`, `monthly-gl-${year}-${month}.xlsx`),
+
+  // ============================================
+  // SEMI-ANNUAL REPORTS API
+  // ============================================
+
+  getSemiAnnualCurrentPeriod: () => {
+    const now = new Date();
+    const currentMonth = now.getMonth() + 1;
+    const currentYear = now.getFullYear();
+    // Determine H1 or H2
+    if (currentMonth <= 6) {
+      return { startYear: currentYear, startMonth: 1, endYear: currentYear, endMonth: 6 };
+    } else {
+      return { startYear: currentYear, startMonth: 7, endYear: currentYear, endMonth: 12 };
+    }
+  },
+
+  // 1. Semi-Annual Profit & Loss
+  getSemiAnnualProfitAndLoss: (startYear: number, startMonth: number, endYear: number, endMonth: number) =>
+    request<{ success: boolean; data: SemiAnnualProfitAndLoss }>(
+      `/reports/monthly/semi-annual/profit-loss?startYear=${startYear}&startMonth=${startMonth}&endYear=${endYear}&endMonth=${endMonth}`
+    ),
+
+  // 2. Semi-Annual Balance Sheet Trend
+  getSemiAnnualBalanceSheetTrend: (startYear: number, startMonth: number, endYear: number, endMonth: number) =>
+    request<{ success: boolean; data: SemiAnnualBalanceSheetTrend }>(
+      `/reports/monthly/semi-annual/balance-sheet-trend?startYear=${startYear}&startMonth=${startMonth}&endYear=${endYear}&endMonth=${endMonth}`
+    ),
+
+  // 3. Semi-Annual Cash Flow Summary
+  getSemiAnnualCashFlowSummary: (startYear: number, startMonth: number, endYear: number, endMonth: number) =>
+    request<{ success: boolean; data: SemiAnnualCashFlowSummary }>(
+      `/reports/monthly/semi-annual/cash-flow?startYear=${startYear}&startMonth=${startMonth}&endYear=${endYear}&endMonth=${endMonth}`
+    ),
+
+  // 4. Semi-Annual Stock Turnover
+  getSemiAnnualStockTurnover: (startYear: number, startMonth: number, endYear: number, endMonth: number) =>
+    request<{ success: boolean; data: SemiAnnualStockTurnover }>(
+      `/reports/monthly/semi-annual/stock-turnover?startYear=${startYear}&startMonth=${startMonth}&endYear=${endYear}&endMonth=${endMonth}`
+    ),
+
+  // 5. Semi-Annual Receivables Collection
+  getSemiAnnualReceivablesCollection: (startYear: number, startMonth: number, endYear: number, endMonth: number) =>
+    request<{ success: boolean; data: SemiAnnualReceivablesCollection }>(
+      `/reports/monthly/semi-annual/receivables-collection?startYear=${startYear}&startMonth=${startMonth}&endYear=${endYear}&endMonth=${endMonth}`
+    ),
+
+  // 6. Semi-Annual Payroll & HR Cost
+  getSemiAnnualPayrollHRCost: (startYear: number, startMonth: number, endYear: number, endMonth: number) =>
+    request<{ success: boolean; data: SemiAnnualPayrollHRCost }>(
+      `/reports/monthly/semi-annual/payroll-hr?startYear=${startYear}&startMonth=${startMonth}&endYear=${endYear}&endMonth=${endMonth}`
+    ),
+
+  // 7. Semi-Annual Tax Obligations
+  getSemiAnnualTaxObligations: (startYear: number, startMonth: number, endYear: number, endMonth: number) =>
+    request<{ success: boolean; data: SemiAnnualTaxObligations }>(
+      `/reports/monthly/semi-annual/tax-obligations?startYear=${startYear}&startMonth=${startMonth}&endYear=${endYear}&endMonth=${endMonth}`
+    ),
 };
 
 export default monthlyReportsApi;

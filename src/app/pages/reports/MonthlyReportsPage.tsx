@@ -451,11 +451,11 @@ export default function MonthlyReportsPage() {
         </div>
 
         {/* Summary Stats */}
-        <Card className="mt-8">
+        <Card className="mt-12">
           <CardHeader>
             <CardTitle>Quick Stats for {monthNames[selectedMonth - 1]} {selectedYear}</CardTitle>
             <CardDescription>
-              Summary metrics across all monthly reports
+              Summary metrics across all reports
             </CardDescription>
           </CardHeader>
           <CardContent>

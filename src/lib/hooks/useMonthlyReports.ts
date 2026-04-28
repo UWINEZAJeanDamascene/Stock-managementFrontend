@@ -21,6 +21,13 @@ import type {
   MonthlyBankReconciliation,
   MonthlyBudgetVsActual,
   MonthlyGeneralLedger,
+  SemiAnnualProfitAndLoss,
+  SemiAnnualBalanceSheetTrend,
+  SemiAnnualCashFlowSummary,
+  SemiAnnualStockTurnover,
+  SemiAnnualReceivablesCollection,
+  SemiAnnualPayrollHRCost,
+  SemiAnnualTaxObligations,
 } from '@/lib/api.monthlyReports';
 
 // Query keys for caching
@@ -41,6 +48,23 @@ export const monthlyReportKeys = {
   bankReconciliation: (year: number, month: number) => [...monthlyReportKeys.all, 'bankReconciliation', year, month] as const,
   budgetVsActual: (year: number, month: number) => [...monthlyReportKeys.all, 'budgetVsActual', year, month] as const,
   generalLedger: (year: number, month: number) => [...monthlyReportKeys.all, 'generalLedger', year, month] as const,
+  // Semi-Annual Reports
+  semiAnnual: (startYear: number, startMonth: number, endYear: number, endMonth: number) =>
+    [...monthlyReportKeys.all, 'semiAnnual', startYear, startMonth, endYear, endMonth] as const,
+  semiAnnualPL: (startYear: number, startMonth: number, endYear: number, endMonth: number) =>
+    [...monthlyReportKeys.all, 'semiAnnual', 'pl', startYear, startMonth, endYear, endMonth] as const,
+  semiAnnualBalanceSheet: (startYear: number, startMonth: number, endYear: number, endMonth: number) =>
+    [...monthlyReportKeys.all, 'semiAnnual', 'balanceSheet', startYear, startMonth, endYear, endMonth] as const,
+  semiAnnualCashFlow: (startYear: number, startMonth: number, endYear: number, endMonth: number) =>
+    [...monthlyReportKeys.all, 'semiAnnual', 'cashFlow', startYear, startMonth, endYear, endMonth] as const,
+  semiAnnualStockTurnover: (startYear: number, startMonth: number, endYear: number, endMonth: number) =>
+    [...monthlyReportKeys.all, 'semiAnnual', 'stockTurnover', startYear, startMonth, endYear, endMonth] as const,
+  semiAnnualReceivables: (startYear: number, startMonth: number, endYear: number, endMonth: number) =>
+    [...monthlyReportKeys.all, 'semiAnnual', 'receivables', startYear, startMonth, endYear, endMonth] as const,
+  semiAnnualPayroll: (startYear: number, startMonth: number, endYear: number, endMonth: number) =>
+    [...monthlyReportKeys.all, 'semiAnnual', 'payroll', startYear, startMonth, endYear, endMonth] as const,
+  semiAnnualTax: (startYear: number, startMonth: number, endYear: number, endMonth: number) =>
+    [...monthlyReportKeys.all, 'semiAnnual', 'tax', startYear, startMonth, endYear, endMonth] as const,
 };
 
 // 1. Profit & Loss Hook
@@ -308,6 +332,150 @@ export function useMonthlyGeneralLedger(year: number, month: number) {
     },
     enabled: !!year && !!month,
     staleTime: 10 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+}
+
+// ============================================
+// SEMI-ANNUAL REPORTS HOOKS
+// ============================================
+
+// 1. Semi-Annual Profit & Loss
+export function useSemiAnnualProfitAndLoss(
+  startYear: number, startMonth: number, endYear: number, endMonth: number
+) {
+  return useQuery<SemiAnnualProfitAndLoss, Error>({
+    queryKey: monthlyReportKeys.semiAnnualPL(startYear, startMonth, endYear, endMonth),
+    queryFn: async () => {
+      const response = await monthlyReportsApi.getSemiAnnualProfitAndLoss(startYear, startMonth, endYear, endMonth);
+      if (!response.success) {
+        throw new Error('Failed to load semi-annual profit & loss report');
+      }
+      return response.data;
+    },
+    enabled: !!startYear && !!startMonth && !!endYear && !!endMonth,
+    staleTime: 15 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+}
+
+// 2. Semi-Annual Balance Sheet Trend
+export function useSemiAnnualBalanceSheetTrend(
+  startYear: number, startMonth: number, endYear: number, endMonth: number
+) {
+  return useQuery<SemiAnnualBalanceSheetTrend, Error>({
+    queryKey: monthlyReportKeys.semiAnnualBalanceSheet(startYear, startMonth, endYear, endMonth),
+    queryFn: async () => {
+      const response = await monthlyReportsApi.getSemiAnnualBalanceSheetTrend(startYear, startMonth, endYear, endMonth);
+      if (!response.success) {
+        throw new Error('Failed to load semi-annual balance sheet trend');
+      }
+      return response.data;
+    },
+    enabled: !!startYear && !!startMonth && !!endYear && !!endMonth,
+    staleTime: 15 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+}
+
+// 3. Semi-Annual Cash Flow Summary
+export function useSemiAnnualCashFlowSummary(
+  startYear: number, startMonth: number, endYear: number, endMonth: number
+) {
+  return useQuery<SemiAnnualCashFlowSummary, Error>({
+    queryKey: monthlyReportKeys.semiAnnualCashFlow(startYear, startMonth, endYear, endMonth),
+    queryFn: async () => {
+      const response = await monthlyReportsApi.getSemiAnnualCashFlowSummary(startYear, startMonth, endYear, endMonth);
+      if (!response.success) {
+        throw new Error('Failed to load semi-annual cash flow summary');
+      }
+      return response.data;
+    },
+    enabled: !!startYear && !!startMonth && !!endYear && !!endMonth,
+    staleTime: 15 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+}
+
+// 4. Semi-Annual Stock Turnover
+export function useSemiAnnualStockTurnover(
+  startYear: number, startMonth: number, endYear: number, endMonth: number
+) {
+  return useQuery<SemiAnnualStockTurnover, Error>({
+    queryKey: monthlyReportKeys.semiAnnualStockTurnover(startYear, startMonth, endYear, endMonth),
+    queryFn: async () => {
+      const response = await monthlyReportsApi.getSemiAnnualStockTurnover(startYear, startMonth, endYear, endMonth);
+      if (!response.success) {
+        throw new Error('Failed to load semi-annual stock turnover analysis');
+      }
+      return response.data;
+    },
+    enabled: !!startYear && !!startMonth && !!endYear && !!endMonth,
+    staleTime: 15 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+}
+
+// 5. Semi-Annual Receivables Collection
+export function useSemiAnnualReceivablesCollection(
+  startYear: number, startMonth: number, endYear: number, endMonth: number
+) {
+  return useQuery<SemiAnnualReceivablesCollection, Error>({
+    queryKey: monthlyReportKeys.semiAnnualReceivables(startYear, startMonth, endYear, endMonth),
+    queryFn: async () => {
+      const response = await monthlyReportsApi.getSemiAnnualReceivablesCollection(startYear, startMonth, endYear, endMonth);
+      if (!response.success) {
+        throw new Error('Failed to load semi-annual receivables collection analysis');
+      }
+      return response.data;
+    },
+    enabled: !!startYear && !!startMonth && !!endYear && !!endMonth,
+    staleTime: 15 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+}
+
+// 6. Semi-Annual Payroll & HR Cost
+export function useSemiAnnualPayrollHRCost(
+  startYear: number, startMonth: number, endYear: number, endMonth: number
+) {
+  return useQuery<SemiAnnualPayrollHRCost, Error>({
+    queryKey: monthlyReportKeys.semiAnnualPayroll(startYear, startMonth, endYear, endMonth),
+    queryFn: async () => {
+      const response = await monthlyReportsApi.getSemiAnnualPayrollHRCost(startYear, startMonth, endYear, endMonth);
+      if (!response.success) {
+        throw new Error('Failed to load semi-annual payroll & HR cost report');
+      }
+      return response.data;
+    },
+    enabled: !!startYear && !!startMonth && !!endYear && !!endMonth,
+    staleTime: 15 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+}
+
+// 7. Semi-Annual Tax Obligations
+export function useSemiAnnualTaxObligations(
+  startYear: number, startMonth: number, endYear: number, endMonth: number
+) {
+  return useQuery<SemiAnnualTaxObligations, Error>({
+    queryKey: monthlyReportKeys.semiAnnualTax(startYear, startMonth, endYear, endMonth),
+    queryFn: async () => {
+      const response = await monthlyReportsApi.getSemiAnnualTaxObligations(startYear, startMonth, endYear, endMonth);
+      if (!response.success) {
+        throw new Error('Failed to load semi-annual tax obligations summary');
+      }
+      return response.data;
+    },
+    enabled: !!startYear && !!startMonth && !!endYear && !!endMonth,
+    staleTime: 15 * 60 * 1000,
     gcTime: 60 * 60 * 1000,
     refetchOnWindowFocus: false,
   });

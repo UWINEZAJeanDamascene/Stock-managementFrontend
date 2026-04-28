@@ -100,17 +100,20 @@ const reportCategories: ReportCategory[] = [
   {
     id: "semi-annual",
     name: "Semi-Annual Reports",
-    description: "Interim financial reports for half-year analysis and regulatory compliance.",
+    description: "Six-month analysis reports covering P&L trends, balance sheet comparisons, cash flow, stock turnover, receivables collection, payroll costs, and tax obligations.",
     icon: CalendarRange,
     color: "text-amber-600",
     bgColor: "bg-amber-50",
     path: "/reports/semi-annual",
-    reportCount: 4,
+    reportCount: 7,
     features: [
-      "Interim Financials",
-      "Half-Year P&L",
-      "Comparative Analysis",
-      "Regulatory Reports"
+      "Profit & Loss (6-Month)",
+      "Balance Sheet Trend",
+      "Cash Flow Summary",
+      "Stock Turnover Analysis",
+      "Receivables Collection",
+      "Payroll & HR Cost",
+      "Tax Obligations"
     ]
   },
   {
