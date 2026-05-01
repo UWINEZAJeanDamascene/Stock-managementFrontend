@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { invoicesApi, bankAccountsApi } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
+import { useCurrency } from '@/contexts/CurrencyContext';
 import { 
   ArrowLeft, 
   CheckCircle, 
@@ -59,6 +60,7 @@ interface Invoice {
   currencyCode: string;
   subtotal: number;
   totalTax: number;
+  taxAmount?: number;
   grandTotal: number;
   amountPaid: number;
   balance: number;
@@ -84,12 +86,15 @@ interface Invoice {
       sku: string;
       unit?: string;
     };
-    qtyOrdered: number;
-    qtyReceived: number;
-    unitCost: number;
+    qty?: number;
+    quantity?: number;
+    unitPrice?: number;
+    unitCost?: number;
     taxRate: number;
-    taxAmount: number;
-    lineTotal: number;
+    taxAmount?: number;
+    lineTax?: number;
+    lineTotal?: number;
+    lineSubtotal?: number;
   }>;
   payments?: Array<{
     _id: string;
@@ -141,6 +146,7 @@ const STATUS_FLOW = [
 
 export default function InvoiceDetailPage() {
   const { t } = useTranslation();
+  const { formatCurrency } = useCurrency();
   const navigate = useNavigate();
   const { id } = useParams();
 
@@ -297,9 +303,6 @@ export default function InvoiceDetailPage() {
     return stepIndex;
   };
 
-  const formatCurrency = (amount: number, currency: string = 'USD') => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount || 0);
-  };
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '-';
@@ -377,7 +380,7 @@ export default function InvoiceDetailPage() {
             <div className="text-left sm:text-right flex-shrink-0">
               <p className="text-muted-foreground text-sm dark:text-gray-400">{t('invoice.total', 'Total')}</p>
               <p className="text-xl sm:text-2xl font-bold dark:text-gray-100 whitespace-nowrap">
-                {formatCurrency(invoice.grandTotal, invoice.currencyCode)}
+                {formatCurrency(invoice.grandTotal)}
               </p>
             </div>
           </div>
@@ -506,11 +509,11 @@ export default function InvoiceDetailPage() {
                           <div className="font-medium dark:text-gray-200">{line.product?.name || '-'}</div>
                           <div className="text-sm text-muted-foreground dark:text-gray-400">{line.product?.sku}</div>
                         </TableCell>
-                        <TableCell className="text-right dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{line.qtyOrdered || 0}</TableCell>
-                        <TableCell className="text-right dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{formatCurrency(line.unitCost || 0, invoice.currencyCode)}</TableCell>
+                        <TableCell className="text-right dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{line.qty || line.quantity || 0}</TableCell>
+                        <TableCell className="text-right dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{formatCurrency(line.unitPrice || 0)}</TableCell>
                         <TableCell className="text-right dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">-</TableCell>
-                        <TableCell className="text-right dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{formatCurrency(line.taxAmount || 0, invoice.currencyCode)}</TableCell>
-                        <TableCell className="text-right font-medium dark:text-gray-200 dark:bg-slate-800 dark:border-b dark:border-slate-700">{formatCurrency(line.lineTotal || 0, invoice.currencyCode)}</TableCell>
+                        <TableCell className="text-right dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{formatCurrency(line.lineTax || line.taxAmount || 0)}</TableCell>
+                        <TableCell className="text-right font-medium dark:text-gray-200 dark:bg-slate-800 dark:border-b dark:border-slate-700">{formatCurrency(line.lineTotal || 0)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -520,23 +523,31 @@ export default function InvoiceDetailPage() {
                   <div className="w-64 space-y-2">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground dark:text-gray-400">{t('invoice.subtotal', 'Subtotal')}</span>
-                      <span className="font-medium dark:text-gray-200">{formatCurrency(invoice.subtotal, invoice.currencyCode)}</span>
+                      <span className="font-medium dark:text-gray-200">{formatCurrency(invoice.subtotal)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground dark:text-gray-400">{t('invoice.tax', 'Tax')}</span>
-                      <span className="font-medium dark:text-gray-200">{formatCurrency(invoice.totalTax || 0, invoice.currencyCode)}</span>
+                      <span className="font-medium dark:text-gray-200">{formatCurrency(
+                        (() => {
+                          const tax = invoice.totalTax as any;
+                          if (tax && typeof tax === 'object') {
+                            return parseFloat(tax.$numberDecimal || tax.toString?.() || 0);
+                          }
+                          return parseFloat(String(tax ?? invoice.taxAmount ?? 0));
+                        })()
+                      )}</span>
                     </div>
                     <div className="flex justify-between border-t pt-2 dark:border-slate-700">
                       <span className="font-bold dark:text-gray-100">{t('invoice.total', 'Total')}</span>
-                      <span className="font-bold text-lg dark:text-gray-100">{formatCurrency(invoice.grandTotal, invoice.currencyCode)}</span>
+                      <span className="font-bold text-lg dark:text-gray-100">{formatCurrency(invoice.grandTotal)}</span>
                     </div>
                     <div className="flex justify-between pt-2">
                       <span className="text-muted-foreground dark:text-gray-400">{t('invoice.amountPaid', 'Amount Paid')}</span>
-                      <span className="font-medium text-green-600 dark:text-green-400">{formatCurrency(invoice.amountPaid, invoice.currencyCode)}</span>
+                      <span className="font-medium text-green-600 dark:text-green-400">{formatCurrency(invoice.amountPaid)}</span>
                     </div>
                     <div className="flex justify-between border-t pt-2 dark:border-slate-700">
                       <span className="font-medium dark:text-gray-200">{t('invoice.amountOutstanding', 'Outstanding')}</span>
-                      <span className="font-bold dark:text-gray-100">{formatCurrency(invoice.balance || invoice.amountOutstanding || 0, invoice.currencyCode)}</span>
+                      <span className="font-bold dark:text-gray-100">{formatCurrency(invoice.balance || invoice.amountOutstanding || 0)}</span>
                     </div>
                   </div>
                 </div>
@@ -576,7 +587,7 @@ export default function InvoiceDetailPage() {
                           <TableCell className="dark:text-gray-300">{payment.reference || '-'}</TableCell>
                           <TableCell className="dark:text-gray-300">{payment.recordedBy?.name ?? '-'}</TableCell>
                           <TableCell className="text-right font-medium dark:text-gray-200">
-                            {formatCurrency(payment.amount, invoice.currencyCode)}
+                            {formatCurrency(payment.amount)}
                           </TableCell>
                         </TableRow>
                       ))}
@@ -614,7 +625,7 @@ export default function InvoiceDetailPage() {
                           <TableCell className="dark:text-gray-300">{formatDate(cn.createdAt)}</TableCell>
                           <TableCell className="dark:text-gray-300">{cn.status}</TableCell>
                           <TableCell className="text-right font-medium dark:text-gray-200">
-                            {formatCurrency(cn.grandTotal, invoice.currencyCode)}
+                            {formatCurrency(cn.grandTotal)}
                           </TableCell>
                         </TableRow>
                       ))}
@@ -656,7 +667,7 @@ export default function InvoiceDetailPage() {
                           <TableCell className="dark:text-gray-300">{formatDate(dn.createdAt)}</TableCell>
                           <TableCell className="dark:text-gray-300">{dn.status}</TableCell>
                           <TableCell className="text-right font-medium dark:text-gray-200">
-                            {formatCurrency(dn.grandTotal, invoice.currencyCode)}
+                            {formatCurrency(dn.grandTotal)}
                           </TableCell>
                         </TableRow>
                       ))}

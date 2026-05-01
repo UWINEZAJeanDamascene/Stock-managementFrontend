@@ -8,8 +8,6 @@ import {
   Lock,
   Edit2,
   Trash2,
-  CheckCircle,
-  XCircle,
   Save,
   ArrowLeft,
   Search
@@ -137,7 +135,8 @@ export default function RolesSettingsPage() {
     if (!formName.trim()) { toast.error('Role name is required'); return; }
     setActionLoading('create');
     try {
-      await accessApi.createRole({ name: formName, description: formDescription, permissions: formPermissions });
+      const permissionStrings = formPermissions.flatMap(p => p.actions.map(a => `${p.resource}:${a}`));
+      await accessApi.createRole({ name: formName, description: formDescription, permissions: permissionStrings });
       toast.success('Role created');
       closeDrawer();
       fetchRoles();
@@ -152,7 +151,8 @@ export default function RolesSettingsPage() {
     if (!selectedRole) return;
     setActionLoading('update');
     try {
-      await accessApi.updateRole(selectedRole._id, { name: formName, description: formDescription, permissions: formPermissions });
+      const permissionStrings = formPermissions.flatMap(p => p.actions.map(a => `${p.resource}:${a}`));
+      await accessApi.updateRole(selectedRole._id, { name: formName, description: formDescription, permissions: permissionStrings });
       toast.success('Role updated');
       closeDrawer();
       fetchRoles();
@@ -251,15 +251,13 @@ export default function RolesSettingsPage() {
                       <Button variant="outline" size="sm" className="flex-1 text-xs dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700" onClick={() => openView(role)}>
                         View
                       </Button>
+                      <Button variant="outline" size="sm" className="flex-1 text-xs dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700" onClick={() => openEdit(role)}>
+                        <Edit2 className="h-3 w-3 mr-1" /> Edit
+                      </Button>
                       {!role.is_system_role && (
-                        <>
-                          <Button variant="outline" size="sm" className="flex-1 text-xs dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700" onClick={() => openEdit(role)}>
-                            <Edit2 className="h-3 w-3 mr-1" /> Edit
-                          </Button>
-                          <Button variant="outline" size="sm" className="text-destructive hover:text-destructive dark:text-red-400 dark:hover:text-red-300" onClick={() => handleDelete(role)}>
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </>
+                        <Button variant="outline" size="sm" className="text-destructive hover:text-destructive dark:text-red-400 dark:hover:text-red-300" onClick={() => handleDelete(role)}>
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
                       )}
                     </div>
                   </div>

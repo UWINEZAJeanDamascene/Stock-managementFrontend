@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { quotationsApi, clientsApi, productsApi } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
+import { useCurrency } from '@/contexts/CurrencyContext';
 import { 
   ArrowLeft, 
   Save, 
@@ -83,6 +84,7 @@ const emptyLine: QuotationLine = {
 
 export default function QuotationFormPage() {
   const { t } = useTranslation();
+  const { formatCurrency } = useCurrency();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const searchParams = new URLSearchParams(window.location.search);
@@ -109,7 +111,7 @@ export default function QuotationFormPage() {
     client: '',
     quotationDate: new Date().toISOString().split('T')[0],
     expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    currency: 'USD',
+    currency: 'RWF',
     notes: '',
     lines: [{ ...emptyLine }]
   });
@@ -161,7 +163,7 @@ export default function QuotationFormPage() {
           client: quotation.client?._id || '',
           quotationDate: quotation.quotationDate ? quotation.quotationDate.split('T')[0] : '',
           expiryDate: quotation.expiryDate ? quotation.expiryDate.split('T')[0] : '',
-          currency: quotation.currency || 'USD',
+          currency: quotation.currency || 'RWF',
           notes: quotation.notes || '',
           lines: quotation.lines && quotation.lines.length > 0 
             ? quotation.lines.map((line: any) => ({
@@ -305,9 +307,6 @@ export default function QuotationFormPage() {
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: formData.currency }).format(amount);
-  };
 
   const handleConvert = async (quotationId: string) => {
     try {
@@ -453,10 +452,11 @@ export default function QuotationFormPage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
-                          <SelectItem value="USD" className="dark:text-slate-200">USD</SelectItem>
-                          <SelectItem value="EUR" className="dark:text-slate-200">EUR</SelectItem>
-                          <SelectItem value="GBP" className="dark:text-slate-200">GBP</SelectItem>
-                          <SelectItem value="LBP" className="dark:text-slate-200">LBP</SelectItem>
+                          <SelectItem value="RWF" className="dark:text-slate-200">RWF (FRw)</SelectItem>
+                          <SelectItem value="USD" className="dark:text-slate-200">USD ($)</SelectItem>
+                          <SelectItem value="EUR" className="dark:text-slate-200">EUR (€)</SelectItem>
+                          <SelectItem value="GBP" className="dark:text-slate-200">GBP (£)</SelectItem>
+                          <SelectItem value="LBP" className="dark:text-slate-200">LBP (ل.ل)</SelectItem>
                         </SelectContent>
                       </Select>
                     )}

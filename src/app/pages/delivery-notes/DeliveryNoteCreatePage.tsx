@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { deliveryNotesApi, invoicesApi, clientsApi, productsApi, warehousesApi, stockBatchApi } from '@/lib/api';
+import { useCurrency } from '@/contexts/CurrencyContext';
 import { Layout } from '../../layout/Layout';
 import { ErrorBoundary } from '../../components/ErrorBoundary';
 import { 
@@ -555,9 +556,7 @@ function DeliveryNoteCreatePageContent() {
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
-  };
+  const { formatCurrency } = useCurrency();
 
   if (loading) {
     return (

@@ -19,6 +19,7 @@ export interface Company {
     country?: string;
     postcode?: string;
   };
+  base_currency?: string;
 }
 
 interface CompanyState {

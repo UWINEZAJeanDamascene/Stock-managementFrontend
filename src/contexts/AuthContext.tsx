@@ -1,5 +1,6 @@
-import { createContext, useContext, ReactNode, useCallback } from 'react';
+import { createContext, useContext, ReactNode, useCallback, useEffect } from 'react';
 import { useAuthStore, User, Membership } from '@/store/authStore';
+import authService from '@/services/authService';
 
 // Auth Context Type
 interface AuthContextType {
@@ -23,6 +24,33 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const store = useAuthStore();
+  const setUser = store.setUser;
+
+  // Ensure we have up-to-date permissions when app mounts or when token exists
+  useEffect(() => {
+    const init = async () => {
+      try {
+        // If there's no token, nothing to do
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        // If user already has permissions, skip
+        if (store.user && Array.isArray(store.user.permissions) && store.user.permissions.length > 0) return;
+
+        // Fetch current user (will include computed permissions from backend)
+        const resp = await authService.getMe();
+        if (resp.success && resp.data) {
+          setUser(resp.data as unknown as User);
+        }
+      } catch (err) {
+        // Fail silently - permissions will be unavailable until explicit login
+        console.warn('[AuthProvider] failed to refresh user permissions', err);
+      }
+    };
+
+    init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   
   // Check permissions based on user role/permissions
   const hasPermission = useCallback((permission: string) => {

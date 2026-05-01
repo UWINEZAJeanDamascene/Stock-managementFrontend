@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { suppliersApi } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
+import { useCurrency } from '@/contexts/CurrencyContext';
 import { 
   Plus, 
   Search,
@@ -46,6 +47,7 @@ interface Supplier {
 
 export default function SuppliersListPage() {
   const { t } = useTranslation();
+  const { formatCurrency } = useCurrency();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -110,10 +112,6 @@ export default function SuppliersListPage() {
     } catch (error: any) {
       toast.error(error.response?.data?.message || t('suppliers.errors.toggleFailed', 'Failed to update status'));
     }
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount || 0);
   };
 
   const getPaymentTermsLabel = (terms: string) => {

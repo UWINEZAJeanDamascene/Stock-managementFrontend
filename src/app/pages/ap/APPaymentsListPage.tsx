@@ -471,10 +471,6 @@ export default function APPaymentsListPage() {
               <Download className="mr-2 h-4 w-4" />
               {t('common.export', 'Export')}
             </Button>
-            <Button onClick={() => navigate('/ap-payments/new')}>
-              <Plus className="mr-2 h-4 w-4" />
-              {t('apPayment.newPayment', 'New Payment')}
-            </Button>
           </div>
         </div>
 

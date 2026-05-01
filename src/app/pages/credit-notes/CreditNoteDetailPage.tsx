@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { creditNotesApi } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
+import { useCompany } from '@/hooks/useCompany';
 import { 
   ArrowLeft, 
   Edit,
@@ -121,6 +122,7 @@ export default function CreditNoteDetailPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { id } = useParams();
+  const { currency: companyCurrency } = useCompany();
 
   const [loading, setLoading] = useState(true);
   const [creditNote, setCreditNote] = useState<CreditNote | null>(null);
@@ -197,9 +199,10 @@ export default function CreditNoteDetailPage() {
     }
   };
 
-  const formatCurrency = (amount: number | any, currency: string = 'USD') => {
+  const formatCurrency = (amount: number | any, currency?: string) => {
     const num = toNumber(amount);
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(num);
+    const curr = currency || companyCurrency || 'FRW';
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: curr }).format(num);
   };
 
   const formatDate = (dateStr: string) => {

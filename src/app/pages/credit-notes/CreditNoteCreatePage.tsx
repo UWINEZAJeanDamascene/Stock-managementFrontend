@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { creditNotesApi, invoicesApi, productsApi, warehousesApi } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
+import { useCompany } from '@/hooks/useCompany';
 import { 
   ArrowLeft, 
   Save, 
@@ -114,6 +115,7 @@ export default function CreditNoteCreatePage() {
   const navigate = useNavigate();
   const { id } = useParams();
   const isEdit = !!id;
+  const { currency: companyCurrency } = useCompany();
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -190,21 +192,30 @@ export default function CreditNoteCreatePage() {
         
         // If credit note has lines, use them; otherwise populate from invoice
         if (cn.lines && cn.lines.length > 0) {
-          setLines(cn.lines);
+          // Normalize product field to ensure it's an object with _id
+          const normalizedLines = cn.lines.map((line: any) => ({
+            ...line,
+            product: typeof line.product === 'string'
+              ? { _id: line.product, name: line.productName || '', code: line.productCode || '' }
+              : line.product || { _id: '', name: '', code: '' },
+          }));
+          setLines(normalizedLines);
         } else if (cn.invoice?._id) {
           // Auto-populate lines from invoice
           const invoice = invoices.find(inv => inv._id === cn.invoice?._id);
           if (invoice && invoice.lines) {
             const creditNoteLines: CreditNoteLine[] = invoice.lines.map((line: any) => ({
               invoiceLineId: line._id || line.lineId,
-              product: line.product,
+              product: typeof line.product === 'string'
+                ? { _id: line.product, name: line.productName || '', code: line.productCode || '' }
+                : line.product || { _id: '', name: '', code: '' },
               productName: line.productName || line.product?.name || '',
               productCode: line.productCode || line.product?.code || '',
-              originalQty: line.quantity || 0, // ADDED: Store original invoice qty
+              originalQty: line.quantity || 0,
               quantity: 0,
-              unitPrice: toNumber(line.unitPrice) || 0, // FIXED: Convert Decimal to number
+              unitPrice: toNumber(line.unitPrice) || 0,
               unitCost: toNumber(line.unitCost) || toNumber(line.product?.averageCost) || 0,
-              taxRate: toNumber(line.taxRate) || 0, // FIXED: Convert Decimal to number
+              taxRate: toNumber(line.taxRate) || 0,
               lineSubtotal: 0,
               lineTax: 0,
               lineTotal: 0,
@@ -244,7 +255,10 @@ export default function CreditNoteCreatePage() {
     // Transform invoice lines to credit note lines
     const creditNoteLines: CreditNoteLine[] = invoice.lines.map((line: any) => ({
       invoiceLineId: line._id || line.lineId,
-      product: line.product,
+      // Handle product as either ObjectId string or populated object
+      product: typeof line.product === 'string'
+        ? { _id: line.product, name: line.productName || '', code: line.productCode || '' }
+        : line.product || { _id: '', name: '', code: '' },
       productName: line.productName || line.product?.name || '',
       productCode: line.productCode || line.product?.code || '',
       originalQty: line.quantity || 0, // ADDED: Store original invoice qty
@@ -293,8 +307,9 @@ export default function CreditNoteCreatePage() {
     return { subtotal, taxAmount, totalAmount };
   };
 
-  const formatCurrency = (amount: number, currency: string = 'USD') => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount || 0);
+  const formatCurrency = (amount: number, currency?: string) => {
+    const curr = currency || companyCurrency || 'FRW';
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: curr }).format(amount || 0);
   };
 
   const handleSave = async () => {
@@ -311,9 +326,10 @@ export default function CreditNoteCreatePage() {
         type,
         reason,
         notes,
+        currencyCode: companyCurrency || 'FRW',
         lines: lines.map(line => ({
           invoiceLineId: line.invoiceLineId,
-          product: line.product._id,
+          product: typeof line.product === 'string' ? line.product : line.product?._id,
           productName: line.productName,
           productCode: line.productCode,
           quantity: line.quantity,

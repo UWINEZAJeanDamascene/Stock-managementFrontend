@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import { grnApi, suppliersApi } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
+import { useCurrency } from '@/contexts/CurrencyContext';
 import { 
   Plus, 
   Search, 
@@ -77,6 +78,7 @@ interface PaginationInfo {
 
 export default function GRNListPage() {
   const { t } = useTranslation();
+  const { formatCurrency } = useCurrency();
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -200,11 +202,6 @@ export default function GRNListPage() {
     
     const config = statusConfig[status] || { variant: 'outline', label: status };
     return <Badge variant={config.variant}>{config.label}</Badge>;
-  };
-
-  const formatCurrency = (amount: number | string, currency: string = 'USD') => {
-    const num = typeof amount === 'string' ? parseFloat(amount) : amount;
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(num || 0);
   };
 
   const formatDate = (dateStr: string) => {

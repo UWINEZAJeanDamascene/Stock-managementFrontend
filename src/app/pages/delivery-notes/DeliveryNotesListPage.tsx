@@ -37,6 +37,7 @@ import {
   SelectValue,
 } from '@/app/components/ui/select';
 import { useTranslation } from 'react-i18next';
+import { useCurrency } from '@/contexts/CurrencyContext';
 
 interface DeliveryNote {
   _id: string;
@@ -44,6 +45,14 @@ interface DeliveryNote {
   quotation?: {
     _id: string;
     referenceNo: string;
+  };
+  salesOrder?: {
+    _id: string;
+    referenceNo: string;
+    quotation?: {
+      _id: string;
+      referenceNo: string;
+    };
   };
   client: {
     _id: string;
@@ -214,9 +223,7 @@ export default function DeliveryNotesListPage() {
     return <Badge variant={config.variant} className={config.className}>{config.label}</Badge>;
   };
 
-  const formatCurrency = (amount: number, currency: string = 'USD') => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount || 0);
-  };
+  const { formatCurrency } = useCurrency();
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '-';
@@ -493,14 +500,14 @@ export default function DeliveryNotesListPage() {
                       <TableCell className="font-medium dark:text-white">
                         {dn.referenceNo}
                       </TableCell>
-                      <TableCell className="dark:text-gray-300">{dn.quotation?.referenceNo || '-'}</TableCell>
+                      <TableCell className="dark:text-gray-300">{dn.quotation?.referenceNo || dn.salesOrder?.quotation?.referenceNo || '-'}</TableCell>
                       <TableCell className="dark:text-gray-300">{dn.client?.name || '-'}</TableCell>
                       <TableCell className="dark:text-gray-300">{formatDate(dn.deliveryDate)}</TableCell>
                       <TableCell>{getStatusBadge(dn.status)}</TableCell>
                       <TableCell className="dark:text-gray-300">{dn.carrier || '-'}</TableCell>
                       <TableCell className="dark:text-gray-300">{dn.trackingNumber || '-'}</TableCell>
                       <TableCell className="text-right font-medium dark:text-white">
-                        {formatCurrency(dn.grandTotal, dn.currencyCode)}
+                        {formatCurrency(dn.grandTotal)}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">

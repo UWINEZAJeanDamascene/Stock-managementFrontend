@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { usersApi } from '@/lib/api';
+import { usersApi, accessApi } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router';
 import { Layout } from '../layout/Layout';
@@ -46,16 +46,19 @@ interface UserRow {
   mustChangePassword?: boolean;
 }
 
-const ROLES = [
-  { value: 'admin', label: 'Administrator' },
-  { value: 'manager', label: 'Manager' },
-  { value: 'accountant', label: 'Accountant' },
-  { value: 'sales', label: 'Sales' },
-  { value: 'stock_manager', label: 'Stock Manager' },
-  { value: 'viewer', label: 'Viewer' },
-];
+interface Role {
+  _id: string;
+  name: string;
+  description: string | null;
+  is_system_role: boolean;
+}
 
-const roleLabel = (role: string) => ROLES.find(r => r.value === role)?.label || role;
+// Helper to format role name for display (e.g., "stock_manager" -> "Stock Manager")
+const formatRoleName = (name: string) => {
+  return name
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, l => l.toUpperCase());
+};
 
 type DrawerMode = 'invite' | 'create' | 'role' | 'password' | null;
 
@@ -69,12 +72,20 @@ export default function UsersPage() {
   const [selectedUser, setSelectedUser] = useState<UserRow | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
+  const [availableRoles, setAvailableRoles] = useState<Role[]>([]);
+  const [rolesLoading, setRolesLoading] = useState(true);
 
   // Invite form
   const [inviteForm, setInviteForm] = useState({ name: '', email: '', role: 'viewer' });
 
   // Create form
   const [createForm, setCreateForm] = useState({ name: '', email: '', role: 'viewer', password: '' });
+
+  // Helper to get role display label
+  const roleLabel = (roleName: string) => {
+    const role = availableRoles.find(r => r.name === roleName);
+    return role ? formatRoleName(role.name) : formatRoleName(roleName);
+  };
 
   // Change role
   const [newRole, setNewRole] = useState('');
@@ -92,6 +103,28 @@ export default function UsersPage() {
   };
 
   useEffect(() => { fetchUsers(); }, []);
+
+  // Fetch available roles from API
+  useEffect(() => {
+    const fetchRoles = async () => {
+      setRolesLoading(true);
+      try {
+        const response = await accessApi.getRoles() as { success: boolean; data: Role[] };
+        if (response.success && response.data) {
+          // Filter to only include roles that can be assigned to users
+          // Exclude platform_admin as it's for platform-level only
+          const assignableRoles = response.data.filter(r => r.name !== 'platform_admin');
+          setAvailableRoles(assignableRoles);
+        }
+      } catch (err: any) {
+        console.error('Failed to load roles:', err);
+        toast.error('Failed to load available roles');
+      } finally {
+        setRolesLoading(false);
+      }
+    };
+    fetchRoles();
+  }, []);
 
   const filteredUsers = users.filter(u =>
     u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -394,9 +427,10 @@ export default function UsersPage() {
                         value={inviteForm.role}
                         onChange={e => setInviteForm({ ...inviteForm, role: e.target.value })}
                         className="flex h-10 w-full rounded-md border border-input bg-background dark:bg-slate-700 dark:text-white dark:border-slate-600 px-3 py-2 text-sm"
+                        disabled={rolesLoading}
                       >
-                        {ROLES.map(r => (
-                          <option key={r.value} value={r.value}>{r.label}</option>
+                        {availableRoles.map(r => (
+                          <option key={r.name} value={r.name}>{formatRoleName(r.name)}</option>
                         ))}
                       </select>
                     </div>
@@ -451,9 +485,10 @@ export default function UsersPage() {
                         value={createForm.role}
                         onChange={e => setCreateForm({ ...createForm, role: e.target.value })}
                         className="flex h-10 w-full rounded-md border border-input bg-background dark:bg-slate-700 dark:text-white dark:border-slate-600 px-3 py-2 text-sm"
+                        disabled={rolesLoading}
                       >
-                        {ROLES.map(r => (
-                          <option key={r.value} value={r.value}>{r.label}</option>
+                        {availableRoles.map(r => (
+                          <option key={r.name} value={r.name}>{formatRoleName(r.name)}</option>
                         ))}
                       </select>
                     </div>
@@ -522,9 +557,10 @@ export default function UsersPage() {
                         value={newRole}
                         onChange={e => setNewRole(e.target.value)}
                         className="flex h-10 w-full rounded-md border border-input bg-background dark:bg-slate-700 dark:text-white dark:border-slate-600 px-3 py-2 text-sm"
+                        disabled={rolesLoading}
                       >
-                        {ROLES.map(r => (
-                          <option key={r.value} value={r.value}>{r.label}</option>
+                        {availableRoles.map(r => (
+                          <option key={r.name} value={r.name}>{formatRoleName(r.name)}</option>
                         ))}
                       </select>
                     </div>

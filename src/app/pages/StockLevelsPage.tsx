@@ -32,6 +32,7 @@ import {
 } from '@mui/icons-material';
 import { productsApi } from '@/lib/api';
 import { Layout } from '../layout/Layout';
+import { useCurrency } from '@/contexts/CurrencyContext';
 
 interface ProductStock {
   _id: string;
@@ -69,6 +70,7 @@ interface PaginationInfo {
 
 export default function StockLevelsPage() {
   const { t } = useTranslation();
+  const { formatCurrency } = useCurrency();
   const [products, setProducts] = useState<ProductStock[]>([]);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -244,13 +246,6 @@ export default function StockLevelsPage() {
     if (product.currentStock === 0) return { label: 'Out of Stock', color: 'error' as const };
     if (product.currentStock <= product.lowStockThreshold) return { label: 'Low Stock', color: 'warning' as const };
     return { label: 'In Stock', color: 'success' as const };
-  };
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(value);
   };
 
   // Calculate totals

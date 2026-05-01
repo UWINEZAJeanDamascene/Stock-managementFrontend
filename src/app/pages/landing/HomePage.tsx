@@ -9,7 +9,7 @@ import { TestimonialSection } from './TestimonialSection';
 import { PricingSection } from './PricingSection';
 import { FAQSection } from './FAQSection';
 import { LandingFooterEnhanced } from './LandingFooterEnhanced';
-import { LiveChatWidget } from './LiveChatWidget';
+// Live chat widget removed per user request
 
 export default function HomePage() {
   useEffect(() => {
@@ -32,7 +32,6 @@ export default function HomePage() {
       <PricingSection />
       <FAQSection />
       <LandingFooterEnhanced />
-      <LiveChatWidget />
     </div>
   );
 }

@@ -24,6 +24,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/ca
 import { Badge } from '@/app/components/ui/badge';
 import { Separator } from '@/app/components/ui/separator';
 import { toast } from "sonner";
+import { useCurrency } from '@/contexts/CurrencyContext';
 
 // Helper to convert MongoDB Decimal128 to number
 const toNumber = (value: any): number => {
@@ -33,6 +34,11 @@ const toNumber = (value: any): number => {
   }
   if (typeof value === 'string') return parseFloat(value) || 0;
   return 0;
+};
+
+// Get qty from field
+const getQty = (item: any): number => {
+  return toNumber(item.orderedQty ?? item.qtyToDeliver ?? item.pendingQty ?? 0);
 };
 
 interface DeliveryNoteItem {
@@ -45,11 +51,9 @@ interface DeliveryNoteItem {
   description: string;
   quantity?: number;
   unit: string;
-  qtyToDeliver?: number;
-  deliveredQty?: number;
   orderedQty?: number;
-  qty?: number;
-  qtyOrdered?: number;
+  pendingQty?: number;
+  deliveredQty?: number;
   [key: string]: any;
 }
 
@@ -63,6 +67,10 @@ interface DeliveryNote {
   salesOrder?: {
     _id: string;
     referenceNo: string;
+    quotation?: {
+      _id: string;
+      referenceNo: string;
+    };
   };
   client: {
     _id: string;
@@ -84,7 +92,8 @@ interface DeliveryNote {
   notes?: string;
   grandTotal: number;
   currencyCode: string;
-  items: DeliveryNoteItem[];
+  items?: DeliveryNoteItem[];
+  lines?: DeliveryNoteItem[];
   invoice?: {
     _id: string;
     referenceNo?: string;
@@ -111,9 +120,10 @@ export default function DeliveryNoteDetailPage() {
       const response = await deliveryNotesApi.getById(id!);
       if (response.success) {
         console.log('Delivery Note Data:', response.data);
-        console.log('Items:', (response.data as any).items);
-        if ((response.data as any).items?.length > 0) {
-          console.log('First item:', (response.data as any).items[0]);
+        console.log('Lines:', (response.data as any).lines);
+        if ((response.data as any).lines?.length > 0) {
+          console.log('First line:', (response.data as any).lines[0]);
+          console.log('qtyToDeliver raw:', (response.data as any).lines[0].qtyToDeliver);
         }
         setDeliveryNote(response.data as DeliveryNote);
       } else {
@@ -265,9 +275,7 @@ export default function DeliveryNoteDetailPage() {
     );
   };
 
-  const formatCurrency = (amount: number, currency: string = 'USD') => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(toNumber(amount));
-  };
+  const { formatCurrency } = useCurrency();
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '-';
@@ -405,23 +413,16 @@ export default function DeliveryNoteDetailPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200 dark:divide-slate-600">
-                        {deliveryNote.items?.map((item: DeliveryNoteItem, idx: number) => (
+                        {(deliveryNote.lines || [])?.map((item: DeliveryNoteItem) => (
                         <tr key={item._id}>
                           <td className="px-4 py-3">
                             <div>
                               <div className="font-medium dark:text-white">{item.product?.name}</div>
                               <div className="text-sm text-gray-500 dark:text-gray-400">{item.product?.sku}</div>
-                              {idx === 0 && <div className="text-xs text-red-400 mt-1">{JSON.stringify(item)}</div>}
                             </div>
                           </td>
                           <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{item.description || '-'}</td>
-                          <td className="px-4 py-3 text-right font-medium dark:text-white">{
-                            (() => {
-                              const val = item.quantity ?? item.qtyToDeliver ?? item.deliveredQty ?? item.orderedQty ?? item.qty ?? item.qtyOrdered;
-                              console.log('Item:', item.product?.name, 'Raw qty:', val, 'Type:', typeof val, 'toNumber:', toNumber(val ?? 0));
-                              return toNumber(val ?? 0);
-                            })()
-                          }</td>
+                          <td className="px-4 py-3 text-right font-medium dark:text-white">{getQty(item)}</td>
                           <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{item.unit || 'pcs'}</td>
                         </tr>
                       ))}
@@ -547,10 +548,12 @@ export default function DeliveryNoteDetailPage() {
                 <CardTitle className="dark:text-white">Summary</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {deliveryNote.quotation && (
+                {(deliveryNote.quotation || deliveryNote.salesOrder?.quotation) && (
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600 dark:text-gray-300">Quotation:</span>
-                    <span className="font-medium dark:text-white">{deliveryNote.quotation.referenceNo}</span>
+                    <span className="font-medium dark:text-white">
+                      {deliveryNote.quotation?.referenceNo || deliveryNote.salesOrder?.quotation?.referenceNo}
+                    </span>
                   </div>
                 )}
                 {deliveryNote.salesOrder && (
@@ -566,7 +569,7 @@ export default function DeliveryNoteDetailPage() {
                 </div>
                 <div className="flex justify-between text-lg font-bold">
                   <span className="dark:text-white">Total:</span>
-                  <span className="dark:text-white">{formatCurrency(deliveryNote.grandTotal, deliveryNote.currencyCode)}</span>
+                  <span className="dark:text-white">{formatCurrency(deliveryNote.grandTotal)}</span>
                 </div>
                 <Separator />
                 <div className="text-xs text-gray-500 dark:text-gray-400">

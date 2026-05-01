@@ -389,7 +389,7 @@ export default function RecurringInvoicesListPage() {
                     <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('recurringInvoices.client', 'Client')}</TableHead>
                     <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('recurringInvoices.frequency', 'Frequency')}</TableHead>
                     <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('recurringInvoices.nextRun', 'Next Run')}</TableHead>
-                    <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('recurringInvoices.status', 'Status')}</TableHead>
+                    <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('recurringInvoices.filterStatus', 'Status')}</TableHead>
                     <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('recurringInvoices.autoConfirm', 'Auto Confirm')}</TableHead>
                     <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('recurringInvoices.lastRun', 'Last Run')}</TableHead>
                     <TableHead className="dark:bg-slate-800 dark:border-b dark:border-slate-700"></TableHead>

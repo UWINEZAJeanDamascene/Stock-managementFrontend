@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import { ProtectedRoute } from './components/ProtectedRoute';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { CurrencyProvider } from '@/contexts/CurrencyContext';
 
@@ -17,6 +18,7 @@ const queryClient = new QueryClient({
   },
 });
 import HomePage from './pages/landing/HomePage';
+import AIChatBot from './components/AIChatBot';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
@@ -180,12 +182,24 @@ import SemiAnnualReceivablesCollectionPage from './pages/reports/semi-annual/Sem
 import SemiAnnualPayrollHRCostPage from './pages/reports/semi-annual/SemiAnnualPayrollHRCostPage';
 import SemiAnnualTaxObligationsPage from './pages/reports/semi-annual/SemiAnnualTaxObligationsPage';
 import SemiAnnualReportsPage from './pages/reports/SemiAnnualReportsPage';
+// Annual Reports
+import AnnualReportsPage from './pages/reports/AnnualReportsPage';
+import AnnualFinancialStatementsPage from './pages/reports/annual/AnnualFinancialStatementsPage';
+import AnnualGeneralLedgerPage from './pages/reports/annual/AnnualGeneralLedgerPage';
+import AnnualFixedAssetsPage from './pages/reports/annual/AnnualFixedAssetsPage';
+import AnnualInventoryPage from './pages/reports/annual/AnnualInventoryPage';
+import AnnualAccountsReceivablePage from './pages/reports/annual/AnnualAccountsReceivablePage';
+import AnnualAccountsPayablePage from './pages/reports/annual/AnnualAccountsPayablePage';
+import AnnualPayrollPage from './pages/reports/annual/AnnualPayrollPage';
+import AnnualTaxSummaryPage from './pages/reports/annual/AnnualTaxSummaryPage';
+import AnnualBudgetVsActualPage from './pages/reports/annual/AnnualBudgetVsActualPage';
+import AnnualAuditTrailPage from './pages/reports/annual/AnnualAuditTrailPage';
 // Settings
 import AccountingPeriodsPage from './pages/settings/AccountingPeriodsPage';
 import CompanyProfilePage from './pages/settings/CompanyProfilePage';
 import RolesSettingsPage from './pages/settings/RolesSettingsPage';
 import { LanguageProvider } from '../contexts/LanguageContext';
-import ChatBot from './components/ChatBot';
+// AI chat widget intentionally removed per user request
 import OfflineSyncBanner from './components/OfflineSyncBanner';
 import { Toaster } from 'sonner';
 
@@ -759,6 +773,18 @@ function AppRoutes() {
         <Route path="/reports/semi-annual/receivables-collection" element={<ErrorBoundary><SemiAnnualReceivablesCollectionPage /></ErrorBoundary>} />
         <Route path="/reports/semi-annual/payroll-hr" element={<ErrorBoundary><SemiAnnualPayrollHRCostPage /></ErrorBoundary>} />
         <Route path="/reports/semi-annual/tax-obligations" element={<ErrorBoundary><SemiAnnualTaxObligationsPage /></ErrorBoundary>} />
+        {/* Annual Reports */}
+        <Route path="/reports/annual" element={<ErrorBoundary><AnnualReportsPage /></ErrorBoundary>} />
+        <Route path="/reports/annual/financial-statements" element={<ErrorBoundary><AnnualFinancialStatementsPage /></ErrorBoundary>} />
+        <Route path="/reports/annual/general-ledger" element={<ErrorBoundary><AnnualGeneralLedgerPage /></ErrorBoundary>} />
+        <Route path="/reports/annual/fixed-assets" element={<ErrorBoundary><AnnualFixedAssetsPage /></ErrorBoundary>} />
+        <Route path="/reports/annual/inventory" element={<ErrorBoundary><AnnualInventoryPage /></ErrorBoundary>} />
+        <Route path="/reports/annual/accounts-receivable" element={<ErrorBoundary><AnnualAccountsReceivablePage /></ErrorBoundary>} />
+        <Route path="/reports/annual/accounts-payable" element={<ErrorBoundary><AnnualAccountsPayablePage /></ErrorBoundary>} />
+        <Route path="/reports/annual/payroll" element={<ErrorBoundary><AnnualPayrollPage /></ErrorBoundary>} />
+        <Route path="/reports/annual/tax-summary" element={<ErrorBoundary><AnnualTaxSummaryPage /></ErrorBoundary>} />
+        <Route path="/reports/annual/budget-vs-actual" element={<ErrorBoundary><AnnualBudgetVsActualPage /></ErrorBoundary>} />
+        <Route path="/reports/annual/audit-trail" element={<ErrorBoundary><AnnualAuditTrailPage /></ErrorBoundary>} />
         <Route path="/periods" element={
           <ErrorBoundary>
             <AccountingPeriodsPage />
@@ -770,9 +796,11 @@ function AppRoutes() {
           </ErrorBoundary>
         } />
         <Route path="/roles" element={
-          <ErrorBoundary>
-            <RolesSettingsPage />
-          </ErrorBoundary>
+          <ProtectedRoute permission="roles:read">
+            <ErrorBoundary>
+              <RolesSettingsPage />
+            </ErrorBoundary>
+          </ProtectedRoute>
         } />
 
         {/* Products routes - debug: direct access without auth check */}
@@ -809,7 +837,7 @@ export default function App() {
           <LanguageProvider>
             <AuthProvider>
               <CurrencyProvider>
-                <ChatBot />
+                <AIChatBot />
                 <Toaster position="top-right" richColors />
                 <AppRoutes />
               </CurrencyProvider>

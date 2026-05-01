@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { creditNotesApi, clientsApi, invoicesApi } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
+import { useCompany } from '@/hooks/useCompany';
 import { 
   Plus, 
   Search, 
@@ -97,6 +98,7 @@ const STATUS_OPTIONS = [
 export default function CreditNotesListPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { currency: companyCurrency } = useCompany();
 
   const [loading, setLoading] = useState(true);
   const [creditNotes, setCreditNotes] = useState<CreditNote[]>([]);
@@ -236,8 +238,9 @@ export default function CreditNotesListPage() {
     return <Badge variant={config.variant} className={config.className}>{config.label}</Badge>;
   };
 
-  const formatCurrency = (amount: number, currency: string = 'USD') => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount || 0);
+  const formatCurrency = (amount: number, currency?: string) => {
+    const curr = currency || companyCurrency || 'FRW';
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: curr }).format(amount || 0);
   };
 
   const formatDate = (dateStr: string) => {

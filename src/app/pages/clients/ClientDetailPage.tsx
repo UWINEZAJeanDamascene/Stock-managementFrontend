@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { clientsApi } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
+import { useCurrency } from '@/contexts/CurrencyContext';
 import { 
   ArrowLeft, 
   Pencil,
@@ -86,6 +87,7 @@ interface Quotation {
 
 export default function ClientDetailPage() {
   const { t } = useTranslation();
+  const { formatCurrency } = useCurrency();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
 
@@ -183,10 +185,6 @@ export default function ClientDetailPage() {
     } catch (error) {
       console.error('Failed to download statement:', error);
     }
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
   };
 
   const formatDate = (dateStr: string) => {

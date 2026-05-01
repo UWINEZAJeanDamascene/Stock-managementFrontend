@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import { useAuthStore, Company } from '@/store/authStore';
+import { useCompanyStore } from '@/store/companyStore';
 
 /**
  * Hook for company-related state and actions
@@ -10,6 +11,7 @@ export function useCompany() {
   const activeRole = useAuthStore((state) => state.activeRole);
   const companies = useAuthStore((state) => state.companies);
   const setActiveCompany = useAuthStore((state) => state.setActiveCompany);
+  const companyProfile = useCompanyStore((state) => state.company);
   
   // For backward compatibility - derive activeCompany from ID (would need API call to get full company details)
   // For now we just return the ID as "activeCompany"
@@ -62,11 +64,11 @@ export function useCompany() {
   }, []);
 
   /**
-   * Get company currency (default to USD)
+   * Get company currency from profile settings
    */
   const currency = useMemo(() => {
-    return 'USD';
-  }, []);
+    return companyProfile?.base_currency || 'FRW';
+  }, [companyProfile]);
 
   // Add setCompanies for backward compatibility (no-op since we use memberships)
   const setCompanies = useCallback(() => {

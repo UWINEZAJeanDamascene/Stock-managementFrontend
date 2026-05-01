@@ -119,20 +119,23 @@ const reportCategories: ReportCategory[] = [
   {
     id: "annual",
     name: "Annual Reports",
-    description: "Complete year-end financial statements, audit reports, and comprehensive business analysis.",
+    description: "Complete year-end financial statements, audit reports, and comprehensive business analysis for external stakeholders.",
     icon: BarChart3,
     color: "text-rose-600",
     bgColor: "bg-rose-50",
     path: "/reports/annual",
-    reportCount: 7,
+    reportCount: 10,
     features: [
-      "Annual Financial Statements",
-      "Audit Reports",
-      "Tax Returns",
-      "Board Reports",
-      "KPI Dashboard",
+      "Financial Statements (IFRS)",
+      "General Ledger",
+      "Fixed Asset Schedule",
+      "Inventory Reconciliation",
+      "Accounts Receivable",
+      "Accounts Payable",
+      "Payroll & Benefits",
+      "Tax Summary (RRA)",
       "Budget vs Actual",
-      "Year-over-Year Analysis"
+      "Audit Trail"
     ]
   }
 ];
@@ -177,7 +180,7 @@ export default function ReportsHubPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Total Reports</p>
-                  <p className="text-2xl font-bold">30+</p>
+                  <p className="text-2xl font-bold">47+</p>
                 </div>
                 <div className="bg-primary/10 p-3 rounded-full">
                   <FileText className="w-6 h-6 text-primary" />

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { invoicesApi, clientsApi } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
+import { useCurrency } from '@/contexts/CurrencyContext';
 import { 
   Plus, 
   Search, 
@@ -72,6 +73,7 @@ const STATUS_OPTIONS = [
 
 export default function InvoicesListPage() {
   const { t } = useTranslation();
+  const { formatCurrency } = useCurrency();
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
@@ -204,9 +206,6 @@ export default function InvoicesListPage() {
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
-  const formatCurrency = (amount: number, currency: string = 'USD') => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount || 0);
-  };
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '-';
@@ -367,10 +366,10 @@ export default function InvoicesListPage() {
                       <TableCell className="dark:text-gray-300 dark:bg-slate-800 hidden md:table-cell">{formatDate(invoice.dueDate)}</TableCell>
                       <TableCell className="dark:bg-slate-800">{getStatusBadge(invoice.status)}</TableCell>
                       <TableCell className="text-right font-medium dark:text-gray-200 dark:bg-slate-800 whitespace-nowrap">
-                        {formatCurrency(invoice.grandTotal, invoice.currencyCode)}
+                        {formatCurrency(invoice.grandTotal)}
                       </TableCell>
                       <TableCell className="text-right dark:text-gray-300 dark:bg-slate-800 hidden sm:table-cell whitespace-nowrap">
-                        {formatCurrency(invoice.balance || (invoice.grandTotal - invoice.amountPaid), invoice.currencyCode)}
+                        {formatCurrency(invoice.balance || (invoice.grandTotal - invoice.amountPaid))}
                       </TableCell>
                       <TableCell className="dark:bg-slate-800 hidden lg:table-cell">
                         {invoice.quotation ? (

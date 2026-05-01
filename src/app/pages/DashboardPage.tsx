@@ -190,7 +190,7 @@ export default function DashboardPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => window.location.href = '/ar-receipts/new'}
+              onClick={() => window.location.href = '/invoices'}
             >
               <CreditCard className="h-4 w-4" />
               <span className="ml-1.5 hidden sm:inline">Record Payment</span>

@@ -176,9 +176,10 @@ export default function BankAccountDetailPage() {
           const sortedTxs = [...txs].sort((a, b) => 
             new Date(a.date).getTime() - new Date(b.date).getTime()
           );
-          let runningBalance = 0;
+          // Start with opening balance, then apply transaction movements
+          let runningBalance = parseFloat(account?.openingBalance?.$numberDecimal || account?.openingBalance || 0);
           const txsWithBalance = sortedTxs.map((tx) => {
-            if (tx.type === "deposit" || tx.type === "transfer_in") {
+            if (tx.type === "deposit" || tx.type === "transfer_in" || tx.type === "opening") {
               runningBalance += tx.amount || 0;
             } else if (tx.type === "withdrawal" || tx.type === "transfer_out") {
               runningBalance -= tx.amount || 0;
@@ -798,10 +799,10 @@ export default function BankAccountDetailPage() {
                           <TableCell>
                             <Badge
                               variant={
-                                tx.type === "deposit" || tx.type === "transfer_in" ? "default" : "secondary"
+                                tx.type === "deposit" || tx.type === "transfer_in" || tx.type === "opening" ? "default" : "secondary"
                               }
                               className={
-                                tx.type === "deposit" || tx.type === "transfer_in"
+                                tx.type === "deposit" || tx.type === "transfer_in" || tx.type === "opening"
                                   ? "bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800"
                                   : "bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800"
                               }
@@ -812,12 +813,12 @@ export default function BankAccountDetailPage() {
                           <TableCell className="font-medium dark:text-slate-200">
                             <span
                               className={
-                                tx.type === "deposit" || tx.type === "transfer_in"
+                                tx.type === "deposit" || tx.type === "transfer_in" || tx.type === "opening"
                                   ? "text-green-600 dark:text-green-400"
                                   : "text-red-600 dark:text-red-400"
                               }
                             >
-                              {tx.type === "deposit" || tx.type === "transfer_in" ? "+" : "-"}
+                              {tx.type === "deposit" || tx.type === "transfer_in" || tx.type === "opening" ? "+" : "-"}
                               {formatCurrency(tx.amount, account?.currencyCode)}
                             </span>
                           </TableCell>

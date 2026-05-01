@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { suppliersApi } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
+import { useCurrency } from '@/contexts/CurrencyContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
@@ -71,6 +72,7 @@ interface PurchaseRecord {
 
 export default function SupplierDetailPage() {
   const { t } = useTranslation();
+  const { formatCurrency } = useCurrency();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
 
@@ -125,10 +127,6 @@ export default function SupplierDetailPage() {
 
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString();
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount || 0);
   };
 
   const getPaymentTermsLabel = (terms: string) => {
@@ -332,7 +330,7 @@ export default function SupplierDetailPage() {
           {/* Products Supplied */}
           <Card className="dark:bg-slate-800">
             <CardHeader>
-              <CardTitle className="text-slate-900 dark:text-white">{t('suppliers.productsSupplied', 'Products Supplied')}</CardTitle>
+              <CardTitle className="text-slate-900 dark:text-white">{t('suppliers.productsSupplied', 'Products Supplied by {{name}}', { name: supplier?.name || '' })}</CardTitle>
             </CardHeader>
             <CardContent>
               {supplier.productsSupplied && supplier.productsSupplied.length > 0 ? (

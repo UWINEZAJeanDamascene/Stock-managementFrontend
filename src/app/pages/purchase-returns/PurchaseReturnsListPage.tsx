@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { purchaseReturnsApi, grnApi, suppliersApi } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
+import { useCurrency } from '@/contexts/CurrencyContext';
 import { 
   Plus, 
   Eye, 
@@ -62,6 +63,7 @@ interface PaginationInfo {
 
 export default function PurchaseReturnsListPage() {
   const { t } = useTranslation();
+  const { formatCurrency } = useCurrency();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [returnList, setReturnList] = useState<PurchaseReturn[]>([]);
@@ -142,11 +144,6 @@ export default function PurchaseReturnsListPage() {
     
     const config = statusConfig[status] || { variant: 'outline', label: status };
     return <Badge variant={config.variant}>{config.label}</Badge>;
-  };
-
-  const formatCurrency = (amount: number | string) => {
-    const num = typeof amount === 'string' ? parseFloat(amount) : amount;
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num || 0);
   };
 
   const formatDate = (dateStr: string) => {

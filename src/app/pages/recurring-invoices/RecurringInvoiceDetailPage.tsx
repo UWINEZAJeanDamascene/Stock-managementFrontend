@@ -538,7 +538,7 @@ export default function RecurringInvoiceDetailPage() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>{t('recurringInvoices.runDate', 'Run Date')}</TableHead>
-                        <TableHead>{t('recurringInvoices.status', 'Status')}</TableHead>
+                        <TableHead>{t('recurringInvoices.filterStatus', 'Status')}</TableHead>
                         <TableHead>{t('recurringInvoices.invoice', 'Generated Invoice')}</TableHead>
                         <TableHead>{t('recurringInvoices.amount', 'Amount')}</TableHead>
                         <TableHead>{t('recurringInvoices.error', 'Error')}</TableHead>

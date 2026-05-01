@@ -51,10 +51,15 @@ interface PickPack {
   salesOrder: {
     _id: string;
     referenceNo: string;
-    client: {
+    client?: {
       _id: string;
       name: string;
     };
+    clientName?: string;
+  };
+  client?: {
+    _id: string;
+    name: string;
   };
   warehouse: {
     _id: string;
@@ -315,7 +320,7 @@ export default function PickPackDetailPage() {
                       {pickPack.lines.map((line) => (
                         <tr key={line._id} className="border-b last:border-0 dark:border-gray-700">
                           <td className="py-3">
-                            <div className="font-medium dark:text-gray-100">{line.description}</div>
+                            <div className="font-medium dark:text-gray-100">{line.product?.name || line.description}</div>
                             <div className="text-sm text-gray-500 dark:text-gray-400">{line.product?.sku}</div>
                           </td>
                           <td className="text-right py-3 dark:text-gray-100">{toNumber(line.qtyToPick)}</td>
@@ -356,7 +361,7 @@ export default function PickPackDetailPage() {
                 <div className="flex items-center gap-3">
                   <User className="h-5 w-5 text-gray-400 dark:text-gray-500" />
                   <div>
-                    <p className="font-medium dark:text-gray-100">{pickPack.salesOrder?.client?.name}</p>
+                    <p className="font-medium dark:text-gray-100">{pickPack.client?.name || pickPack.salesOrder?.client?.name || pickPack.salesOrder?.clientName || '—'}</p>
                     <p className="text-sm text-gray-500 dark:text-gray-400">Client</p>
                   </div>
                 </div>

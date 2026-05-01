@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { purchaseReturnsApi, bankAccountsApi } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
+import { useCurrency } from '@/contexts/CurrencyContext';
 import {
   ArrowLeft,
   CheckCircle,
@@ -96,6 +97,7 @@ interface PurchaseReturnDetail {
 
 export default function PurchaseReturnDetailPage() {
   const { t } = useTranslation();
+  const { formatCurrency } = useCurrency();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
 
@@ -184,11 +186,6 @@ export default function PurchaseReturnDetailPage() {
     setRefundReference('');
     fetchBankAccounts();
     setShowRefundDialog(true);
-  };
-
-  const formatCurrency = (amount: number | string) => {
-    const num = typeof amount === 'string' ? parseFloat(amount) : amount;
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num || 0);
   };
 
   const formatDate = (dateStr: string) => {

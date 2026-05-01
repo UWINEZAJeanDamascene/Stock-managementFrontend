@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { quotationsApi, clientsApi } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
+import { useCurrency } from '@/contexts/CurrencyContext';
 import { 
   ArrowLeft, 
   CheckCircle, 
@@ -69,6 +70,7 @@ interface Quotation {
 
 export default function ClientQuotationViewPage() {
   const { t } = useTranslation();
+  const { formatCurrency } = useCurrency();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
 
@@ -185,9 +187,6 @@ export default function ClientQuotationViewPage() {
     }
   };
 
-  const formatCurrency = (amount: number, currency: string = 'USD') => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount || 0);
-  };
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '-';
@@ -195,13 +194,13 @@ export default function ClientQuotationViewPage() {
   };
 
   const getStatusBadge = (status: string) => {
-    const statusConfig: Record<string, { variant: 'default' | 'secondary' | 'outline' | 'destructive' | 'success'; label: string }> = {
+    const statusConfig: Record<string, { variant: 'default' | 'secondary' | 'outline' | 'destructive'; label: string }> = {
       draft: { variant: 'secondary', label: 'Draft' },
       sent: { variant: 'default', label: 'Sent' },
-      accepted: { variant: 'success', label: 'Accepted' },
+      accepted: { variant: 'default', label: 'Accepted' },
       rejected: { variant: 'destructive', label: 'Rejected' },
       expired: { variant: 'outline', label: 'Expired' },
-      converted: { variant: 'success', label: 'Converted' },
+      converted: { variant: 'default', label: 'Converted' },
     };
     
     const config = statusConfig[status] || { variant: 'outline', label: status };
@@ -402,10 +401,10 @@ export default function ClientQuotationViewPage() {
                         </TableCell>
                         <TableCell className="dark:text-slate-300">{line.description || '-'}</TableCell>
                         <TableCell className="text-right dark:text-slate-300">{line.qty}</TableCell>
-                        <TableCell className="text-right dark:text-slate-300">{formatCurrency(line.unitPrice, quotation.currency)}</TableCell>
+                        <TableCell className="text-right dark:text-slate-300">{formatCurrency(line.unitPrice)}</TableCell>
                         <TableCell className="text-right dark:text-slate-300">{line.discountPercent}%</TableCell>
                         <TableCell className="text-right dark:text-slate-300">{line.taxRate}%</TableCell>
-                        <TableCell className="text-right font-medium dark:text-slate-200">{formatCurrency(line.lineTotal, quotation.currency)}</TableCell>
+                        <TableCell className="text-right font-medium dark:text-slate-200">{formatCurrency(line.lineTotal)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -435,15 +434,15 @@ export default function ClientQuotationViewPage() {
               <CardContent className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground dark:text-slate-400">Subtotal</span>
-                  <span className="font-medium dark:text-slate-200">{formatCurrency(quotation.subtotal, quotation.currency)}</span>
+                  <span className="font-medium dark:text-slate-200">{formatCurrency(quotation.subtotal)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground dark:text-slate-400">Tax</span>
-                  <span className="font-medium dark:text-slate-200">{formatCurrency(quotation.taxAmount, quotation.currency)}</span>
+                  <span className="font-medium dark:text-slate-200">{formatCurrency(quotation.taxAmount)}</span>
                 </div>
                 <div className="border-t pt-3 flex justify-between text-lg font-bold dark:border-slate-600">
                   <span className="text-slate-900 dark:text-white">Total</span>
-                  <span className="text-slate-900 dark:text-white">{formatCurrency(quotation.totalAmount, quotation.currency)}</span>
+                  <span className="text-slate-900 dark:text-white">{formatCurrency(quotation.totalAmount)}</span>
                 </div>
               </CardContent>
             </Card>

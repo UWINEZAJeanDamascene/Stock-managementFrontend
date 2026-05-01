@@ -286,11 +286,7 @@ export default function ChatBot() {
         className="fixed bottom-6 right-6 z-[9999] flex h-14 w-14 items-center justify-center rounded-full bg-indigo-600 text-white shadow-xl shadow-indigo-500/30 transition-all duration-200 hover:bg-indigo-500 hover:scale-110 active:scale-95"
       >
         {open ? <X className="h-5 w-5" /> : <MessageCircle className="h-6 w-6" />}
-        {!open && unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-            {unreadCount}
-          </span>
-        )}
+        {/* unread badge removed to avoid overlapping red dot */}
       </button>
 
       {/* Chat window */}

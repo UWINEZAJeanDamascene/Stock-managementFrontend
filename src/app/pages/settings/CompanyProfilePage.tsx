@@ -104,8 +104,17 @@ export default function CompanyProfilePage() {
     try {
       await companyApi.update({
         name: profile.name,
+        legal_name: profile.legal_name || undefined,
         email: profile.email || undefined,
         phone: profile.phone || undefined,
+        website: profile.website || undefined,
+        registration_number: profile.registration_number || undefined,
+        tax_identification_number: profile.tax_identification_number || undefined,
+        industry: profile.industry || undefined,
+        fiscal_year_start_month: profile.fiscal_year_start_month,
+        default_payment_terms_days: profile.default_payment_terms_days,
+        is_vat_registered: profile.is_vat_registered,
+        vat_rate_pct: profile.vat_rate_pct,
         address: profile.address || undefined,
       });
       toast.success('Company profile updated');

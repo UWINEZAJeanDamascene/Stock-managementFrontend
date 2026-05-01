@@ -544,12 +544,6 @@ export default function ARReceiptsListPage() {
             <p className="text-muted-foreground dark:text-slate-400">{t('arReceipt.description', 'Manage customer receipts and aging')}</p>
           </div>
           <div className="flex gap-2">
-            {activeTab === 'receipts' && (
-              <Button onClick={() => navigate('/ar-receipts/new')}>
-                <Plus className="mr-2 h-4 w-4" />
-                {t('arReceipt.newReceipt', 'New Receipt')}
-              </Button>
-            )}
             {activeTab === 'aging' && (
               <Button variant="outline" onClick={exportAgingToCSV} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
                 <Download className="mr-2 h-4 w-4" />
