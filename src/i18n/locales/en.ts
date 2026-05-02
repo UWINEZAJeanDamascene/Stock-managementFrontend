@@ -45,6 +45,8 @@ const en = {
     purchaseReturns: "Purchase Returns",
     arReceipts: "AR Receipts",
     apPayments: "AP Payments",
+    accountsReceivable: "Accounts Receivable",
+    accountsPayable: "Accounts Payable",
     bankAccounts: "Bank Accounts",
     chartOfAccounts: "Chart of Accounts",
     journalEntries: "Journal Entries",

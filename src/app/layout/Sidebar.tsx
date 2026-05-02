@@ -270,13 +270,13 @@ const salesNav: NavSection = {
       permission: "sales_invoices:read",
     },
     {
-      nameKey: "nav.arReceipts",
+      nameKey: "nav.accountsReceivable",
       href: "/ar-receipts",
       icon: Receipt,
       permission: "ar_receipts:read",
     },
     {
-      nameKey: "nav.apPayments",
+      nameKey: "nav.accountsPayable",
       href: "/ap-payments",
       icon: Wallet,
       permission: "ap_payments:read",

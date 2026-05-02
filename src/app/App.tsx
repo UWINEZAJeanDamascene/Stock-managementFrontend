@@ -98,12 +98,8 @@ import PickPackCreatePage from './pages/pick-packs/PickPackCreatePage';
 import PickPackDetailPage from './pages/pick-packs/PickPackDetailPage';
 import PickPackPickPage from './pages/pick-packs/PickPackPickPage';
 import PickPackPackPage from './pages/pick-packs/PickPackPackPage';
-import ARReceiptsListPage from './pages/ar/ARReceiptsListPage';
-import ARReceiptCreatePage from './pages/ar/ARReceiptCreatePage';
-import ARReceiptDetailPage from './pages/ar/ARReceiptDetailPage';
-import APPaymentsListPage from './pages/ap/APPaymentsListPage';
-import APPaymentCreatePage from './pages/ap/APPaymentCreatePage';
-import APPaymentDetailPage from './pages/ap/APPaymentDetailPage';
+import ARDashboardPage from './pages/ar/ARDashboardPage';
+import APDashboardPage from './pages/ap/APDashboardPage';
 import APAgingReportPage from './pages/ap/APAgingReportPage';
 import APReconciliationPage from './pages/ap/APReconciliationPage';
 import BankAccountsListPage from './pages/bank/BankAccountsListPage';
@@ -444,25 +440,10 @@ function AppRoutes() {
         <Route path="/recurring-invoices/new" element={<RecurringInvoiceFormPage />} />
         <Route path="/recurring-invoices/:id/edit" element={<RecurringInvoiceFormPage />} />
         <Route path="/recurring-invoices/:id" element={<RecurringInvoiceDetailPage />} />
-        {/* AR Receipts */}
+        {/* Accounts Receivable - Read-Only Dashboard */}
         <Route path="/ar-receipts" element={
           <ErrorBoundary>
-            <ARReceiptsListPage />
-          </ErrorBoundary>
-        } />
-        <Route path="/ar-receipts/new" element={
-          <ErrorBoundary>
-            <ARReceiptCreatePage />
-          </ErrorBoundary>
-        } />
-        <Route path="/ar-receipts/:id/edit" element={
-          <ErrorBoundary>
-            <ARReceiptCreatePage />
-          </ErrorBoundary>
-        } />
-        <Route path="/ar-receipts/:id" element={
-          <ErrorBoundary>
-            <ARReceiptDetailPage />
+            <ARDashboardPage />
           </ErrorBoundary>
         } />
         {/* AR Aging */}
@@ -477,25 +458,10 @@ function AppRoutes() {
             <ARReconciliationPage />
           </ErrorBoundary>
         } />
-        {/* AP Payments */}
+        {/* Accounts Payable - Read-Only Dashboard */}
         <Route path="/ap-payments" element={
           <ErrorBoundary>
-            <APPaymentsListPage />
-          </ErrorBoundary>
-        } />
-        <Route path="/ap-payments/new" element={
-          <ErrorBoundary>
-            <APPaymentCreatePage />
-          </ErrorBoundary>
-        } />
-        <Route path="/ap-payments/:id/edit" element={
-          <ErrorBoundary>
-            <APPaymentCreatePage />
-          </ErrorBoundary>
-        } />
-        <Route path="/ap-payments/:id" element={
-          <ErrorBoundary>
-            <APPaymentDetailPage />
+            <APDashboardPage />
           </ErrorBoundary>
         } />
         {/* AP Aging */}

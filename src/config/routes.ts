@@ -85,20 +85,14 @@ export const APP_ROUTES = {
   PURCHASE_RETURN_NEW: '/purchase-returns/new',
   PURCHASE_RETURN_DETAIL: '/purchase-returns/:id',
   
-  // AR Receipts
+  // Accounts Receivable (read-only ledger)
   AR_RECEIPTS: '/ar-receipts',
-  AR_RECEIPT_NEW: '/ar-receipts/new',
-  AR_RECEIPT_DETAIL: '/ar-receipts/:id',
-  AR_RECEIPT_EDIT: '/ar-receipts/:id/edit',
   
   // AR Aging
   AR_AGING: '/ar-aging',
   
-  // AP Payments
+  // Accounts Payable (read-only ledger)
   AP_PAYMENTS: '/ap-payments',
-  AP_PAYMENT_NEW: '/ap-payments/new',
-  AP_PAYMENT_DETAIL: '/ap-payments/:id',
-  AP_PAYMENT_EDIT: '/ap-payments/:id/edit',
   
   // Bank Accounts
   BANK_ACCOUNTS: '/bank-accounts',

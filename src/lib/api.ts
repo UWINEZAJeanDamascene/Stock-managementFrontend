@@ -2671,34 +2671,48 @@ export const chatApi = {
   send: async (
     message: string,
     history: ChatMessage[] = [],
-  ): Promise<{ success: boolean; reply: string }> => {
+  ): Promise<{ success: boolean; reply: string; provider?: string; cached?: boolean }> => {
     const token = localStorage.getItem("token");
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
-    const response = await fetch(`${API_BASE_URL}/chat`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ message, history }),
-    });
+    // 90s timeout to accommodate full multi-provider fallback chain (Groq→Gemini→Ollama)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 90000);
 
-    let data: any;
     try {
-      data = await response.json();
-    } catch {
-      data = {};
-    }
+      const response = await fetch(`${API_BASE_URL}/chat`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ message, history }),
+        signal: controller.signal,
+      });
 
-    // Always return the reply field if present (covers both success and error responses)
-    if (data.reply)
-      return { success: data.success ?? false, reply: data.reply };
+      let data: any;
+      try {
+        data = await response.json();
+      } catch {
+        data = {};
+      }
 
-    if (!response.ok) {
-      throw new ApiError(response.status, data.message || "An error occurred");
+      // Always return the reply field if present (covers both success and error responses)
+      if (data.reply)
+        return {
+          success: data.success ?? false,
+          reply: data.reply,
+          provider: data.provider,
+          cached: data.cached,
+        };
+
+      if (!response.ok) {
+        throw new ApiError(response.status, data.message || "An error occurred");
+      }
+      return data;
+    } finally {
+      clearTimeout(timeoutId);
     }
-    return data;
   },
 };
 
@@ -7517,87 +7531,12 @@ interface ARReceiptAllocation {
   amountAllocated: string;
 }
 
+/**
+ * AR Reports API - Read-Only
+ * All AR entries originate from source documents (invoices, payments, credit notes).
+ * No manual transaction entry through this API.
+ */
 export const arReceiptsApi = {
-  // List receipts with filters
-  getAll: (params?: {
-    client_id?: string;
-    status?: string;
-    date_from?: string;
-    date_to?: string;
-    page?: number;
-    limit?: number;
-  }) => {
-    const query = buildQuery(params as Record<string, any>);
-    return request<{ success: boolean; count: number; data: ARReceiptData[] }>(
-      `/ar/receipts${query ? `?${query}` : ""}`,
-    );
-  },
-
-  // Get single receipt with allocations
-  getById: (id: string) =>
-    request<{
-      success: boolean;
-      data: ARReceiptData;
-      allocations: ARReceiptAllocation[];
-    }>(`/ar/receipts/${id}`),
-
-  // Create receipt
-  create: (data: {
-    client: string;
-    receiptDate?: string;
-    paymentMethod: string;
-    bankAccount?: string;
-    amountReceived: number;
-    currencyCode?: string;
-    exchangeRate?: number;
-    reference?: string;
-    notes?: string;
-  }) =>
-    request<{ success: boolean; data: ARReceiptData }>("/ar/receipts", {
-      method: "POST",
-      body: data,
-    }),
-
-  // Update receipt (draft only)
-  update: (
-    id: string,
-    data: Partial<{
-      receiptDate: string;
-      paymentMethod: string;
-      bankAccount: string;
-      amountReceived: number;
-      currencyCode: string;
-      exchangeRate: number;
-      reference: string;
-      notes: string;
-    }>,
-  ) =>
-    request<{ success: boolean; data: ARReceiptData }>(`/ar/receipts/${id}`, {
-      method: "PUT",
-      body: data,
-    }),
-
-  // Post receipt (draft -> posted)
-  post: (id: string) =>
-    request<{ success: boolean; message: string; data: ARReceiptData }>(
-      `/ar/receipts/${id}/post`,
-      { method: "POST" },
-    ),
-
-  // Reverse posted receipt
-  reverse: (id: string, reason: string) =>
-    request<{ success: boolean; message: string; data: ARReceiptData }>(
-      `/ar/receipts/${id}/reverse`,
-      { method: "POST", body: { reason } },
-    ),
-
-  // Allocate receipt to invoice
-  allocate: (id: string, data: { invoiceId: string; amount: number }) =>
-    request<{ success: boolean; data: ARReceiptAllocation }>(
-      `/ar/receipts/${id}/allocate`,
-      { method: "POST", body: data },
-    ),
-
   // Get aging report
   getAgingReport: (params?: { client_id?: string; as_of_date?: string }) => {
     const query = buildQuery(params as Record<string, any>);
@@ -7891,108 +7830,12 @@ export interface APPaymentAllocation {
   amountAllocated: string;
 }
 
-// AP Payments API
+/**
+ * AP Reports API - Read-Only
+ * All AP entries originate from source documents (purchases, GRNs, payments).
+ * No manual transaction entry through this API.
+ */
 export const apPaymentsApi = {
-  // List payments with filters
-  getAll: (params?: {
-    supplier_id?: string;
-    status?: string;
-    date_from?: string;
-    date_to?: string;
-    page?: number;
-    limit?: number;
-  }) => {
-    const query = buildQuery(params as Record<string, any>);
-    return request<{ success: boolean; count: number; data: APPayment[] }>(
-      `/ap/payments${query ? `?${query}` : ""}`,
-    );
-  },
-
-  // Get single payment with allocations
-  getById: (id: string) =>
-    request<{
-      success: boolean;
-      data: APPayment;
-      allocations: APPaymentAllocation[];
-    }>(`/ap/payments/${id}`),
-
-  // Create payment
-  create: (data: {
-    supplierId: string;
-    paymentDate?: string;
-    paymentMethod: string;
-    bankAccountId: string;
-    amountPaid: number;
-    currencyCode?: string;
-    exchangeRate?: number;
-    reference?: string;
-    notes?: string;
-  }) =>
-    request<{ success: boolean; data: APPayment }>("/ap/payments", {
-      method: "POST",
-      body: data,
-    }),
-
-  // Update payment (draft only)
-  update: (
-    id: string,
-    data: Partial<{
-      paymentDate: string;
-      paymentMethod: string;
-      bankAccountId: string;
-      amountPaid: number;
-      currencyCode: string;
-      exchangeRate: number;
-      reference: string;
-      notes: string;
-    }>,
-  ) =>
-    request<{ success: boolean; data: APPayment }>(`/ap/payments/${id}`, {
-      method: "PUT",
-      body: data,
-    }),
-
-  // Post payment (draft -> posted)
-  post: (id: string) =>
-    request<{ success: boolean; message: string; data: APPayment }>(
-      `/ap/payments/${id}/post`,
-      { method: "POST" },
-    ),
-
-  // Save and post without journal entry
-  saveAndPost: (id: string) =>
-    request<{ success: boolean; message: string; data: APPayment }>(
-      `/ap/payments/${id}/save-and-post`,
-      { method: "POST" },
-    ),
-
-  // Reverse posted payment
-  reverse: (id: string, reason: string) =>
-    request<{ success: boolean; message: string; data: APPayment }>(
-      `/ap/payments/${id}/reverse`,
-      { method: "POST", body: { reason } },
-    ),
-
-  // Allocate payment to GRN
-  allocate: (paymentId: string, data: { grnId: string; amount: number }) =>
-    request<{ success: boolean; data: APPaymentAllocation }>(
-      "/ap/allocations",
-      {
-        method: "POST",
-        body: {
-          payment: paymentId,
-          grn: data.grnId,
-          amountAllocated: data.amount,
-        },
-      },
-    ),
-
-  // Get allocations for a payment
-  getAllocations: (paymentId: string) =>
-    request<{ success: boolean; data: APPaymentAllocation[] }>(
-      `/ap/allocations?payment_id=${paymentId}`,
-    ),
-
   // Get aging report
   getAgingReport: (params?: { supplier_id?: string; as_of_date?: string }) => {
     const query = buildQuery(params as Record<string, any>);

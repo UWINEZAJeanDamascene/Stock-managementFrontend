@@ -45,6 +45,8 @@ const fr = {
     purchaseReturns: "Retours achats",
     arReceipts: "Reçus AR",
     apPayments: "Paiements AP",
+    accountsReceivable: "Comptes Clients (AR)",
+    accountsPayable: "Comptes Fournisseurs (AP)",
     bankAccounts: "Comptes bancaires",
     chartOfAccounts: "Plan comptable",
     journalEntries: "Écritures comptables",
