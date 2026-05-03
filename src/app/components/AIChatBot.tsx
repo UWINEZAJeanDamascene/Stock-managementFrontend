@@ -78,6 +78,93 @@ function parseMessageBlocks(text: string): ParsedBlock[] {
 
 // ─── Inline markdown renderer ────────────────────────────────────────────────
 function InlineMarkdown({ text }: { text: string }): React.ReactNode {
+  // First, handle markdown links: [text](url)
+  const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+  const elements: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match;
+  let keyCounter = 0;
+
+  while ((match = linkRegex.exec(text)) !== null) {
+    // Add text before the link
+    if (match.index > lastIndex) {
+      elements.push(<span key={keyCounter++}>{processInlineFormatting(text.slice(lastIndex, match.index))}</span>);
+    }
+
+    const linkText = match[1];
+    let url = match[2];
+
+    // Determine if this is an Excel download link
+    const isExcelDownload = url.includes('/downloads/') || url.includes('/public-download/');
+
+    if (isExcelDownload) {
+      elements.push(
+        <a
+          key={keyCounter++}
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600/20 px-3 py-1.5 text-sm font-medium text-emerald-400 hover:bg-emerald-600/30 transition-colors border border-emerald-600/30"
+          onClick={(e) => {
+            e.preventDefault();
+            fetch(url)
+              .then((res) => {
+                if (!res.ok) throw new Error(`Download failed: ${res.status}`);
+                // Extract filename from Content-Disposition header
+                const disposition = res.headers.get('content-disposition');
+                let filename = 'download.xlsx';
+                if (disposition && disposition.includes('filename=')) {
+                  const match = disposition.match(/filename="([^"]+)"/);
+                  if (match) filename = match[1];
+                }
+                return res.blob().then(blob => ({ blob, filename }));
+              })
+              .then(({ blob, filename }) => {
+                const link = document.createElement('a');
+                link.href = window.URL.createObjectURL(blob);
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+              })
+              .catch((err) => {
+                console.error('[Download] Error:', err);
+                alert('Download failed: ' + err.message);
+              });
+          }}
+        >
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          {linkText}
+        </a>
+      );
+    } else {
+      elements.push(
+        <a
+          key={keyCounter++}
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-indigo-400 hover:text-indigo-300 underline"
+        >
+          {linkText}
+        </a>
+      );
+    }
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  // Add remaining text after last link
+  if (lastIndex < text.length) {
+    elements.push(<span key={keyCounter++}>{processInlineFormatting(text.slice(lastIndex))}</span>);
+  }
+
+  return elements.length > 0 ? elements : <span>{processInlineFormatting(text)}</span>;
+}
+
+function processInlineFormatting(text: string): React.ReactNode {
   const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g);
   return parts.map((part, i) => {
     if (part.startsWith('**') && part.endsWith('**')) {
