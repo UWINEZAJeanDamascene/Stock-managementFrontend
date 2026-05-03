@@ -2678,7 +2678,7 @@ export const chatApi = {
     };
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
-    // 90s timeout to accommodate multi-provider fallback chain (Groq→Gemini)
+    // 90s timeout to accommodate 6-provider fallback chain (Groq→Mistral→OpenRouter→DeepSeek→Together→Gemini)
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 90000);
 
