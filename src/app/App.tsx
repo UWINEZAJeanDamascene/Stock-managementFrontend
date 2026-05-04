@@ -497,6 +497,7 @@ function AppRoutes() {
             <BankAccountsListPage />
           </ErrorBoundary>
         } />
+    
         {/* Petty Cash */}
         <Route path="/petty-cash" element={
           <ErrorBoundary>

@@ -61,6 +61,92 @@ export interface CashPosition {
   };
 }
 
+// ═══════════════════════════════════════════════════════════
+// NEW: Real-World Bank Reconciliation Types
+// ═══════════════════════════════════════════════════════════
+
+export interface BankReconciliationSession {
+  _id: string;
+  bankAccount: string;
+  company: string;
+  statementDate: string;
+  statementStartDate?: string;
+  statementEndDate?: string;
+  statementClosingBalance: number;
+  bookOpeningBalance: number;
+  bookClosingBalance: number;
+  difference: number;
+  status: "in_progress" | "completed" | "abandoned";
+  createdBy: string;
+  completedBy?: string;
+  completedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  notes?: string;
+  summary: {
+    totalStatementLines: number;
+    totalMatched: number;
+    totalUnmatched: number;
+    totalIgnored: number;
+    outstandingDeposits: number;
+    outstandingChecks: number;
+    adjustingEntriesCreated: number;
+  };
+  isLocked: boolean;
+  previousReconciliationId?: string;
+}
+
+export interface BankStatementLine {
+  _id: string;
+  reconciliationId: string;
+  bankAccount: string;
+  company: string;
+  transactionDate: string;
+  description: string;
+  reference?: string;
+  debitAmount: number;
+  creditAmount: number;
+  balance?: number;
+  status: "unmatched" | "matched" | "ignored";
+  matchedAmount: number;
+  matchedJournalEntryId?: string;
+  matchedJournalLineId?: string;
+  matchedAt?: string;
+  matchedBy?: string;
+  ignoreReason?: string;
+  adjustingEntryId?: string;
+  importedAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface JournalTransactionLine {
+  _id: string;
+  entryId: string;
+  entryNumber: string;
+  date: string;
+  description: string;
+  reference?: string;
+  debit: number;
+  credit: number;
+  amount: number;
+  isDebit: boolean;
+  reconciled: boolean;
+}
+
+export interface ReconciliationSummary {
+  totalStatementLines: number;
+  totalMatched: number;
+  totalUnmatched: number;
+  totalIgnored: number;
+  outstandingDeposits: number;
+  outstandingChecks: number;
+  adjustingEntriesCreated: number;
+  statementBalance: number;
+  bookBalance: number;
+  difference: number;
+}
+
 // Helper: build query string while skipping undefined/null values
 function buildQuery(params?: Record<string, any>) {
   if (!params) return "";
@@ -3348,8 +3434,10 @@ export const fixedAssetsApi = {
     data: {
       disposalDate: string;
       disposalProceeds?: number;
+      disposalCosts?: number;
       disposalMethod?: string;
       bankAccountId?: string;
+      disposalAuthNumber?: string;
       notes?: string;
     },
   ) =>
@@ -3370,6 +3458,21 @@ export const fixedAssetsApi = {
       `/fixed-assets/${id}/depreciation/${entryId}/reverse`,
       { method: "POST", body: { reason } },
     ),
+  // Status Management
+  placeInService: (id: string, data: { inServiceDate?: string; reason?: string }) =>
+    request<{ success: boolean; data: unknown }>(
+      `/fixed-assets/${id}/place-in-service`,
+      { method: "POST", body: data },
+    ),
+  transitionStatus: (id: string, data: { toStatus: string; reason?: string; notes?: string }) =>
+    request<{ success: boolean; data: unknown }>(
+      `/fixed-assets/${id}/transition`,
+      { method: "POST", body: data },
+    ),
+  getStatusHistory: (id: string) =>
+    request<{ success: boolean; data: unknown }>(`/fixed-assets/${id}/status-history`),
+  getDisposalEvent: (id: string) =>
+    request<{ success: boolean; data: unknown }>(`/fixed-assets/${id}/disposal-event`),
 };
 
 export const assetCategoriesApi = {
@@ -5135,8 +5238,12 @@ export interface PettyCashFloat {
   _id: string;
   company: string;
   name: string;
+  ledgerAccountId?: string;
   openingBalance: number;
   currentBalance: number;
+  floatAmount: number;
+  imprestMode: boolean;
+  imprestReplenishmentAmount?: number;
   minimumBalance: number;
   custodian: { _id: string; name: string; email: string };
   location?: string;
@@ -5150,6 +5257,7 @@ export interface PettyCashExpense {
   _id: string;
   company: string;
   float: { _id: string; name: string };
+  voucherNumber?: string;
   description: string;
   amount: number;
   category: string;
@@ -5184,13 +5292,49 @@ export interface PettyCashTransaction {
   _id: string;
   company: string;
   float: { _id: string; name: string };
-  type: "opening" | "expense" | "replenishment" | "adjustment" | "closing";
+  referenceNo?: string;
+  voucherNumber?: string;
+  type: "opening" | "expense" | "replenishment" | "adjustment" | "closing" | "top_up";
+  typeLabel?: string;
   amount: number;
   balanceAfter: number;
+  runningBalance?: number;
   description?: string;
+  expenseAccountId?: string;
+  expenseAccountName?: string;
+  receiptRef?: string;
+  journalEntryId?: string;
+  transactionDate: string;
   date: string;
   createdBy: { _id: string; name: string; email: string };
   createdAt: string;
+}
+
+export interface PettyCashReconciliation {
+  _id: string;
+  company: string;
+  float: { _id: string; name: string };
+  reconciliationNumber: string;
+  countDate: string;
+  systemBalance: number;
+  cashDenominations: Array<{
+    denomination: number;
+    count: number;
+    total: number;
+  }>;
+  physicalCashTotal: number;
+  difference: number;
+  differenceType: "balanced" | "shortage" | "overage";
+  status: "pending" | "approved" | "rejected";
+  countedBy: { _id: string; name: string; email: string };
+  approvedBy?: { _id: string; name: string; email: string };
+  approvedAt?: string;
+  notes?: string;
+  discrepancyExplanation?: string;
+  shortageOverageAccountId?: string;
+  journalEntryId?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface PettyCashSummary {
@@ -5272,6 +5416,7 @@ export const pettyCashApi = {
     custodianId?: string;
     floatAmount: number;
     openingBalance?: number;
+    imprestMode?: boolean;
     notes?: string;
   }) =>
     request<{ success: boolean; data: PettyCashFloat }>("/petty-cash/funds", {
@@ -5462,7 +5607,7 @@ export const pettyCashApi = {
       "/petty-cash/replenishments",
       { method: "POST", body: data },
     ),
-  approveReplenishment: (id: string, data?: { notes?: string }) =>
+  approveReplenishment: (id: string, data?: { status?: "approved" | "rejected"; notes?: string }) =>
     request<{ success: boolean; data: PettyCashReplenishment }>(
       `/petty-cash/replenishments/${id}/approve`,
       { method: "PUT", body: data },
@@ -5527,6 +5672,70 @@ export const pettyCashApi = {
       data: PettyCashTransaction[];
     }>(`/petty-cash/transactions${query ? `?${query}` : ""}`);
   },
+
+  // Imprest replenishment
+  getImprestCalculation: (id: string) =>
+    request<{
+      success: boolean;
+      data: {
+        isImprest: boolean;
+        floatAmount?: number;
+        currentBalance?: number;
+        replenishmentAmount?: number;
+        message?: string;
+      };
+    }>(`/petty-cash/funds/${id}/imprest-calculation`),
+
+  // Cash count reconciliation
+  createCashCount: (
+    id: string,
+    data: {
+      countDate?: string;
+      cashDenominations: { denomination: number; count: number; total: number }[];
+      notes?: string;
+    },
+  ) =>
+    request<{
+      success: boolean;
+      data: {
+        _id: string;
+        reconciliationNumber: string;
+        countDate: string;
+        systemBalance: number;
+        physicalCashTotal: number;
+        difference: number;
+        differenceType: "balanced" | "shortage" | "overage";
+        status: string;
+      };
+    }>(`/petty-cash/funds/${id}/cash-count`, { method: "POST", body: data }),
+
+  getReconciliations: (
+    id: string,
+    params?: { status?: string; page?: number; limit?: number },
+  ) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{
+      success: boolean;
+      count: number;
+      total: number;
+      pages: number;
+      data: PettyCashReconciliation[];
+    }>(`/petty-cash/funds/${id}/reconciliations${query ? `?${query}` : ""}`);
+  },
+
+  getReconciliation: (id: string) =>
+    request<{ success: boolean; data: PettyCashReconciliation }>(
+      `/petty-cash/reconciliations/${id}`,
+    ),
+
+  approveReconciliation: (
+    id: string,
+    data: { status: "approved" | "rejected"; discrepancyExplanation?: string },
+  ) =>
+    request<{ success: boolean; data: PettyCashReconciliation }>(
+      `/petty-cash/reconciliations/${id}/approve`,
+      { method: "PUT", body: data },
+    ),
 };
 
 // Accounts Payable API
@@ -6817,6 +7026,598 @@ export const bankAccountsApi = {
       `/bank-accounts/${id}/reconciliation-report${query ? `?${query}` : ""}`,
     );
   },
+
+  // --- Bank Reconciliation API (Real-World Standard) ---
+
+  /**
+   * Get journal entry lines for bank account (left side of reconciliation)
+   * These are the "Book" transactions that need to be matched to bank statement lines
+   */
+  getJournalTransactions: (
+    id: string,
+    params?: { startDate?: string; endDate?: string; reconciled?: boolean },
+  ) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{
+      success: boolean;
+      data: Array<{
+        journalEntryId: string;
+        lineId: string;
+        entryNumber: string;
+        date: string;
+        description: string;
+        debit: number;
+        credit: number;
+        amount: number;
+        reference?: string;
+        reconciled: boolean;
+        matchedStatementLineId?: string;
+      }>;
+      totals: {
+        totalDebits: number;
+        totalCredits: number;
+        reconciledCount: number;
+        unreconciledCount: number;
+      };
+    }>(`/bank-accounts/${id}/journal-transactions${query ? `?${query}` : ""}`);
+  },
+
+  /**
+   * Get bank statement lines (right side of reconciliation)
+   * These are imported from CSV and need to be matched to journal entries
+   */
+  getStatementLines: (
+    id: string,
+    params?: { startDate?: string; endDate?: string; reconciled?: boolean },
+  ) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{
+      success: boolean;
+      data: Array<{
+        _id: string;
+        transactionDate: string;
+        description: string;
+        reference?: string;
+        debitAmount: number;
+        creditAmount: number;
+        balance?: number;
+        isReconciled: boolean;
+        matchedAmount?: number;
+      }>;
+      totals: {
+        totalDebits: number;
+        totalCredits: number;
+        reconciledCount: number;
+        unreconciledCount: number;
+      };
+    }>(`/bank-accounts/${id}/statement-lines${query ? `?${query}` : ""}`);
+  },
+
+  /**
+   * Get current reconciliation state with difference calculation
+   * Returns book balance, bank balance, deposits in transit, outstanding checks, and difference
+   */
+  getReconciliation: (
+    id: string,
+    params?: { startDate?: string; endDate?: string },
+  ) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{
+      success: boolean;
+      data: {
+        journalLines: any[];
+        bankLines: any[];
+        summary: {
+          bookBalance: number;
+          bankBalance: number;
+          lastStatementBalance: number;
+          adjustedBankBalance: number;
+          adjustedBookBalance: number;
+          difference: number;
+          depositsInTransit: number;
+          outstandingPayments: number;
+          bankCreditsNotInBooks: number;
+          bankChargesNotInBooks: number;
+          journalCount: number;
+          bankCount: number;
+          reconciledBankCount: number;
+          unreconciledBankCount: number;
+        };
+      };
+    }>(`/bank-accounts/${id}/reconciliation${query ? `?${query}` : ""}`);
+  },
+
+  /**
+   * Match a journal entry line to a bank statement line
+   * Creates a link between the two without modifying either
+   */
+  matchReconciliation: (
+    id: string,
+    data: {
+      journalEntryId: string;
+      journalLineId: string;
+      statementLineId: string;
+    },
+  ) =>
+    request<{
+      success: boolean;
+      message: string;
+      data: {
+        matchId: string;
+        isReconciled: boolean;
+        matchedAmount: number;
+        statementAmount: number;
+        difference: number;
+      };
+    }>(`/bank-accounts/${id}/reconciliation/match`, {
+      method: "POST",
+      body: data,
+    }),
+
+  /**
+   * Unmatch (remove a match) by matchId
+   */
+  unmatchReconciliation: (id: string, matchId: string) =>
+    request<{
+      success: boolean;
+      message: string;
+      data: {
+        remainingMatchesForStatementLine: any[];
+      };
+    }>(`/bank-accounts/${id}/reconciliation/match/${matchId}`, {
+      method: "DELETE",
+    }),
+
+  /**
+   * Complete reconciliation - ONLY allowed when difference is zero
+   * This validates that all items are matched or explained before completing
+   */
+  completeReconciliation: (
+    id: string,
+    data: {
+      statementClosingBalance: number;
+      statementDate?: string;
+      periodStart?: string;
+      periodEnd?: string;
+      notes?: string;
+    },
+  ) =>
+    request<{
+      success: boolean;
+      message: string;
+      data: {
+        reconciliation: {
+          statementDate: string;
+          statementClosingBalance: number;
+          bookClosingBalance: number;
+          status: string;
+        };
+        summary: {
+          bookBalance: number;
+          statementBalance: number;
+          adjustedBankBalance: number;
+          adjustedBookBalance: number;
+          difference: number;
+          depositsInTransit: number;
+          outstandingPayments: number;
+          matchedItemCount: number;
+          unreconciledStatementCount: number;
+        };
+      };
+    }>(`/bank-accounts/${id}/reconciliation/complete`, {
+      method: "POST",
+      body: data,
+    }),
+
+  /**
+   * Create adjustment entry for unmatched statement line (user-initiated)
+   * Use this for bank charges, fees, interest, etc. that appear on statement but not in books
+   */
+  createAdjustmentEntry: (
+    id: string,
+    data: {
+      statementLineId: string;
+      expenseAccountCode?: string; // For bank charges/fees (debit to bank)
+      incomeAccountCode?: string; // For bank credits/interest (credit from bank)
+      description?: string;
+      notes?: string;
+    },
+  ) =>
+    request<{
+      success: boolean;
+      message: string;
+      data: {
+        journalEntry: {
+          _id: string;
+          entryNumber: string;
+          date: string;
+          description: string;
+          totalDebit: number;
+          totalCredit: number;
+        };
+        statementLine: {
+          _id: string;
+          description: string;
+          amount: number;
+          isDebit: boolean;
+          transactionDate: string;
+        };
+        counterAccount: {
+          code: string;
+          name: string;
+        };
+      };
+    }>(`/bank-accounts/${id}/reconciliation/adjustment`, {
+      method: "POST",
+      body: data,
+    }),
+
+  /**
+   * Get auto-match suggestions for reconciliation (preview mode)
+   * Returns suggested matches with confidence scores without applying them
+   */
+  getAutoMatchSuggestions: (
+    id: string,
+    params?: { startDate?: string; endDate?: string },
+  ) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{
+      success: boolean;
+      data: {
+        suggestions: Array<{
+          statementLine: {
+            _id: string;
+            date: string;
+            description: string;
+            reference?: string;
+            debitAmount: number;
+            creditAmount: number;
+            amount: number;
+          };
+          journalLine: {
+            _id: string;
+            journalEntryId: string;
+            entryNumber: string;
+            date: string;
+            description: string;
+            debit: number;
+            credit: number;
+            amount: number;
+            reference?: string;
+          };
+          matchScore: number;
+          matchConfidence: "high" | "medium" | "low";
+          difference: number;
+        }>;
+        summary: {
+          totalSuggestions: number;
+          highConfidence: number;
+          mediumConfidence: number;
+          lowConfidence: number;
+          totalMatchedAmount: number;
+        };
+        unmatched: {
+          statementLines: number;
+          journalLines: number;
+        };
+      };
+    }>(`/bank-accounts/${id}/auto-match-suggestions${query ? `?${query}` : ""}`);
+  },
+
+  /**
+   * Bulk apply reconciliation matches
+   * Apply multiple matches at once (typically from auto-match suggestions)
+   */
+  bulkMatchReconciliation: (
+    id: string,
+    data: {
+      matches: Array<{
+        journalEntryId: string;
+        journalLineId: string;
+        statementLineId: string;
+      }>;
+    },
+  ) =>
+    request<{
+      success: boolean;
+      message: string;
+      data: {
+        successful: Array<{
+          matchId: string;
+          journalLineId: string;
+          statementLineId: string;
+          matchedAmount: number;
+          isFullyReconciled: boolean;
+        }>;
+        failed: Array<{
+          journalLineId: string;
+          statementLineId: string;
+          reason: string;
+        }>;
+      };
+    }>(`/bank-accounts/${id}/reconciliation/bulk-match`, {
+      method: "POST",
+      body: data,
+    }),
+
+  // ═══════════════════════════════════════════════════════════
+  // NEW: Real-World Bank Reconciliation Workflow APIs
+  // ═══════════════════════════════════════════════════════════
+
+  /**
+   * Start a new reconciliation session
+   * Creates a new reconciliation with status "in_progress"
+   */
+  startReconciliation: (
+    id: string,
+    data: {
+      statementDate: string;
+      statementClosingBalance: number;
+      statementStartDate?: string;
+      statementEndDate?: string;
+      notes?: string;
+    },
+  ) =>
+    request<{
+      success: boolean;
+      data: BankReconciliationSession;
+      message: string;
+    }>(`/bank-accounts/${id}/reconciliations`, {
+      method: "POST",
+      body: data,
+    }),
+
+  /**
+   * Get all reconciliations for a bank account
+   */
+  getReconciliations: (
+    id: string,
+    params?: { status?: string; limit?: number; page?: number },
+  ) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{
+      success: boolean;
+      data: BankReconciliationSession[];
+      pagination: {
+        total: number;
+        page: number;
+        limit: number;
+        pages: number;
+      };
+    }>(`/bank-accounts/${id}/reconciliations${query ? `?${query}` : ""}`);
+  },
+
+  /**
+   * Get single reconciliation with full details
+   * Returns reconciliation, statement lines, journal lines, and summary
+   */
+  /**
+   * Import bank statement CSV into a reconciliation session
+   */
+  importStatement: (
+    id: string,
+    reconciliationId: string,
+    data: {
+      csvData: Array<{
+        date: string;
+        description: string;
+        reference?: string;
+        debit?: number | string;
+        credit?: number | string;
+        balance?: number | string;
+      }>;
+      dateFormat?: string;
+    },
+  ) =>
+    request<{
+      success: boolean;
+      data: {
+        importedCount: number;
+        errors?: Array<{ row: number; error: string }>;
+        lines: BankStatementLine[];
+      };
+      message: string;
+    }>(`/bank-accounts/${id}/reconciliations/${reconciliationId}/import`, {
+      method: "POST",
+      body: data,
+    }),
+
+  /**
+   * Match a journal entry line to a statement line
+   */
+  matchLines: (
+    id: string,
+    reconciliationId: string,
+    data: {
+      statementLineId: string;
+      journalEntryId: string;
+      journalLineId: string;
+    },
+  ) =>
+    request<{
+      success: boolean;
+      data: {
+        statementLine: BankStatementLine;
+        journalEntry: any;
+        stats: ReconciliationSummary;
+      };
+      message: string;
+    }>(`/bank-accounts/${id}/reconciliations/${reconciliationId}/match`, {
+      method: "POST",
+      body: data,
+    }),
+
+  /**
+   * Unmatch a previously matched line
+   */
+  unmatchLines: (
+    id: string,
+    reconciliationId: string,
+    data: { statementLineId: string },
+  ) =>
+    request<{
+      success: boolean;
+      data: {
+        statementLine: BankStatementLine;
+        stats: ReconciliationSummary;
+      };
+      message: string;
+    }>(`/bank-accounts/${id}/reconciliations/${reconciliationId}/unmatch`, {
+      method: "POST",
+      body: data,
+    }),
+
+  /**
+   * Create adjusting journal entry for unmatched statement line
+   * Use for bank charges, interest, fees, etc.
+   */
+  createAdjustingEntry: (
+    id: string,
+    reconciliationId: string,
+    data: {
+      statementLineId: string;
+      lines: Array<{
+        accountId: string;
+        amount: number;
+        debit: boolean;
+        description?: string;
+      }>;
+      description?: string;
+      date?: string;
+    },
+  ) =>
+    request<{
+      success: boolean;
+      data: {
+        journalEntry: any;
+        statementLine: BankStatementLine;
+        stats: ReconciliationSummary;
+      };
+      message: string;
+    }>(`/bank-accounts/${id}/reconciliations/${reconciliationId}/adjust`, {
+      method: "POST",
+      body: data,
+    }),
+
+  /**
+   * Complete reconciliation - only when difference = 0
+   */
+  completeReconciliationSession: (
+    id: string,
+    reconciliationId: string,
+    data?: { notes?: string },
+  ) =>
+    request<{
+      success: boolean;
+      data: {
+        reconciliation: BankReconciliationSession;
+        stats: ReconciliationSummary;
+      };
+      message: string;
+    }>(`/bank-accounts/${id}/reconciliations/${reconciliationId}/complete`, {
+      method: "POST",
+      body: data,
+    }),
+
+  /**
+   * Abandon/cancel a reconciliation session
+   */
+  abandonReconciliation: (
+    id: string,
+    reconciliationId: string,
+    data?: { reason?: string },
+  ) =>
+    request<{
+      success: boolean;
+      message: string;
+    }>(`/bank-accounts/${id}/reconciliations/${reconciliationId}/abandon`, {
+      method: "POST",
+      body: data,
+    }),
+
+  /**
+   * Ignore a statement line (for items that don't need matching)
+   */
+  ignoreStatementLine: (
+    id: string,
+    reconciliationId: string,
+    data: { statementLineId: string; reason?: string },
+  ) =>
+    request<{
+      success: boolean;
+      data: {
+        statementLine: BankStatementLine;
+        stats: ReconciliationSummary;
+      };
+      message: string;
+    }>(`/bank-accounts/${id}/reconciliations/${reconciliationId}/ignore`, {
+      method: "POST",
+      body: data,
+    }),
+
+  /**
+   * Get auto-match suggestions
+   */
+  getMatchSuggestions: (id: string, reconciliationId: string) =>
+    request<{
+      success: boolean;
+      data: {
+        suggestions: Array<{
+          statementLine: {
+            _id: string;
+            date: string;
+            description: string;
+            amount: number;
+            reference?: string;
+          };
+          journalLine: {
+            _id: string;
+            entryId: string;
+            entryNumber: string;
+            date: string;
+            description: string;
+            amount: number;
+            reference?: string;
+          };
+          score: number;
+          confidence: "high" | "medium" | "low";
+          difference: number;
+        }>;
+        summary: {
+          totalSuggestions: number;
+          highConfidence: number;
+          mediumConfidence: number;
+          lowConfidence: number;
+        };
+      };
+    }>(`/bank-accounts/${id}/reconciliations/${reconciliationId}/suggestions`),
+
+  /**
+   * Apply multiple match suggestions
+   */
+  applySuggestions: (
+    id: string,
+    reconciliationId: string,
+    data: {
+      suggestions: Array<{
+        statementLineId: string;
+        journalEntryId: string;
+        journalLineId: string;
+      }>;
+    },
+  ) =>
+    request<{
+      success: boolean;
+      data: {
+        matched: number;
+        errors?: Array<{ statementLineId: string; error: string }>;
+        stats: ReconciliationSummary;
+      };
+      message: string;
+    }>(`/bank-accounts/${id}/reconciliations/${reconciliationId}/suggestions/apply`, {
+      method: "POST",
+      body: data,
+    }),
 };
 
 // Fixed Assets API
@@ -6839,7 +7640,7 @@ export interface FixedAsset {
   usefulLifeYears?: number;
   depreciationMethod: "straight_line" | "declining_balance";
   decliningRate?: number;
-  status: "active" | "fully_depreciated" | "disposed";
+  status: "in_transit" | "in_service" | "under_maintenance" | "idle" | "fully_depreciated" | "disposed" | "active";
   accumulatedDepreciation: number;
   netBookValue: number;
   supplierId?: string;

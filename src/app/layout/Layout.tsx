@@ -10,6 +10,7 @@ import NotificationBell from '@/app/components/NotificationBell';
 
 interface LayoutProps {
   children: ReactNode;
+  title?: string;
 }
 
 export function Layout({ children }: LayoutProps) {

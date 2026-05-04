@@ -22,6 +22,11 @@ import {
   Pencil,
   RefreshCw,
   Shield,
+  Play,
+  Pause,
+  Wrench,
+  History,
+  Truck,
 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import {
@@ -85,12 +90,24 @@ export default function AssetDetailPage() {
   const [disposalForm, setDisposalForm] = useState({
     disposalDate: new Date().toISOString().split("T")[0],
     disposalProceeds: 0,
-    disposalMethod: "sold",
+    disposalCosts: 0,
+    disposalMethod: "sale",
     bankAccountId: "",
+    disposalAuthNumber: "",
     notes: "",
   });
   const [bankAccounts, setBankAccounts] = useState<any[]>([]);
   const [disposing, setDisposing] = useState(false);
+
+  // Status management dialogs
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [statusForm, setStatusForm] = useState({
+    toStatus: "",
+    reason: "",
+    notes: "",
+  });
+  const [changingStatus, setChangingStatus] = useState(false);
+  const [statusHistory, setStatusHistory] = useState<any[]>([]);
 
   useEffect(() => {
     if (id) {
@@ -184,13 +201,15 @@ export default function AssetDetailPage() {
       const response = await fixedAssetsApi.dispose(id, {
         disposalDate: disposalForm.disposalDate,
         disposalProceeds: disposalForm.disposalProceeds,
+        disposalCosts: disposalForm.disposalCosts,
         disposalMethod: disposalForm.disposalMethod,
-        bankAccountId: (disposalForm as any).bankAccountId || undefined,
+        bankAccountId: disposalForm.bankAccountId || undefined,
+        disposalAuthNumber: disposalForm.disposalAuthNumber || undefined,
         notes: disposalForm.notes,
       });
       const res: any = response;
       if (res.success) {
-        toast.success(t("assets.success.disposal"));
+        toast.success(t("assets.success.disposal") || "Asset disposed successfully");
         setDisposeDialogOpen(false);
         fetchAsset();
       } else {
@@ -233,25 +252,108 @@ export default function AssetDetailPage() {
   };
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "active":
-        return (
-          <Badge variant="default" className="bg-green-500 dark:bg-green-600">
-            {t("assets.status.active")}
-          </Badge>
-        );
-      case "fully_depreciated":
-        return (
-          <Badge variant="secondary" className="bg-amber-500 dark:bg-amber-600">
-            {t("assets.status.fullyDepreciated")}
-          </Badge>
-        );
-      case "disposed":
-        return (
-          <Badge variant="destructive" className="dark:bg-red-600">{t("assets.status.disposed")}</Badge>
-        );
-      default:
-        return <Badge className="dark:bg-slate-700 dark:text-slate-200">{status}</Badge>;
+    const statusConfig: Record<string, { color: string; label: string; icon: any }> = {
+      in_transit: { color: "bg-blue-500", label: t("assets.status.inTransit") || "In Transit", icon: Truck },
+      in_service: { color: "bg-green-500", label: t("assets.status.inService") || "In Service", icon: Play },
+      under_maintenance: { color: "bg-orange-500", label: t("assets.status.maintenance") || "Under Maintenance", icon: Wrench },
+      idle: { color: "bg-yellow-500", label: t("assets.status.idle") || "Idle", icon: Pause },
+      fully_depreciated: { color: "bg-amber-500", label: t("assets.status.fullyDepreciated") || "Fully Depreciated", icon: TrendingDown },
+      disposed: { color: "bg-red-500", label: t("assets.status.disposed") || "Disposed", icon: Trash2 },
+      active: { color: "bg-green-500", label: t("assets.status.active") || "Active", icon: Play },
+    };
+
+    const config = statusConfig[status] || { color: "bg-slate-500", label: status, icon: null };
+    const Icon = config.icon;
+
+    return (
+      <Badge className={`${config.color} text-white dark:opacity-90 flex items-center gap-1`}>
+        {Icon && <Icon className="h-3 w-3" />}
+        {config.label}
+      </Badge>
+    );
+  };
+
+  const getValidTransitions = (currentStatus: string) => {
+    const transitions: Record<string, { value: string; label: string; icon: any }[]> = {
+      in_transit: [
+        { value: "in_service", label: "Place In Service", icon: Play },
+      ],
+      in_service: [
+        { value: "under_maintenance", label: "Start Maintenance", icon: Wrench },
+        { value: "idle", label: "Mark Idle", icon: Pause },
+      ],
+      under_maintenance: [
+        { value: "in_service", label: "Return to Service", icon: Play },
+        { value: "idle", label: "Mark Idle", icon: Pause },
+      ],
+      idle: [
+        { value: "in_service", label: "Return to Service", icon: Play },
+        { value: "under_maintenance", label: "Start Maintenance", icon: Wrench },
+      ],
+      fully_depreciated: [],
+      disposed: [],
+    };
+    return transitions[currentStatus] || [];
+  };
+
+  const fetchStatusHistory = async () => {
+    if (!id) return;
+    try {
+      const response: any = await fixedAssetsApi.getStatusHistory(id);
+      if (response.success) {
+        setStatusHistory(response.data || []);
+      }
+    } catch (error) {
+      console.error("[AssetDetailPage] Failed to fetch status history:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === "history" && id) {
+      fetchStatusHistory();
+    }
+  }, [activeTab, id]);
+
+  const handlePlaceInService = async () => {
+    if (!id) return;
+    setChangingStatus(true);
+    try {
+      const response: any = await fixedAssetsApi.placeInService(id, {
+        inServiceDate: new Date().toISOString().split("T")[0],
+      });
+      if (response.success) {
+        toast.success("Asset placed in service. Depreciation will start from in-service date.");
+        fetchAsset();
+      } else {
+        toast.error(response.error || "Failed to place asset in service");
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || "Failed to place asset in service");
+    } finally {
+      setChangingStatus(false);
+    }
+  };
+
+  const handleStatusTransition = async () => {
+    if (!id || !statusForm.toStatus) return;
+    setChangingStatus(true);
+    try {
+      const response: any = await fixedAssetsApi.transitionStatus(id, {
+        toStatus: statusForm.toStatus,
+        reason: statusForm.reason,
+        notes: statusForm.notes,
+      });
+      if (response.success) {
+        toast.success(`Asset status changed to ${statusForm.toStatus.replace("_", " ")}`);
+        setStatusDialogOpen(false);
+        fetchAsset();
+      } else {
+        toast.error(response.error || "Failed to change status");
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || "Failed to change status");
+    } finally {
+      setChangingStatus(false);
     }
   };
 
@@ -295,8 +397,33 @@ export default function AssetDetailPage() {
             </div>
             <p className="text-muted-foreground dark:text-slate-400">{asset.referenceNo}</p>
           </div>
-          {asset.status === "active" && (
-            <div className="flex gap-2">
+          <div className="flex gap-2">
+            {/* Status-specific actions */}
+            {asset.status === "in_transit" && (
+              <Button
+                onClick={handlePlaceInService}
+                disabled={changingStatus}
+                className="dark:bg-blue-600 dark:text-white"
+              >
+                <Play className="mr-2 h-4 w-4" />
+                Place In Service
+              </Button>
+            )}
+
+            {/* Status transition button for valid transitions */}
+            {getValidTransitions(asset.status).length > 0 && (
+              <Button
+                variant="outline"
+                onClick={() => setStatusDialogOpen(true)}
+                className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
+              >
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Change Status
+              </Button>
+            )}
+
+            {/* Depreciate button for active assets */}
+            {(asset.status === "in_service" || asset.status === "active") && (
               <Button
                 variant="outline"
                 onClick={() => setDepreciateDialogOpen(true)}
@@ -305,6 +432,10 @@ export default function AssetDetailPage() {
                 <Calculator className="mr-2 h-4 w-4" />
                 {t("assets.actions.depreciate")}
               </Button>
+            )}
+
+            {/* Dispose button (not for already disposed) */}
+            {asset.status !== "disposed" && (
               <Button
                 variant="destructive"
                 onClick={() => setDisposeDialogOpen(true)}
@@ -312,8 +443,8 @@ export default function AssetDetailPage() {
                 <Trash2 className="mr-2 h-4 w-4" />
                 {t("assets.actions.dispose")}
               </Button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -326,6 +457,10 @@ export default function AssetDetailPage() {
             </TabsTrigger>
             <TabsTrigger value="entries" className="dark:text-slate-300 dark:data-[state=active]:bg-slate-700">
               {t("assets.tabs.entries")}
+            </TabsTrigger>
+            <TabsTrigger value="history" className="dark:text-slate-300 dark:data-[state=active]:bg-slate-700">
+              <History className="h-4 w-4 mr-1" />
+              History
             </TabsTrigger>
           </TabsList>
 
@@ -657,6 +792,54 @@ export default function AssetDetailPage() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* Status History Tab */}
+          <TabsContent value="history">
+            <Card className="dark:bg-slate-800">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 dark:text-white">
+                  <History className="h-5 w-5" />
+                  Asset Status History
+                </CardTitle>
+                <CardDescription className="dark:text-slate-400">
+                  Complete lifecycle audit trail for this asset
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {statusHistory.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground dark:text-slate-400">
+                    <History className="h-12 w-12 mx-auto mb-4 dark:text-slate-500" />
+                    <p>No status history recorded yet</p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="dark:bg-slate-700/50 dark:border-slate-600">
+                        <TableHead className="dark:text-slate-200">Date</TableHead>
+                        <TableHead className="dark:text-slate-200">From</TableHead>
+                        <TableHead className="dark:text-slate-200">To</TableHead>
+                        <TableHead className="dark:text-slate-200">Changed By</TableHead>
+                        <TableHead className="dark:text-slate-200">Reason</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {statusHistory.map((entry) => (
+                        <TableRow key={entry._id} className="dark:border-slate-600">
+                          <TableCell className="dark:text-slate-300">{formatDate(entry.changedAt)}</TableCell>
+                          <TableCell>{getStatusBadge(entry.fromStatus)}</TableCell>
+                          <TableCell>{getStatusBadge(entry.toStatus)}</TableCell>
+                          <TableCell className="dark:text-slate-300">
+                            {entry.changedBy?.name || "System"}
+                          </TableCell>
+                          <TableCell className="dark:text-slate-300">{entry.reason || "-"}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
 
         {/* Depreciate Dialog */}
@@ -700,79 +883,186 @@ export default function AssetDetailPage() {
           </DialogContent>
         </Dialog>
 
-        {/* Dispose Dialog */}
-        <Dialog open={disposeDialogOpen} onOpenChange={setDisposeDialogOpen}>
+        {/* Status Transition Dialog */}
+        <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
           <DialogContent className="dark:bg-slate-800">
             <DialogHeader>
-              <DialogTitle className="dark:text-white">{t("assets.dialogs.dispose.title")}</DialogTitle>
+              <DialogTitle className="dark:text-white">Change Asset Status</DialogTitle>
               <DialogDescription className="dark:text-slate-400">
-                {t("assets.dialogs.dispose.description")}
+                Transition asset from {asset.status.replace("_", " ")} to a new status
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label className="dark:text-slate-200">New Status</Label>
+                <select
+                  className="w-full border border-input rounded-md px-3 py-2 text-sm bg-background dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                  value={statusForm.toStatus}
+                  onChange={(e) => setStatusForm({ ...statusForm, toStatus: e.target.value })}
+                >
+                  <option value="">Select new status...</option>
+                  {getValidTransitions(asset.status).map((t) => (
+                    <option key={t.value} value={t.value}>{t.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label className="dark:text-slate-200">Reason</Label>
+                <Input
+                  value={statusForm.reason}
+                  onChange={(e) => setStatusForm({ ...statusForm, reason: e.target.value })}
+                  placeholder="e.g., Scheduled maintenance, Seasonal idle"
+                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="dark:text-slate-200">Notes</Label>
+                <Input
+                  value={statusForm.notes}
+                  onChange={(e) => setStatusForm({ ...statusForm, notes: e.target.value })}
+                  placeholder="Additional details..."
+                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setStatusDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleStatusTransition} disabled={changingStatus || !statusForm.toStatus}>
+                {changingStatus && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Change Status
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dispose Dialog - Enhanced */}
+        <Dialog open={disposeDialogOpen} onOpenChange={setDisposeDialogOpen}>
+          <DialogContent className="dark:bg-slate-800 max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="dark:text-white">{t("assets.dialogs.dispose.title")}</DialogTitle>
+              <DialogDescription className="dark:text-slate-400">
+                Record asset disposal with complete financial details
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              {/* Disposal Method */}
+              <div className="space-y-2">
+                <Label className="dark:text-slate-200">Disposal Method</Label>
+                <select
+                  className="w-full border border-input rounded-md px-3 py-2 text-sm bg-background dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                  value={disposalForm.disposalMethod}
+                  onChange={(e) => setDisposalForm({ ...disposalForm, disposalMethod: e.target.value })}
+                >
+                  <option value="sale">Sale (Sold to third party)</option>
+                  <option value="scrap">Scrap (No proceeds)</option>
+                  <option value="donation">Donation (Given away)</option>
+                  <option value="trade_in">Trade-in (Exchanged)</option>
+                  <option value="theft_loss">Theft/Loss (Insurance claim)</option>
+                </select>
+              </div>
+
+              {/* Disposal Date */}
               <div className="space-y-2">
                 <Label className="dark:text-slate-200">{t("assets.fields.disposalDate")}</Label>
                 <Input
                   type="date"
                   value={disposalForm.disposalDate}
-                  onChange={(e) =>
-                    setDisposalForm({
-                      ...disposalForm,
-                      disposalDate: e.target.value,
-                    })
-                  }
+                  onChange={(e) => setDisposalForm({ ...disposalForm, disposalDate: e.target.value })}
                   className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                 />
               </div>
-              <div className="space-y-2">
-                <Label className="dark:text-slate-200">{t("assets.fields.disposalProceeds")}</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={disposalForm.disposalProceeds}
-                  onChange={(e) =>
-                    setDisposalForm({
-                      ...disposalForm,
-                      disposalProceeds: parseFloat(e.target.value) || 0,
-                    })
-                  }
-                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
-                />
+
+              {/* Financial Summary */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="dark:text-slate-200">Gross Proceeds</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={disposalForm.disposalProceeds}
+                    onChange={(e) => setDisposalForm({ ...disposalForm, disposalProceeds: parseFloat(e.target.value) || 0 })}
+                    className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="dark:text-slate-200">Disposal Costs</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={disposalForm.disposalCosts}
+                    onChange={(e) => setDisposalForm({ ...disposalForm, disposalCosts: parseFloat(e.target.value) || 0 })}
+                    className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                  />
+                </div>
               </div>
+
+              {/* Net Proceeds Preview */}
+              <div className="p-3 bg-muted rounded dark:bg-slate-700">
+                <div className="flex justify-between text-sm">
+                  <span className="dark:text-slate-300">Net Proceeds:</span>
+                  <span className="font-semibold dark:text-white">
+                    {formatCurrency(disposalForm.disposalProceeds - disposalForm.disposalCosts)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm mt-1">
+                  <span className="dark:text-slate-300">Current Book Value:</span>
+                  <span className="font-semibold dark:text-white">{formatCurrency(asset.netBookValue)}</span>
+                </div>
+                <div className="flex justify-between text-sm mt-1 pt-2 border-t dark:border-slate-600">
+                  <span className="dark:text-slate-300">Expected Gain/Loss:</span>
+                  <span className={`font-semibold ${
+                    (disposalForm.disposalProceeds - disposalForm.disposalCosts - parseFloat(asset.netBookValue?.toString() || "0")) >= 0
+                      ? "text-green-600 dark:text-green-400"
+                      : "text-red-600 dark:text-red-400"
+                  }`}>
+                    {formatCurrency(disposalForm.disposalProceeds - disposalForm.disposalCosts - parseFloat(asset.netBookValue?.toString() || "0"))}
+                  </span>
+                </div>
+              </div>
+
+              {/* Bank Account for Proceeds */}
               {disposalForm.disposalProceeds > 0 && (
                 <div className="space-y-2">
                   <Label className="dark:text-slate-200">Deposit Proceeds to Bank Account</Label>
                   <select
                     className="w-full border border-input rounded-md px-3 py-2 text-sm bg-background dark:bg-slate-700 dark:text-white dark:border-slate-600"
                     value={disposalForm.bankAccountId}
-                    onChange={(e) =>
-                      setDisposalForm({
-                        ...disposalForm,
-                        bankAccountId: e.target.value,
-                      })
-                    }
+                    onChange={(e) => setDisposalForm({ ...disposalForm, bankAccountId: e.target.value })}
                   >
-                    <option value="">Select bank account for proceeds…</option>
+                    <option value="">Select bank account...</option>
                     {bankAccounts.map((acc: any) => (
                       <option key={acc._id} value={acc._id}>
-                        {acc.name}
-                        {acc.cachedBalance !== undefined
-                          ? ` (Balance: ${Number(acc.cachedBalance).toLocaleString()})`
-                          : ""}
+                        {acc.name} (Bal: {formatCurrency(acc.cachedBalance || 0)})
                       </option>
                     ))}
                   </select>
-                  <p className="text-xs text-muted-foreground dark:text-slate-400">
-                    Journal: DR Bank Account / CR Asset Account (proceeds)
-                  </p>
                 </div>
               )}
+
+              {/* RRA Disposal Authorization */}
               <div className="space-y-2">
-                <Label className="dark:text-slate-200">{t("assets.fields.netBookValue")}</Label>
-                <div className="p-2 bg-muted rounded dark:bg-slate-700 dark:text-white">
-                  {formatCurrency(asset.netBookValue)}
-                </div>
+                <Label className="dark:text-slate-200">RRA Disposal Auth Number (Optional)</Label>
+                <Input
+                  value={disposalForm.disposalAuthNumber}
+                  onChange={(e) => setDisposalForm({ ...disposalForm, disposalAuthNumber: e.target.value })}
+                  placeholder="e.g., RRA-2024-001234"
+                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                />
+              </div>
+
+              {/* Notes */}
+              <div className="space-y-2">
+                <Label className="dark:text-slate-200">Notes</Label>
+                <Input
+                  value={disposalForm.notes}
+                  onChange={(e) => setDisposalForm({ ...disposalForm, notes: e.target.value })}
+                  placeholder="Additional disposal details..."
+                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                />
               </div>
             </div>
             <DialogFooter>

@@ -353,6 +353,7 @@ export default function PettyCashTransactionsPage() {
                     <TableHead className="dark:text-slate-200">
                       {t("pettyCash.reference", "Reference")}
                     </TableHead>
+                    <TableHead className="dark:text-slate-200">Voucher</TableHead>
                     <TableHead className="dark:text-slate-200">{t("pettyCash.type", "Type")}</TableHead>
                     <TableHead className="dark:text-slate-200">
                       {t("pettyCash.description", "Description")}
@@ -379,6 +380,13 @@ export default function PettyCashTransactionsPage() {
                       </TableCell>
                       <TableCell className="font-mono text-sm dark:text-slate-300">
                         {tx.referenceNo}
+                      </TableCell>
+                      <TableCell className="font-mono text-sm dark:text-slate-300">
+                        {tx.voucherNumber ? (
+                          <span className="text-blue-600 dark:text-blue-400">{tx.voucherNumber}</span>
+                        ) : (
+                          <span className="text-muted-foreground dark:text-slate-500">-</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         <Badge

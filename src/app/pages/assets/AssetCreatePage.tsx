@@ -68,11 +68,13 @@ export default function AssetCreatePage() {
     description: "",
     categoryId: "",
     purchaseDate: new Date().toISOString().split("T")[0],
+    inServiceDate: "",
     purchaseCost: 0,
     salvageValue: 0,
     usefulLifeMonths: 60,
     depreciationMethod: "straight_line",
     decliningRate: 20,
+    depreciationFrequency: "monthly",
     // Defaults aligned with the Chart of Accounts (1700-series PP&E, 1810-series accum dep)
     assetAccountCode: "1700",
     accumDepreciationAccountCode: "1810",
@@ -81,6 +83,9 @@ export default function AssetCreatePage() {
     // Payment source
     bankAccountId: "",
     paymentAccountCode: "2000",
+    // Acquisition method
+    acquisitionMethod: "purchase",
+    donationFairValue: 0,
     // New fields
     referenceNo: "",
     serialNumber: "",
@@ -89,7 +94,7 @@ export default function AssetCreatePage() {
     warrantyStartDate: "",
     warrantyEndDate: "",
     insuredValue: 0,
-    status: "active",
+    status: "in_transit",
   });
 
   const fetchBankAccounts = useCallback(async () => {
@@ -129,25 +134,25 @@ export default function AssetCreatePage() {
     try {
       const response: any = await assetCategoriesApi.getAll();
       console.log("[DEBUG] Categories API response:", response);
-      
+
       // Handle both { success: true, data: [...] } and { success: true, data: { data: [...] } }
       let categoryData = response.data;
       if (categoryData && categoryData.data && Array.isArray(categoryData.data)) {
         categoryData = categoryData.data;
       }
-      
+
       if (response.success && Array.isArray(categoryData)) {
         const fetchedCategories = categoryData.filter((c: any) => c._id);
         console.log("[DEBUG] Filtered categories:", fetchedCategories);
         setCategories(fetchedCategories);
-        
-        // Auto-select first category if none selected and in create mode
-        if (fetchedCategories.length > 0 && !isEdit) {
+
+        // Auto-select first category if none selected and in create mode (id is undefined)
+        if (fetchedCategories.length > 0 && !id) {
           const defaultCat = fetchedCategories[0];
           console.log("[DEBUG] Auto-selecting category:", defaultCat._id, defaultCat.name);
           setFormData((prev: any) => ({
             ...prev,
-            categoryId: defaultCat._id,
+            categoryId: String(defaultCat._id),
             usefulLifeMonths: defaultCat.defaultUsefulLifeMonths || 60,
             depreciationMethod: defaultCat.defaultDepreciationMethod || "straight_line",
             assetAccountCode: defaultCat.defaultAssetAccountCode || "1700",
@@ -159,7 +164,7 @@ export default function AssetCreatePage() {
     } catch (error) {
       console.error("[AssetCreatePage] Failed to fetch categories:", error);
     }
-  }, [isEdit]);
+  }, [id]);
 
   const fetchSuppliers = useCallback(async () => {
     try {
@@ -181,10 +186,15 @@ export default function AssetCreatePage() {
         setFormData({
           name: asset.name || "",
           description: asset.description || "",
-          categoryId: asset.categoryId?._id || asset.categoryId || "",
+          categoryId: String(asset.categoryId?._id || asset.categoryId || ""),
           purchaseDate: asset.purchaseDate
             ? new Date(asset.purchaseDate).toISOString().split("T")[0]
             : "",
+          inServiceDate: asset.inServiceDate
+            ? new Date(asset.inServiceDate).toISOString().split("T")[0]
+            : "",
+          acquisitionMethod: asset.acquisitionMethod || "purchase",
+          depreciationFrequency: asset.depreciationFrequency || "monthly",
           purchaseCost: getNumericValue(asset.purchaseCost),
           salvageValue: getNumericValue(asset.salvageValue),
           usefulLifeMonths: asset.usefulLifeMonths || 60,
@@ -234,32 +244,27 @@ export default function AssetCreatePage() {
     }
   }, [id, isEdit, fetchCategories, fetchSuppliers, fetchBankAccounts, fetchChartAccounts, fetchDepartments]);
 
-  const handleCategoryChange = (categoryId: string) => {
+  const handleCategoryChange = useCallback((categoryId: string) => {
     if (!categoryId) {
-      // Clear category selection
       setFormData((prev) => ({ ...prev, categoryId: "" }));
       return;
     }
     
-    const category = categories.find((c) => c._id === categoryId);
+    const category = categories.find((c) => String(c._id) === categoryId);
     if (category) {
       setFormData((prev) => ({
         ...prev,
         categoryId,
-        usefulLifeMonths:
-          category.defaultUsefulLifeMonths || prev.usefulLifeMonths,
-        depreciationMethod:
-          category.defaultDepreciationMethod || prev.depreciationMethod,
+        usefulLifeMonths: category.defaultUsefulLifeMonths || prev.usefulLifeMonths,
+        depreciationMethod: category.defaultDepreciationMethod || prev.depreciationMethod,
         assetAccountCode: category.defaultAssetAccountCode || "1700",
-        accumDepreciationAccountCode:
-          category.defaultAccumDepreciationAccountCode || "1810",
-        depreciationExpenseAccountCode:
-          category.defaultDepreciationExpenseAccountCode || "5800",
+        accumDepreciationAccountCode: category.defaultAccumDepreciationAccountCode || "1810",
+        depreciationExpenseAccountCode: category.defaultDepreciationExpenseAccountCode || "5800",
       }));
     } else {
       setFormData((prev) => ({ ...prev, categoryId }));
     }
-  };
+  }, [categories]);
 
   const calculateDepreciation = () => {
     const depreciableAmount = formData.purchaseCost - formData.salvageValue;
@@ -280,6 +285,7 @@ export default function AssetCreatePage() {
         description: formData.description,
         categoryId: formData.categoryId || undefined,
         purchaseDate: formData.purchaseDate,
+        inServiceDate: formData.inServiceDate || undefined,
         purchaseCost: formData.purchaseCost,
         salvageValue: formData.salvageValue,
         usefulLifeMonths: formData.usefulLifeMonths,
@@ -290,6 +296,7 @@ export default function AssetCreatePage() {
           formData.depreciationMethod === "declining_balance"
             ? formData.decliningRate
             : undefined,
+        depreciationFrequency: formData.depreciationFrequency,
         assetAccountCode: formData.assetAccountCode,
         accumDepreciationAccountCode: formData.accumDepreciationAccountCode,
         depreciationExpenseAccountCode: formData.depreciationExpenseAccountCode,
@@ -299,6 +306,11 @@ export default function AssetCreatePage() {
         paymentAccountCode: formData.bankAccountId
           ? undefined
           : formData.paymentAccountCode || "2000",
+        // Acquisition method
+        acquisitionMethod: formData.acquisitionMethod,
+        donationFairValue: formData.acquisitionMethod === "donation"
+          ? formData.donationFairValue || formData.purchaseCost
+          : undefined,
         // New fields
         serialNumber: formData.serialNumber || undefined,
         location: formData.location || undefined,
@@ -468,32 +480,21 @@ export default function AssetCreatePage() {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="category" className="dark:text-slate-200">
-                        {t("assets.fields.category")}
+                        Category
                       </Label>
-                      {/* DEBUG: categories count: {categories.length}, formData.categoryId: {formData.categoryId || "(empty)"} */}
-                      <Select
-                        value={formData.categoryId || "none"}
-                        onValueChange={(v) => {
-                          console.log("[DEBUG] Category selected:", v);
-                          handleCategoryChange(v === "none" ? "" : v);
-                        }}
+                      <select
+                        id="category"
+                        className="w-full border border-input rounded-md px-3 py-2 text-sm bg-background dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                        value={formData.categoryId || ""}
+                        onChange={(e) => handleCategoryChange(e.target.value)}
                       >
-                        <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
-                          <SelectValue
-                            placeholder={t("assets.placeholders.category")}
-                          />
-                        </SelectTrigger>
-                        <SelectContent className="dark:bg-slate-800">
-                          <SelectItem value="none">{t("common.none")}</SelectItem>
-                          {categories
-                            .filter((c: any) => c._id)
-                            .map((cat: any) => (
-                              <SelectItem key={cat._id} value={cat._id}>
-                                {cat.name}
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
+                        <option value="">None</option>
+                        {categories.map((cat) => (
+                          <option key={String(cat._id)} value={String(cat._id)}>
+                            {cat.name}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -575,7 +576,7 @@ export default function AssetCreatePage() {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="status" className="dark:text-slate-200">
-                        {t("assets.fields.status")}
+                        Status
                       </Label>
                       <Select
                         value={formData.status}
@@ -587,9 +588,12 @@ export default function AssetCreatePage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent className="dark:bg-slate-800">
-                          <SelectItem value="active">{t("assets.status.active")}</SelectItem>
-                          <SelectItem value="fully_depreciated">{t("assets.status.fullyDepreciated")}</SelectItem>
-                          <SelectItem value="disposed">{t("assets.status.disposed")}</SelectItem>
+                          <SelectItem value="in_transit">In Transit (Not yet in service)</SelectItem>
+                          <SelectItem value="in_service">In Service (Active)</SelectItem>
+                          <SelectItem value="under_maintenance">Under Maintenance</SelectItem>
+                          <SelectItem value="idle">Idle</SelectItem>
+                          <SelectItem value="fully_depreciated">Fully Depreciated</SelectItem>
+                          <SelectItem value="disposed">Disposed</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -652,6 +656,27 @@ export default function AssetCreatePage() {
                       />
                     </div>
                     <div className="space-y-2">
+                      <Label htmlFor="inServiceDate" className="dark:text-slate-200">
+                        In-Service Date
+                        <span className="text-xs text-muted-foreground ml-1">(When depreciation starts)</span>
+                      </Label>
+                      <Input
+                        id="inServiceDate"
+                        type="date"
+                        value={formData.inServiceDate}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            inServiceDate: e.target.value,
+                          })
+                        }
+                        className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Leave blank to use purchase date. Depreciation starts from this date.
+                      </p>
+                    </div>
+                    <div className="space-y-2">
                       <Label htmlFor="purchaseCost" className="dark:text-slate-200">
                         {t("assets.fields.purchaseCost")} *
                       </Label>
@@ -698,6 +723,49 @@ export default function AssetCreatePage() {
                         </span>
                       </div>
                     </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="acquisitionMethod" className="dark:text-slate-200">
+                        Acquisition Method
+                      </Label>
+                      <Select
+                        value={formData.acquisitionMethod}
+                        onValueChange={(v) =>
+                          setFormData({ ...formData, acquisitionMethod: v })
+                        }
+                      >
+                        <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="dark:bg-slate-800">
+                          <SelectItem value="purchase">Purchase (Buy)</SelectItem>
+                          <SelectItem value="construction">Construction (Built)</SelectItem>
+                          <SelectItem value="donation">Donation (Received)</SelectItem>
+                          <SelectItem value="exchange">Exchange (Trade-in)</SelectItem>
+                          <SelectItem value="transfer">Transfer (Internal)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {formData.acquisitionMethod === "donation" && (
+                      <div className="space-y-2">
+                        <Label htmlFor="donationFairValue" className="dark:text-slate-200">
+                          Donation Fair Value
+                        </Label>
+                        <Input
+                          id="donationFairValue"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={formData.donationFairValue}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              donationFairValue: parseFloat(e.target.value) || 0,
+                            })
+                          }
+                          className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                        />
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -817,12 +885,29 @@ export default function AssetCreatePage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent className="dark:bg-slate-800">
-                          <SelectItem value="straight_line">
-                            {t("assets.depreciation.straightLine")}
-                          </SelectItem>
-                          <SelectItem value="declining_balance">
-                            {t("assets.depreciation.decliningBalance")}
-                          </SelectItem>
+                          <SelectItem value="straight_line">Straight Line (RWA: Buildings)</SelectItem>
+                          <SelectItem value="declining_balance">Declining Balance (RWA: Plant, Vehicles)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="depreciationFrequency" className="dark:text-slate-200">
+                        Depreciation Frequency
+                      </Label>
+                      <Select
+                        value={formData.depreciationFrequency}
+                        onValueChange={(v) =>
+                          setFormData({ ...formData, depreciationFrequency: v })
+                        }
+                      >
+                        <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="dark:bg-slate-800">
+                          <SelectItem value="monthly">Monthly</SelectItem>
+                          <SelectItem value="quarterly">Quarterly</SelectItem>
+                          <SelectItem value="semi_annually">Semi-Annually</SelectItem>
+                          <SelectItem value="annually">Annually</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
