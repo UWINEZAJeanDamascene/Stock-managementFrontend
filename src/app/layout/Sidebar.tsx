@@ -337,6 +337,12 @@ const financeNav: NavSection = {
       permission: "budgets:read",
     },
     {
+      nameKey: "nav.projects",
+      href: "/projects",
+      icon: FolderTree,
+      permission: "budgets:read",
+    },
+    {
       nameKey: "nav.budgetSettings",
       href: "/budgets/settings",
       icon: Settings,

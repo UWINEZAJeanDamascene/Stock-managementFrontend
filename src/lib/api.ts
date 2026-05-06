@@ -3810,6 +3810,9 @@ export interface Budget {
   updatedBy?: { _id: string; name: string; email: string };
   version?: number;
   previousVersion?: string;
+  scenario_type?: string;
+  scenario_name?: string;
+  is_primary_scenario?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -3825,7 +3828,12 @@ export interface BudgetLine {
   period_month: number;
   period_year: number;
   budgeted_amount: number;
+  encumbered_amount?: number;
+  actual_amount?: number;
   notes?: string;
+  // Project/Job-Level Budgeting fields
+  project_id?: string | { _id: string; name: string; project_code: string; wbs_code: string; status: string };
+  wbs_code?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -3894,6 +3902,29 @@ export interface Encumbrance {
   created_by: { _id: string; name: string; email: string };
   released_by?: { _id: string; name: string; email: string } | null;
   release_reason?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface BudgetActualConsumption {
+  _id: string;
+  company_id: string;
+  budget_id: string;
+  budget_line_id: string;
+  account_id: { _id: string; code: string; name: string; type?: string } | string;
+  project_id?: string | null;
+  wbs_code?: string | null;
+  origin_type: "encumbrance_liquidation" | "direct_actual";
+  document_type: string;
+  document_id: string;
+  document_number: string;
+  document_date: string;
+  amount: number;
+  source_type?: string;
+  source_id?: string;
+  source_number?: string;
+  notes?: string;
+  created_by?: { _id: string; name: string; email: string } | null;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -4504,10 +4535,16 @@ export const budgetsApi = {
       `/budgets/${budgetId}/encumbrances`,
       { method: "POST", body: data },
     ),
-  getEncumbrances: (budgetId: string, params?: { status?: string; account_id?: string }) => {
+  getEncumbrances: (budgetId: string, params?: { status?: string; account_id?: string; budget_line_id?: string }) => {
     const query = buildQuery(params as Record<string, any>);
     return request<{ success: boolean; data: Encumbrance[] }>(
       `/budgets/${budgetId}/encumbrances${query ? `?${query}` : ""}`,
+    );
+  },
+  getActualConsumptions: (budgetId: string, params?: { account_id?: string; budget_line_id?: string }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; data: BudgetActualConsumption[] }>(
+      `/budgets/${budgetId}/actual-consumptions${query ? `?${query}` : ""}`,
     );
   },
   getEncumbranceSummary: (budgetId: string) =>
@@ -10566,3 +10603,148 @@ export const pickPackApi = {
     request<{ success: boolean; data: unknown }>("/pick-packs/pending-pack"),
 };
 
+// ── Project / WBS API ───────────────────────────────────────────────────────
+
+export interface Project {
+  _id: string;
+  company_id: string;
+  project_code: string;
+  name: string;
+  description?: string;
+  parent_id?: { _id: string; name: string; wbs_code: string; project_code: string } | string;
+  wbs_level: number;
+  wbs_code: string;
+  type: "project" | "job" | "phase" | "work_package" | "task";
+  status: "planning" | "active" | "on_hold" | "completed" | "cancelled";
+  priority: "low" | "medium" | "high" | "critical";
+  budget_allocated: number;
+  budget_spent: number;
+  budget_remaining: number;
+  start_date?: string;
+  end_date?: string;
+  actual_start_date?: string;
+  actual_end_date?: string;
+  department_id?: { _id: string; name: string; code: string } | string;
+  client_id?: { _id: string; name: string } | string;
+  manager_id?: { _id: string; firstName: string; lastName: string; email: string } | string;
+  billing_type: "fixed_price" | "time_material" | "cost_plus" | "none";
+  contract_value: number;
+  progress_percent: number;
+  is_active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ProjectCreateRequest {
+  project_code: string;
+  name: string;
+  description?: string;
+  parent_id?: string;
+  type?: "project" | "job" | "phase" | "work_package" | "task";
+  status?: "planning" | "active" | "on_hold" | "completed" | "cancelled";
+  priority?: "low" | "medium" | "high" | "critical";
+  budget_allocated?: number;
+  start_date?: string;
+  end_date?: string;
+  department_id?: string;
+  client_id?: string;
+  manager_id?: string;
+  billing_type?: "fixed_price" | "time_material" | "cost_plus" | "none";
+  contract_value?: number;
+}
+
+export interface ProjectUpdateRequest extends Partial<ProjectCreateRequest> {
+  progress_percent?: number;
+  actual_start_date?: string;
+  actual_end_date?: string;
+}
+
+export interface WBSTreeNode extends Project {
+  children: WBSTreeNode[];
+}
+
+export interface ProjectBudgetSummary {
+  project: Project;
+  budget_summary: {
+    total_budgeted: number;
+    total_actual: number;
+    total_encumbered: number;
+    total_remaining: number;
+  };
+  line_count: number;
+  budget_lines: BudgetLine[];
+}
+
+export const projectsApi = {
+  // Get all projects
+  getAll: (filters?: {
+    status?: string;
+    type?: string;
+    department_id?: string;
+    client_id?: string;
+    manager_id?: string;
+    search?: string;
+    is_active?: string;
+  }) => {
+    const query = buildQuery(filters as Record<string, any>);
+    return request<{ success: boolean; data: Project[]; count: number }>(
+      `/projects${query ? `?${query}` : ""}`
+    );
+  },
+
+  // Get project by ID
+  getById: (id: string) =>
+    request<{ success: boolean; data: Project }>(`/projects/${id}`),
+
+  // Create new project
+  create: (data: ProjectCreateRequest) =>
+    request<{ success: boolean; data: Project; message: string }>("/projects", {
+      method: "POST",
+      body: data,
+    }),
+
+  // Update project
+  update: (id: string, data: ProjectUpdateRequest) =>
+    request<{ success: boolean; data: Project; message: string }>(`/projects/${id}`, {
+      method: "PUT",
+      body: data,
+    }),
+
+  // Delete project
+  delete: (id: string) =>
+    request<{ success: boolean; message: string }>(`/projects/${id}`, {
+      method: "DELETE",
+    }),
+
+  // Get WBS tree
+  getWBSTree: (id?: string) =>
+    request<{ success: boolean; data: WBSTreeNode[] }>(
+      id ? `/projects/${id}/wbs-tree` : "/projects/wbs-tree"
+    ),
+
+  // Get budget summary
+  getBudgetSummary: (id: string) =>
+    request<{ success: boolean; data: ProjectBudgetSummary }>(`/projects/${id}/budget-summary`),
+
+  // Clone project
+  clone: (id: string, data: { new_code: string; new_name: string }) =>
+    request<{ success: boolean; data: Project; message: string }>(`/projects/${id}/clone`, {
+      method: "POST",
+      body: data,
+    }),
+
+  // Get statistics
+  getStatistics: () =>
+    request<{
+      success: boolean;
+      data: {
+        by_status: Array<{
+          _id: string;
+          count: number;
+          total_budget: number;
+          total_spent: number;
+        }>;
+        by_type: Array<{ _id: string; count: number }>;
+      };
+    }>("/projects/statistics"),
+};

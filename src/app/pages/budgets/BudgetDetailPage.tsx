@@ -4,9 +4,13 @@ import { useTranslation } from "react-i18next";
 import {
   budgetsApi,
   chartOfAccountsApi,
+  projectsApi,
   Budget,
   BudgetLine,
   ChartOfAccountItem,
+  Encumbrance,
+  BudgetActualConsumption,
+  type Project,
 } from "@/lib/api";
 import { Layout } from "../../layout/Layout";
 import {
@@ -71,6 +75,14 @@ import {
   Lock as LockIcon,
   Bell,
   History,
+  FolderTree,
+  Link2,
+  AlertTriangle,
+  CheckCircle2,
+  Gauge,
+  Wallet,
+  Eye,
+  Receipt,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -106,12 +118,13 @@ export default function BudgetDetailPage() {
   const [budget, setBudget] = useState<Budget | null>(null);
   const [lines, setLines] = useState<BudgetLine[]>([]);
   const [accounts, setAccounts] = useState<ChartOfAccountItem[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [comparison, setComparison] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
   // Line editing
-  const [showAddLine, setShowAddLine] = useState(false);
+  const [showAddLine, setShowAddLine] = useState(true);
   const [newLine, setNewLine] = useState({
     account_id: "",
     period_month: new Date().getMonth() + 1,
@@ -119,6 +132,7 @@ export default function BudgetDetailPage() {
     budgeted_amount: 0,
     category: "",
     notes: "",
+    project_id: "",
   });
 
   // Dialogs
@@ -129,12 +143,18 @@ export default function BudgetDetailPage() {
   const [closeOpen, setCloseOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [closeNotes, setCloseNotes] = useState("");
+  const [lineConsumptionOpen, setLineConsumptionOpen] = useState(false);
+  const [selectedLine, setSelectedLine] = useState<BudgetLine | null>(null);
+  const [lineEncumbrances, setLineEncumbrances] = useState<Encumbrance[]>([]);
+  const [lineActualConsumptions, setLineActualConsumptions] = useState<BudgetActualConsumption[]>([]);
+  const [lineConsumptionLoading, setLineConsumptionLoading] = useState(false);
 
   useEffect(() => {
     if (id) {
       fetchBudget();
       fetchLines();
       fetchAccounts();
+      fetchProjects();
     }
   }, [id]);
 
@@ -184,6 +204,17 @@ export default function BudgetDetailPage() {
     }
   };
 
+  const fetchProjects = async () => {
+    try {
+      const response: any = await projectsApi.getAll({ is_active: "true" });
+      if (response.success) {
+        setProjects(response.data || []);
+      }
+    } catch (error) {
+      console.error("[BudgetDetailPage] Failed to fetch projects:", error);
+    }
+  };
+
   const fetchComparison = async () => {
     try {
       const response: any = await budgetsApi.getComparison(id!);
@@ -212,7 +243,6 @@ export default function BudgetDetailPage() {
         toast.success(
           t("budgets.success.lineAdded", "Line added successfully"),
         );
-        setShowAddLine(false);
         setNewLine({
           account_id: "",
           period_month: new Date().getMonth() + 1,
@@ -220,6 +250,7 @@ export default function BudgetDetailPage() {
           budgeted_amount: 0,
           category: "",
           notes: "",
+          project_id: "",
         });
         fetchLines();
         fetchBudget();
@@ -231,6 +262,36 @@ export default function BudgetDetailPage() {
       );
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const openLineConsumption = async (line: BudgetLine) => {
+    setSelectedLine(line);
+    setLineConsumptionOpen(true);
+    setLineConsumptionLoading(true);
+
+    try {
+      const [encumbrancesResponse, actualsResponse]: any = await Promise.all([
+        budgetsApi.getEncumbrances(id!, {
+          budget_line_id: line._id,
+        }),
+        budgetsApi.getActualConsumptions(id!, {
+          budget_line_id: line._id,
+        }),
+      ]);
+      if (encumbrancesResponse.success) {
+        setLineEncumbrances(encumbrancesResponse.data || []);
+      }
+      if (actualsResponse.success) {
+        setLineActualConsumptions(actualsResponse.data || []);
+      }
+    } catch (error) {
+      console.error("[BudgetDetailPage] Failed to fetch line consumption:", error);
+      toast.error("Failed to load line consumption details");
+      setLineEncumbrances([]);
+      setLineActualConsumptions([]);
+    } finally {
+      setLineConsumptionLoading(false);
     }
   };
 
@@ -404,10 +465,78 @@ export default function BudgetDetailPage() {
     return acc ? `${acc.code} - ${acc.name}` : account_id || "-";
   };
 
+  const getProjectMeta = (project: BudgetLine["project_id"], wbsCode?: string) => {
+    if (project && typeof project === "object") {
+      return {
+        id: project._id,
+        label: `${project.wbs_code || wbsCode || project.project_code} - ${project.name}`,
+        code: project.wbs_code || wbsCode || project.project_code,
+      };
+    }
+
+    const projectId = typeof project === "string" ? project : "";
+    const matched = projects.find((p) => p._id === projectId);
+    return {
+      id: projectId,
+      label: matched ? `${matched.wbs_code} - ${matched.name}` : wbsCode || projectId,
+      code: wbsCode || matched?.wbs_code || projectId,
+    };
+  };
+
   const totalBudgeted = lines.reduce(
     (sum, l) => sum + (l.budgeted_amount || 0),
     0,
   );
+  const totalCommitted = lines.reduce(
+    (sum, l) => sum + (l.encumbered_amount || 0),
+    0,
+  );
+  const totalActualConsumed = lines.reduce(
+    (sum, l) => sum + (l.actual_amount || 0),
+    0,
+  );
+  const totalAvailable = lines.reduce(
+    (sum, l) => sum + ((l.budgeted_amount || 0) - (l.encumbered_amount || 0) - (l.actual_amount || 0)),
+    0,
+  );
+  const linkedProjectLines = lines.filter((line) => Boolean(line.project_id)).length;
+  const headerBudgetAmount =
+    budget?.amount && Number(budget.amount) > 0 ? Number(budget.amount) : totalBudgeted;
+  const getLineAvailable = (line: BudgetLine) =>
+    (line.budgeted_amount || 0) - (line.encumbered_amount || 0) - (line.actual_amount || 0);
+
+  const getLineUtilization = (line: BudgetLine) => {
+    const budgeted = line.budgeted_amount || 0;
+    if (!budgeted) return 0;
+    return (((line.encumbered_amount || 0) + (line.actual_amount || 0)) / budgeted) * 100;
+  };
+
+  const getLineStatus = (line: BudgetLine) => {
+    const available = getLineAvailable(line);
+    const utilization = getLineUtilization(line);
+
+    if (available < 0 || utilization > 100) {
+      return {
+        label: "Over budget",
+        className: "border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300",
+        icon: AlertTriangle,
+      };
+    }
+
+    if (utilization >= 85) {
+      return {
+        label: "Near limit",
+        className: "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300",
+        icon: Gauge,
+      };
+    }
+
+    return {
+      label: "On track",
+      className: "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300",
+      icon: CheckCircle2,
+    };
+  };
 
   if (loading) {
     return (
@@ -543,8 +672,11 @@ export default function BudgetDetailPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-blue-600">
-                {formatCurrency(budget.amount as number)}
+                {formatCurrency(headerBudgetAmount)}
               </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Controlled total across all allocation lines
+              </p>
             </CardContent>
           </Card>
           <Card>
@@ -621,9 +753,20 @@ export default function BudgetDetailPage() {
           <TabsContent value="lines">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>
-                  {t("budgets.budgetLines", "Budget Lines")}
-                </CardTitle>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <CardTitle>
+                      {t("budgets.budgetLines", "Budget Lines")}
+                    </CardTitle>
+                    <Badge variant="outline" className="gap-1 border-emerald-200 bg-emerald-50 text-emerald-700">
+                      <Link2 className="h-3 w-3" />
+                      Project / WBS ready
+                    </Badge>
+                  </div>
+                  <CardDescription>
+                    Assign each budget line to a general ledger account and, where needed, link it to a project or WBS node for operational tracking.
+                  </CardDescription>
+                </div>
                 {budget.status === "draft" && (
                   <Button
                     variant="outline"
@@ -631,15 +774,62 @@ export default function BudgetDetailPage() {
                     onClick={() => setShowAddLine(!showAddLine)}
                   >
                     <Plus className="mr-2 h-4 w-4" />
-                    {t("budgets.addLine", "Add Line")}
+                    {showAddLine ? "Hide entry panel" : "Add budget line"}
                   </Button>
                 )}
               </CardHeader>
               <CardContent>
+                <div className="mb-4 grid gap-3 md:grid-cols-3">
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900">
+                    <div className="text-xs uppercase text-slate-500">Budget lines</div>
+                    <div className="mt-1 text-2xl font-semibold">{lines.length}</div>
+                  </div>
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900">
+                    <div className="text-xs uppercase text-slate-500">Linked to projects</div>
+                    <div className="mt-1 text-2xl font-semibold">{linkedProjectLines}</div>
+                  </div>
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900">
+                    <div className="text-xs uppercase text-slate-500">Unassigned lines</div>
+                    <div className="mt-1 text-2xl font-semibold">{Math.max(0, lines.length - linkedProjectLines)}</div>
+                  </div>
+                </div>
+
+                <div className="mb-4 grid gap-3 md:grid-cols-4">
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900">
+                    <div className="text-xs uppercase text-slate-500">Budgeted</div>
+                    <div className="mt-1 text-xl font-semibold">{formatCurrency(totalBudgeted)}</div>
+                  </div>
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900">
+                    <div className="text-xs uppercase text-slate-500">Committed</div>
+                    <div className="mt-1 text-xl font-semibold">{formatCurrency(totalCommitted)}</div>
+                  </div>
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900">
+                    <div className="text-xs uppercase text-slate-500">Actual</div>
+                    <div className="mt-1 text-xl font-semibold">{formatCurrency(totalActualConsumed)}</div>
+                  </div>
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900">
+                    <div className="text-xs uppercase text-slate-500">Available</div>
+                    <div className={`mt-1 text-xl font-semibold ${totalAvailable < 0 ? "text-red-600" : "text-emerald-600"}`}>
+                      {formatCurrency(totalAvailable)}
+                    </div>
+                  </div>
+                </div>
+
                 {/* Add Line Form */}
                 {showAddLine && budget.status === "draft" && (
-                  <div className="border rounded-lg p-4 mb-4 bg-muted/30">
-                    <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
+                  <div className="mb-4 rounded-lg border border-slate-200 bg-muted/30 p-4 dark:border-slate-800">
+                    <div className="mb-4 flex items-start justify-between gap-4">
+                      <div>
+                        <div className="flex items-center gap-2 text-sm font-semibold">
+                          <FolderTree className="h-4 w-4 text-indigo-600" />
+                          Budget line allocation
+                        </div>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          Create a line and optionally link it to a project or WBS node so budget, actual, and encumbrance reporting stay aligned.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-8">
                       <div className="md:col-span-2">
                         <Label className="text-xs">
                           {t("budgets.account", "Account")} *
@@ -666,6 +856,57 @@ export default function BudgetDetailPage() {
                             ))}
                           </SelectContent>
                         </Select>
+                      </div>
+                      <div className="md:col-span-2">
+                        <Label className="text-xs">
+                          Allocation Scope: Project / WBS
+                        </Label>
+                        <p className="mb-2 text-xs text-muted-foreground">
+                          Leave blank only when this line is not tied to a specific project.
+                        </p>
+                        <Select
+                          value={newLine.project_id || "__none__"}
+                          onValueChange={(value) =>
+                            setNewLine({
+                              ...newLine,
+                              project_id: value === "__none__" ? "" : value,
+                            })
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue
+                              placeholder={t(
+                                "projects.selectProject",
+                                "Select project (optional)",
+                              )}
+                            />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__none__">
+                              Unassigned / shared budget
+                            </SelectItem>
+                            {projects.map((p) => (
+                              <SelectItem key={p._id} value={p._id}>
+                                <span className="font-mono text-xs">{p.wbs_code}</span> {p.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs">
+                          Category
+                        </Label>
+                        <Input
+                          value={newLine.category}
+                          onChange={(e) =>
+                            setNewLine({
+                              ...newLine,
+                              category: e.target.value,
+                            })
+                          }
+                          placeholder="Payroll"
+                        />
                       </div>
                       <div>
                         <Label className="text-xs">
@@ -728,6 +969,21 @@ export default function BudgetDetailPage() {
                           }
                         />
                       </div>
+                      <div className="md:col-span-2">
+                        <Label className="text-xs">
+                          Notes
+                        </Label>
+                        <Input
+                          value={newLine.notes}
+                          onChange={(e) =>
+                            setNewLine({
+                              ...newLine,
+                              notes: e.target.value,
+                            })
+                          }
+                          placeholder="Planning assumption or cost driver"
+                        />
+                      </div>
                       <div className="flex items-end gap-2">
                         <Button
                           size="sm"
@@ -739,6 +995,7 @@ export default function BudgetDetailPage() {
                           ) : (
                             <Plus className="h-4 w-4" />
                           )}
+                          <span className="ml-2">Save line</span>
                         </Button>
                         <Button
                           variant="ghost"
@@ -774,15 +1031,23 @@ export default function BudgetDetailPage() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>{t("budgets.account", "Account")}</TableHead>
+                        <TableHead>{t("projects.project", "Project")}</TableHead>
+                        <TableHead>{t("budgets.period", "Period")}</TableHead>
                         <TableHead>{t("budgets.month", "Month")}</TableHead>
                         <TableHead>{t("budgets.year", "Year")}</TableHead>
                         <TableHead className="text-right">
                           {t("budgets.budgetedAmount", "Budgeted")}
                         </TableHead>
+                        <TableHead className="text-right">Committed</TableHead>
+                        <TableHead className="text-right">Actual</TableHead>
+                        <TableHead className="text-right">Available</TableHead>
+                        <TableHead className="text-right">Use %</TableHead>
+                        <TableHead>Status</TableHead>
                         <TableHead>
                           {t("budgets.category", "Category")}
                         </TableHead>
                         <TableHead>{t("budgets.notes", "Notes")}</TableHead>
+                        <TableHead className="text-right">Consumption</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -792,6 +1057,25 @@ export default function BudgetDetailPage() {
                             {getAccountName(line.account_id)}
                           </TableCell>
                           <TableCell>
+                            {line.project_id ? (
+                              <span
+                                className="text-xs font-mono bg-primary/10 text-primary px-1.5 py-0.5 rounded cursor-pointer hover:bg-primary/20"
+                                onClick={() => {
+                                  const projectMeta = getProjectMeta(line.project_id, line.wbs_code);
+                                  if (projectMeta.id) navigate(`/projects/${projectMeta.id}`);
+                                }}
+                                title={getProjectMeta(line.project_id, line.wbs_code).label}
+                              >
+                                {getProjectMeta(line.project_id, line.wbs_code).code}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {`${MONTHS.find((m) => m.value === line.period_month)?.label || line.period_month} ${line.period_year}`}
+                          </TableCell>
+                          <TableCell>
                             {MONTHS.find((m) => m.value === line.period_month)
                               ?.label || line.period_month}
                           </TableCell>
@@ -799,20 +1083,69 @@ export default function BudgetDetailPage() {
                           <TableCell className="text-right font-medium">
                             {formatCurrency(line.budgeted_amount)}
                           </TableCell>
+                          <TableCell className="text-right">
+                            {formatCurrency(line.encumbered_amount || 0)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {formatCurrency(line.actual_amount || 0)}
+                          </TableCell>
+                          <TableCell className={`text-right font-medium ${getLineAvailable(line) < 0 ? "text-red-600" : "text-emerald-600"}`}>
+                            {formatCurrency(getLineAvailable(line))}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {getLineUtilization(line).toFixed(1)}%
+                          </TableCell>
+                          <TableCell>
+                            {(() => {
+                              const status = getLineStatus(line);
+                              const StatusIcon = status.icon;
+                              return (
+                                <Badge variant="outline" className={`gap-1 ${status.className}`}>
+                                  <StatusIcon className="h-3 w-3" />
+                                  {status.label}
+                                </Badge>
+                              );
+                            })()}
+                          </TableCell>
                           <TableCell>{line.category || "-"}</TableCell>
                           <TableCell className="text-muted-foreground text-sm">
                             {line.notes || "-"}
                           </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openLineConsumption(line)}
+                              className="h-8 px-2"
+                            >
+                              <Eye className="mr-2 h-4 w-4" />
+                              View
+                            </Button>
+                          </TableCell>
                         </TableRow>
                       ))}
                       <TableRow className="bg-muted/30">
-                        <TableCell colSpan={3} className="font-semibold">
+                        <TableCell colSpan={5} className="font-semibold">
                           {t("budgets.total", "Total")}
                         </TableCell>
                         <TableCell className="text-right font-bold">
                           {formatCurrency(totalBudgeted)}
                         </TableCell>
+                        <TableCell className="text-right font-bold">
+                          {formatCurrency(totalCommitted)}
+                        </TableCell>
+                        <TableCell className="text-right font-bold">
+                          {formatCurrency(totalActualConsumed)}
+                        </TableCell>
+                        <TableCell className={`text-right font-bold ${totalAvailable < 0 ? "text-red-600" : "text-emerald-600"}`}>
+                          {formatCurrency(totalAvailable)}
+                        </TableCell>
+                        <TableCell className="text-right font-bold">
+                          {totalBudgeted > 0 ? (((totalCommitted + totalActualConsumed) / totalBudgeted) * 100).toFixed(1) : "0.0"}%
+                        </TableCell>
+                        <TableCell></TableCell>
                         <TableCell colSpan={2}></TableCell>
+                        <TableCell></TableCell>
                       </TableRow>
                     </TableBody>
                   </Table>
@@ -1004,7 +1337,7 @@ export default function BudgetDetailPage() {
                       {t("budgets.amount", "Amount")}
                     </span>
                     <span className="font-medium">
-                      {formatCurrency(budget.amount as number)}
+                          {formatCurrency(Number(budget.amount || 0))}
                     </span>
                   </div>
                   {budget.notes && (
@@ -1326,6 +1659,155 @@ export default function BudgetDetailPage() {
           </DialogContent>
         </Dialog>
       </div>
+
+      <Dialog open={lineConsumptionOpen} onOpenChange={setLineConsumptionOpen}>
+        <DialogContent className="max-h-[85vh] max-w-6xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Budget line consumption</DialogTitle>
+            <DialogDescription>
+              Review commitments and liquidation documents that consumed this budget line.
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedLine && (
+            <div className="space-y-6">
+              <div className="grid gap-3 md:grid-cols-5">
+                <div className="rounded-lg border p-3">
+                  <div className="text-xs uppercase text-muted-foreground">Account</div>
+                  <div className="mt-1 text-sm font-medium">{getAccountName(selectedLine.account_id)}</div>
+                </div>
+                <div className="rounded-lg border p-3">
+                  <div className="text-xs uppercase text-muted-foreground">Project / WBS</div>
+                  <div className="mt-1 text-sm font-medium">
+                    {selectedLine.project_id ? getProjectMeta(selectedLine.project_id, selectedLine.wbs_code).label : "Unassigned"}
+                  </div>
+                </div>
+                <div className="rounded-lg border p-3">
+                  <div className="text-xs uppercase text-muted-foreground">Budgeted</div>
+                  <div className="mt-1 text-sm font-semibold">{formatCurrency(selectedLine.budgeted_amount)}</div>
+                </div>
+                <div className="rounded-lg border p-3">
+                  <div className="text-xs uppercase text-muted-foreground">Committed</div>
+                  <div className="mt-1 text-sm font-semibold">{formatCurrency(selectedLine.encumbered_amount || 0)}</div>
+                </div>
+                <div className="rounded-lg border p-3">
+                  <div className="text-xs uppercase text-muted-foreground">Actual / Available</div>
+                  <div className="mt-1 text-sm font-semibold">
+                    {formatCurrency(selectedLine.actual_amount || 0)} / {formatCurrency(getLineAvailable(selectedLine))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid gap-6 xl:grid-cols-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Commitments</CardTitle>
+                    <CardDescription>Encumbrances raised against this budget line.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {lineConsumptionLoading ? (
+                      <div className="flex items-center justify-center py-10">
+                        <Loader2 className="h-6 w-6 animate-spin" />
+                      </div>
+                    ) : lineEncumbrances.length === 0 ? (
+                      <div className="py-8 text-sm text-muted-foreground">No encumbrances have been posted to this line.</div>
+                    ) : (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Source</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead className="text-right">Encumbered</TableHead>
+                            <TableHead className="text-right">Remaining</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {lineEncumbrances.map((encumbrance) => (
+                            <TableRow key={encumbrance._id}>
+                              <TableCell>
+                                <div className="font-medium">{encumbrance.source_number}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {encumbrance.source_type.replaceAll("_", " ")} • {encumbrance.description}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline">{encumbrance.status.replaceAll("_", " ")}</Badge>
+                              </TableCell>
+                              <TableCell className="text-right">{formatCurrency(encumbrance.encumbered_amount)}</TableCell>
+                              <TableCell className="text-right">{formatCurrency(encumbrance.remaining_amount)}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Receipt className="h-4 w-4" />
+                      Actual consumption
+                    </CardTitle>
+                    <CardDescription>Liquidation documents that converted commitments into actual spend.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {lineConsumptionLoading ? (
+                      <div className="flex items-center justify-center py-10">
+                        <Loader2 className="h-6 w-6 animate-spin" />
+                      </div>
+                    ) : lineActualConsumptions.length === 0 ? (
+                      <div className="py-8 text-sm text-muted-foreground">
+                        No actual consumption documents are linked to this line yet.
+                      </div>
+                    ) : (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Document</TableHead>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Origin</TableHead>
+                            <TableHead className="text-right">Amount</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {lineActualConsumptions.map((consumption) => (
+                            <TableRow key={consumption._id}>
+                              <TableCell>
+                                <div className="font-medium">{consumption.document_number}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {consumption.document_type.replaceAll("_", " ")}
+                                  {consumption.source_number ? ` • from ${consumption.source_number}` : ""}
+                                </div>
+                                {consumption.notes ? (
+                                  <div className="text-xs text-muted-foreground">{consumption.notes}</div>
+                                ) : null}
+                              </TableCell>
+                              <TableCell>{formatDate(consumption.document_date)}</TableCell>
+                              <TableCell>
+                                <Badge variant="outline">
+                                  {consumption.origin_type === "direct_actual" ? "Direct actual" : "Encumbrance liquidation"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right">{formatCurrency(consumption.amount)}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setLineConsumptionOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }

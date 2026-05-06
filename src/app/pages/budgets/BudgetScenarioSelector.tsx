@@ -33,9 +33,9 @@ interface BudgetScenarioSelectorProps {
   budgetId: string;
   budgetName: string;
   currentScenario?: {
-    scenario_type: string;
-    scenario_name: string;
-    is_primary_scenario: boolean;
+    scenario_type?: string;
+    scenario_name?: string;
+    is_primary_scenario?: boolean;
   };
   onScenarioChange?: (scenario: any) => void;
   onRefresh?: () => void;
@@ -149,98 +149,81 @@ export function BudgetScenarioSelector({
             <Button
               variant="outline"
               size="sm"
-              className="gap-2 h-9 px-3"
+              className="gap-2 h-9 px-3 relative"
               type="button"
+              
             >
               <Layers className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium hidden sm:inline">
+              <span className="text-sm font-medium">
                 {t("budgets.scenarios.title", "Scenario")}:
               </span>
-              <span className="text-sm font-medium sm:hidden">
-                {t("budgets.scenarios.title", "Scenario")}
-              </span>
-              <span className="max-w-[80px] sm:max-w-[120px] truncate">
+              <span className="max-w-[100px] truncate">
                 {currentScenario?.scenario_name || primaryScenario?.scenario_name || t("budgets.scenarios.base", "Base Case")}
               </span>
               <ChevronDown className="h-3 w-3 text-muted-foreground ml-1" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="start"
-            side="bottom"
-            className="w-80 bg-popover border shadow-lg rounded-lg p-1"
-            sideOffset={6}
-            alignOffset={0}
-            avoidCollisions={true}
-            collisionPadding={16}
-          >
-            <div className="px-3 py-2">
-              <DropdownMenuLabel className="px-0 py-1 text-sm font-semibold text-foreground">
-                {t("budgets.scenarios.selectScenario", "Select Scenario")}
-              </DropdownMenuLabel>
-              <p className="text-xs text-muted-foreground">
-                {scenarios.length} {scenarios.length === 1 ? 'scenario' : 'scenarios'} available
-              </p>
-            </div>
-            <DropdownMenuSeparator className="my-1" />
+            <DropdownMenuContent
+              align="end"
+              className="w-72 max-w-[90vw] z-[9999] bg-popover border shadow-md"
+              sideOffset={8}
+              avoidCollisions={true}
+            >
+            <DropdownMenuLabel>
+              {t("budgets.scenarios.selectScenario", "Select Scenario")}
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
 
-            <div className="max-h-[280px] overflow-y-auto">
-              {scenarios.map((scenario) => (
-                <DropdownMenuItem
-                  key={scenario._id}
-                  className="flex items-center justify-between py-2.5 px-3 cursor-pointer rounded-md mx-1 my-0.5 focus:bg-accent"
-                  onClick={() => handleScenarioSwitch(scenario)}
-                >
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className="flex-shrink-0">
-                      {getScenarioIcon(scenario.scenario_type)}
-                    </div>
-                    <div className="flex flex-col min-w-0 gap-0.5">
-                      <span className="font-medium text-sm truncate">{scenario.scenario_name || scenario.name}</span>
-                      <div className="flex items-center gap-1.5">
-                        <Badge variant="secondary" className={`text-[10px] px-1.5 py-0 h-4 ${getScenarioBadgeColor(scenario.scenario_type)}`}>
-                          {scenario.scenario_type}
-                        </Badge>
-                        {scenario.is_primary_scenario && (
-                          <span className="flex items-center gap-0.5 text-xs text-primary">
-                            <Check className="h-3 w-3" />
-                            <span className="text-[10px]">Primary</span>
-                          </span>
-                        )}
-                      </div>
+            {scenarios.map((scenario) => (
+              <DropdownMenuItem
+                key={scenario._id}
+                className="flex items-center justify-between py-2 cursor-pointer"
+                onClick={() => handleScenarioSwitch(scenario)}
+              >
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  {getScenarioIcon(scenario.scenario_type)}
+                  <div className="flex flex-col min-w-0">
+                    <span className="font-medium truncate">{scenario.scenario_name || scenario.name}</span>
+                    <div className="flex items-center gap-1">
+                      <Badge className={`text-xs ${getScenarioBadgeColor(scenario.scenario_type)}`}>
+                        {scenario.scenario_type}
+                      </Badge>
+                      {scenario.is_primary_scenario && (
+                        <Check className="h-3 w-3 text-primary" />
+                      )}
                     </div>
                   </div>
-                  {!scenario.is_primary_scenario && scenarios.length > 1 && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 px-2 text-xs ml-2 flex-shrink-0 hover:bg-muted"
-                      onClick={(e) => handleSetPrimary(scenario._id, e)}
-                    >
-                      {t("budgets.scenarios.setPrimaryShort", "Set Primary")}
-                    </Button>
-                  )}
-                </DropdownMenuItem>
-              ))}
-            </div>
+                </div>
+                {!scenario.is_primary_scenario && scenarios.length > 1 && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 px-2 text-xs"
+                    onClick={(e) => handleSetPrimary(scenario._id, e)}
+                  >
+                    {t("budgets.scenarios.setPrimaryShort", "Set Primary")}
+                  </Button>
+                )}
+              </DropdownMenuItem>
+            ))}
 
-            <DropdownMenuSeparator className="my-1" />
+            <DropdownMenuSeparator />
 
             <DropdownMenuItem
-              className="gap-2 cursor-pointer rounded-md mx-1 my-0.5 py-2 px-3 focus:bg-accent"
+              className="gap-2 cursor-pointer"
               onClick={() => setShowCreateDialog(true)}
             >
-              <Plus className="h-4 w-4 text-primary" />
-              <span className="text-sm">{t("budgets.scenarios.createNew", "Create New Scenario")}</span>
+              <Plus className="h-4 w-4" />
+              {t("budgets.scenarios.createNew", "Create New Scenario")}
             </DropdownMenuItem>
 
             {hasMultipleScenarios && (
               <DropdownMenuItem
-                className="gap-2 cursor-pointer rounded-md mx-1 my-0.5 py-2 px-3 focus:bg-accent"
+                className="gap-2 cursor-pointer"
                 onClick={() => setShowComparisonDialog(true)}
               >
-                <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm">{t("budgets.scenarios.compare", "Compare Scenarios")}</span>
+                <BarChart3 className="h-4 w-4" />
+                {t("budgets.scenarios.compare", "Compare Scenarios")}
               </DropdownMenuItem>
             )}
           </DropdownMenuContent>
