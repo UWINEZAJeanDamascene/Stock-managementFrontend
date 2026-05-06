@@ -766,7 +766,7 @@ export default function BankAccountsListPage() {
                                   size="sm"
                                   onClick={() =>
                                     navigate(
-                                      `/bank-accounts/${account._id}?tab=reconciliation`,
+                                      `/bank-accounts/${account._id}/reconcile`,
                                     )
                                   }
                                   className="dark:text-slate-300 dark:hover:bg-slate-700"

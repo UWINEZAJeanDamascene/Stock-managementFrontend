@@ -10,6 +10,7 @@ import {
   TrendingUp,
   TrendingDown,
   Upload,
+  Calculator,
 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
@@ -60,7 +61,7 @@ interface StatementLine {
   reference: string;
   debit: number;
   credit: number;
-  runningBalance: number;
+  balance: number;
   isReconciled: boolean;
 }
 
@@ -455,7 +456,7 @@ export default function BankAccountDetailPage() {
           reference: tx.reference || "",
           debit: tx.debit || 0,
           credit: tx.credit || 0,
-          runningBalance: 0, // Will be calculated
+          balance: 0, // Will be calculated
           isReconciled: false,
         }));
         
@@ -540,6 +541,13 @@ export default function BankAccountDetailPage() {
     amount: line.credit > 0 ? line.credit : -line.debit,
     matched: false,
   }));
+
+  // Compute actual statement balance from last imported line (for display)
+  const computedStatementBalance = statementLines.length > 0
+    ? statementLines[statementLines.length - 1].balance
+    : parseFloat(reconcileBalance) || 0;
+  const computedBookBalance = account?.currentBalance || 0;
+  const computedDifference = computedStatementBalance - computedBookBalance;
 
   // ── Loading guard ─────────────────────────────────────────────────────────────
   if (loading) {
@@ -626,11 +634,8 @@ export default function BankAccountDetailPage() {
             <TabsTrigger value="transactions" className="dark:text-slate-200 dark:data-[state=active]:bg-slate-700">
               {t("bankAccount.transactions", "Transactions")}
             </TabsTrigger>
-            <TabsTrigger value="statements" className="dark:text-slate-200 dark:data-[state=active]:bg-slate-700">
-              {t("bankAccount.statementLines", "Statement Lines")}
-            </TabsTrigger>
             <TabsTrigger value="reconciliation" className="dark:text-slate-200 dark:data-[state=active]:bg-slate-700">
-              {t("bankAccount.reconciliation", "Reconciliation")}
+              {t("bankAccount.professionalReconciliation", "Reconciliation")}
             </TabsTrigger>
           </TabsList>
 
@@ -837,21 +842,85 @@ export default function BankAccountDetailPage() {
             </Card>
           </TabsContent>
 
-          {/* ── Statement Lines Tab ──────────────────────────────────────────── */}
-          <TabsContent value="statements">
+          {/* ── Reconciliation Tab ───────────────────────────────────────────── */}
+          <TabsContent value="reconciliation">
             <Card className="dark:bg-slate-800 dark:border-slate-700">
               <CardHeader>
                 <div className="flex justify-between items-center">
                   <CardTitle className="dark:text-white">
-                    {t(
-                      "bankAccount.bankStatementLines",
-                      "Bank Statement Lines",
-                    )}
+                    {t("bankAccount.bankReconciliation", "Bank Reconciliation")}
                   </CardTitle>
-                  {/* Fix D — Import Statement button */}
+                  <Button
+                    onClick={() => navigate(`/bank-accounts/${id}/reconcile`)}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <Calculator className="h-4 w-4 mr-2" />
+                    {t("bankAccount.professionalReconciliation", "Professional Reconciliation")}
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {/* Quick Stats - computed from imported statement lines */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <div className="p-4 bg-slate-700/50 rounded-lg border border-slate-600">
+                    <div className="text-sm text-slate-400 mb-1">Statement Balance</div>
+                    <div className="text-2xl font-bold text-white">
+                      {formatCurrency(computedStatementBalance, account?.currencyCode)}
+                    </div>
+                  </div>
+                  <div className="p-4 bg-slate-700/50 rounded-lg border border-slate-600">
+                    <div className="text-sm text-slate-400 mb-1">Book Balance</div>
+                    <div className="text-2xl font-bold text-white">
+                      {formatCurrency(computedBookBalance, account?.currencyCode)}
+                    </div>
+                  </div>
+                  <div className="p-4 bg-slate-700/50 rounded-lg border border-slate-600">
+                    <div className="text-sm text-slate-400 mb-1">Difference</div>
+                    <div className={`text-2xl font-bold ${computedDifference === 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      {formatCurrency(computedDifference, account?.currencyCode)}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Statement Details Input */}
+                <div className="mb-6 p-4 border rounded-lg bg-muted/40 space-y-4 dark:bg-slate-700/50 dark:border-slate-600">
+                  <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wide dark:text-slate-400">
+                    {t("bankAccount.reconcileInputs", "Statement Details")}
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <Label htmlFor="reconcileBalance" className="dark:text-slate-200">
+                        {t("bankAccount.statementBalance", "Statement Closing Balance")}
+                      </Label>
+                      <Input
+                        id="reconcileBalance"
+                        type="number"
+                        step="0.01"
+                        placeholder="0.00"
+                        value={reconcileBalance}
+                        onChange={(e) => setReconcileBalance(e.target.value)}
+                        className="dark:bg-slate-700 dark:text-white dark:border-slate-600 dark:placeholder:text-slate-400"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="reconcileDate" className="dark:text-slate-200">
+                        {t("bankAccount.statementDate", "Statement Date")}
+                      </Label>
+                      <Input
+                        id="reconcileDate"
+                        type="date"
+                        value={reconcileDate}
+                        onChange={(e) => setReconcileDate(e.target.value)}
+                        className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Import Statement Button */}
+                <div className="mb-6">
                   <Button
                     variant="outline"
-                    size="sm"
                     onClick={() => {
                       setImportFile(null);
                       setImportData([]);
@@ -864,16 +933,20 @@ export default function BankAccountDetailPage() {
                     {t("bankAccount.importStatement", "Import Statement")}
                   </Button>
                 </div>
-              </CardHeader>
-              <CardContent>
-                {statementLines.length === 0 ? (
-                  <p className="text-muted-foreground dark:text-slate-400 text-center py-8">
-                    {t(
-                      "bankAccount.noStatementLines",
-                      "No statement lines imported yet. Import a bank statement to see lines here.",
-                    )}
-                  </p>
-                ) : (
+
+                {/* Statement Lines Table */}
+                <div className="border rounded-lg dark:border-slate-600">
+                  <h3 className="font-medium p-4 border-b dark:border-slate-600 dark:text-slate-200">
+                    {t("bankAccount.importedStatementLines", "Imported Statement Lines")}
+                    <span className="ml-2 text-sm text-muted-foreground dark:text-slate-400">
+                      ({statementLines.length})
+                    </span>
+                  </h3>
+                  {statementLines.length === 0 ? (
+                    <div className="p-8 text-center text-muted-foreground dark:text-slate-400">
+                      {t("bankAccount.noImportedLines", "No statement lines imported yet. Click 'Import Statement' to upload a CSV file.")}
+                    </div>
+                  ) : (
                   <Table>
                     <TableHeader>
                       <TableRow className="dark:bg-slate-700/50">
@@ -922,7 +995,7 @@ export default function BankAccountDetailPage() {
                           </TableCell>
                           <TableCell className="dark:text-slate-300">
                             {formatCurrency(
-                              line.runningBalance,
+                              line.balance,
                               account?.currencyCode,
                             )}
                           </TableCell>
@@ -942,240 +1015,11 @@ export default function BankAccountDetailPage() {
                     </TableBody>
                   </Table>
                 )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* ── Reconciliation Tab ───────────────────────────────────────────── */}
-          <TabsContent value="reconciliation">
-            <Card className="dark:bg-slate-800 dark:border-slate-700">
-              <CardHeader>
-                <CardTitle className="dark:text-white">
-                  {t("bankAccount.reconciliation", "Bank Reconciliation")}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {/* Fix E — Statement balance & date inputs */}
-                <div className="mb-6 p-4 border rounded-lg bg-muted/40 space-y-4 dark:bg-slate-700/50 dark:border-slate-600">
-                  <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wide dark:text-slate-400">
-                    {t("bankAccount.reconcileInputs", "Statement Details")}
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <Label htmlFor="reconcileBalance" className="dark:text-slate-200">
-                        {t(
-                          "bankAccount.statementBalance",
-                          "Statement Closing Balance",
-                        )}
-                      </Label>
-                      <Input
-                        id="reconcileBalance"
-                        type="number"
-                        step="0.01"
-                        placeholder="0.00"
-                        value={reconcileBalance}
-                        onChange={(e) => setReconcileBalance(e.target.value)}
-                        className="dark:bg-slate-700 dark:text-white dark:border-slate-600 dark:placeholder:text-slate-400"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="reconcileDate" className="dark:text-slate-200">
-                        {t("bankAccount.statementDate", "Statement Date")}
-                      </Label>
-                      <Input
-                        id="reconcileDate"
-                        type="date"
-                        value={reconcileDate}
-                        onChange={(e) => setReconcileDate(e.target.value)}
-                        className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Difference display */}
-                <div className="mb-6 p-4 bg-muted rounded-lg dark:bg-slate-700/50">
-                  <div className="text-sm text-muted-foreground dark:text-slate-400">
-                    {t("bankAccount.difference", "Difference")}
-                  </div>
-                  <div
-                    className={`text-2xl font-bold ${
-                      getDifference() === 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
-                    }`}
-                  >
-                    {formatCurrency(getDifference(), account?.currencyCode)}
-                  </div>
-                </div>
-
-                {/* Two-column matching */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Journal Items */}
-                  <div>
-                    <h3 className="font-medium mb-2 dark:text-slate-200">
-                      {t(
-                        "bankAccount.unmatchedJournal",
-                        "Unmatched Journal Lines",
-                      )}
-                      <span className="ml-2 text-sm text-muted-foreground dark:text-slate-400">
-                        ({unmatchedJournalItems.length})
-                      </span>
-                    </h3>
-                    <div className="border rounded-lg dark:border-slate-600">
-                      {unmatchedJournalItems.length === 0 ? (
-                        <div className="p-4 text-center text-muted-foreground dark:text-slate-400">
-                          {t(
-                            "bankAccount.noJournalItems",
-                            "No unmatched journal items",
-                          )}
-                        </div>
-                      ) : (
-                        <Table>
-                          <TableHeader>
-                            <TableRow className="dark:bg-slate-700/50">
-                              <TableHead />
-                              <TableHead className="dark:text-slate-200">
-                                {t("bankAccount.date", "Date")}
-                              </TableHead>
-                              <TableHead className="dark:text-slate-200">
-                                {t("bankAccount.description", "Description")}
-                              </TableHead>
-                              <TableHead className="dark:text-slate-200">
-                                {t("bankAccount.amount", "Amount")}
-                              </TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody className="dark:bg-slate-800">
-                            {unmatchedJournalItems.map((item) => (
-                              <TableRow
-                                key={item._id}
-                                className={`cursor-pointer dark:hover:bg-slate-700/30 ${selectedJournal === item._id ? "bg-muted dark:bg-slate-700" : ""}`}
-                                onClick={() => setSelectedJournal(item._id)}
-                              >
-                                <TableCell>
-                                  <input
-                                    type="radio"
-                                    readOnly
-                                    checked={selectedJournal === item._id}
-                                    className="dark:accent-slate-400"
-                                  />
-                                </TableCell>
-                                <TableCell className="dark:text-slate-300">{formatDate(item.date)}</TableCell>
-                                <TableCell className="dark:text-slate-300">{item.description}</TableCell>
-                                <TableCell className={item.amount > 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}>
-                                  {formatCurrency(
-                                    Math.abs(item.amount),
-                                    account?.currencyCode,
-                                  )}
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Bank Statement Items */}
-                  <div>
-                    <h3 className="font-medium mb-2 dark:text-slate-200">
-                      {t(
-                        "bankAccount.unmatchedStatement",
-                        "Unmatched Statement Lines",
-                      )}
-                      <span className="ml-2 text-sm text-muted-foreground dark:text-slate-400">
-                        ({unmatchedStatementItems.length})
-                      </span>
-                    </h3>
-                    <div className="border rounded-lg dark:border-slate-600">
-                      {unmatchedStatementItems.length === 0 ? (
-                        <div className="p-4 text-center text-muted-foreground dark:text-slate-400">
-                          {t(
-                            "bankAccount.noBankItems",
-                            "No unmatched statement items. Import a statement first.",
-                          )}
-                        </div>
-                      ) : (
-                        <Table>
-                          <TableHeader>
-                            <TableRow className="dark:bg-slate-700/50">
-                              <TableHead />
-                              <TableHead className="dark:text-slate-200">
-                                {t("bankAccount.date", "Date")}
-                              </TableHead>
-                              <TableHead className="dark:text-slate-200">
-                                {t("bankAccount.description", "Description")}
-                              </TableHead>
-                              <TableHead className="dark:text-slate-200">
-                                {t("bankAccount.amount", "Amount")}
-                              </TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody className="dark:bg-slate-800">
-                            {unmatchedStatementItems.map((item) => (
-                              <TableRow
-                                key={item._id}
-                                className={`cursor-pointer dark:hover:bg-slate-700/30 ${selectedBank === item._id ? "bg-muted dark:bg-slate-700" : ""}`}
-                                onClick={() => setSelectedBank(item._id)}
-                              >
-                                <TableCell>
-                                  <input
-                                    type="radio"
-                                    readOnly
-                                    checked={selectedBank === item._id}
-                                    className="dark:accent-slate-400"
-                                  />
-                                </TableCell>
-                                <TableCell className="dark:text-slate-300">{formatDate(item.date)}</TableCell>
-                                <TableCell className="dark:text-slate-300">{item.description}</TableCell>
-                                <TableCell className={item.amount > 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}>
-                                  {formatCurrency(
-                                    Math.abs(item.amount),
-                                    account?.currencyCode,
-                                  )}
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Fix E — Reconcile button (calls real endpoint) */}
-                <div className="mt-6 flex flex-col items-center gap-3">
-                  {reconcileMessage && (
-                    <p
-                      className={`text-sm font-medium ${
-                        reconcileMessage.startsWith("✓")
-                          ? "text-green-600 dark:text-green-400"
-                          : "text-red-600 dark:text-red-400"
-                      }`}
-                    >
-                      {reconcileMessage}
-                    </p>
-                  )}
-                  <Button
-                    disabled={reconciling || !reconcileBalance}
-                    onClick={handleReconcile}
-                    className="dark:bg-slate-700 dark:text-white dark:hover:bg-slate-600"
-                  >
-                    {reconciling ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        {t("bankAccount.reconciling", "Reconciling...")}
-                      </>
-                    ) : (
-                      <>
-                        <Check className="mr-2 h-4 w-4" />
-                        {t("bankAccount.match", "Match Selected")}
-                      </>
-                    )}
-                  </Button>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
+
         </Tabs>
       </div>
 

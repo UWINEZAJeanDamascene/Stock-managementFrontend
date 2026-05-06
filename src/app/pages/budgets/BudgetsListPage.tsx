@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { budgetsApi, Budget } from "@/lib/api";
 import { Layout } from "../../layout/Layout";
+import { BudgetImportDialog } from "./BudgetImportDialog";
 import {
   Plus,
   Eye,
@@ -21,6 +22,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Download,
+  Upload,
   TrendingUp,
   TrendingDown,
   DollarSign,
@@ -129,6 +131,9 @@ export default function BudgetsListPage() {
     newPeriodEnd: "",
     newName: "",
   });
+
+  // Import dialog
+  const [showImportDialog, setShowImportDialog] = useState(false);
 
   // Reject form
   const [rejectReason, setRejectReason] = useState("");
@@ -514,6 +519,10 @@ export default function BudgetsListPage() {
             </div>
           </div>
           <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setShowImportDialog(true)} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
+              <Upload className="mr-2 h-4 w-4" />
+              {t("common.import", "Import")}
+            </Button>
             <Button variant="outline" onClick={handleExport} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
               <Download className="mr-2 h-4 w-4" />
               {t("common.export", "Export")}
@@ -1330,6 +1339,16 @@ export default function BudgetsListPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Import Dialog */}
+        <BudgetImportDialog
+          open={showImportDialog}
+          onOpenChange={setShowImportDialog}
+          onSuccess={() => {
+            fetchBudgets();
+            fetchSummary();
+          }}
+        />
       </div>
     </Layout>
   );

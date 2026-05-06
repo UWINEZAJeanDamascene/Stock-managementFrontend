@@ -1,3 +1,11 @@
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+// Utility to merge Tailwind classes
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+
 // Currency formatting utilities for Rwandan Francs (FRW)
 
 export function formatCurrency(value: number | undefined | null): string {

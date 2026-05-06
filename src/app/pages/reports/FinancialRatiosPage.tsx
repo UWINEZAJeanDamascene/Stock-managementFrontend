@@ -22,6 +22,7 @@ import {
   ChevronDown,
   ChevronUp,
   BarChart2,
+  Landmark,
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
@@ -836,10 +837,41 @@ export default function FinancialRatiosPage() {
                 </div>
               </div>
 
-              {/* 6. Source data inputs */}
+              {/* 6. Debt Metrics Section */}
+              {report.debt_metrics?.metrics && (
+                <div>
+                  <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                    <Landmark className="h-3.5 w-3.5" />
+                    Debt & Borrowing Metrics
+                  </p>
+                  <div className="bg-slate-900/50 border border-slate-700/50 rounded-xl p-5">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {Object.entries(report.debt_metrics.metrics).map(([key, metric]: [string, any]) => (
+                        <div key={key} className="bg-slate-800/50 rounded-lg p-4">
+                          <p className="text-xs text-slate-400 mb-1">{metric.label}</p>
+                          <p className={`text-lg font-semibold ${
+                            metric.status === 'good' ? 'text-emerald-400' :
+                            metric.status === 'warning' ? 'text-amber-400' :
+                            metric.status === 'danger' ? 'text-rose-400' : 'text-slate-200'
+                          }`}>
+                            {metric.value !== null && metric.value !== undefined
+                              ? metric.value.toLocaleString() + (metric.unit || '')
+                              : '-'}
+                          </p>
+                          {metric.description && (
+                            <p className="text-[10px] text-slate-500 mt-1">{metric.description}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 7. Source data inputs */}
               <InputDataSection report={report} />
 
-              {/* 7. Footer timestamp */}
+              {/* 8. Footer timestamp */}
               <p className="text-[11px] text-slate-400 dark:text-slate-600 text-center pb-2">
                 Generated {format(new Date(report.generated_at), 'dd MMM yyyy HH:mm')} ·{' '}
                 Period: {report.days_in_period} days

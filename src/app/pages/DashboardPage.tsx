@@ -4,6 +4,7 @@ import { dashboardApi, type ExecutiveDashboardData } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { Skeleton } from '@/app/components/ui/skeleton';
+import { Badge } from '@/app/components/ui/badge';
 import {
   DollarSign,
   TrendingUp,
@@ -20,6 +21,8 @@ import {
   CreditCard,
   BarChart3,
   UserPlus,
+  Landmark,
+  ArrowRight,
 } from 'lucide-react';
 
 function formatCurrency(value: number): string {
@@ -150,6 +153,7 @@ export default function DashboardPage() {
   const metrics = data?.key_metrics;
   const ar = data?.accounts_receivable;
   const journalEntries = data?.recent_journal_entries || [];
+  const upcomingDebt = data?.upcoming_debt_payments;
   const hasNegativeCash = (metrics?.cash_balance.current ?? 0) < 0;
   const cashBalance = metrics?.cash_balance.current ?? 0;
 
@@ -457,6 +461,80 @@ export default function DashboardPage() {
           </Card>
         </div>
       </div>
+
+      {/* Row 3: Upcoming Debt Payments */}
+      {upcomingDebt && (
+        <div className="mt-6">
+          <Card className="bg-slate-900/50 border-slate-700/50">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base font-semibold text-slate-200 flex items-center gap-2">
+                  <Landmark className="h-4 w-4 text-amber-400" />
+                  Upcoming Debt Payments
+                  <Badge variant="secondary" className="bg-amber-500/20 text-amber-300 border-amber-500/30">
+                    {upcomingDebt.totalUpcoming} due
+                  </Badge>
+                </CardTitle>
+                <div className="text-right">
+                  <p className="text-xs text-slate-400">Total Due (Next 30 Days)</p>
+                  <p className="text-lg font-bold text-amber-400">{formatCurrency(upcomingDebt.totalAmount)}</p>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {upcomingDebt.totalUpcoming === 0 ? (
+                <div className="text-center py-8 text-slate-500">
+                  <Landmark className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                  <p className="text-sm">No debt payments due in the next 30 days</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {upcomingDebt.payments.map((payment: any) => (
+                  <div
+                    key={payment.loanId}
+                    className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50 hover:border-amber-500/30 transition-colors"
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <p className="text-sm font-medium text-slate-200">{payment.loanName}</p>
+                        {payment.loanNumber && (
+                          <p className="text-xs text-slate-500">{payment.loanNumber}</p>
+                        )}
+                      </div>
+                      <Badge
+                        variant="outline"
+                        className={`text-xs ${
+                          payment.daysUntil <= 7
+                            ? 'border-rose-500/50 text-rose-400 bg-rose-500/10'
+                            : payment.daysUntil <= 14
+                            ? 'border-amber-500/50 text-amber-400 bg-amber-500/10'
+                            : 'border-emerald-500/50 text-emerald-400 bg-emerald-500/10'
+                        }`}
+                      >
+                        {payment.daysUntil === 0
+                          ? 'Today'
+                          : payment.daysUntil === 1
+                          ? 'Tomorrow'
+                          : `${payment.daysUntil} days`}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs text-slate-500">Due {new Date(payment.dueDate).toLocaleDateString()}</p>
+                        <p className="text-lg font-semibold text-amber-400">
+                          {formatCurrency(payment.estimatedAmount)}
+                        </p>
+                      </div>
+                      <ArrowRight className="h-4 w-4 text-slate-600" />
+                    </div>
+                  </div>
+                ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </Layout>
   );
 }

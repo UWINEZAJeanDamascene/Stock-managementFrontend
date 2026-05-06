@@ -81,6 +81,7 @@ import { BudgetApprovalPanel } from "./BudgetApprovalPanel";
 import { BudgetAlertPanel } from "./BudgetAlertPanel";
 import { BudgetPeriodLockPanel } from "./BudgetPeriodLockPanel";
 import { BudgetRevisionPanel } from "./BudgetRevisionPanel";
+import { BudgetScenarioSelector } from "./BudgetScenarioSelector";
 
 const MONTHS = [
   { value: 1, label: "Jan" },
@@ -445,7 +446,26 @@ export default function BudgetDetailPage() {
                 t("budgets.noDescription", "No description")}
             </p>
           </div>
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-2 flex-wrap items-center">
+            {/* Scenario Selector */}
+            <BudgetScenarioSelector
+              budgetId={id!}
+              budgetName={budget.name}
+              currentScenario={{
+                scenario_type: budget.scenario_type,
+                scenario_name: budget.scenario_name,
+                is_primary_scenario: budget.is_primary_scenario
+              }}
+              onScenarioChange={(scenario) => {
+                // Navigate to the selected scenario
+                navigate(`/budgets/${scenario._id}`);
+              }}
+              onRefresh={() => {
+                fetchBudget();
+                fetchLines();
+              }}
+            />
+
             {budget.status === "draft" && (
               <>
                 <Button

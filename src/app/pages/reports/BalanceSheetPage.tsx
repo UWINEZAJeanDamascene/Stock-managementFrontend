@@ -11,7 +11,9 @@ import {
   AlertTriangle,
   Building2,
   Landmark,
-  Wallet
+  Wallet,
+  Clock,
+  CalendarClock
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
@@ -60,18 +62,45 @@ function SectionRow({
   );
 }
 
+function MaturityBadge({ classification }: {
+  classification?: string;
+}) {
+  if (!classification) return null;
+
+  const isCurrent = classification === "current";
+  const isNonCurrent = classification === "non_current" || classification === "non_current_assumed";
+
+  return (
+    <span className={`inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded ${
+      isCurrent
+        ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+        : isNonCurrent
+          ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
+          : 'bg-gray-100 text-gray-600 dark:bg-gray-800'
+    }`}>
+      {isCurrent ? (
+        <><Clock className="h-3 w-3" /> Current (&lt;12m)</>
+      ) : isNonCurrent ? (
+        <><CalendarClock className="h-3 w-3" /> Non-Current (&gt;12m)</>
+      ) : null}
+    </span>
+  );
+}
+
 function ExpandableSection({
   title,
   current,
   comparative,
   showComparative: _showComparative,
-  defaultExpanded = false
+  defaultExpanded = false,
+  showMaturity = false
 }: {
   title: string;
   current: BSSection;
   comparative?: BSSection;
   showComparative: boolean;
   defaultExpanded?: boolean;
+  showMaturity?: boolean;
 }) {
   const [expanded, setExpanded] = useState(defaultExpanded);
 
@@ -90,15 +119,28 @@ function ExpandableSection({
         <div className="border-l-2 ml-2">
           {current.lines.map((line) => {
             const compLine = comparative?.lines.find(l => l.account_code === line.account_code);
+            const hasMaturityData = line.maturity_classification || line.due_within_12_months !== undefined;
+
             return (
-              <SectionRow
-                key={line.account_code}
-                label={`${line.account_code} ${line.account_name}`}
-                current={line.amount}
-                comparative={compLine?.amount}
-                indent={1}
-                isNegative={line.amount < 0}
-              />
+              <div key={line.account_code}>
+                <SectionRow
+                  label={`${line.account_code} ${line.account_name}`}
+                  current={line.amount}
+                  comparative={compLine?.amount}
+                  indent={1}
+                  isNegative={line.amount < 0}
+                />
+                {showMaturity && hasMaturityData && (
+                  <div className="flex items-center gap-2 pl-8 py-0.5">
+                    <MaturityBadge classification={line.maturity_classification} />
+                    {line.due_within_12_months !== undefined && line.due_after_12_months !== undefined && (
+                      <span className="text-xs text-muted-foreground">
+                        Due ≤12m: {fmt(line.due_within_12_months)} | Due &gt;12m: {fmt(line.due_after_12_months)}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
             );
           })}
         </div>
@@ -312,6 +354,7 @@ export default function BalanceSheetPage() {
                 comparative={comp?.non_current_liabilities}
                 showComparative={showComparative}
                 defaultExpanded={false}
+                showMaturity={true}
               />
               <SectionRow
                 label="Total Non-Current Liabilities"
@@ -328,6 +371,7 @@ export default function BalanceSheetPage() {
                 comparative={comp?.current_liabilities}
                 showComparative={showComparative}
                 defaultExpanded={true}
+                showMaturity={true}
               />
               <SectionRow
                 label="Total Current Liabilities"

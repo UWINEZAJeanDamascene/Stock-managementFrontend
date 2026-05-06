@@ -46,6 +46,7 @@ import {
   LayoutDashboard,
   Banknote,
   ClipboardList,
+  Clock,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -393,6 +394,12 @@ const reportsNav: NavSection = {
       nameKey: "nav.financialRatios",
       href: "/reports/financial-ratios",
       icon: Gauge,
+      permission: "reports:read",
+    },
+    {
+      nameKey: "nav.debtMaturity",
+      href: "/reports/debt-maturity",
+      icon: Clock,
       permission: "reports:read",
     },
   ],

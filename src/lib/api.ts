@@ -463,6 +463,19 @@ export interface ExecutiveDashboardData {
     totalDebit?: number;
     totalCredit?: number;
   }>;
+  upcoming_debt_payments: {
+    totalUpcoming: number;
+    totalAmount: number;
+    payments: Array<{
+      loanId: string;
+      loanName: string;
+      loanNumber?: string;
+      dueDate: string;
+      daysUntil: number;
+      estimatedAmount: number;
+      outstandingBalance: number;
+    }>;
+  };
   date_context: {
     this_month_start: string;
     this_month_end: string;
@@ -2563,6 +2576,48 @@ export const reportsApi = {
     }>(`/reports/inactive-clients${query ? `?${query}` : ""}`);
   },
 
+  // Liability Reports (IFRS/IAS 1)
+  getDebtMaturitySchedule: (params: {
+    as_of_date: string;
+    years_ahead?: number;
+  }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<
+      DebtMaturityReport & { from_cache: boolean }
+    >(`/reports/debt-maturity${query ? `?${query}` : ""}`);
+  },
+
+  getInterestExpenseAnalysis: (params: {
+    date_from: string;
+    date_to: string;
+  }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{
+      company_id: string;
+      period: { from: string; to: string };
+      generated_at: string;
+      summary: {
+        total_interest_expense: number;
+        expected_interest: number;
+        variance: number;
+        loan_count: number;
+      };
+      by_source: Array<{
+        source: string;
+        total_amount: number;
+        entry_count: number;
+      }>;
+      loan_details: Array<{
+        loanNumber: string;
+        name: string;
+        outstandingBalance: number;
+        interestRate: number;
+        annualInterest: number;
+      }>;
+      from_cache: boolean;
+    }>(`/reports/interest-expense${query ? `?${query}` : ""}`);
+  },
+
   // Export functions
   exportExcel: (
     reportType: string,
@@ -3541,6 +3596,21 @@ export interface Liability {
     reference?: string;
     notes?: string;
   }>;
+  // IFRS 9 Fields
+  ifrs9Classification?: 'amortized_cost' | 'fvoci' | 'fvtpl';
+  impairmentStage?: 'stage_1' | 'stage_2' | 'stage_3';
+  eclProvision?: number;
+  probabilityOfDefault?: number;
+  lossGivenDefault?: number;
+  exposureAtDefault?: number;
+  effectiveInterestRate?: number;
+  significantIncreaseInCreditRisk?: boolean;
+  creditRiskAssessedAt?: string;
+  daysPastDue?: number;
+  forbearanceStatus?: 'none' | 'temporary' | 'permanent';
+  defaultDate?: string;
+  writeOffAmount?: number;
+  writeOffDate?: string;
 }
 
 export interface LiabilityTransaction {
@@ -4739,6 +4809,135 @@ export const budgetsApi = {
       data: { workflow: BudgetWorkflowConfig; matched_criteria: any } | null;
       message: string;
     }>("/budgets/workflow-configs/test-match", { method: "POST", body: data }),
+
+  // ── IMPORT/EXPORT ─────────────────────────────────────────────────────
+  downloadImportTemplate: (format: "excel" | "csv" = "excel") => {
+    const token = localStorage.getItem("token");
+    return fetch(`${API_BASE_URL}/budgets/import/template?format=${format}`, {
+      headers: { Authorization: token ? `Bearer ${token}` : "" },
+    });
+  },
+  parseImport: (file: File) => {
+    const token = localStorage.getItem("token");
+    const formData = new FormData();
+    formData.append("file", file);
+    return fetch(`${API_BASE_URL}/budgets/import/parse`, {
+      method: "POST",
+      headers: { Authorization: token ? `Bearer ${token}` : "" },
+      body: formData,
+    }).then((res) => res.json());
+  },
+  validateImport: (parsedData: any) =>
+    request<{
+      success: boolean;
+      data: {
+        isValid: boolean;
+        budgets: any[];
+        lines: any[];
+        errors: any[];
+        warnings: any[];
+        suggestions: {
+          accounts: Array<{ id: string; code: string; name: string }>;
+          departments: Array<{ id: string; name: string }>;
+        };
+      };
+      message: string;
+    }>("/budgets/import/validate", { method: "POST", body: { parsedData } }),
+  executeImport: (
+    validatedData: any,
+    options?: {
+      updateExisting?: boolean;
+      skipErrors?: boolean;
+      createMissingAccounts?: boolean;
+      defaultFiscalYear?: number;
+    },
+  ) =>
+    request<{
+      success: boolean;
+      data: {
+        budgetsCreated: number;
+        budgetsUpdated: number;
+        linesCreated: number;
+        linesUpdated: number;
+        errors: any[];
+        budgets: Budget[];
+      };
+      message: string;
+    }>("/budgets/import/execute", {
+      method: "POST",
+      body: { validatedData, options },
+    }),
+
+  // ── BUDGET SCENARIOS / WHAT-IF ANALYSIS ────────────────────────────────
+  getScenarios: (budgetId: string) =>
+    request<{
+      success: boolean;
+      data: Budget[];
+      count: number;
+    }>(`/budgets/${budgetId}/scenarios`),
+  createScenario: (
+    budgetId: string,
+    data: {
+      scenario_type: "base" | "optimistic" | "pessimistic" | "custom";
+      scenario_name?: string;
+      adjustments?: {
+        amount_adjustment_percent?: number;
+        line_adjustment_percent?: number;
+        category_adjustments?: Record<string, number>;
+      };
+      notes?: string;
+    },
+  ) =>
+    request<{ success: boolean; data: Budget; message: string }>(
+      `/budgets/${budgetId}/scenarios`,
+      { method: "POST", body: data },
+    ),
+  compareScenarios: (scenarioIds: string[]) =>
+    request<{
+      success: boolean;
+      data: {
+        base_scenario: {
+          scenario_id: string;
+          scenario_type: string;
+          scenario_name: string;
+          is_primary: boolean;
+          total_amount: number;
+          total_budgeted: number;
+          line_count: number;
+          by_category: Record<string, number>;
+          by_month: Record<string, number>;
+        };
+        scenarios: Array<{
+          scenario_id: string;
+          scenario_type: string;
+          scenario_name: string;
+          is_primary: boolean;
+          total_amount: number;
+          total_budgeted: number;
+          line_count: number;
+          by_category: Record<string, number>;
+          by_month: Record<string, number>;
+          variance_percent: number;
+          variance_amount: number;
+        }>;
+        summary: {
+          total_scenarios: number;
+          max_amount: number;
+          min_amount: number;
+          avg_amount: number;
+        };
+      };
+    }>("/budgets/scenarios/compare", { method: "POST", body: { scenarioIds } }),
+  setPrimaryScenario: (scenarioId: string) =>
+    request<{ success: boolean; data: Budget; message: string }>(
+      `/budgets/scenarios/${scenarioId}/set-primary`,
+      { method: "POST" },
+    ),
+  deleteScenario: (scenarioId: string) =>
+    request<{ success: boolean; data: { deleted: boolean; scenario_id: string }; message: string }>(
+      `/budgets/scenarios/${scenarioId}`,
+      { method: "DELETE" },
+    ),
 };
 
 // Notifications API
@@ -5027,42 +5226,6 @@ export const backupApi = {
     request<{ success: boolean; data: BackupStats }>("/backups/stats"),
 };
 
-// Departments API
-export const departmentsApi = {
-  getAll: (params?: { search?: string }) => {
-    const query = buildQuery(params as Record<string, any>);
-    return request<{ success: boolean; count: number; data: unknown[] }>(
-      `/departments${query ? `?${query}` : ""}`,
-    );
-  },
-  getById: (id: string) =>
-    request<{ success: boolean; data: unknown }>(`/departments/${id}`),
-  create: (data: { name: string; description?: string }) =>
-    request<{ success: boolean; data: unknown }>("/departments", {
-      method: "POST",
-      body: data,
-    }),
-  update: (id: string, data: { name?: string; description?: string }) =>
-    request<{ success: boolean; data: unknown }>(`/departments/${id}`, {
-      method: "PUT",
-      body: data,
-    }),
-  delete: (id: string) =>
-    request<{ success: boolean; message: string }>(`/departments/${id}`, {
-      method: "DELETE",
-    }),
-  assignUsers: (id: string, userIds: string[]) =>
-    request<{ success: boolean; message: string; data: unknown }>(
-      `/departments/${id}/assign-users`,
-      { method: "PUT", body: { userIds } },
-    ),
-  removeUser: (id: string, userId: string) =>
-    request<{ success: boolean; message: string }>(
-      `/departments/${id}/remove-user/${userId}`,
-      { method: "PUT" },
-    ),
-};
-
 // Audit Trail API
 export const auditTrailApi = {
   getAll: (params?: Record<string, string>) => {
@@ -5260,10 +5423,19 @@ export interface PettyCashExpense {
   voucherNumber?: string;
   description: string;
   amount: number;
+  expenseAccountId?: string;
   category: string;
+  subcategory?: string;
+  recipientType?: "staff" | "client" | "mixed" | null;
+  isTaxable?: boolean;
+  isStaffAdvance?: boolean;
+  staffAdvanceStatus?: "outstanding" | "reconciled" | "deducted_from_salary" | null;
+  purpose?: string;
   date: string;
   receiptNumber?: string;
   receiptImage?: { name: string; url: string };
+  receiptUploadUrl?: string;
+  receiptUploadName?: string;
   notes?: string;
   status: "pending" | "approved" | "rejected" | "reimbursed";
   approvedBy?: { _id: string; name: string; email: string };
@@ -5440,13 +5612,21 @@ export const pettyCashApi = {
     id: string,
     data: {
       amount: number;
-      expenseAccountId: string;
+      expenseAccountId?: string;
       description?: string;
       receiptRef?: string;
       transactionDate?: string;
+      category?: string;
+      subcategory?: string;
+      recipientType?: "staff" | "client" | "mixed";
+      isTaxable?: boolean;
+      isStaffAdvance?: boolean;
+      purpose?: string;
+      receiptUploadUrl?: string;
+      receiptUploadName?: string;
     },
   ) =>
-    request<{ success: boolean; data: PettyCashTransaction }>(
+    request<{ success: boolean; warnings?: string[]; data: PettyCashTransaction }>(
       `/petty-cash/funds/${id}/expense`,
       { method: "POST", body: data },
     ),
@@ -7609,15 +7789,406 @@ export const bankAccountsApi = {
     request<{
       success: boolean;
       data: {
-        matched: number;
-        errors?: Array<{ statementLineId: string; error: string }>;
+        applied: number;
+        failed: number;
         stats: ReconciliationSummary;
       };
       message: string;
-    }>(`/bank-accounts/${id}/reconciliations/${reconciliationId}/suggestions/apply`, {
+    }>(`/bank-accounts/${id}/reconciliations/${reconciliationId}/apply-suggestions`, {
       method: "POST",
       body: data,
     }),
+
+  // ═══════════════════════════════════════════════════════════
+  // NEW BACKEND ENDPOINTS (bankReconciliationController)
+  // ═══════════════════════════════════════════════════════════
+
+  /**
+   * Start a new reconciliation session (new backend)
+   * POST /:id/reconciliation/start
+   */
+  startReconciliationNew: (
+    id: string,
+    data: {
+      statementDateStart: string;
+      statementDateEnd: string;
+      statementClosingBalance: number;
+      notes?: string;
+    },
+  ) =>
+    request<{
+      success: boolean;
+      data: {
+        reconciliationId: string;
+        bankAccount: { id: string; name: string; ledgerAccountId: string };
+        statementDateStart: string;
+        statementDateEnd: string;
+        statementClosingBalance: number;
+        bookClosingBalance: number;
+        difference: number;
+        status: string;
+      };
+      message: string;
+    }>(`/bank-accounts/${id}/reconciliation/start`, {
+      method: "POST",
+      body: data,
+    }),
+
+  /**
+   * Get reconciliation data - both sides (new backend)
+   * GET /:id/reconciliation/data
+   */
+  getReconciliationDataNew: (
+    id: string,
+    params?: { reconciliationId?: string },
+  ) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{
+      success: boolean;
+      data: {
+        reconciliationId: string;
+        status: string;
+        period: { start: string; end: string };
+        statementClosingBalance: number;
+        bookClosingBalance: number;
+        journalLines: Array<{
+          type: "journal";
+          journalEntryId: string;
+          lineId: string;
+          entryNumber: string;
+          date: string;
+          description: string;
+          debit: number;
+          credit: number;
+          amount: number;
+          isDebit: boolean;
+          reconciled: boolean;
+          matchedStatementLineIds?: string[];
+          sourceType: string;
+          isLocked: boolean;
+        }>;
+        journalSummary: {
+          totalLines: number;
+          reconciledCount: number;
+          unreconciledCount: number;
+          totalDebits: number;
+          totalCredits: number;
+          bookBalance: number;
+        };
+        bankLines: Array<{
+          type: "bank";
+          id: string;
+          date: string;
+          description: string;
+          debit: number;
+          credit: number;
+          amount: number;
+          isDebit: boolean;
+          balance?: number;
+          reference?: string;
+          reconciled: boolean;
+          status: string;
+          matchedAmount: number;
+        }>;
+        bankSummary: {
+          totalLines: number;
+          reconciledCount: number;
+          unreconciledCount: number;
+          lastStatementBalance: number;
+        };
+        summary: {
+          depositsInTransit: number;
+          outstandingChecks: number;
+          bankCreditsNotInBooks: number;
+          bankChargesNotInBooks: number;
+          adjustedBankBalance: number;
+          adjustedBookBalance: number;
+          difference: number;
+        };
+      };
+    }>(`/bank-accounts/${id}/reconciliation/data${query ? `?${query}` : ""}`);
+  },
+
+  /**
+   * Get auto-match suggestions (new backend)
+   * GET /:id/reconciliation/suggest
+   */
+  getMatchSuggestionsNew: (id: string, params?: { reconciliationId?: string }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{
+      success: boolean;
+      data: Array<{
+        statementLineId: string;
+        journalEntryId: string;
+        journalLineId: string;
+        score: number;
+        matchType: string;
+        details: {
+          statementAmount: number;
+          journalAmount: number;
+          daysDiff: number;
+          statementDescription: string;
+          journalDescription: string;
+        };
+      }>;
+      summary: {
+        totalStatementLines: number;
+        totalJournalLines: number;
+        suggestionsCount: number;
+      };
+    }>(`/bank-accounts/${id}/reconciliation/suggest${query ? `?${query}` : ""}`);
+  },
+
+  /**
+   * Match items - user approved (new backend)
+   * POST /:id/reconciliation/match-items
+   */
+  matchItemsNew: (
+    id: string,
+    data: {
+      reconciliationId?: string;
+      journalEntryId: string;
+      journalLineId?: string;
+      statementLineId: string;
+    },
+  ) =>
+    request<{
+      success: boolean;
+      message: string;
+      data: {
+        matchId: string;
+        journalEntryId: string;
+        journalLineId: string;
+        statementLineId: string;
+        isFullyReconciled: boolean;
+        matchedAmount: number;
+        statementAmount: number;
+        difference: number;
+      };
+    }>(`/bank-accounts/${id}/reconciliation/match-items`, {
+      method: "POST",
+      body: data,
+    }),
+
+  /**
+   * Unmatch items (new backend)
+   * POST /:id/reconciliation/unmatch
+   */
+  unmatchItemsNew: (
+    id: string,
+    data: {
+      matchId: string;
+    },
+  ) =>
+    request<{
+      success: boolean;
+      message: string;
+      data: {
+        remainingMatches: number;
+        isFullyReconciled: boolean;
+      };
+    }>(`/bank-accounts/${id}/reconciliation/unmatch`, {
+      method: "POST",
+      body: data,
+    }),
+
+  /**
+   * Ignore statement line (new backend)
+   * POST /:id/reconciliation/ignore
+   */
+  ignoreStatementLineNew: (
+    id: string,
+    data: {
+      statementLineId: string;
+    },
+  ) =>
+    request<{
+      success: boolean;
+      message: string;
+      data: { statementLineId: string };
+    }>(`/bank-accounts/${id}/reconciliation/ignore`, {
+      method: "POST",
+      body: data,
+    }),
+
+  /**
+   * Create adjusting entry (new backend)
+   * POST /:id/reconciliation/adjusting-entry
+   */
+  createAdjustingEntryNew: (
+    id: string,
+    data: {
+      reconciliationId?: string;
+      statementLineId: string;
+      expenseAccountCode?: string;
+      description?: string;
+      date?: string;
+    },
+  ) =>
+    request<{
+      success: boolean;
+      message: string;
+      data: {
+        journalEntryId: string;
+        entryNumber: string;
+        statementLineId: string;
+        amount: number;
+        isDebit: boolean;
+        lines: any[];
+      };
+    }>(`/bank-accounts/${id}/reconciliation/adjusting-entry`, {
+      method: "POST",
+      body: data,
+    }),
+
+  /**
+   * Complete reconciliation - only when difference = 0 (new backend)
+   * POST /:id/reconciliation/complete
+   */
+  completeReconciliationNew: (
+    id: string,
+    data: {
+      reconciliationId?: string;
+      notes?: string;
+      force?: boolean;
+    },
+  ) =>
+    request<{
+      success: boolean;
+      message: string;
+      data: {
+        reconciliationId: string;
+        completedAt: string;
+        lockedEntriesCount: number;
+        finalDifference: number;
+        bookBalance: number;
+        statementBalance: number;
+      };
+    }>(`/bank-accounts/${id}/reconciliation/complete`, {
+      method: "POST",
+      body: data,
+    }),
+
+  /**
+   * Cancel reconciliation (new backend)
+   * POST /:id/reconciliation/cancel
+   */
+  cancelReconciliationNew: (
+    id: string,
+    data: {
+      reconciliationId?: string;
+    },
+  ) =>
+    request<{
+      success: boolean;
+      message: string;
+      data: { reconciliationId: string };
+    }>(`/bank-accounts/${id}/reconciliation/cancel`, {
+      method: "POST",
+      body: data,
+    }),
+
+  /**
+   * Import statement CSV (new backend)
+   * POST /:id/reconciliation/import
+   */
+  importStatementNew: (
+    id: string,
+    data: {
+      reconciliationId?: string;
+      dateFormat?: string;
+      skipFirstRow?: boolean;
+      dateColumn?: string;
+      descriptionColumn?: string;
+      debitColumn?: string;
+      creditColumn?: string;
+      balanceColumn?: string;
+      referenceColumn?: string;
+      file: File;
+    },
+  ) => {
+    const formData = new FormData();
+    formData.append("file", data.file);
+    if (data.reconciliationId) formData.append("reconciliationId", data.reconciliationId);
+    if (data.dateFormat) formData.append("dateFormat", data.dateFormat);
+    if (data.skipFirstRow !== undefined) formData.append("skipFirstRow", String(data.skipFirstRow));
+    if (data.dateColumn) formData.append("dateColumn", data.dateColumn);
+    if (data.descriptionColumn) formData.append("descriptionColumn", data.descriptionColumn);
+    if (data.debitColumn) formData.append("debitColumn", data.debitColumn);
+    if (data.creditColumn) formData.append("creditColumn", data.creditColumn);
+    if (data.balanceColumn) formData.append("balanceColumn", data.balanceColumn);
+    if (data.referenceColumn) formData.append("referenceColumn", data.referenceColumn);
+
+    return request<{
+      success: boolean;
+      message: string;
+      data: {
+        count: number;
+        reconciliationId?: string;
+        firstDate?: string;
+        lastDate?: string;
+      };
+    }>(`/bank-accounts/${id}/reconciliation/import`, {
+      method: "POST",
+      body: formData,
+    });
+  },
+
+  /**
+   * List all reconciliations (new backend)
+   * GET /:id/reconciliations
+   */
+  listReconciliationsNew: (
+    id: string,
+    params?: { status?: string; limit?: number; page?: number },
+  ) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{
+      success: boolean;
+      data: any[];
+      pagination: {
+        total: number;
+        page: number;
+        limit: number;
+        pages: number;
+      };
+    }>(`/bank-accounts/${id}/reconciliations${query ? `?${query}` : ""}`);
+  },
+
+  /**
+   * Get reconciliation report (new backend)
+   * GET /:id/reconciliation/report
+   */
+  getReconciliationReportNew: (
+    id: string,
+    params?: { reconciliationId?: string },
+  ) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{
+      success: boolean;
+      data: {
+        reconciliationId: string;
+        status: string;
+        period: { start: string; end: string };
+        statementClosingBalance: number;
+        bookClosingBalance: number;
+        difference: number;
+        completedAt?: string;
+        reportSnapshot: any;
+        matchedItems: Array<{
+          matchId: string;
+          statementDate: string;
+          statementDescription: string;
+          statementAmount: number;
+          journalEntryNumber: string;
+          journalDescription: string;
+          matchedAmount: number;
+          matchedAt: string;
+        }>;
+        notes?: string;
+      };
+    }>(`/bank-accounts/${id}/reconciliation/report${query ? `?${query}` : ""}`);
+  },
 };
 
 // Fixed Assets API
@@ -8890,6 +9461,23 @@ export interface Expense {
   amount: number;
   taxAmount: number;
   totalAmount: number;
+  // Rwanda-specific currency fields
+  currencyCode?: string;
+  exchangeRate?: number;
+  amountInRWF?: number;
+  taxAmountInRWF?: number;
+  totalAmountInRWF?: number;
+  // RRA Tax fields
+  rraTaxCategory?: string;
+  rraTaxTransactionId?: string;
+  isVATRecoverable?: boolean;
+  // Department allocation
+  departmentId?: string;
+  department?: {
+    _id: string;
+    code: string;
+    name: string;
+  } | null;
   status: string;
   type?: string;
   category?: string;
@@ -8919,13 +9507,68 @@ export interface Expense {
   updatedAt: string;
 }
 
+// RRA Tax Categories
+export type RRATaxCategory =
+  | 'vat_standard'
+  | 'vat_exempt'
+  | 'vat_zero'
+  | 'wht_15_services'
+  | 'wht_30_dividends'
+  | 'wht_10_interest'
+  | 'reverse_charge'
+  | 'not_taxable';
+
+export const rraTaxCategories: { value: RRATaxCategory; label: string; rate: number }[] = [
+  { value: 'vat_standard', label: 'VAT Standard (18%)', rate: 18 },
+  { value: 'vat_exempt', label: 'VAT Exempt', rate: 0 },
+  { value: 'vat_zero', label: 'VAT Zero-rated (0%)', rate: 0 },
+  { value: 'wht_15_services', label: 'WHT - Services (15%)', rate: 15 },
+  { value: 'wht_30_dividends', label: 'WHT - Dividends (30%)', rate: 30 },
+  { value: 'wht_10_interest', label: 'WHT - Interest (10%)', rate: 10 },
+  { value: 'reverse_charge', label: 'Reverse Charge', rate: 18 },
+  { value: 'not_taxable', label: 'Not Taxable', rate: 0 },
+];
+
+// Supported Currencies
+export type CurrencyCode = 'RWF' | 'USD' | 'EUR' | 'GBP' | 'UGX' | 'KES' | 'TZS';
+
+export const supportedCurrencies: { code: CurrencyCode; name: string; symbol: string }[] = [
+  { code: 'RWF', name: 'Rwanda Franc', symbol: 'Fr' },
+  { code: 'USD', name: 'US Dollar', symbol: '$' },
+  { code: 'EUR', name: 'Euro', symbol: '€' },
+  { code: 'GBP', name: 'British Pound', symbol: '£' },
+  { code: 'UGX', name: 'Ugandan Shilling', symbol: 'USh' },
+  { code: 'KES', name: 'Kenyan Shilling', symbol: 'KSh' },
+  { code: 'TZS', name: 'Tanzanian Shilling', symbol: 'TSh' },
+];
+
+// Department Types
+export interface Department {
+  _id: string;
+  company: string;
+  code: string;
+  name: string;
+  description?: string;
+  manager?: {
+    _id: string;
+    name: string;
+    email: string;
+  } | null;
+  budgetLimit: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Expenses API
 export const expensesApi = {
   // List expenses with filters
   getAll: (params?: {
     type?: string;
+    status?: string;
     startDate?: string;
     endDate?: string;
+    search?: string;
     expenseAccountId?: string;
     paymentMethod?: string;
     page?: number;
@@ -8939,6 +9582,12 @@ export const expensesApi = {
       pages: number;
       currentPage: number;
       data: Expense[];
+      pagination?: {
+        total: number;
+        pages: number;
+        currentPage: number;
+        limit: number;
+      };
     }>(`/expenses${query ? `?${query}` : ""}`);
   },
 
@@ -8964,6 +9613,12 @@ export const expensesApi = {
     isRecurring?: boolean;
     recurringFrequency?: string;
     budget_id?: string;
+    // Rwanda-specific fields
+    currencyCode?: CurrencyCode;
+    exchangeRate?: number;
+    rraTaxCategory?: RRATaxCategory;
+    isVATRecoverable?: boolean;
+    department_id?: string;
   }) =>
     request<{ success: boolean; data: Expense }>("/expenses", {
       method: "POST",
@@ -9083,6 +9738,59 @@ export const expensesApi = {
         isActive: boolean;
       }>;
     }>("/bank-accounts?isActive=true"),
+};
+
+// Department API
+export const departmentsApi = {
+  // List departments
+  getAll: (params?: { search?: string; isActive?: boolean }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{
+      success: boolean;
+      count: number;
+      data: Department[];
+    }>(`/departments${query ? `?${query}` : ""}`);
+  },
+
+  // Get single department
+  getById: (id: string) =>
+    request<{ success: boolean; data: Department }>(`/departments/${id}`),
+
+  // Create department
+  create: (data: {
+    code: string;
+    name: string;
+    description?: string;
+    manager?: string;
+    budgetLimit?: number;
+  }) =>
+    request<{ success: boolean; data: Department }>("/departments", {
+      method: "POST",
+      body: data,
+    }),
+
+  // Update department
+  update: (
+    id: string,
+    data: Partial<{
+      code: string;
+      name: string;
+      description: string;
+      manager: string;
+      budgetLimit: number;
+      isActive: boolean;
+    }>,
+  ) =>
+    request<{ success: boolean; data: Department }>(`/departments/${id}`, {
+      method: "PUT",
+      body: data,
+    }),
+
+  // Delete department
+  delete: (id: string) =>
+    request<{ success: boolean; message: string }>(`/departments/${id}`, {
+      method: "DELETE",
+    }),
 };
 
 // Chart of Accounts Types
@@ -9428,6 +10136,118 @@ export const periodApi = {
   },
 };
 
+// Debt Maturity Schedule Types (IFRS 7 / IAS 1 Compliance)
+export interface DebtMaturityLoan {
+  loanId: string;
+  loanNumber: string;
+  name: string;
+  lenderName: string | null;
+  originalAmount: number;
+  outstandingBalance: number;
+  interestRate: number;
+  effectiveInterestRate: number;
+  startDate: string;
+  endDate: string | null;
+  loanType: string;
+  bucket: string;
+  liabilityAccount: {
+    code: string;
+    name: string;
+  } | null;
+  // IFRS 7.33 Classification
+  isSecured: boolean;
+  securityDescription: string | null;
+  classification: 'bank_loan' | 'bond' | 'finance_lease' | 'related_party' | 'other';
+  // IFRS 7.34 Currency
+  currencyCode: string;
+  exchangeRate: number;
+  amountInRWF: number;
+  // IAS 24 Related Party
+  relatedPartyName: string | null;
+  // IAS 1.74 Covenant
+  hasCovenants: boolean;
+  covenantBreach: boolean;
+  covenantBreachDate: string | null;
+  covenantReclassified: boolean;
+  // IFRS 7.39 Cash Flow
+  principalAmount: number;
+  interestAmount: number;
+  totalCashFlow: number;
+}
+
+export interface DebtMaturityBucket {
+  key: string;
+  label: string;
+  startDate: string | null;
+  endDate: string | null;
+  principal_amount: number;
+  interest_amount: number;
+  total_cash_flow: number;
+  loan_count: number;
+  effective_interest_rate: number;
+  loans: DebtMaturityLoan[];
+}
+
+export interface ClassificationBreakdown {
+  security: {
+    secured: { count: number; amount: number };
+    unsecured: { count: number; amount: number };
+  };
+  type: {
+    bank_loan: { count: number; amount: number; label: string };
+    bond: { count: number; amount: number; label: string };
+    finance_lease: { count: number; amount: number; label: string };
+    related_party: { count: number; amount: number; label: string };
+    other: { count: number; amount: number; label: string };
+  };
+}
+
+export interface CurrencyBreakdown {
+  currency_code: string;
+  count: number;
+  amount: number;
+  amount_in_rwf: number;
+  exchange_rate_avg: number;
+}
+
+export interface CovenantReclassification {
+  loan_id: string;
+  loan_number: string;
+  name: string;
+  breach_date: string | null;
+  note: string;
+}
+
+export interface BalanceSheetReconciliation {
+  schedule_total: number;
+  balance_sheet_borrowings: number;
+  difference: number;
+  reconciled: boolean;
+  note: string;
+}
+
+export interface DebtMaturityReport {
+  company_id: string;
+  report_date: string;
+  generated_at: string;
+  summary: {
+    total_debt: number;
+    total_interest: number;
+    total_cash_flow: number;
+    total_loans: number;
+    debt_with_maturity_date: number;
+    debt_without_maturity_date: number;
+    covenant_breach_count: number;
+  };
+  buckets: DebtMaturityBucket[];
+  classification_breakdown: ClassificationBreakdown;
+  currency_breakdown: CurrencyBreakdown[];
+  covenant_reclassifications: CovenantReclassification[];
+  balance_sheet_reconciliation: BalanceSheetReconciliation;
+  loan_details: DebtMaturityLoan[];
+  ifrs_disclosure_notes: string[];
+}
+
 // Balance Sheet Types (IAS 1 Statement of Financial Position)
 export interface BSLineItem {
   account_id: string;
@@ -9435,6 +10255,17 @@ export interface BSLineItem {
   account_name: string;
   sub_type: string;
   amount: number;
+  // IAS 1 Liability Classification fields
+  maturity_classification?: "current" | "non_current" | "non_current_assumed";
+  due_within_12_months?: number;
+  due_after_12_months?: number;
+  loan_details?: Array<{
+    loanNumber: string;
+    name: string;
+    endDate: string;
+    outstandingBalance: number;
+    isCurrent: boolean;
+  }>;
 }
 
 export interface BSSection {
@@ -9537,6 +10368,28 @@ export interface FRSummary {
   danger_count: number;
 }
 
+interface DebtMetric {
+  value: number | null;
+  label: string;
+  unit?: string;
+  description?: string;
+  benchmark?: string;
+  status?: string;
+}
+
+interface DebtMetricsCategory {
+  label: string;
+  metrics: {
+    total_borrowings: DebtMetric;
+    net_debt: DebtMetric;
+    weighted_avg_interest_rate: DebtMetric;
+    secured_loan_ratio: DebtMetric;
+    short_term_debt_ratio: DebtMetric;
+    debt_service_coverage: DebtMetric;
+    loan_count: DebtMetric;
+  };
+}
+
 export interface FinancialRatiosReport {
   company_id: string;
   company_name: string;
@@ -9550,6 +10403,7 @@ export interface FinancialRatiosReport {
     efficiency: FRCategory;
     leverage: FRCategory;
   };
+  debt_metrics?: DebtMetricsCategory;
   summary: FRSummary;
   generated_at: string;
 }

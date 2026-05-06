@@ -41,10 +41,16 @@ import {
   DialogDescription,
   DialogFooter,
 } from '../../components/ui/dialog';
-import { 
-  ArrowLeft, 
-  RefreshCcw, 
-  DollarSign, 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../../components/ui/dropdown-menu';
+import {
+  ArrowLeft,
+  RefreshCcw,
+  DollarSign,
   Calendar,
   TrendingUp,
   TrendingDown,
@@ -53,7 +59,10 @@ import {
   Pencil,
   Trash2,
   XCircle,
-  CalendarDays
+  CalendarDays,
+  Zap,
+  ChevronDown,
+  Shield
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -332,10 +341,194 @@ export default function LiabilityDetailPage() {
       }
     } catch (error: any) {
       console.error('[LiabilityDetailPage] Cancel error:', error);
-      toast.error(error.response?.data?.message || t('liabilities.errors.cancelFailed'));
+      toast.error(error.response?.data?.error || t('liabilities.errors.cancelFailed'));
     } finally {
       setSubmitting(false);
-      setCancelDialogOpen(false);
+    }
+  };
+
+  // Quick Auto-Record Functions
+  const handleQuickRepayment = async () => {
+    if (!liability) return;
+
+    // Check for valid bank account
+    const loanBankAccountId = (liability as any).bankAccountId;
+    const defaultBankAccount = bankAccounts.length > 0 ? bankAccounts[0]._id : null;
+    const bankAccountId = loanBankAccountId || defaultBankAccount;
+
+    if (!bankAccountId) {
+      toast.error('No bank account available. Please configure a bank account first.');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      // Calculate payment schedule to get monthly amounts
+      const scheduleResponse: any = await loansApi.calculatePaymentSchedule({
+        originalAmount: liability.originalAmount,
+        interestRate: liability.interestRate || 0,
+        durationMonths: (liability as any).durationMonths || 12,
+        interestMethod: (liability as any).interestMethod || 'simple',
+        startDate: liability.startDate,
+        loanType: liability.loanType
+      });
+
+      let principalPortion = 0;
+      let interestPortion = 0;
+
+      if (scheduleResponse.success && scheduleResponse.data?.schedule) {
+        const schedule = scheduleResponse.data.schedule;
+        interestPortion = schedule.monthlyInterest || 0;
+        principalPortion = schedule.monthlyPrincipal || 0;
+
+        // If simple method with 0 monthly principal, calculate principal
+        if (principalPortion === 0 && schedule.totalPayment > 0) {
+          principalPortion = schedule.totalPayment - interestPortion;
+        }
+      }
+
+      // Calculate total accrued interest from loan start date to today
+      const startDate = liability.startDate ? new Date(liability.startDate) : new Date();
+      const today = new Date();
+      const daysElapsed = Math.max(0, Math.ceil((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
+      const yearsElapsed = daysElapsed / 365.25;
+
+      // Calculate total accrued interest for the entire period
+      if (interestPortion === 0 && liability.interestRate > 0) {
+        // Simple interest: P * R * T
+        interestPortion = liability.originalAmount * (liability.interestRate / 100) * yearsElapsed;
+      }
+
+      // Calculate remaining months until maturity
+      const endDate = liability.endDate ? new Date(liability.endDate) : new Date();
+      const daysRemaining = Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      const monthsRemaining = Math.max(1, Math.ceil(daysRemaining / 30));
+
+      // Determine loan type and calculate appropriate principal
+      const loanType = liability.loanType || 'bullet';
+      const interestMethod = (liability as any).interestMethod || 'simple';
+
+      if (principalPortion === 0) {
+        if (loanType === 'amortizing' || interestMethod === 'compound') {
+          // Amortizing: spread principal over remaining months
+          principalPortion = liability.outstandingBalance / monthsRemaining;
+        } else if (loanType === 'bullet' && daysRemaining <= 0) {
+          // Bullet loan at/past maturity: pay full principal
+          principalPortion = liability.outstandingBalance;
+        } else {
+          // Bullet loan before maturity: interest-only payment (principal = 0)
+          principalPortion = 0;
+        }
+      }
+
+      // Calculate total and cap at outstanding balance
+      // The total repayment (principal + interest) should never exceed outstanding balance + interest
+      // For a normal payment: principal + interest = payment amount
+      // But principal portion alone cannot exceed outstanding balance
+      principalPortion = Math.min(principalPortion, liability.outstandingBalance);
+
+      // If this is a bullet loan at maturity, cap total at outstanding
+      if (loanType === 'bullet' && daysRemaining <= 0) {
+        // At maturity for bullet: principal should equal outstanding, interest is separate
+        // But some backends expect: principalPortion + interestPortion <= outstandingBalance
+        // So we need to adjust
+        if (principalPortion + interestPortion > liability.outstandingBalance) {
+          // Adjust: interest is paid first, then principal from remainder
+          const availableForPrincipal = Math.max(0, liability.outstandingBalance - interestPortion);
+          principalPortion = Math.min(principalPortion, availableForPrincipal);
+        }
+      }
+
+      // Final validation
+      if (principalPortion < 0) principalPortion = 0;
+      if (interestPortion < 0) interestPortion = 0;
+
+      if (principalPortion === 0 && interestPortion === 0) {
+        toast.error('No payment to record - outstanding balance may be zero');
+        setSubmitting(false);
+        return;
+      }
+
+      // Ensure principal never exceeds outstanding balance (safety check for API validation)
+      principalPortion = Math.min(principalPortion, liability.outstandingBalance);
+      // Also ensure total doesn't exceed outstanding + interest (some backends validate this)
+      const maxTotal = liability.outstandingBalance + interestPortion;
+      if (principalPortion + interestPortion > maxTotal) {
+        principalPortion = Math.max(0, maxTotal - interestPortion);
+      }
+
+      const transactionDate = new Date().toISOString().split('T')[0];
+
+      // Round to 2 decimal places for API
+      const finalPrincipal = Math.floor(principalPortion * 100) / 100;
+      const finalInterest = Math.floor(interestPortion * 100) / 100;
+
+      // Final safety check
+      if (finalPrincipal > liability.outstandingBalance) {
+        toast.error('Calculated principal exceeds outstanding balance. Please use Manual entry.');
+        setSubmitting(false);
+        return;
+      }
+
+      const response: any = await loansApi.recordRepayment(id!, {
+        principalPortion: finalPrincipal,
+        interestPortion: finalInterest,
+        bankAccountId: bankAccountId,
+        transactionDate: transactionDate,
+        notes: `Auto-recorded repayment. Principal: ${formatCurrency(finalPrincipal)}, Interest: ${formatCurrency(finalInterest)}. Ref: AUTO-RP-${Date.now().toString().slice(-4)}`
+      });
+
+      if (response.success) {
+        toast.success(`Quick repayment recorded: ${formatCurrency(principalPortion + interestPortion)}`);
+        fetchLiability();
+        fetchTransactions();
+      } else {
+        toast.error(response.error || 'Failed to record quick repayment');
+      }
+    } catch (error: any) {
+      console.error('[LiabilityDetailPage] Quick repayment error:', error);
+      toast.error(error.response?.data?.error || 'Failed to record quick repayment');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleQuickInterest = async () => {
+    if (!liability) return;
+
+    setSubmitting(true);
+    try {
+      // Calculate monthly interest
+      const rate = liability.interestRate || 0;
+      const balance = liability.outstandingBalance || 0;
+      const monthlyInterest = (balance * (rate / 100)) / 12;
+
+      if (monthlyInterest <= 0) {
+        toast.error('No interest to charge (0% rate or no balance)');
+        setSubmitting(false);
+        return;
+      }
+
+      const today = new Date().toISOString().split('T')[0];
+
+      const response: any = await loansApi.recordInterest(id!, {
+        amount: Math.round(monthlyInterest * 100) / 100,
+        chargeDate: today,
+        notes: `Auto-recorded monthly interest at ${rate}% annual rate. Ref: AUTO-INT-${Date.now().toString().slice(-4)}`
+      });
+
+      if (response.success) {
+        toast.success(`Quick interest recorded: ${formatCurrency(monthlyInterest)}`);
+        fetchLiability();
+        fetchTransactions();
+      } else {
+        toast.error(response.error || 'Failed to record quick interest');
+      }
+    } catch (error: any) {
+      console.error('[LiabilityDetailPage] Quick interest error:', error);
+      toast.error(error.response?.data?.error || 'Failed to record quick interest');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -347,7 +540,8 @@ export default function LiabilityDetailPage() {
     }).format(amount || 0);
   };
 
-  const formatDate = (date: string) => {
+  const formatDate = (date: string | undefined | null) => {
+    if (!date) return '-';
     return new Date(date).toLocaleDateString();
   };
 
@@ -417,38 +611,89 @@ export default function LiabilityDetailPage() {
             <Trash2 className="mr-2 h-4 w-4" />
             {t('liabilities.actions.delete')}
           </Button>
-          {/* Check if liability account is valid (has been resolved with name) - also allow string codes */}
+          {/* Repayment Button Group */}
           {(() => {
             const liabAccount = (liability as any).liabilityAccountId;
             const liabIsValid = (liabAccount && typeof liabAccount === 'object' && liabAccount.name) || (typeof liabAccount === 'string' && liabAccount.length > 0);
             const liabNotConfigured = !liabAccount || (typeof liabAccount === 'string' && !liabAccount);
+
+            if (!liabIsValid) {
+              return (
+                <Button
+                  disabled
+                  title={liabNotConfigured ? 'Liability account not configured - Please edit to add account' : 'Liability account is invalid - Please edit to select a valid account'}
+                  className="dark:bg-primary dark:text-primary-foreground"
+                >
+                  <RefreshCcw className="mr-2 h-4 w-4" />
+                  {t('liabilities.actions.recordRepayment')}
+                </Button>
+              );
+            }
+
             return (
-              <Button 
-                onClick={() => setRepaymentOpen(true)}
-                disabled={!liabIsValid}
-                title={liabNotConfigured ? 'Liability account not configured - Please edit to add account' : (!liabIsValid ? 'Liability account is invalid (deleted from Chart of Accounts) - Please edit to select a valid account' : '')}
-                className="dark:bg-primary dark:text-primary-foreground"
-              >
-                <RefreshCcw className="mr-2 h-4 w-4" />
-                {t('liabilities.actions.recordRepayment')}
-              </Button>
+              <div className="flex">
+                <Button
+                  onClick={handleQuickRepayment}
+                  disabled={submitting}
+                  className="dark:bg-primary dark:text-primary-foreground rounded-r-none"
+                >
+                  <Zap className="mr-2 h-4 w-4" />
+                  Quick Repay
+                </Button>
+                <Button
+                  onClick={() => setRepaymentOpen(true)}
+                  disabled={submitting}
+                  variant="outline"
+                  className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700 rounded-l-none border-l-0"
+                >
+                  <RefreshCcw className="mr-2 h-4 w-4" />
+                  Manual
+                </Button>
+              </div>
             );
           })()}
+
+          {/* Interest Button Group */}
           {(() => {
             const intAccount = (liability as any).interestExpenseAccountId;
             const intIsValid = (intAccount && typeof intAccount === 'object' && intAccount.name) || (typeof intAccount === 'string' && intAccount.length > 0);
             const intNotConfigured = !intAccount || (typeof intAccount === 'string' && !intAccount);
+
+            if (!intIsValid) {
+              return (
+                <Button
+                  variant="outline"
+                  disabled
+                  title={intNotConfigured ? 'Interest expense account not configured' : 'Interest expense account is invalid'}
+                  className="dark:border-slate-600 dark:text-slate-200"
+                >
+                  <TrendingUp className="mr-2 h-4 w-4" />
+                  {t('liabilities.actions.recordInterest')}
+                </Button>
+              );
+            }
+
             return (
-              <Button 
-                variant="outline" 
-                onClick={() => setInterestOpen(true)}
-                disabled={!intIsValid}
-                title={intNotConfigured ? 'Interest expense account not configured - Please edit to add account' : (!intIsValid ? 'Interest expense account is invalid (deleted from Chart of Accounts) - Please edit to select a valid account' : '')}
-                className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
-              >
-                <TrendingUp className="mr-2 h-4 w-4" />
-                {t('liabilities.actions.recordInterest')}
-              </Button>
+              <div className="flex">
+                <Button
+                  onClick={handleQuickInterest}
+                  disabled={submitting}
+                  variant="outline"
+                  className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700 rounded-r-none"
+                >
+                  <Zap className="mr-2 h-4 w-4 text-yellow-500" />
+                  Quick Interest
+                </Button>
+                <Button
+                  onClick={() => setInterestOpen(true)}
+                  disabled={submitting}
+                  variant="outline"
+                  className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700 rounded-l-none border-l-0"
+                >
+                  <TrendingUp className="mr-2 h-4 w-4" />
+                  Manual
+                </Button>
+              </div>
             );
           })()}
         </div>
@@ -534,6 +779,87 @@ export default function LiabilityDetailPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* IFRS 9 - Financial Instruments */}
+        <Card className="dark:bg-slate-800 mb-6">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium dark:text-slate-400 flex items-center gap-2">
+              <Shield className="h-4 w-4 text-blue-400" />
+              IFRS 9 - Financial Instruments
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <p className="text-xs text-slate-500">Classification</p>
+                <Badge variant="outline" className="mt-1">
+                  {liability.ifrs9Classification === 'amortized_cost' ? 'Amortized Cost' :
+                   liability.ifrs9Classification === 'fvoci' ? 'FVOCI' :
+                   liability.ifrs9Classification === 'fvtpl' ? 'FVTPL' : 'Amortized Cost'}
+                </Badge>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500">Impairment Stage</p>
+                <Badge
+                  variant="outline"
+                  className={`mt-1 ${
+                    liability.impairmentStage === 'stage_1' ? 'border-emerald-500/50 text-emerald-400' :
+                    liability.impairmentStage === 'stage_2' ? 'border-amber-500/50 text-amber-400' :
+                    'border-rose-500/50 text-rose-400'
+                  }`}
+                >
+                  {liability.impairmentStage === 'stage_1' ? 'Stage 1 (12m ECL)' :
+                   liability.impairmentStage === 'stage_2' ? 'Stage 2 (Lifetime ECL)' :
+                   liability.impairmentStage === 'stage_3' ? 'Stage 3 (Credit-impaired)' : 'Stage 1'}
+                </Badge>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500">ECL Provision</p>
+                <p className="text-sm font-semibold text-slate-200">
+                  {formatCurrency(liability.eclProvision || 0)}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500">Days Past Due</p>
+                <p className={`text-sm font-semibold ${
+                  (liability.daysPastDue || 0) > 30 ? 'text-rose-400' :
+                  (liability.daysPastDue || 0) > 0 ? 'text-amber-400' : 'text-emerald-400'
+                }`}>
+                  {liability.daysPastDue || 0} DPD
+                </p>
+              </div>
+            </div>
+            {(liability.probabilityOfDefault || liability.lossGivenDefault || liability.effectiveInterestRate) && (
+              <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-slate-700/50">
+                <div>
+                  <p className="text-xs text-slate-500">Probability of Default (PD)</p>
+                  <p className="text-sm font-semibold text-slate-200">
+                    {(liability.probabilityOfDefault || 0).toFixed(2)}%
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500">Loss Given Default (LGD)</p>
+                  <p className="text-sm font-semibold text-slate-200">
+                    {(liability.lossGivenDefault || 45).toFixed(0)}%
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500">Effective Interest Rate</p>
+                  <p className="text-sm font-semibold text-slate-200">
+                    {(liability.effectiveInterestRate || 0).toFixed(2)}%
+                  </p>
+                </div>
+              </div>
+            )}
+            {liability.forbearanceStatus && liability.forbearanceStatus !== 'none' && (
+              <div className="mt-4 pt-4 border-t border-slate-700/50">
+                <Badge variant="outline" className="border-amber-500/50 text-amber-400">
+                  Forbearance: {liability.forbearanceStatus === 'temporary' ? 'Temporary' : 'Permanent'}
+                </Badge>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Transaction History - Split into two tables */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

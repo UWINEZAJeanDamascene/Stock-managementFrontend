@@ -1,4 +1,4 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import { Sidebar } from './Sidebar';
 import { Sheet, SheetContent } from '@/app/components/ui/sheet';
 import { useIsMobile } from '@/app/components/ui/use-mobile';
@@ -19,6 +19,20 @@ export function Layout({ children }: LayoutProps) {
   const { theme, toggleTheme } = useTheme();
   const isMobile = useIsMobile();
   const navigate = useNavigate();
+
+  // When the app layout is mounted, lock document scrolling so the app's
+  // internal scroll container is the only vertical scroll. Remove the lock
+  // when unmounting so public pages (landing) can scroll normally.
+  useEffect(() => {
+    try {
+      document.body.classList.add('app-scroll-lock');
+    } catch (e) {}
+    return () => {
+      try {
+        document.body.classList.remove('app-scroll-lock');
+      } catch (e) {}
+    };
+  }, []);
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-slate-900">

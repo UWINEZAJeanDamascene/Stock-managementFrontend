@@ -134,6 +134,7 @@ import ProfitLossPage from './pages/reports/ProfitLossPage';
 import BalanceSheetPage from './pages/reports/BalanceSheetPage';
 import CashFlowPage from './pages/reports/CashFlowPage';
 import FinancialRatiosPage from './pages/reports/FinancialRatiosPage';
+import DebtMaturityPage from './pages/reports/DebtMaturityPage';
 import ReportsHubPage from './pages/reports/ReportsHubPage';
 import DailyReportsPage from './pages/reports/DailyReportsPage';
 import DailySalesReportPage from './pages/reports/daily/DailySalesReportPage';
@@ -497,7 +498,6 @@ function AppRoutes() {
             <BankAccountsListPage />
           </ErrorBoundary>
         } />
-    
         {/* Petty Cash */}
         <Route path="/petty-cash" element={
           <ErrorBoundary>
@@ -686,6 +686,11 @@ function AppRoutes() {
         <Route path="/reports/financial-ratios" element={
           <ErrorBoundary>
             <FinancialRatiosPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/reports/debt-maturity" element={
+          <ErrorBoundary>
+            <DebtMaturityPage />
           </ErrorBoundary>
         } />
         <Route path="/reports" element={

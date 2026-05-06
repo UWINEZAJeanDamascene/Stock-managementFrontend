@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { expensesApi, Expense } from '@/lib/api';
+import { expensesApi, Expense, departmentsApi, rraTaxCategories, supportedCurrencies, CurrencyCode, RRATaxCategory } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
 import {
   ArrowLeft,
@@ -65,16 +65,24 @@ export default function ExpenseDetailPage() {
     type: 'other_expense',
     reference: '',
     notes: '',
+    // Rwanda-specific fields
+    currencyCode: 'RWF' as CurrencyCode,
+    exchangeRate: 1,
+    rraTaxCategory: '' as RRATaxCategory,
+    isVATRecoverable: true,
+    departmentId: '',
   });
 
   const [expenseAccounts, setExpenseAccounts] = useState<any[]>([]);
   const [bankAccounts, setBankAccounts] = useState<any[]>([]);
+  const [departments, setDepartments] = useState<any[]>([]);
 
   useEffect(() => {
     if (id) {
       fetchExpense();
       fetchAccounts();
       fetchBankAccounts();
+      fetchDepartments();
     }
   }, [id]);
 
@@ -95,6 +103,12 @@ export default function ExpenseDetailPage() {
           type: response.data.type || 'other_expense',
           reference: response.data.reference || '',
           notes: response.data.notes || '',
+          // Rwanda-specific fields
+          currencyCode: (response.data.currencyCode || 'RWF') as CurrencyCode,
+          exchangeRate: response.data.exchangeRate || 1,
+          rraTaxCategory: (response.data.rraTaxCategory || '') as RRATaxCategory,
+          isVATRecoverable: response.data.isVATRecoverable !== undefined ? response.data.isVATRecoverable : true,
+          departmentId: response.data.department?._id || '',
         });
       } else {
         toast.error('Expense not found');
@@ -131,6 +145,17 @@ export default function ExpenseDetailPage() {
     }
   };
 
+  const fetchDepartments = async () => {
+    try {
+      const response = await departmentsApi.getAll({ isActive: true });
+      if (response.success && response.data) {
+        setDepartments(response.data);
+      }
+    } catch (error) {
+      console.error('[ExpenseDetailPage] Failed to fetch departments:', error);
+    }
+  };
+
   const handleUpdate = async () => {
     if (!editForm.description || editForm.amount <= 0) {
       toast.error('Please provide valid expense details');
@@ -151,6 +176,12 @@ export default function ExpenseDetailPage() {
         type: editForm.type,
         reference: editForm.reference,
         notes: editForm.notes,
+        // Rwanda-specific fields
+        currencyCode: editForm.currencyCode,
+        exchangeRate: editForm.exchangeRate,
+        rraTaxCategory: editForm.rraTaxCategory,
+        isVATRecoverable: editForm.isVATRecoverable,
+        department_id: editForm.departmentId || undefined,
       });
 
       if (response.success) {
@@ -218,7 +249,15 @@ export default function ExpenseDetailPage() {
       }
     } catch (error: any) {
       console.error('[ExpenseDetailPage] Approve error:', error);
-      toast.error(error.response?.data?.message || 'Failed to approve expense');
+      // Handle segregation of duties error specifically
+      if (error.response?.data?.code === 'SEGREGATION_OF_DUTIES') {
+        toast.error(error.response.data.message, {
+          duration: 5000,
+          icon: '⚠️',
+        });
+      } else {
+        toast.error(error.response?.data?.message || 'Failed to approve expense');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -260,11 +299,28 @@ export default function ExpenseDetailPage() {
     }
   };
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: number, currency: string = 'RWF') => {
+    if (currency === 'RWF') {
+      return new Intl.NumberFormat('en-RW', {
+        style: 'currency',
+        currency: 'RWF',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(amount || 0);
+    }
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency: currency,
       minimumFractionDigits: 2,
+    }).format(amount || 0);
+  };
+
+  const formatRWF = (amount: number) => {
+    return new Intl.NumberFormat('en-RW', {
+      style: 'currency',
+      currency: 'RWF',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(amount || 0);
   };
 
@@ -390,6 +446,20 @@ export default function ExpenseDetailPage() {
           </div>
         )}
 
+        {/* Segregation of Duties Warning */}
+        {expense.status === 'pending' && expense.createdBy && (
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-4 mb-6 flex items-center gap-3">
+            <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            <div className="text-blue-800 dark:text-blue-300">
+              <p className="font-medium">Segregation of Duties Required</p>
+              <p className="text-sm">
+                Created by: <span className="font-semibold">{expense.createdBy.name}</span>.{' '}
+                Another user must review and approve this expense for compliance.
+              </p>
+            </div>
+          </div>
+        )}
+
         {expense.status === 'reversed' && (
           <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700 rounded-lg p-4 mb-6 flex items-center gap-3">
             <RotateCcw className="h-5 w-5 text-orange-600 dark:text-orange-400" />
@@ -416,10 +486,14 @@ export default function ExpenseDetailPage() {
           </Card>
           <Card className="dark:bg-slate-800">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium dark:text-white">Net Amount</CardTitle>
+              <CardTitle className="text-sm font-medium dark:text-white">
+                Net Amount {expense.currencyCode && expense.currencyCode !== 'RWF' && `(${expense.currencyCode})`}
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold dark:text-white">{formatCurrency(expense.amount)}</div>
+              <div className="text-2xl font-bold dark:text-white">
+                {formatCurrency(expense.amount, expense.currencyCode || 'RWF')}
+              </div>
             </CardContent>
           </Card>
           <Card className="dark:bg-slate-800">
@@ -427,15 +501,19 @@ export default function ExpenseDetailPage() {
               <CardTitle className="text-sm font-medium dark:text-white">Tax Amount</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{formatCurrency(expense.taxAmount)}</div>
+              <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                {formatCurrency(expense.taxAmount, expense.currencyCode || 'RWF')}
+              </div>
             </CardContent>
           </Card>
           <Card className="dark:bg-slate-800">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium dark:text-white">Total Amount</CardTitle>
+              <CardTitle className="text-sm font-medium dark:text-white">Total (RWF)</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600 dark:text-red-400">{formatCurrency(expense.totalAmount)}</div>
+              <div className="text-2xl font-bold text-red-600 dark:text-red-400">
+                {formatRWF(expense.totalAmountInRWF || expense.totalAmount)}
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -478,6 +556,66 @@ export default function ExpenseDetailPage() {
                 <div>
                   <Label className="text-muted-foreground text-sm dark:text-slate-400">Type</Label>
                   <p className="mt-1 capitalize dark:text-slate-200">{expense.type.replace(/_/g, ' ')}</p>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground text-sm dark:text-slate-400">Currency</Label>
+                  <div className="mt-1">
+                    <Badge variant="outline" className="dark:border-slate-600 dark:text-slate-300">
+                      {expense.currencyCode || 'RWF'}
+                      {expense.exchangeRate && expense.exchangeRate !== 1 && (
+                        <span className="ml-2 text-xs text-muted-foreground dark:text-slate-400">
+                          Rate: {expense.exchangeRate}
+                        </span>
+                      )}
+                    </Badge>
+                  </div>
+                </div>
+                {expense.rraTaxCategory && (
+                  <div>
+                    <Label className="text-muted-foreground text-sm dark:text-slate-400">RRA Tax Category</Label>
+                    <div className="mt-1">
+                      <Badge
+                        variant="outline"
+                        className={`dark:border-slate-600 ${
+                          expense.rraTaxCategory === 'vat_standard'
+                            ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                            : expense.rraTaxCategory === 'vat_exempt'
+                            ? 'bg-gray-50 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300'
+                            : expense.rraTaxCategory?.startsWith('wht')
+                            ? 'bg-orange-50 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300'
+                            : 'dark:text-slate-300'
+                        }`}
+                      >
+                        {expense.rraTaxCategory.replace(/_/g, ' ').toUpperCase()}
+                      </Badge>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {expense.department && (
+                <div>
+                  <Label className="text-muted-foreground text-sm dark:text-slate-400">Department</Label>
+                  <div className="mt-1 flex items-center gap-2">
+                    <Badge variant="outline" className="dark:border-slate-600 dark:text-slate-300">
+                      {expense.department.code}
+                    </Badge>
+                    <span className="text-sm text-muted-foreground dark:text-slate-400">
+                      {expense.department.name}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {expense.isVATRecoverable !== undefined && (
+                <div>
+                  <Label className="text-muted-foreground text-sm dark:text-slate-400">VAT Status</Label>
+                  <p className="mt-1 text-sm dark:text-slate-200">
+                    {expense.isVATRecoverable ? 'VAT Recoverable' : 'VAT Non-Recoverable'}
+                  </p>
                 </div>
               )}
             </CardContent>
@@ -604,6 +742,87 @@ export default function ExpenseDetailPage() {
                   className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                 />
               </div>
+
+              {/* Rwanda-specific fields */}
+              <div className="space-y-2">
+                <Label className="dark:text-slate-200">Currency *</Label>
+                <Select
+                  value={editForm.currencyCode}
+                  onValueChange={(value) => {
+                    const newCurrency = value as CurrencyCode;
+                    setEditForm({
+                      ...editForm,
+                      currencyCode: newCurrency,
+                      exchangeRate: newCurrency === 'RWF' ? 1 : editForm.exchangeRate,
+                    });
+                  }}
+                >
+                  <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
+                    <SelectValue placeholder="Select currency" />
+                  </SelectTrigger>
+                  <SelectContent className="dark:bg-slate-800">
+                    {supportedCurrencies.map((curr) => (
+                      <SelectItem key={curr.code} value={curr.code} className="dark:text-slate-200">
+                        {curr.code} - {curr.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {editForm.currencyCode !== 'RWF' && (
+                <div className="space-y-2">
+                  <Label className="dark:text-slate-200">Exchange Rate *</Label>
+                  <Input
+                    type="number"
+                    step="0.0001"
+                    placeholder="1.0"
+                    value={editForm.exchangeRate || ''}
+                    onChange={(e) => setEditForm({ ...editForm, exchangeRate: parseFloat(e.target.value) || 1 })}
+                    className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                  />
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label className="dark:text-slate-200">RRA Tax Category *</Label>
+                <Select
+                  value={editForm.rraTaxCategory}
+                  onValueChange={(value) => setEditForm({ ...editForm, rraTaxCategory: value as RRATaxCategory })}
+                >
+                  <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
+                    <SelectValue placeholder="Select tax category" />
+                  </SelectTrigger>
+                  <SelectContent className="dark:bg-slate-800 max-h-60">
+                    {rraTaxCategories.map((cat) => (
+                      <SelectItem key={cat.value} value={cat.value} className="dark:text-slate-200">
+                        {cat.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="dark:text-slate-200">Department (Optional)</Label>
+                <Select
+                  value={editForm.departmentId || 'none'}
+                  onValueChange={(value) => setEditForm({ ...editForm, departmentId: value === 'none' ? '' : value })}
+                >
+                  <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
+                    <SelectValue placeholder="Select department" />
+                  </SelectTrigger>
+                  <SelectContent className="dark:bg-slate-800">
+                    <SelectItem value="none" className="dark:text-slate-200">None</SelectItem>
+                    {departments.map((dept) => (
+                      <SelectItem key={dept._id} value={dept._id} className="dark:text-slate-200">
+                        {dept.code} - {dept.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="space-y-2">
                 <Label className="dark:text-slate-200">Expense Account *</Label>
                 <Select

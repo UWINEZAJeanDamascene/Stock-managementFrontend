@@ -126,6 +126,12 @@
     @apply bg-background text-foreground;
   }
 
+  /* When the app layout is active, lock document scroll so the app's internal
+     scroll container is used. Layout component adds/removes `.app-scroll-lock`. */
+  .app-scroll-lock {
+    overflow: hidden;
+  }
+
   /* Ensure the root elements occupy full height so child elements using h-screen
      and flex layout can correctly size to the viewport. This avoids double
      scrollbars (document + app). */

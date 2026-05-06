@@ -255,15 +255,28 @@ export default function PettyCashTransactionsPage() {
             <Card className="dark:bg-slate-800">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground dark:text-slate-400">
-                  {t("pettyCash.replenishmentNeeded", "Replenishment Needed")}
+                  {fund.currentBalance > fund.floatAmount
+                    ? t("pettyCash.excessBalance", "Excess Balance Alert")
+                    : t("pettyCash.replenishmentNeeded", "Replenishment Needed")}
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p
-                  className={`text-2xl font-bold ${fund.replenishmentNeeded > 0 ? "text-amber-600 dark:text-amber-400" : "text-green-600 dark:text-green-400"}`}
-                >
-                  {formatCurrency(fund.replenishmentNeeded)}
-                </p>
+                {fund.currentBalance > fund.floatAmount ? (
+                  <div>
+                    <p className="text-2xl font-bold text-red-600 dark:text-red-400">
+                      +{formatCurrency(fund.currentBalance - fund.floatAmount)}
+                    </p>
+                    <p className="text-xs text-red-500 dark:text-red-400 mt-1">
+                      Balance exceeds float by {formatCurrency(fund.currentBalance - fund.floatAmount)}
+                    </p>
+                  </div>
+                ) : (
+                  <p
+                    className={`text-2xl font-bold ${fund.replenishmentNeeded > 0 ? "text-amber-600 dark:text-amber-400" : "text-green-600 dark:text-green-400"}`}
+                  >
+                    {formatCurrency(fund.replenishmentNeeded)}
+                  </p>
+                )}
               </CardContent>
             </Card>
             <Card className="dark:bg-slate-800">
@@ -356,7 +369,7 @@ export default function PettyCashTransactionsPage() {
                     <TableHead className="dark:text-slate-200">Voucher</TableHead>
                     <TableHead className="dark:text-slate-200">{t("pettyCash.type", "Type")}</TableHead>
                     <TableHead className="dark:text-slate-200">
-                      {t("pettyCash.description", "Description")}
+                      {t("pettyCash.expenseDescription", "Description")}
                     </TableHead>
                     <TableHead className="dark:text-slate-200">
                       {t("pettyCash.expenseAccount", "Account")}

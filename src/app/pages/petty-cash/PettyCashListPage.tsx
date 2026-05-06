@@ -46,6 +46,7 @@ import {
 } from "@/app/components/ui/select";
 import { Label } from "@/app/components/ui/label";
 import { Switch } from "@/app/components/ui/switch";
+import { Checkbox } from "@/app/components/ui/checkbox";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
@@ -108,7 +109,23 @@ export default function PettyCashListPage() {
     description: "",
     receiptRef: "",
     transactionDate: new Date().toISOString().split("T")[0],
+    category: "office_stationery" as
+      | "office_stationery"
+      | "travel_transport"
+      | "meals_entertainment"
+      | "maintenance_repairs"
+      | "staff_welfare"
+      | "marketing_sales"
+      | "utilities_misc",
+    subcategory: "",
+    recipientType: "" as "" | "staff" | "client" | "mixed",
+    isTaxable: false,
+    isStaffAdvance: false,
+    purpose: "",
+    receiptUploadUrl: "",
+    receiptUploadName: "",
   });
+  const [expenseWarnings, setExpenseWarnings] = useState<string[]>([]);
 
   // ── Replenishment form ────────────────────────────────────────────────────────
   const [replenishForm, setReplenishForm] = useState({
@@ -354,27 +371,107 @@ export default function PettyCashListPage() {
     }
   };
 
+  // Category to default GL account mapping
+  const getDefaultAccountForCategory = (
+    category: string,
+    subcategory: string,
+    isStaffAdvance: boolean,
+  ): string => {
+    if (isStaffAdvance) {
+      return "1250"; // Employee Advances
+    }
+    const sub = subcategory.toLowerCase();
+    switch (category) {
+      case "office_stationery":
+        return "5610"; // Office Supplies
+      case "travel_transport":
+        // Use 5650 Travel & Local Transport for parking, taxi, fuel, bus
+        // Use 5700 Transport & Delivery for courier, delivery, freight
+        if (sub.includes("parking") || sub.includes("taxi") || sub.includes("moto") || sub.includes("fuel") || sub.includes("bus") || sub === "taxi_moto" || sub === "parking" || sub === "fuel" || sub === "bus_transport") {
+          return "5650"; // Travel & Local Transport
+        }
+        if (sub.includes("courier") || sub.includes("delivery") || sub.includes("freight")) {
+          return "5700"; // Transport & Delivery
+        }
+        return "5650"; // Default to Travel & Local Transport
+      case "meals_entertainment":
+        return "5930"; // Staff Welfare & Entertainment
+      case "maintenance_repairs":
+        return "5710"; // Repairs & Maintenance
+      case "staff_welfare":
+        return "5930"; // Staff Welfare & Entertainment
+      case "marketing_sales":
+        return "5850"; // Marketing & Advertising
+      case "utilities_misc":
+        if (sub.includes("momo") || sub.includes("mobile money")) {
+          return "5920"; // Mobile Money Transaction Fees
+        }
+        if (sub.includes("airtime") || sub.includes("internet") || sub.includes("utilities")) {
+          return "5600"; // Utilities
+        }
+        return "5910"; // Miscellaneous Expenses
+      default:
+        return expenseAccounts[0]?.code || FALLBACK_ACCOUNTS[0].code;
+    }
+  };
+
+  // Auto-populate expense account when category changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const defaultAccount = getDefaultAccountForCategory(
+      expenseForm.category,
+      expenseForm.subcategory,
+      expenseForm.isStaffAdvance,
+    );
+    setExpenseForm((prev) => ({ ...prev, expenseAccountId: defaultAccount }));
+  }, [expenseForm.category, expenseForm.subcategory, expenseForm.isStaffAdvance]);
+
+  // Reset subcategory when category changes to prevent invalid selections
+  useEffect(() => {
+    setExpenseForm((prev) => ({ ...prev, subcategory: "" }));
+  }, [expenseForm.category]);
+
   const handleRecordExpense = async () => {
     if (!expenseForm.amount || expenseForm.amount <= 0) {
       toast.error("Please provide a valid expense amount");
       return;
     }
-    if (!expenseForm.expenseAccountId) {
-      toast.error("Please select an expense account");
+    if (!expenseForm.description.trim()) {
+      toast.error("Please provide a description");
       return;
     }
     setSubmitting(true);
+    setExpenseWarnings([]);
     try {
-      const response = await pettyCashApi.recordExpense(selectedFund?._id!, {
+      const payload: any = {
         amount: expenseForm.amount,
-        expenseAccountId: expenseForm.expenseAccountId,
         description: expenseForm.description || undefined,
         receiptRef: expenseForm.receiptRef || undefined,
         transactionDate: expenseForm.transactionDate,
-      });
+        category: expenseForm.category,
+        subcategory: expenseForm.subcategory || undefined,
+        recipientType: expenseForm.recipientType || undefined,
+        isTaxable: expenseForm.isTaxable || undefined,
+        isStaffAdvance: expenseForm.isStaffAdvance || undefined,
+        purpose: expenseForm.purpose || undefined,
+        receiptUploadUrl: expenseForm.receiptUploadUrl || undefined,
+        receiptUploadName: expenseForm.receiptUploadName || undefined,
+      };
+      // Only send expenseAccountId if user has overridden the default
+      // Backend will auto-map if not provided
+      if (expenseForm.expenseAccountId) {
+        payload.expenseAccountId = expenseForm.expenseAccountId;
+      }
+      const response = await pettyCashApi.recordExpense(selectedFund?._id!, payload);
       if (response.success) {
-        toast.success("Expense recorded successfully");
+        if (response.warnings && response.warnings.length > 0) {
+          setExpenseWarnings(response.warnings);
+          toast.warning("Expense recorded with warnings");
+        } else {
+          toast.success("Expense recorded successfully");
+        }
         setShowExpenseDialog(false);
+        setExpenseWarnings([]);
         const defaultCode =
           expenseAccounts.length > 0
             ? expenseAccounts[0].code
@@ -385,6 +482,14 @@ export default function PettyCashListPage() {
           description: "",
           receiptRef: "",
           transactionDate: new Date().toISOString().split("T")[0],
+          category: "office_stationery",
+          subcategory: "",
+          recipientType: "",
+          isTaxable: false,
+          isStaffAdvance: false,
+          purpose: "",
+          receiptUploadUrl: "",
+          receiptUploadName: "",
         });
         fetchFunds();
       } else {
@@ -754,8 +859,96 @@ export default function PettyCashListPage() {
     { code: "5900", name: "Miscellaneous Expenses" },
   ];
 
+  // Petty cash specific GL accounts (filter to show only these)
+  const PETTY_CASH_ACCOUNT_CODES = [
+    "5610", // Office Supplies
+    "5650", // Travel & Local Transport
+    "5710", // Repairs & Maintenance
+    "5910", // Miscellaneous Expenses
+    "5920", // Mobile Money Transaction Fees
+    "5930", // Staff Welfare & Entertainment
+    "5700", // Transport & Delivery
+    "5850", // Marketing & Advertising
+    "5600", // Utilities
+    "1250", // Employee Advances (for staff advances)
+  ];
+
   const activeExpenseAccounts: { code: string; name: string }[] =
-    expenseAccounts.length > 0 ? expenseAccounts : FALLBACK_ACCOUNTS;
+    expenseAccounts.length > 0
+      ? expenseAccounts.filter((acct) => PETTY_CASH_ACCOUNT_CODES.includes(acct.code))
+      : FALLBACK_ACCOUNTS.filter((acct) => PETTY_CASH_ACCOUNT_CODES.includes(acct.code));
+
+  // Subcategory options for cascading dropdown based on category
+  const SUBCATEGORY_OPTIONS: Record<string, { value: string; label: string }[]> = {
+    office_stationery: [
+      { value: "pens_pencils", label: "Pens, pencils, notebooks" },
+      { value: "printer_ink", label: "Printer ink / toner" },
+      { value: "printing", label: "Printing & photocopying" },
+      { value: "stamps_postage", label: "Stamps & postage" },
+      { value: "envelopes", label: "Envelopes, folders, files" },
+      { value: "tape_staples", label: "Tape, staples, scissors" },
+      { value: "whiteboard", label: "Whiteboard markers" },
+      { value: "usb_drives", label: "USB drives / small peripherals" },
+      { value: "other", label: "Other (specify)" },
+    ],
+    travel_transport: [
+      { value: "taxi_moto", label: "Taxi / moto fares" },
+      { value: "bus_transport", label: "Bus / public transport" },
+      { value: "parking", label: "Parking fees" },
+      { value: "fuel", label: "Fuel for short errands" },
+      { value: "courier", label: "Courier / delivery fees" },
+      { value: "airport", label: "Airport transfers (small)" },
+      { value: "toll", label: "Toll charges" },
+      { value: "other", label: "Other (specify)" },
+    ],
+    meals_entertainment: [
+      { value: "team_lunch", label: "Team lunch / coffee" },
+      { value: "client_tea", label: "Client tea / refreshments" },
+      { value: "overtime_meals", label: "Working overtime meals" },
+      { value: "birthday", label: "Staff birthday cakes" },
+      { value: "drinking_water", label: "Office drinking water" },
+      { value: "meeting_snacks", label: "Meeting snacks" },
+      { value: "other", label: "Other (specify)" },
+    ],
+    maintenance_repairs: [
+      { value: "light_bulb", label: "Light bulb replacement" },
+      { value: "plumbing", label: "Minor plumbing fixes" },
+      { value: "cleaning", label: "Cleaning supplies" },
+      { value: "batteries", label: "Batteries for equipment" },
+      { value: "extension_cords", label: "Extension cords / cables" },
+      { value: "door_locks", label: "Door locks / keys" },
+      { value: "hardware", label: "Small hardware items" },
+      { value: "other", label: "Other (specify)" },
+    ],
+    staff_welfare: [
+      { value: "staff_medical", label: "Staff medical (minor)" },
+      { value: "emergency_loan", label: "Emergency loan advance" },
+      { value: "uniform", label: "Uniform accessories" },
+      { value: "safety_gear", label: "Safety gear (small)" },
+      { value: "condolence", label: "Condolence / gift contributions" },
+      { value: "transport_emergency", label: "Staff transport emergencies" },
+      { value: "other", label: "Other (specify)" },
+    ],
+    marketing_sales: [
+      { value: "flyers", label: "Printed flyers / posters" },
+      { value: "business_cards", label: "Business card printing" },
+      { value: "promotional_gifts", label: "Small promotional gifts" },
+      { value: "banners", label: "Banners (small, local)" },
+      { value: "name_tags", label: "Event name tags / badges" },
+      { value: "newspaper", label: "Newspaper / notice fees" },
+      { value: "other", label: "Other (specify)" },
+    ],
+    utilities_misc: [
+      { value: "airtime", label: "Airtime / internet bundles" },
+      { value: "momo_fees", label: "Mobile money fees" },
+      { value: "bank_charges", label: "Bank charges (small)" },
+      { value: "subscriptions", label: "Newspaper subscriptions" },
+      { value: "government_filing", label: "Government filing fees" },
+      { value: "sundries", label: "Miscellaneous sundries" },
+      { value: "donations", label: "Donations (petty)" },
+      { value: "other", label: "Other (specify)" },
+    ],
+  };
 
   // ── Render ────────────────────────────────────────────────────────────────────
 
@@ -1323,10 +1516,10 @@ export default function PettyCashListPage() {
         </Dialog>
 
         {/* ══════════════════════════════════════════════════════════
-            Record Expense Dialog — Fix E (dynamic accounts)
+            Record Expense Dialog — Enhanced with 7 Categories
         ══════════════════════════════════════════════════════════ */}
         <Dialog open={showExpenseDialog} onOpenChange={setShowExpenseDialog}>
-          <DialogContent className="sm:max-w-md dark:bg-slate-800">
+          <DialogContent className="sm:max-w-lg dark:bg-slate-800 max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="dark:text-white">
                 {t("pettyCash.recordExpense", "Record Expense")}
@@ -1346,12 +1539,82 @@ export default function PettyCashListPage() {
                 </p>
               </div>
 
+              {/* Category Selection */}
+              <div className="grid gap-2">
+                <Label className="dark:text-slate-200">Category *</Label>
+                <Select
+                  value={expenseForm.category}
+                  onValueChange={(value: any) =>
+                    setExpenseForm({
+                      ...expenseForm,
+                      category: value,
+                      subcategory: "",
+                      recipientType: "",
+                      isTaxable: false,
+                      isStaffAdvance: false,
+                    })
+                  }
+                >
+                  <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
+                    <SelectValue placeholder="Select expense category" />
+                  </SelectTrigger>
+                  <SelectContent className="dark:bg-slate-800">
+                    <SelectItem value="office_stationery">Office & Stationery</SelectItem>
+                    <SelectItem value="travel_transport">Travel & Transport</SelectItem>
+                    <SelectItem value="meals_entertainment">Meals & Entertainment</SelectItem>
+                    <SelectItem value="maintenance_repairs">Maintenance & Repairs</SelectItem>
+                    <SelectItem value="staff_welfare">Staff & Welfare</SelectItem>
+                    <SelectItem value="marketing_sales">Marketing & Sales</SelectItem>
+                    <SelectItem value="utilities_misc">Utilities & Miscellaneous</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Subcategory - Cascading dropdown based on category */}
+              <div className="grid gap-2">
+                <Label htmlFor="exp-subcategory" className="dark:text-slate-200">
+                  Subcategory / Details {expenseForm.subcategory === "other" && "*"}
+                </Label>
+                <Select
+                  value={expenseForm.subcategory}
+                  onValueChange={(value) =>
+                    setExpenseForm({
+                      ...expenseForm,
+                      subcategory: value,
+                    })
+                  }
+                >
+                  <SelectTrigger id="exp-subcategory" className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
+                    <SelectValue placeholder="Select subcategory" />
+                  </SelectTrigger>
+                  <SelectContent className="dark:bg-slate-800 max-h-60">
+                    {SUBCATEGORY_OPTIONS[expenseForm.category]?.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {expenseForm.subcategory === "other" && (
+                  <p className="text-xs text-amber-500">
+                    Please specify details in the Description field below
+                  </p>
+                )}
+                {expenseForm.category === "utilities_misc" && expenseForm.subcategory === "momo_fees" && (
+                  <p className="text-xs text-green-500">
+                    ✓ MoMo fees detected - GL will auto-map to Mobile Money Transaction Fees (5920)
+                  </p>
+                )}
+              </div>
+
+              {/* Amount */}
               <div className="grid gap-2">
                 <Label htmlFor="exp-amount" className="dark:text-slate-200">Amount *</Label>
                 <Input
                   id="exp-amount"
                   type="number"
                   min={0}
+                  step={0.01}
                   value={expenseForm.amount}
                   onChange={(e) =>
                     setExpenseForm({
@@ -1364,8 +1627,107 @@ export default function PettyCashListPage() {
                 />
               </div>
 
+              {/* Conditional: Purpose for Travel */}
+              {expenseForm.category === "travel_transport" && (
+                <div className="grid gap-2">
+                  <Label htmlFor="exp-purpose" className="dark:text-slate-200">Trip Purpose</Label>
+                  <Input
+                    id="exp-purpose"
+                    value={expenseForm.purpose}
+                    onChange={(e) =>
+                      setExpenseForm({ ...expenseForm, purpose: e.target.value })
+                    }
+                    placeholder="e.g., Client meeting in Kigali"
+                    className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                  />
+                </div>
+              )}
+
+              {/* Conditional: Recipient Type for Meals & Entertainment */}
+              {expenseForm.category === "meals_entertainment" && (
+                <>
+                  <div className="grid gap-2">
+                    <Label className="dark:text-slate-200">Recipient Type</Label>
+                    <Select
+                      value={expenseForm.recipientType}
+                      onValueChange={(value: any) =>
+                        setExpenseForm({ ...expenseForm, recipientType: value })
+                      }
+                    >
+                      <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
+                        <SelectValue placeholder="Who was this for?" />
+                      </SelectTrigger>
+                      <SelectContent className="dark:bg-slate-800">
+                        <SelectItem value="staff">Staff Only</SelectItem>
+                        <SelectItem value="client">Client Only</SelectItem>
+                        <SelectItem value="mixed">Staff & Client (Mixed)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="exp-taxable"
+                      checked={expenseForm.isTaxable}
+                      onCheckedChange={(checked) =>
+                        setExpenseForm({ ...expenseForm, isTaxable: checked === true })
+                      }
+                    />
+                    <Label htmlFor="exp-taxable" className="text-sm dark:text-slate-200">
+                      Taxable (for RRA reporting)
+                    </Label>
+                  </div>
+                </>
+              )}
+
+              {/* Conditional: Staff Advance for Staff & Welfare */}
+              {expenseForm.category === "staff_welfare" && (
+                <div className="p-3 border rounded-lg dark:border-slate-600">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="exp-advance"
+                      checked={expenseForm.isStaffAdvance}
+                      onCheckedChange={(checked) =>
+                        setExpenseForm({
+                          ...expenseForm,
+                          isStaffAdvance: checked === true,
+                        })
+                      }
+                    />
+                    <Label htmlFor="exp-advance" className="text-sm font-medium dark:text-slate-200">
+                      This is a staff advance (not an expense)
+                    </Label>
+                  </div>
+                  <p className="text-xs text-muted-foreground dark:text-slate-400 mt-1 ml-6">
+                    Advances are posted to Staff Debtors (Employee Advances) and must be reconciled later
+                  </p>
+                </div>
+              )}
+
+              {/* Maintenance Warning */}
+              {expenseForm.category === "maintenance_repairs" &&
+                selectedFund?.floatAmount &&
+                expenseForm.amount >= selectedFund.floatAmount * 0.3 && (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg dark:bg-amber-900/20 dark:border-amber-700">
+                    <p className="text-sm text-amber-800 dark:text-amber-300">
+                      <strong>⚠️ Warning:</strong> This maintenance expense is large relative to the petty cash float. Consider routing through a purchase order instead.
+                    </p>
+                  </div>
+                )}
+
+              {/* Display backend warnings */}
+              {expenseWarnings.length > 0 && (
+                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg dark:bg-yellow-900/20 dark:border-yellow-700">
+                  {expenseWarnings.map((w, i) => (
+                    <p key={i} className="text-sm text-yellow-800 dark:text-yellow-300">
+                      ⚠️ {w}
+                    </p>
+                  ))}
+                </div>
+              )}
+
+              {/* Expense Account (auto-populated but overridable) */}
               <div className="grid gap-2">
-                <Label className="dark:text-slate-200">Expense Account *</Label>
+                <Label className="dark:text-slate-200">GL Account</Label>
                 <Select
                   value={expenseForm.expenseAccountId}
                   onValueChange={(value) =>
@@ -1373,9 +1735,9 @@ export default function PettyCashListPage() {
                   }
                 >
                   <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
-                    <SelectValue placeholder="Select expense account" />
+                    <SelectValue placeholder="Auto-selected based on category" />
                   </SelectTrigger>
-                  <SelectContent className="dark:bg-slate-800">
+                  <SelectContent className="dark:bg-slate-800 max-h-60">
                     {activeExpenseAccounts.map((acct) => (
                       <SelectItem key={acct.code} value={acct.code}>
                         {acct.name} ({acct.code})
@@ -1383,8 +1745,12 @@ export default function PettyCashListPage() {
                     ))}
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-muted-foreground dark:text-slate-400">
+                  Auto-populated from category. Select manually to override.
+                </p>
               </div>
 
+              {/* Description */}
               <div className="grid gap-2">
                 <Label htmlFor="exp-desc" className="dark:text-slate-200">Description *</Label>
                 <Input
@@ -1396,11 +1762,12 @@ export default function PettyCashListPage() {
                       description: e.target.value,
                     })
                   }
-                  placeholder="Expense description"
+                  placeholder="Brief description of the expense"
                   className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                 />
               </div>
 
+              {/* Receipt Reference */}
               <div className="grid gap-2">
                 <Label htmlFor="exp-receipt" className="dark:text-slate-200">Receipt Reference</Label>
                 <Input
@@ -1417,6 +1784,7 @@ export default function PettyCashListPage() {
                 />
               </div>
 
+              {/* Transaction Date */}
               <div className="grid gap-2">
                 <Label htmlFor="exp-date" className="dark:text-slate-200">Transaction Date</Label>
                 <Input
@@ -1437,7 +1805,10 @@ export default function PettyCashListPage() {
             <DialogFooter>
               <Button
                 variant="outline"
-                onClick={() => setShowExpenseDialog(false)}
+                onClick={() => {
+                  setShowExpenseDialog(false);
+                  setExpenseWarnings([]);
+                }}
                 className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
               >
                 Cancel

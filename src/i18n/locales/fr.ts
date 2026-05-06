@@ -62,6 +62,7 @@ const fr = {
     balanceSheet: "Bilan",
     cashFlow: "Flux de trésorerie",
     financialRatios: "Ratios financiers",
+    debtMaturity: "Échéancier des Dettes",
     userManagement: "Utilisateurs",
     rolesPage: "Rôles",
     security: "Sécurité",

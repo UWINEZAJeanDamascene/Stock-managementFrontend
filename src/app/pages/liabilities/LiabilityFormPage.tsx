@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../..
 import { Button } from '../../components/ui/button';
 import { Label } from '../../components/ui/label';
 import { Input } from '../../components/ui/input';
+import { Checkbox } from '../../components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -26,7 +27,10 @@ import {
   FileText,
   Calculator,
   TrendingDown,
-  Landmark
+  Landmark,
+  Shield,
+  AlertTriangle,
+  Info
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { 
@@ -71,7 +75,27 @@ export default function LiabilityFormPage() {
     durationMonths: 12,
     interestMethod: 'simple',
     paymentTerms: 'monthly',
-    collateral: ''
+    collateral: '',
+    // IFRS 7 fields
+    isSecured: false,
+    securityDescription: '',
+    classification: 'bank_loan',
+    currencyCode: 'RWF',
+    exchangeRate: 1,
+    hasCovenants: false,
+    covenantDetails: '',
+    covenantBreach: false,
+    // IFRS 9 fields
+    ifrs9Classification: 'amortized_cost',
+    impairmentStage: 'stage_1',
+    eclProvision: 0,
+    probabilityOfDefault: 0,
+    lossGivenDefault: 45,
+    exposureAtDefault: 0,
+    effectiveInterestRate: 0,
+    significantIncreaseInCreditRisk: false,
+    daysPastDue: 0,
+    forbearanceStatus: 'none'
   });
 
   // Calculate payment schedule when relevant fields change
@@ -174,7 +198,27 @@ export default function LiabilityFormPage() {
           durationMonths: (liability as any).durationMonths || 12,
           interestMethod: (liability as any).interestMethod || 'simple',
           paymentTerms: (liability as any).paymentTerms || 'monthly',
-          collateral: (liability as any).collateral || ''
+          collateral: (liability as any).collateral || '',
+          // IFRS 7 fields
+          isSecured: (liability as any).isSecured || false,
+          securityDescription: (liability as any).securityDescription || '',
+          classification: (liability as any).classification || 'bank_loan',
+          currencyCode: (liability as any).currencyCode || 'RWF',
+          exchangeRate: (liability as any).exchangeRate || 1,
+          hasCovenants: (liability as any).hasCovenants || false,
+          covenantDetails: (liability as any).covenantDetails || '',
+          covenantBreach: (liability as any).covenantBreach || false,
+          // IFRS 9 fields
+          ifrs9Classification: (liability as any).ifrs9Classification || 'amortized_cost',
+          impairmentStage: (liability as any).impairmentStage || 'stage_1',
+          eclProvision: (liability as any).eclProvision || 0,
+          probabilityOfDefault: (liability as any).probabilityOfDefault || 0,
+          lossGivenDefault: (liability as any).lossGivenDefault || 45,
+          exposureAtDefault: (liability as any).exposureAtDefault || 0,
+          effectiveInterestRate: (liability as any).effectiveInterestRate || 0,
+          significantIncreaseInCreditRisk: (liability as any).significantIncreaseInCreditRisk || false,
+          daysPastDue: (liability as any).daysPastDue || 0,
+          forbearanceStatus: (liability as any).forbearanceStatus || 'none'
         });
       }
     } catch (error) {
@@ -227,12 +271,57 @@ export default function LiabilityFormPage() {
         durationMonths: formData.durationMonths,
         paymentTerms: formData.paymentTerms,
         collateral: formData.collateral || undefined,
+        // IFRS 7 fields
+        isSecured: formData.isSecured,
+        securityDescription: formData.securityDescription || undefined,
+        classification: formData.classification,
+        currencyCode: formData.currencyCode,
+        exchangeRate: formData.exchangeRate,
+        hasCovenants: formData.hasCovenants,
+        covenantDetails: formData.covenantDetails || undefined,
+        covenantBreach: formData.covenantBreach,
+        // IFRS 9 fields
+        ifrs9Classification: formData.ifrs9Classification,
+        impairmentStage: formData.impairmentStage,
+        eclProvision: formData.eclProvision,
+        probabilityOfDefault: formData.probabilityOfDefault,
+        lossGivenDefault: formData.lossGivenDefault,
+        exposureAtDefault: formData.exposureAtDefault,
+        effectiveInterestRate: formData.effectiveInterestRate,
+        significantIncreaseInCreditRisk: formData.significantIncreaseInCreditRisk,
+        daysPastDue: formData.daysPastDue,
+        forbearanceStatus: formData.forbearanceStatus,
         status: 'active'
       };
 
       let response: any;
       if (isEditMode) {
-        response = await loansApi.update(id!, payload);
+        // When editing, send IFRS 7 and IFRS 9 disclosure fields
+        const disclosurePayload = {
+          // IFRS 7.33 Classification
+          isSecured: formData.isSecured,
+          securityDescription: formData.securityDescription || undefined,
+          classification: formData.classification,
+          // IFRS 7.34 Currency
+          currencyCode: formData.currencyCode,
+          exchangeRate: formData.exchangeRate,
+          // IAS 1.74 Covenant tracking
+          hasCovenants: formData.hasCovenants,
+          covenantDetails: formData.covenantDetails || undefined,
+          covenantBreach: formData.covenantBreach,
+          // IFRS 9 fields
+          ifrs9Classification: formData.ifrs9Classification,
+          impairmentStage: formData.impairmentStage,
+          eclProvision: formData.eclProvision,
+          probabilityOfDefault: formData.probabilityOfDefault,
+          lossGivenDefault: formData.lossGivenDefault,
+          exposureAtDefault: formData.exposureAtDefault,
+          effectiveInterestRate: formData.effectiveInterestRate,
+          significantIncreaseInCreditRisk: formData.significantIncreaseInCreditRisk,
+          daysPastDue: formData.daysPastDue,
+          forbearanceStatus: formData.forbearanceStatus,
+        };
+        response = await loansApi.update(id!, disclosurePayload);
       } else {
         response = await loansApi.create(payload);
       }
@@ -551,6 +640,325 @@ export default function LiabilityFormPage() {
                     placeholder="Purpose of the loan"
                     className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                   />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* IFRS 7 Disclosure Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 dark:text-white">
+                  <Shield className="h-5 w-5 text-primary dark:text-primary" />
+                  IFRS 7 Disclosure
+                </CardTitle>
+                <CardDescription className="dark:text-slate-400">
+                  Financial instrument classification and covenant tracking
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-4 md:grid-cols-2">
+                {/* Loan Classification */}
+                <div className="space-y-2">
+                  <Label htmlFor="classification" className="dark:text-slate-200">Loan Classification (IFRS 7.33)</Label>
+                  <Select
+                    value={formData.classification}
+                    onValueChange={(value) => handleChange('classification', value)}
+                  >
+                    <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
+                      <SelectValue placeholder="Select classification" />
+                    </SelectTrigger>
+                    <SelectContent className="dark:bg-slate-800">
+                      <SelectItem value="bank_loan">Bank Loan</SelectItem>
+                      <SelectItem value="bond">Bond</SelectItem>
+                      <SelectItem value="finance_lease">Finance Lease (IFRS 16)</SelectItem>
+                      <SelectItem value="related_party">Related Party (IAS 24)</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Currency */}
+                <div className="space-y-2">
+                  <Label htmlFor="currencyCode" className="dark:text-slate-200">Currency (IFRS 7.34)</Label>
+                  <Select
+                    value={formData.currencyCode}
+                    onValueChange={(value) => handleChange('currencyCode', value)}
+                  >
+                    <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
+                      <SelectValue placeholder="Select currency" />
+                    </SelectTrigger>
+                    <SelectContent className="dark:bg-slate-800">
+                      <SelectItem value="RWF">RWF - Rwandan Franc</SelectItem>
+                      <SelectItem value="USD">USD - US Dollar</SelectItem>
+                      <SelectItem value="EUR">EUR - Euro</SelectItem>
+                      <SelectItem value="GBP">GBP - British Pound</SelectItem>
+                      <SelectItem value="UGX">UGX - Ugandan Shilling</SelectItem>
+                      <SelectItem value="KES">KES - Kenyan Shilling</SelectItem>
+                      <SelectItem value="TZS">TZS - Tanzanian Shilling</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Exchange Rate (only if not RWF) */}
+                {formData.currencyCode !== 'RWF' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="exchangeRate" className="dark:text-slate-200">Exchange Rate (to RWF)</Label>
+                    <Input
+                      id="exchangeRate"
+                      type="number"
+                      step="0.0001"
+                      value={formData.exchangeRate}
+                      onChange={(e) => handleChange('exchangeRate', parseFloat(e.target.value) || 1)}
+                      placeholder="1.0"
+                      className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                    />
+                  </div>
+                )}
+
+                {/* Secured Toggle */}
+                <div className="space-y-2 md:col-span-2">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="isSecured"
+                      checked={formData.isSecured}
+                      onCheckedChange={(checked) => handleChange('isSecured', checked === true)}
+                    />
+                    <Label htmlFor="isSecured" className="dark:text-slate-200 cursor-pointer">
+                      This loan is secured (IFRS 7.33)
+                    </Label>
+                  </div>
+                </div>
+
+                {/* Security Description (only if secured) */}
+                {formData.isSecured && (
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="securityDescription" className="dark:text-slate-200">Security/Collateral Description</Label>
+                    <Input
+                      id="securityDescription"
+                      value={formData.securityDescription}
+                      onChange={(e) => handleChange('securityDescription', e.target.value)}
+                      placeholder="e.g., Property mortgage, equipment pledge, etc."
+                      className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                    />
+                  </div>
+                )}
+
+                {/* Covenant Tracking */}
+                <div className="space-y-2 md:col-span-2 pt-4 border-t border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="hasCovenants"
+                      checked={formData.hasCovenants}
+                      onCheckedChange={(checked) => handleChange('hasCovenants', checked === true)}
+                    />
+                    <Label htmlFor="hasCovenants" className="dark:text-slate-200 cursor-pointer">
+                      This loan has financial covenants (IAS 1.74)
+                    </Label>
+                  </div>
+                </div>
+
+                {/* Covenant Details (only if has covenants) */}
+                {formData.hasCovenants && (
+                  <>
+                    <div className="space-y-2 md:col-span-2">
+                      <Label htmlFor="covenantDetails" className="dark:text-slate-200">Covenant Details</Label>
+                      <Input
+                        id="covenantDetails"
+                        value={formData.covenantDetails}
+                        onChange={(e) => handleChange('covenantDetails', e.target.value)}
+                        placeholder="e.g., Debt/EBITDA < 3.0, Current Ratio > 1.5"
+                        className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                      />
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="covenantBreach"
+                        checked={formData.covenantBreach}
+                        onCheckedChange={(checked) => handleChange('covenantBreach', checked === true)}
+                      />
+                      <Label htmlFor="covenantBreach" className="text-red-600 dark:text-red-400 cursor-pointer font-medium">
+                        <AlertTriangle className="h-4 w-4 inline mr-1" />
+                        Covenant breach detected - Reclassify to Current (IAS 1.74)
+                      </Label>
+                    </div>
+                  </>
+                )}
+
+                {/* IFRS 7 Guidance */}
+                <div className="mt-4 pt-4 border-t border-slate-700/50">
+                  <div className="flex items-start gap-2 text-xs text-slate-500">
+                    <Info className="h-4 w-4 flex-shrink-0 mt-0.5 text-slate-400" />
+                    <p>
+                      <strong>IFRS 7</strong> requires disclosure of financial instrument classification (IFRS 7.33) 
+                      and currency risk (IFRS 7.34). Covenant tracking ensures compliance with IAS 1.74 
+                      presentation requirements for borrowings.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* IFRS 9 - Financial Instruments Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 dark:text-white">
+                  <Calculator className="h-5 w-5 text-primary dark:text-primary" />
+                  IFRS 9 - Financial Instruments
+                </CardTitle>
+                <CardDescription className="dark:text-slate-400">
+                  Impairment (ECL model) and classification
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="ifrs9Classification" className="dark:text-slate-200">Classification</Label>
+                    <Select
+                      value={formData.ifrs9Classification}
+                      onValueChange={(value) => handleChange('ifrs9Classification', value)}
+                    >
+                      <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
+                        <SelectValue placeholder="Select classification" />
+                      </SelectTrigger>
+                      <SelectContent className="dark:bg-slate-800">
+                        <SelectItem value="amortized_cost">Amortized Cost</SelectItem>
+                        <SelectItem value="fvoci">FVOCI (Fair Value OCI)</SelectItem>
+                        <SelectItem value="fvtpl">FVTPL (Fair Value P&L)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-slate-500">IFRS 9 business model classification</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="impairmentStage" className="dark:text-slate-200">Impairment Stage (ECL)</Label>
+                    <Select
+                      value={formData.impairmentStage}
+                      onValueChange={(value) => handleChange('impairmentStage', value)}
+                    >
+                      <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
+                        <SelectValue placeholder="Select stage" />
+                      </SelectTrigger>
+                      <SelectContent className="dark:bg-slate-800">
+                        <SelectItem value="stage_1">Stage 1 - 12-month ECL</SelectItem>
+                        <SelectItem value="stage_2">Stage 2 - Lifetime ECL</SelectItem>
+                        <SelectItem value="stage_3">Stage 3 - Credit-impaired</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-slate-500">Expected Credit Loss stage</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="eclProvision" className="dark:text-slate-200">ECL Provision</Label>
+                    <Input
+                      id="eclProvision"
+                      type="number"
+                      value={formData.eclProvision}
+                      onChange={(e) => handleChange('eclProvision', parseFloat(e.target.value) || 0)}
+                      placeholder="0.00"
+                      className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                    />
+                    <p className="text-xs text-slate-500">Expected Credit Loss provision amount</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="daysPastDue" className="dark:text-slate-200">Days Past Due (DPD)</Label>
+                    <Input
+                      id="daysPastDue"
+                      type="number"
+                      value={formData.daysPastDue}
+                      onChange={(e) => handleChange('daysPastDue', parseInt(e.target.value) || 0)}
+                      placeholder="0"
+                      className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                    />
+                    <p className="text-xs text-slate-500">Days since last payment</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="probabilityOfDefault" className="dark:text-slate-200">Probability of Default (PD %)</Label>
+                    <Input
+                      id="probabilityOfDefault"
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.01"
+                      value={formData.probabilityOfDefault}
+                      onChange={(e) => handleChange('probabilityOfDefault', parseFloat(e.target.value) || 0)}
+                      placeholder="0.00"
+                      className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                    />
+                    <p className="text-xs text-slate-500">Likelihood of default (0-100%)</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="lossGivenDefault" className="dark:text-slate-200">Loss Given Default (LGD %)</Label>
+                    <Input
+                      id="lossGivenDefault"
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={formData.lossGivenDefault}
+                      onChange={(e) => handleChange('lossGivenDefault', parseFloat(e.target.value) || 0)}
+                      placeholder="45"
+                      className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                    />
+                    <p className="text-xs text-slate-500">Expected loss if default occurs (default: 45%)</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="effectiveInterestRate" className="dark:text-slate-200">Effective Interest Rate (EIR %)</Label>
+                    <Input
+                      id="effectiveInterestRate"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={formData.effectiveInterestRate}
+                      onChange={(e) => handleChange('effectiveInterestRate', parseFloat(e.target.value) || 0)}
+                      placeholder="0.00"
+                      className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                    />
+                    <p className="text-xs text-slate-500">Actual yield for amortized cost calculation</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="forbearanceStatus" className="dark:text-slate-200">Forbearance Status</Label>
+                    <Select
+                      value={formData.forbearanceStatus}
+                      onValueChange={(value) => handleChange('forbearanceStatus', value)}
+                    >
+                      <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent className="dark:bg-slate-800">
+                        <SelectItem value="none">None</SelectItem>
+                        <SelectItem value="temporary">Temporary</SelectItem>
+                        <SelectItem value="permanent">Permanent</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-slate-500">Restructuring/forbearance status</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2 pt-4 border-t border-slate-200 dark:border-slate-700">
+                  <Checkbox
+                    id="significantIncreaseInCreditRisk"
+                    checked={formData.significantIncreaseInCreditRisk}
+                    onCheckedChange={(checked) => handleChange('significantIncreaseInCreditRisk', checked === true)}
+                  />
+                  <Label htmlFor="significantIncreaseInCreditRisk" className="dark:text-slate-200 cursor-pointer text-amber-500">
+                    Significant Increase in Credit Risk (SICR) - Stage 2 indicator
+                  </Label>
+                </div>
+
+                {/* IFRS 9 Guidance */}
+                <div className="mt-4 pt-4 border-t border-slate-700/50">
+                  <div className="flex items-start gap-2 text-xs text-slate-500">
+                    <Info className="h-4 w-4 flex-shrink-0 mt-0.5 text-slate-400" />
+                    <p>
+                      <strong>IFRS 9</strong> requires classification (Amortized Cost/FVOCI/FVTPL) and impairment 
+                      using the Expected Credit Loss (ECL) model. ECL = PD × LGD × EAD. 
+                      Stage 1 (12-month ECL), Stage 2 (Lifetime ECL), Stage 3 (Credit-impaired).
+                    </p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
