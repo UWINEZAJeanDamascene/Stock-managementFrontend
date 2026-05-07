@@ -6,12 +6,6 @@ import {
   Typography,
   TextField,
   Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   TablePagination,
   FormControl,
   InputLabel,
@@ -21,7 +15,6 @@ import {
   IconButton,
   CircularProgress,
   InputAdornment,
-  Alert,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -51,6 +44,8 @@ export default function BatchesPage() {
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
+  const isDark = () => document.documentElement.classList.contains('dark');
+  const [dark, setDark] = useState(isDark());
 
   // Pagination
   const [page, setPage] = useState(0);
@@ -63,6 +58,12 @@ export default function BatchesPage() {
   const [warehouseFilter, setWarehouseFilter] = useState('');
   const [quarantinedFilter, setQuarantinedFilter] = useState<'' | 'true' | 'false'>('');
   const [expiryFilter, setExpiryFilter] = useState('');
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => setDark(isDark()));
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
 
   // Load products for filter
   useEffect(() => {
@@ -218,28 +219,63 @@ export default function BatchesPage() {
     }
   };
 
+  const toNum = (value?: string | number | null) => {
+    if (value == null) return 0;
+    const parsed = typeof value === 'number' ? value : parseFloat(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+
+  const totalQty = batches.reduce((sum, batch) => sum + toNum(batch.qtyOnHand), 0);
+  const totalValue = batches.reduce((sum, batch) => sum + (toNum(batch.qtyOnHand) * toNum(batch.unitCost)), 0);
+  const quarantinedCount = batches.filter((batch) => batch.isQuarantined).length;
+  const expiryRiskCount = batches.filter((batch) => isExpired(batch.expiryDate) || isNearingExpiry(batch.expiryDate)).length;
+
   return (
     <Layout>
       <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
         <Box sx={{ p: { xs: 2, sm: 3 } }} className="dark:text-white">
-          {/* Header - Responsive */}
-          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: { sm: 'space-between' }, alignItems: { xs: 'flex-start', sm: 'center' }, gap: 2, mb: 3 }}>
-            <Typography variant="h5" component="h1" className="dark:text-white text-xl sm:text-2xl">
-              {t('common.batches.title') || 'Batches'}
-            </Typography>
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<RefreshIcon />}
-              onClick={fetchBatches}
-              className="dark:border-slate-600 dark:text-white"
-            >
-              {t('common.refresh') || 'Refresh'}
-            </Button>
-          </Box>
+          <div className="mb-5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <Typography variant="h5" component="h1" sx={{ color: dark ? '#f8fafc' : '#0f172a', fontWeight: 850 }}>
+                  {t('common.batches.title', 'Batches')}
+                </Typography>
+                <Typography variant="body2" sx={{ color: dark ? '#94a3b8' : '#64748b' }}>
+                  Lot traceability, expiry exposure, quarantine status, and stock value by batch.
+                </Typography>
+              </div>
+              <Button
+                variant="outlined"
+                startIcon={<RefreshIcon size={18} />}
+                onClick={fetchBatches}
+                sx={{ borderColor: dark ? '#475569' : '#cbd5e1', color: dark ? '#e2e8f0' : '#334155' }}
+              >
+                {t('common.refresh', 'Refresh')}
+              </Button>
+            </div>
+          </div>
+
+          <div className="mb-5 grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4">
+            {[
+              ['Batches in View', total.toLocaleString(), `${batches.length.toLocaleString()} loaded`],
+              ['Quantity on Hand', totalQty.toLocaleString(undefined, { maximumFractionDigits: 2 }), 'Across active filters'],
+              ['Batch Value', `$${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 'Qty x unit cost'],
+              ['Expiry / Quarantine Risk', `${expiryRiskCount + quarantinedCount}`, `${expiryRiskCount} expiry, ${quarantinedCount} quarantine`],
+            ].map(([label, value, sub]) => (
+              <Paper key={label} sx={{ p: 2.75, backgroundColor: dark ? '#111827' : 'white', border: `1px solid ${dark ? '#334155' : '#e2e8f0'}`, boxShadow: 'none', borderRadius: 2 }}>
+                <Typography variant="caption" sx={{ color: dark ? '#94a3b8' : '#64748b', textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 800 }}>
+                  {label}
+                </Typography>
+                <Typography variant="h5" sx={{ color: dark ? '#f8fafc' : '#0f172a', fontWeight: 850, mt: 1 }}>
+                  {value}
+                </Typography>
+                <Typography variant="caption" sx={{ color: dark ? '#94a3b8' : '#64748b' }}>{sub}</Typography>
+              </Paper>
+            ))}
+          </div>
 
           {/* Filters */}
-          <Paper sx={{ p: 2, mb: 3 }} className="dark:!bg-slate-800 dark:border dark:border-slate-700">
+          <Paper sx={{ p: 2.5, mb: 3, backgroundColor: dark ? '#1e293b' : 'white', border: `1px solid ${dark ? '#334155' : '#e2e8f0'}`, boxShadow: 'none', borderRadius: 2 }}>
             <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
               {/* Search */}
               <TextField
@@ -247,8 +283,11 @@ export default function BatchesPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 size="small"
-                sx={{ minWidth: 200 }}
-                className="dark:text-white"
+                sx={{
+                  minWidth: 220,
+                  '& .MuiInputBase-root': { backgroundColor: dark ? '#0f172a' : 'white', color: dark ? '#e2e8f0' : '#0f172a' },
+                  '& .MuiOutlinedInput-notchedOutline': { borderColor: dark ? '#334155' : '#cbd5e1' },
+                }}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -260,19 +299,19 @@ export default function BatchesPage() {
 
               {/* Product Filter */}
               <FormControl size="small" sx={{ minWidth: 200 }}>
-                <InputLabel className="dark:text-slate-400">{t('common.batches.product') || 'Product'}</InputLabel>
+                <InputLabel sx={{ color: dark ? '#94a3b8' : '#64748b' }}>{t('common.batches.product', 'Product')}</InputLabel>
                 <Select
                   value={productFilter}
-                  label={t('common.batches.product') || 'Product'}
+                  label={t('common.batches.product', 'Product')}
                   onChange={(e) => setProductFilter(e.target.value)}
-                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                  sx={{ backgroundColor: dark ? '#0f172a' : 'white', color: dark ? '#e2e8f0' : '#0f172a', '& .MuiOutlinedInput-notchedOutline': { borderColor: dark ? '#334155' : '#cbd5e1' } }}
                   MenuProps={{
                     PaperProps: {
                       className: 'dark:!bg-slate-800 dark:!border-slate-700'
                     }
                   }}
                 >
-                  <MenuItem value="" className="dark:text-white">{t('common.all') || 'All'}</MenuItem>
+                  <MenuItem value="" className="dark:text-white">{t('common.all', 'All')}</MenuItem>
                   {products.map((p) => (
                     <MenuItem key={p._id} value={p._id} className="dark:text-white">
                       {p.name} ({p.sku})
@@ -283,19 +322,19 @@ export default function BatchesPage() {
 
               {/* Warehouse Filter */}
               <FormControl size="small" sx={{ minWidth: 180 }}>
-                <InputLabel className="dark:text-slate-400">{t('common.batches.warehouse') || 'Warehouse'}</InputLabel>
+                <InputLabel sx={{ color: dark ? '#94a3b8' : '#64748b' }}>{t('common.batches.warehouse', 'Warehouse')}</InputLabel>
                 <Select
                   value={warehouseFilter}
-                  label={t('common.batches.warehouse') || 'Warehouse'}
+                  label={t('common.batches.warehouse', 'Warehouse')}
                   onChange={(e) => setWarehouseFilter(e.target.value)}
-                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                  sx={{ backgroundColor: dark ? '#0f172a' : 'white', color: dark ? '#e2e8f0' : '#0f172a', '& .MuiOutlinedInput-notchedOutline': { borderColor: dark ? '#334155' : '#cbd5e1' } }}
                   MenuProps={{
                     PaperProps: {
                       className: 'dark:!bg-slate-800 dark:!border-slate-700'
                     }
                   }}
                 >
-                  <MenuItem value="" className="dark:text-white">{t('common.all') || 'All'}</MenuItem>
+                  <MenuItem value="" className="dark:text-white">{t('common.all', 'All')}</MenuItem>
                   {warehouses.map((w) => (
                     <MenuItem key={w._id} value={w._id} className="dark:text-white">
                       {w.name} ({w.code})
@@ -306,172 +345,121 @@ export default function BatchesPage() {
 
               {/* Quarantined Filter */}
               <FormControl size="small" sx={{ minWidth: 150 }}>
-                <InputLabel className="dark:text-slate-400">{t('common.batches.quarantined') || 'Quarantined'}</InputLabel>
+                <InputLabel sx={{ color: dark ? '#94a3b8' : '#64748b' }}>{t('common.batches.quarantined', 'Quarantined')}</InputLabel>
                 <Select
                   value={quarantinedFilter}
-                  label={t('common.batches.quarantined') || 'Quarantined'}
+                  label={t('common.batches.quarantined', 'Quarantined')}
                   onChange={(e) => setQuarantinedFilter(e.target.value as '' | 'true' | 'false')}
-                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                  sx={{ backgroundColor: dark ? '#0f172a' : 'white', color: dark ? '#e2e8f0' : '#0f172a', '& .MuiOutlinedInput-notchedOutline': { borderColor: dark ? '#334155' : '#cbd5e1' } }}
                   MenuProps={{
                     PaperProps: {
                       className: 'dark:!bg-slate-800 dark:!border-slate-700'
                     }
                   }}
                 >
-                  <MenuItem value="" className="dark:text-white">{t('common.all') || 'All'}</MenuItem>
-                  <MenuItem value="true" className="dark:text-white">{t('common.yes') || 'Yes'}</MenuItem>
-                  <MenuItem value="false" className="dark:text-white">{t('common.no') || 'No'}</MenuItem>
+                  <MenuItem value="" className="dark:text-white">{t('common.all', 'All')}</MenuItem>
+                  <MenuItem value="true" className="dark:text-white">{t('common.yes', 'Yes')}</MenuItem>
+                  <MenuItem value="false" className="dark:text-white">{t('common.no', 'No')}</MenuItem>
                 </Select>
               </FormControl>
 
               {/* Expiry Before Filter */}
               <TextField
                 type="date"
-                label={t('common.batches.expiryBefore') || 'Expiry Before'}
+                label={t('common.batches.expiryBefore', 'Expiry Before')}
                 value={expiryFilter}
                 onChange={(e) => setExpiryFilter(e.target.value)}
                 size="small"
-                sx={{ minWidth: 180 }}
+                sx={{
+                  minWidth: 180,
+                  '& .MuiInputBase-root': { backgroundColor: dark ? '#0f172a' : 'white', color: dark ? '#e2e8f0' : '#0f172a' },
+                  '& .MuiInputLabel-root': { color: dark ? '#94a3b8' : '#64748b' },
+                  '& .MuiOutlinedInput-notchedOutline': { borderColor: dark ? '#334155' : '#cbd5e1' },
+                }}
                 InputLabelProps={{ shrink: true }}
-                className="dark:text-white"
               />
             </Box>
           </Paper>
 
-          {/* Table */}
-          <TableContainer component={Paper} className="dark:!bg-slate-800 dark:border dark:border-slate-700">
-            <Table>
-              <TableHead>
-                <TableRow className="dark:bg-slate-800">
-                  <TableCell className="dark:text-slate-200">{t('common.batches.batchNo') || 'Batch No'}</TableCell>
-                  <TableCell className="dark:text-slate-200">{t('common.batches.product') || 'Product'}</TableCell>
-                  <TableCell className="dark:text-slate-200">{t('common.batches.warehouse') || 'Warehouse'}</TableCell>
-                  <TableCell align="right" className="dark:text-slate-200">{t('common.batches.qtyOnHand') || 'Qty On Hand'}</TableCell>
-                  <TableCell align="right" className="dark:text-slate-200">{t('common.batches.unitCost') || 'Unit Cost'}</TableCell>
-                  <TableCell className="dark:text-slate-200">{t('common.batches.manufactureDate') || 'Manufacture Date'}</TableCell>
-                  <TableCell className="dark:text-slate-200">{t('common.batches.expiryDate') || 'Expiry Date'}</TableCell>
-                  <TableCell className="dark:text-slate-200">{t('common.batches.quarantined') || 'Quarantined'}</TableCell>
-                  <TableCell align="center" className="dark:text-slate-200">{t('common.actions') || 'Actions'}</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody className="dark:bg-slate-800">
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
-                      <CircularProgress />
-                    </TableCell>
-                  </TableRow>
-                ) : batches.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
-                      <Typography color="text.secondary" className="dark:text-slate-400">
-                        {t('common.batches.noBatches') || 'No batches found'}
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  batches.map((batch) => (
-                    <TableRow
-                      key={batch._id}
-                      className="dark:bg-slate-800 dark:hover:bg-slate-700/50"
-                      sx={{
-                        backgroundColor: isExpired(batch.expiryDate)
-                          ? 'error.light'
-                          : isNearingExpiry(batch.expiryDate)
-                          ? 'warning.light'
-                          : batch.isQuarantined
-                          ? 'action.hover'
-                          : 'inherit',
-                      }}
-                    >
-                      <TableCell className="dark:text-slate-200">{batch.batchNo}</TableCell>
-                      <TableCell>
-                        <Typography className="dark:text-white">{batch.product?.name}</Typography>
-                        <Typography variant="caption" display="block" className="dark:text-slate-400">
-                          {batch.product?.sku}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography className="dark:text-white">{batch.warehouse?.name}</Typography>
-                        <Typography variant="caption" display="block" className="dark:text-slate-400">
-                          {batch.warehouse?.code}
-                        </Typography>
-                      </TableCell>
-                      <TableCell align="right" className="dark:text-slate-200">{Number(batch.qtyOnHand || 0).toFixed(2)}</TableCell>
-                      <TableCell align="right" className="dark:text-slate-200">${Number(batch.unitCost || 0).toFixed(6)}</TableCell>
-                      <TableCell className="dark:text-slate-200">{formatDate(batch.manufactureDate)}</TableCell>
-                      <TableCell>
-                        <Typography
-                          className={
-                            isExpired(batch.expiryDate)
-                              ? 'text-red-500'
-                              : isNearingExpiry(batch.expiryDate)
-                              ? 'text-amber-500'
-                              : 'dark:text-slate-200'
-                          }
-                        >
-                          {formatDate(batch.expiryDate)}
-                        </Typography>
-                        {isExpired(batch.expiryDate) && (
-                          <Chip
-                            label={t('common.batches.expired') || 'Expired'}
-                            color="error"
-                            size="small"
-                            sx={{ ml: 1 }}
-                          />
-                        )}
-                        {isNearingExpiry(batch.expiryDate) && !isExpired(batch.expiryDate) && (
-                          <Chip
-                            label={t('common.batches.expiringSoon') || 'Expiring Soon'}
-                            color="warning"
-                            size="small"
-                            sx={{ ml: 1 }}
-                          />
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {batch.isQuarantined ? (
-                          <Chip
-                            icon={<QuarantineIcon size={14} />}
-                            label={t('common.yes') || 'Yes'}
-                            color="error"
-                            size="small"
-                          />
-                        ) : (
-                          <Chip
-                            label={t('common.no') || 'No'}
-                            color="success"
-                            size="small"
-                            variant="outlined"
-                          />
-                        )}
-                      </TableCell>
-                      <TableCell align="center">
-                        <IconButton
-                          size="small"
-                          onClick={() => handleToggleQuarantine(batch._id)}
-                          disabled={updating === batch._id}
-                          title={
-                            batch.isQuarantined
-                              ? t('common.batches.unquarantine') || 'Remove Quarantine'
-                              : t('common.batches.quarantine') || 'Quarantine'
-                          }
-                          className="dark:text-slate-300 dark:hover:text-white"
-                        >
-                          {updating === batch._id ? (
-                            <CircularProgress size={18} />
-                          ) : batch.isQuarantined ? (
-                            <UnquarantineIcon size={18} />
-                          ) : (
-                            <QuarantineIcon size={18} />
+          <Paper sx={{ backgroundColor: dark ? '#111827' : 'white', border: `1px solid ${dark ? '#334155' : '#e2e8f0'}`, boxShadow: 'none', borderRadius: 2, overflow: 'hidden' }}>
+            <Box sx={{ px: 3, py: 2.25, borderBottom: `1px solid ${dark ? '#334155' : '#e2e8f0'}` }}>
+              <Typography variant="subtitle1" sx={{ color: dark ? '#f8fafc' : '#0f172a', fontWeight: 850 }}>Batch Register</Typography>
+              <Typography variant="caption" sx={{ color: dark ? '#94a3b8' : '#64748b' }}>Operational batch cards with expiry, quarantine, value, and warehouse context.</Typography>
+            </Box>
+            <Box sx={{ p: 2.5 }}>
+              {loading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 7 }}>
+                  <CircularProgress />
+                </Box>
+              ) : batches.length === 0 ? (
+                <Box sx={{ py: 8, textAlign: 'center' }}>
+                  <Typography variant="subtitle2" sx={{ color: dark ? '#e2e8f0' : '#334155', fontWeight: 800 }}>
+                    {t('common.batches.noBatches', 'No batches found')}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: dark ? '#94a3b8' : '#64748b' }}>
+                    Received batch lots will appear here with expiry and quarantine controls.
+                  </Typography>
+                </Box>
+              ) : (
+                <div className="grid gap-3">
+                  {batches.map((batch) => {
+                    const expired = isExpired(batch.expiryDate);
+                    const expiringSoon = isNearingExpiry(batch.expiryDate);
+                    const batchValue = toNum(batch.qtyOnHand) * toNum(batch.unitCost);
+                    return (
+                      <div
+                        key={batch._id}
+                        className="grid gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition hover:border-blue-300 dark:border-slate-700 dark:bg-slate-950/60 dark:hover:border-blue-800 lg:grid-cols-[1.1fr_1fr_0.9fr_0.9fr_auto]"
+                      >
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="rounded-md bg-slate-100 px-2 py-1 font-mono text-xs font-bold text-slate-700 dark:bg-slate-800 dark:text-slate-200">{batch.batchNo}</span>
+                            {batch.isQuarantined && <Chip icon={<QuarantineIcon size={14} />} label={t('common.batches.quarantined', 'Quarantined')} color="error" size="small" />}
+                          </div>
+                          <p className="mt-2 truncate text-sm font-bold text-slate-950 dark:text-white">{batch.product?.name || '-'}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">{batch.product?.sku || '-'}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Warehouse</p>
+                          <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{batch.warehouse?.name || '-'}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">{batch.warehouse?.code || '-'}</p>
+                        </div>
+                        <div className="rounded-md bg-slate-50 p-3 dark:bg-slate-900">
+                          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">On Hand</p>
+                          <p className="mt-1 text-xl font-black text-slate-950 dark:text-white">{toNum(batch.qtyOnHand).toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+                          <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">${toNum(batch.unitCost).toFixed(6)} unit cost</p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Expiry</p>
+                          <p className={`mt-1 text-sm font-bold ${expired ? 'text-red-500' : expiringSoon ? 'text-amber-500' : 'text-slate-900 dark:text-white'}`}>
+                            {formatDate(batch.expiryDate)}
+                          </p>
+                          <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Mfg {formatDate(batch.manufactureDate)}</p>
+                          {(expired || expiringSoon) && (
+                            <Chip label={expired ? t('common.batches.expired', 'Expired') : t('common.batches.expiringSoon', 'Expiring Soon')} color={expired ? 'error' : 'warning'} size="small" sx={{ mt: 1 }} />
                           )}
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+                        </div>
+                        <div className="flex items-center justify-between gap-4 lg:flex-col lg:items-end">
+                          <div className="text-left lg:text-right">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Value</p>
+                            <p className="mt-1 font-mono text-sm font-bold text-slate-950 dark:text-white">${batchValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                          </div>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleToggleQuarantine(batch._id)}
+                            disabled={updating === batch._id}
+                            title={batch.isQuarantined ? t('common.batches.unquarantine', 'Remove Quarantine') : t('common.batches.quarantine', 'Quarantine')}
+                            sx={{ border: `1px solid ${dark ? '#334155' : '#cbd5e1'}`, color: dark ? '#e2e8f0' : '#334155' }}
+                          >
+                            {updating === batch._id ? <CircularProgress size={18} /> : batch.isQuarantined ? <UnquarantineIcon size={18} /> : <QuarantineIcon size={18} />}
+                          </IconButton>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </Box>
             <TablePagination
               rowsPerPageOptions={[5, 10, 25, 50]}
               component="div"
@@ -480,9 +468,13 @@ export default function BatchesPage() {
               page={page}
               onPageChange={handleChangePage}
               onRowsPerPageChange={handleChangeRowsPerPage}
-              className="dark:bg-slate-800 dark:text-slate-300"
+              sx={{
+                backgroundColor: dark ? '#0f172a' : '#f8fafc',
+                color: dark ? '#e2e8f0' : '#334155',
+                borderTop: `1px solid ${dark ? '#334155' : '#e2e8f0'}`,
+              }}
             />
-          </TableContainer>
+          </Paper>
         </Box>
       </div>
     </Layout>

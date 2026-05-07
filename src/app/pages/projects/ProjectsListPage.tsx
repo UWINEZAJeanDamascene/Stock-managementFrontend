@@ -59,6 +59,11 @@ const TYPE_ICONS: Record<string, string> = {
 
 const ALL_FILTER_VALUE = "__all__";
 
+const toAmount = (value: unknown) => {
+  const amount = Number(value);
+  return Number.isFinite(amount) ? amount : 0;
+};
+
 export default function ProjectsListPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -113,9 +118,18 @@ export default function ProjectsListPage() {
     );
   });
 
-  const totalBudget = filteredProjects.reduce((sum, p) => sum + (p.budget_allocated || 0), 0);
-  const totalSpent = filteredProjects.reduce((sum, p) => sum + (p.budget_spent || 0), 0);
+  const totalBudget = filteredProjects.reduce((sum, p) => sum + toAmount(p.budget_allocated), 0);
+  const totalSpent = filteredProjects.reduce((sum, p) => sum + toAmount(p.budget_spent), 0);
   const totalRemaining = totalBudget - totalSpent;
+
+  const getProjectProgress = (project: Project) => {
+    const budget = toAmount(project.budget_allocated);
+    const spent = toAmount(project.budget_spent);
+    if (budget > 0) {
+      return Math.min(100, (spent / budget) * 100);
+    }
+    return toAmount(project.progress_percent);
+  };
 
   const getStatusBadge = (status: string) => {
     const cls = STATUS_COLORS[status] || "bg-gray-500/10 text-gray-500";
@@ -290,15 +304,15 @@ export default function ProjectsListPage() {
                     </TableCell>
                     <TableCell>{getStatusBadge(project.status)}</TableCell>
                     <TableCell className="text-right font-medium">
-                      {formatCurrency(project.budget_allocated)}
+                      {formatCurrency(toAmount(project.budget_allocated))}
                     </TableCell>
                     <TableCell className="text-right text-red-500">
-                      {formatCurrency(project.budget_spent)}
+                      {formatCurrency(toAmount(project.budget_spent))}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
                         <TrendingUp className="h-3 w-3 text-muted-foreground" />
-                        <span className="text-sm">{project.progress_percent}%</span>
+                        <span className="text-sm">{getProjectProgress(project).toFixed(1)}%</span>
                       </div>
                     </TableCell>
                     <TableCell>

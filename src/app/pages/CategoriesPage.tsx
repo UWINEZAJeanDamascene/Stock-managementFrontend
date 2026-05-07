@@ -9,7 +9,9 @@ import {
   Folder, 
   FolderOpen,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  GitBranch,
+  ShieldCheck
 } from 'lucide-react';
 import { Layout } from '@/app/layout/Layout';
 import { Button } from '@/app/components/ui/button';
@@ -38,7 +40,6 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { toast } from 'sonner';
 import { categoriesApi } from '@/lib/api';
-import { APP_ROUTES } from '@/config/routes';
 
 // Type definitions
 interface Category {
@@ -237,14 +238,14 @@ export default function CategoriesPage() {
     return (
       <div key={category._id}>
         <div 
-          className="flex items-center justify-between py-2 px-3 hover:bg-muted/50 rounded-md group"
+          className="group flex items-center justify-between rounded-lg border border-transparent px-3 py-3 transition hover:border-slate-200 hover:bg-white hover:shadow-sm dark:hover:border-slate-700 dark:hover:bg-slate-900"
           style={{ paddingLeft }}
         >
           <div className="flex items-center gap-2 flex-1 min-w-0">
             {hasChildren ? (
               <button
                 onClick={() => toggleExpand(category._id)}
-                className="p-0.5 hover:bg-muted rounded"
+                className="rounded-md p-1 hover:bg-slate-100 dark:hover:bg-slate-800"
               >
                 {isExpanded ? (
                   <ChevronDown className="h-4 w-4 text-muted-foreground" />
@@ -262,15 +263,20 @@ export default function CategoriesPage() {
               <Folder className="h-5 w-5 text-yellow-500 dark:text-yellow-400 flex-shrink-0" />
             )}
             
-            <span className="truncate font-medium text-slate-900 dark:text-white">{category.name}</span>
+            <span className="truncate font-semibold text-slate-900 dark:text-white">{category.name}</span>
             {category.description && (
-              <span className="text-muted-foreground text-sm truncate hidden sm:inline">
+              <span className="hidden truncate text-sm text-slate-500 dark:text-slate-400 sm:inline">
                 - {category.description}
+              </span>
+            )}
+            {hasChildren && (
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                {category.children!.length}
               </span>
             )}
           </div>
           
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
             <Button
               variant="ghost"
               size="icon"
@@ -369,14 +375,24 @@ export default function CategoriesPage() {
     return false;
   };
 
+  const flattenTree = (items: Category[]): Category[] => {
+    return items.flatMap(item => [item, ...flattenTree(item.children || [])]);
+  };
+
+  const allCategories = flattenTree(categories);
+  const activeCategories = allCategories.filter(category => category.isActive !== false).length;
+  const leafCategories = allCategories.filter(category => !category.children || category.children.length === 0).length;
+  const translatedCategoryTitle = t('common.categories');
+  const categoryTitle = translatedCategoryTitle === 'common.categories' ? 'Categories' : translatedCategoryTitle;
+
   return (
     <Layout>
-      <div className="container mx-auto py-6 space-y-6 bg-slate-50 dark:bg-slate-900 min-h-screen">
+      <div className="container mx-auto py-6 px-4 space-y-6 bg-slate-50 dark:bg-slate-950 min-h-screen">
       {/* Page Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white">{t('pages.categories.title')}</h1>
-          <p className="text-muted-foreground">{t('pages.categories.subtitle')}</p>
+          <p className="text-slate-500 dark:text-slate-400">{t('pages.categories.subtitle')}</p>
         </div>
         <Button onClick={() => handleAdd()}>
           <Plus className="h-4 w-4 mr-2" />
@@ -384,12 +400,45 @@ export default function CategoriesPage() {
         </Button>
       </div>
 
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Category Tree</p>
+              <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">{allCategories.length}</p>
+            </div>
+            <Folder className="h-9 w-9 text-yellow-500" />
+          </div>
+          <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{categories.length} top-level groups</p>
+        </div>
+        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Structure Depth</p>
+              <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">{leafCategories}</p>
+            </div>
+            <GitBranch className="h-9 w-9 text-blue-500" />
+          </div>
+          <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Leaf categories ready for products</p>
+        </div>
+        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Control Status</p>
+              <p className="mt-2 text-2xl font-bold text-emerald-600 dark:text-emerald-300">{activeCategories}</p>
+            </div>
+            <ShieldCheck className="h-9 w-9 text-emerald-500" />
+          </div>
+          <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Active categories in use</p>
+        </div>
+      </div>
+
       {/* Categories Tree */}
-      <Card className="dark:bg-slate-800">
+      <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
         <CardHeader>
-          <CardTitle className="text-slate-900 dark:text-white">{t('common.categories')}</CardTitle>
+          <CardTitle className="text-slate-900 dark:text-white">{categoryTitle}</CardTitle>
         </CardHeader>
-        <CardContent className="dark:bg-slate-800">
+        <CardContent>
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />

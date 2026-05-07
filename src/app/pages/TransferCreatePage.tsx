@@ -81,6 +81,14 @@ export default function TransferCreatePage() {
   // Success dialog
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [journalEntry, setJournalEntry] = useState<JournalEntry | null>(null);
+  const isDark = () => document.documentElement.classList.contains('dark');
+  const [dark, setDark] = useState(isDark());
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => setDark(isDark()));
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
 
   // Fetch products and warehouses
   useEffect(() => {
@@ -184,19 +192,38 @@ export default function TransferCreatePage() {
   };
 
   const totalValue = items.reduce((sum, item) => sum + (item.quantity * item.unitCost), 0);
+  const panelSx = {
+    p: 3,
+    backgroundColor: dark ? '#111827' : 'white',
+    border: `1px solid ${dark ? '#334155' : '#e2e8f0'}`,
+    boxShadow: 'none',
+  };
+  const fieldSx = {
+    '& .MuiInputBase-root': {
+      backgroundColor: dark ? '#0f172a' : 'white',
+      color: dark ? '#e2e8f0' : '#1e293b',
+    },
+    '& .MuiInputLabel-root': {
+      color: dark ? '#94a3b8' : '#64748b',
+    },
+    '& .MuiOutlinedInput-notchedOutline': {
+      borderColor: dark ? '#334155' : '#cbd5e1',
+    },
+  };
 
   return (
     <Layout>
-      <Box sx={{ p: 3 }}>
+      <Box sx={{ p: 3 }} className="min-h-screen bg-slate-50 dark:bg-slate-950">
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
           <Button
             startIcon={<ArrowLeftIcon />}
             onClick={() => navigate('/stock-transfers')}
+            sx={{ color: dark ? '#93c5fd' : '#2563eb' }}
           >
             {t('common.back', 'Back')}
           </Button>
-          <Typography variant="h5" component="h1">
+          <Typography variant="h5" component="h1" sx={{ color: dark ? '#f8fafc' : '#0f172a', fontWeight: 700 }}>
             {t('transfers.newTransfer', 'New Stock Transfer')}
           </Typography>
         </div>
@@ -210,13 +237,13 @@ export default function TransferCreatePage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Transfer Details */}
-          <Paper className="p-4">
-            <Typography variant="h6" className="mb-4">
+          <Paper sx={panelSx}>
+            <Typography variant="h6" sx={{ color: dark ? '#f8fafc' : '#0f172a', mb: 2 }}>
               {t('transfers.transferDetails', 'Transfer Details')}
             </Typography>
             
             <div className="space-y-4">
-              <FormControl fullWidth required>
+              <FormControl fullWidth required sx={fieldSx}>
                 <InputLabel>{t('transfers.fromWarehouse', 'From Warehouse')}</InputLabel>
                 <Select
                   value={fromWarehouse}
@@ -229,7 +256,7 @@ export default function TransferCreatePage() {
                 </Select>
               </FormControl>
               
-              <FormControl fullWidth required>
+              <FormControl fullWidth required sx={fieldSx}>
                 <InputLabel>{t('transfers.toWarehouse', 'To Warehouse')}</InputLabel>
                 <Select
                   value={toWarehouse}
@@ -249,6 +276,7 @@ export default function TransferCreatePage() {
                 value={transferDate}
                 onChange={(e) => setTransferDate(e.target.value)}
                 InputLabelProps={{ shrink: true }}
+                sx={fieldSx}
               />
               
               <TextField
@@ -258,19 +286,27 @@ export default function TransferCreatePage() {
                 label={t('transfers.notes', 'Notes')}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
+                sx={fieldSx}
               />
             </div>
           </Paper>
 
           {/* Transfer Items */}
-          <Paper className="p-4">
-            <Typography variant="h6" className="mb-4">
+          <Paper sx={panelSx}>
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div>
+                <Typography variant="h6" sx={{ color: dark ? '#f8fafc' : '#0f172a' }}>
               {t('transfers.items', 'Transfer Items')}
             </Typography>
+                <Typography variant="caption" sx={{ color: dark ? '#94a3b8' : '#64748b' }}>
+                  {items.length} lines · ${totalValue.toFixed(2)} total transfer value
+                </Typography>
+              </div>
+            </div>
             
             {/* Add Product */}
             <div className="flex gap-2 mb-4">
-              <FormControl fullWidth>
+              <FormControl fullWidth sx={fieldSx}>
                 <InputLabel>{t('transfers.selectProduct', 'Select Product')}</InputLabel>
                 <Select
                   value={selectedProduct}
@@ -294,27 +330,27 @@ export default function TransferCreatePage() {
             </div>
 
             {/* Items Table */}
-            <TableContainer>
+            <TableContainer sx={{ border: `1px solid ${dark ? '#334155' : '#e2e8f0'}`, borderRadius: 1 }}>
               <Table size="small">
                 <TableHead>
-                  <TableRow>
-                    <TableCell>{t('transfers.product', 'Product')}</TableCell>
-                    <TableCell align="right">{t('transfers.quantity', 'Qty')}</TableCell>
-                    <TableCell align="right">{t('transfers.unitCost', 'Unit Cost')}</TableCell>
-                    <TableCell align="right">{t('transfers.total', 'Total')}</TableCell>
+                  <TableRow sx={{ backgroundColor: dark ? '#0f172a' : '#f8fafc' }}>
+                    <TableCell sx={{ color: dark ? '#e2e8f0' : '#0f172a', fontWeight: 600 }}>{t('transfers.product', 'Product')}</TableCell>
+                    <TableCell align="right" sx={{ color: dark ? '#e2e8f0' : '#0f172a', fontWeight: 600 }}>{t('transfers.quantity', 'Qty')}</TableCell>
+                    <TableCell align="right" sx={{ color: dark ? '#e2e8f0' : '#0f172a', fontWeight: 600 }}>{t('transfers.unitCost', 'Unit Cost')}</TableCell>
+                    <TableCell align="right" sx={{ color: dark ? '#e2e8f0' : '#0f172a', fontWeight: 600 }}>{t('transfers.total', 'Total')}</TableCell>
                     <TableCell></TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {items.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} align="center">
+                      <TableCell colSpan={5} align="center" sx={{ py: 5, color: dark ? '#94a3b8' : '#64748b' }}>
                         {t('transfers.noItems', 'No items added')}
                       </TableCell>
                     </TableRow>
                   ) : (
                     items.map((item, index) => (
-                      <TableRow key={index}>
+                      <TableRow key={index} sx={{ '& td': { color: dark ? '#e2e8f0' : '#1e293b' } }}>
                         <TableCell>
                           <Typography variant="body2">{item.productName}</Typography>
                           <Typography variant="caption" color="text.secondary">
@@ -328,7 +364,7 @@ export default function TransferCreatePage() {
                             value={item.quantity}
                             onChange={(e) => handleItemChange(index, 'quantity', parseInt(e.target.value) || 0)}
                             inputProps={{ min: 1 }}
-                            sx={{ width: 80 }}
+                            sx={{ width: 90, ...fieldSx }}
                           />
                         </TableCell>
                         <TableCell>
@@ -338,7 +374,7 @@ export default function TransferCreatePage() {
                             value={item.unitCost}
                             onChange={(e) => handleItemChange(index, 'unitCost', parseFloat(e.target.value) || 0)}
                             inputProps={{ min: 0, step: 0.01 }}
-                            sx={{ width: 100 }}
+                            sx={{ width: 110, ...fieldSx }}
                           />
                         </TableCell>
                         <TableCell align="right">

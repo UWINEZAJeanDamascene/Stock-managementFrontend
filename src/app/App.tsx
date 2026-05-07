@@ -117,15 +117,8 @@ import BudgetFormPage from './pages/budgets/BudgetFormPage';
 import BudgetDetailPage from './pages/budgets/BudgetDetailPage';
 import BudgetSettingsPage from './pages/budgets/BudgetSettingsPage';
 import ProjectsListPage from './pages/projects/ProjectsListPage';
-
-function ProjectPlaceholder() {
-  return (
-    <div className="p-6">
-      <h2 className="text-xl font-bold">Project page</h2>
-      <p className="text-muted-foreground">This project subpage is not implemented yet.</p>
-    </div>
-  );
-}
+import ProjectFormPage from './pages/projects/ProjectFormPage';
+import ProjectDetailPage from './pages/projects/ProjectDetailPage';
 import ARAgingPage from './pages/ar/ARAgingPage';
 import ARReconciliationPage from './pages/ar/ARReconciliationPage';
 import ExpensesListPage from './pages/expenses/ExpensesListPage';
@@ -595,22 +588,27 @@ function AppRoutes() {
         } />
         <Route path="/projects/new" element={
           <ErrorBoundary>
-            <ProjectPlaceholder />
+            <ProjectFormPage />
           </ErrorBoundary>
         } />
         <Route path="/projects/:id" element={
           <ErrorBoundary>
-            <ProjectPlaceholder />
+            <ProjectDetailPage />
           </ErrorBoundary>
         } />
         <Route path="/projects/:id/edit" element={
           <ErrorBoundary>
-            <ProjectPlaceholder />
+            <ProjectFormPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/projects/:id/wbs" element={
+          <ErrorBoundary>
+            <ProjectDetailPage />
           </ErrorBoundary>
         } />
         <Route path="/projects/:id/budget" element={
           <ErrorBoundary>
-            <ProjectPlaceholder />
+            <ProjectDetailPage />
           </ErrorBoundary>
         } />
         {/* Expenses */}

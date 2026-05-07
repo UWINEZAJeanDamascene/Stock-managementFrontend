@@ -67,7 +67,7 @@ export function BudgetEncumbrancePanel({
   const [submitting, setSubmitting] = useState(false);
 
   // Form state
-  const [accountId, setAccountId] = useState("");
+  const [budgetLineId, setBudgetLineId] = useState("");
   const [sourceType, setSourceType] = useState<"purchase_order" | "goods_received_note" | "expense_request" | "manual">("purchase_order");
   const [sourceNumber, setSourceNumber] = useState("");
   const [amount, setAmount] = useState("");
@@ -99,7 +99,7 @@ export function BudgetEncumbrancePanel({
   };
 
   const handleCreateEncumbrance = async () => {
-    if (!accountId || !sourceNumber || !amount || !description) {
+    if (!budgetLineId || !sourceNumber || !amount || !description) {
       toast.error("Please fill in all required fields");
       return;
     }
@@ -112,8 +112,22 @@ export function BudgetEncumbrancePanel({
 
     setSubmitting(true);
     try {
+      const selectedLine = budgetLines.find((line) => line._id === budgetLineId);
+      const selectedAccountId = selectedLine
+        ? typeof selectedLine.account_id === "object"
+          ? selectedLine.account_id._id
+          : selectedLine.account_id
+        : "";
+
+      if (!selectedLine || !selectedAccountId) {
+        toast.error("Please select a valid budget line");
+        setSubmitting(false);
+        return;
+      }
+
       const response = await budgetsApi.createEncumbrance(budgetId, {
-        account_id: accountId,
+        budget_line_id: budgetLineId,
+        account_id: selectedAccountId,
         source_type: sourceType,
         source_id: `${sourceType}_${Date.now()}`,
         source_number: sourceNumber,
@@ -168,7 +182,7 @@ export function BudgetEncumbrancePanel({
   };
 
   const resetForm = () => {
-    setAccountId("");
+    setBudgetLineId("");
     setSourceType("purchase_order");
     setSourceNumber("");
     setAmount("");
@@ -220,18 +234,51 @@ export function BudgetEncumbrancePanel({
     });
   };
 
-  const getLineLabel = (accountId: string) => {
-    const line = budgetLines.find((l) => {
-      const id = typeof l.account_id === "object" ? l.account_id._id : l.account_id;
-      return id === accountId;
-    });
+  const toAmount = (value: unknown) => {
+    const amount = Number(value);
+    return Number.isFinite(amount) ? amount : 0;
+  };
+
+  const originalEncumbered = encumbrances.reduce(
+    (sum, enc) => sum + toAmount(enc.encumbered_amount),
+    0,
+  );
+  const openCommitted = encumbrances.reduce(
+    (sum, enc) => sum + toAmount(enc.remaining_amount),
+    0,
+  );
+  const liquidatedAmount = encumbrances.reduce(
+    (sum, enc) => sum + toAmount(enc.liquidated_amount),
+    0,
+  );
+  const activeEncumbranceCount = encumbrances.filter((enc) =>
+    ["active", "partially_liquidated"].includes(enc.status),
+  ).length;
+  const summaryOriginalEncumbered = encumbrances.length
+    ? originalEncumbered
+    : toAmount(summary?.totalEncumbered ?? summary?.total_encumbered);
+  const summaryOpenCommitted = encumbrances.length
+    ? openCommitted
+    : toAmount(summary?.totalRemaining ?? summary?.total_remaining);
+  const summaryActiveCount = encumbrances.length
+    ? activeEncumbranceCount
+    : Number(summary?.byStatus?.active?.count || summary?.by_status?.active || 0);
+
+  const getLineLabel = (lineId: string) => {
+    const line = budgetLines.find((l) => l._id === lineId);
     if (!line) return "Unknown";
     const account = typeof line.account_id === "object" ? line.account_id : null;
-    return `${account?.code || ""} - ${account?.name || "Unknown"}`;
+    const project =
+      line.project_id && typeof line.project_id === "object"
+        ? ` - ${line.project_id.wbs_code || line.wbs_code || line.project_id.project_code}`
+        : line.wbs_code
+          ? ` - ${line.wbs_code}`
+          : "";
+    return `${account?.code || ""} - ${account?.name || "Unknown"}${project}`;
   };
 
   const canCreateEncumbrance =
-    canUpdate && ["draft", "approved", "locked"].includes(budgetStatus);
+    canUpdate && ["approved", "active", "locked"].includes(budgetStatus);
 
   if (loading) {
     return (
@@ -248,21 +295,29 @@ export function BudgetEncumbrancePanel({
   return (
     <div className="space-y-4">
       {/* Summary Cards */}
-      {summary && (
-        <div className="grid grid-cols-3 gap-4">
+      {(summary || encumbrances.length > 0) && (
+        <div className="grid gap-4 md:grid-cols-4">
           <Card>
             <CardContent className="p-4">
-              <div className="text-sm text-muted-foreground">Total Encumbered</div>
+              <div className="text-sm text-muted-foreground">Original Encumbrances</div>
               <div className="text-xl font-semibold text-amber-600">
-                {formatCurrency(summary.totalEncumbered)}
+                {formatCurrency(summaryOriginalEncumbered)}
               </div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4">
-              <div className="text-sm text-muted-foreground">Remaining Commitments</div>
+              <div className="text-sm text-muted-foreground">Open Commitments</div>
               <div className="text-xl font-semibold text-blue-600">
-                {formatCurrency(summary.totalRemaining)}
+                {formatCurrency(summaryOpenCommitted)}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="text-sm text-muted-foreground">Liquidated to Actual</div>
+              <div className="text-xl font-semibold text-red-500">
+                {formatCurrency(liquidatedAmount)}
               </div>
             </CardContent>
           </Card>
@@ -270,7 +325,7 @@ export function BudgetEncumbrancePanel({
             <CardContent className="p-4">
               <div className="text-sm text-muted-foreground">Active Encumbrances</div>
               <div className="text-xl font-semibold">
-                {summary.byStatus?.active?.count || 0}
+                {summaryActiveCount}
               </div>
             </CardContent>
           </Card>
@@ -315,8 +370,9 @@ export function BudgetEncumbrancePanel({
                 <TableRow>
                   <TableHead>Source</TableHead>
                   <TableHead>Account</TableHead>
-                  <TableHead>Encumbered</TableHead>
-                  <TableHead>Remaining</TableHead>
+                  <TableHead>Original</TableHead>
+                  <TableHead>Liquidated</TableHead>
+                  <TableHead>Open</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Created</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -342,10 +398,13 @@ export function BudgetEncumbrancePanel({
                     <TableCell className="text-sm">
                       {typeof enc.account_id === "object"
                         ? `${enc.account_id.code} - ${enc.account_id.name}`
-                        : getLineLabel(enc.account_id as string)}
+                        : enc.account_id}
                     </TableCell>
                     <TableCell className="font-medium">
                       {formatCurrency(enc.encumbered_amount)}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {formatCurrency(enc.liquidated_amount)}
                     </TableCell>
                     <TableCell className="text-sm">
                       {formatCurrency(enc.remaining_amount)}
@@ -373,6 +432,11 @@ export function BudgetEncumbrancePanel({
                           >
                             <Unlock className="h-4 w-4 text-amber-600" />
                           </Button>
+                        )}
+                        {!["active", "partially_liquidated"].includes(enc.status) && (
+                          <span className="text-xs text-muted-foreground">
+                            No open commitment
+                          </span>
                         )}
                       </div>
                     </TableCell>
@@ -424,12 +488,12 @@ export function BudgetEncumbrancePanel({
               />
             </div>
 
-            {/* Account */}
+            {/* Budget Line */}
             <div className="space-y-2">
-              <Label>Budget Account *</Label>
-              <Select value={accountId} onValueChange={setAccountId}>
+              <Label>Budget Line *</Label>
+              <Select value={budgetLineId} onValueChange={setBudgetLineId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select account" />
+                  <SelectValue placeholder="Select budget line" />
                 </SelectTrigger>
                 <SelectContent>
                   {budgetLines.map((line) => {
@@ -437,18 +501,26 @@ export function BudgetEncumbrancePanel({
                       typeof line.account_id === "object"
                         ? line.account_id
                         : null;
+                    const project =
+                      line.project_id && typeof line.project_id === "object"
+                        ? line.project_id.wbs_code || line.wbs_code || line.project_id.project_code
+                        : line.wbs_code;
+                    const available =
+                      Number(line.budgeted_amount || 0) -
+                      Number(line.encumbered_amount || 0) -
+                      Number(line.actual_amount || 0);
                     return (
-                      <SelectItem key={line._id} value={account?._id || line._id}>
-                        {account?.code || ""} - {account?.name || "Unknown"}{" "}
-                        ({formatCurrency(line.budgeted_amount)})
+                      <SelectItem key={line._id} value={line._id}>
+                        {account?.code || ""} - {account?.name || "Unknown"}
+                        {project ? ` - ${project}` : ""} ({formatCurrency(available)} available)
                       </SelectItem>
                     );
                   })}
                 </SelectContent>
               </Select>
-              {accountId && (
+              {budgetLineId && (
                 <p className="text-xs text-muted-foreground">
-                  Available: {getLineLabel(accountId)}
+                  Selected: {getLineLabel(budgetLineId)}
                 </p>
               )}
             </div>
@@ -503,7 +575,7 @@ export function BudgetEncumbrancePanel({
             </Button>
             <Button
               onClick={handleCreateEncumbrance}
-              disabled={submitting || !accountId || !sourceNumber || !amount || !description}
+              disabled={submitting || !budgetLineId || !sourceNumber || !amount || !description}
             >
               {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Reserve Budget

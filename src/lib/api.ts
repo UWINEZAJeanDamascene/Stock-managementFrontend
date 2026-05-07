@@ -3782,7 +3782,7 @@ export interface Budget {
   company?: string;
   company_id?: string;
   type: "revenue" | "expense" | "profit";
-  status: "draft" | "active" | "approved" | "closed" | "cancelled" | "locked";
+  status: "draft" | "pending_approval" | "active" | "approved" | "rejected" | "closed" | "cancelled" | "locked";
   fiscal_year?: number;
   periodStart: string;
   periodEnd: string;
@@ -4521,6 +4521,7 @@ export const budgetsApi = {
   createEncumbrance: (
     budgetId: string,
     data: {
+      budget_line_id: string;
       account_id: string;
       source_type: "purchase_order" | "goods_received_note" | "expense_request" | "manual";
       source_id: string;
@@ -9650,6 +9651,7 @@ export const expensesApi = {
     isRecurring?: boolean;
     recurringFrequency?: string;
     budget_id?: string;
+    budget_line_id?: string;
     // Rwanda-specific fields
     currencyCode?: CurrencyCode;
     exchangeRate?: number;

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { budgetsApi, BudgetApproval } from "@/lib/api";
+import { budgetsApi, type BudgetApproval, type BudgetWorkflowConfig } from "@/lib/api";
 import { Button } from "@/app/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card";
 import { Badge } from "@/app/components/ui/badge";
@@ -11,13 +11,17 @@ import { Loader2, CheckCircle, XCircle, Clock, User } from "lucide-react";
 interface BudgetApprovalPanelProps {
   budgetId: string;
   budgetStatus: string;
+  budgetAmount: number;
+  departmentId?: string | null;
   onApprovalChange: () => void;
 }
 
-export function BudgetApprovalPanel({ budgetId, budgetStatus, onApprovalChange }: BudgetApprovalPanelProps) {
+export function BudgetApprovalPanel({ budgetId, budgetStatus, budgetAmount, departmentId, onApprovalChange }: BudgetApprovalPanelProps) {
   const [approvals, setApprovals] = useState<BudgetApproval[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [workflowMatch, setWorkflowMatch] = useState<BudgetWorkflowConfig | null>(null);
+  const [workflowChecked, setWorkflowChecked] = useState(false);
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
@@ -28,6 +32,12 @@ export function BudgetApprovalPanel({ budgetId, budgetStatus, onApprovalChange }
   useEffect(() => {
     fetchApprovals();
   }, [budgetId]);
+
+  useEffect(() => {
+    if (budgetStatus === "draft") {
+      fetchWorkflowMatch();
+    }
+  }, [budgetStatus, budgetAmount, departmentId]);
 
   const fetchApprovals = async () => {
     try {
@@ -42,12 +52,30 @@ export function BudgetApprovalPanel({ budgetId, budgetStatus, onApprovalChange }
     }
   };
 
+  const fetchWorkflowMatch = async () => {
+    setWorkflowChecked(false);
+    try {
+      const response = await budgetsApi.testWorkflowMatch({
+        workflow_type: "budget_creation",
+        amount: budgetAmount,
+        department_id: departmentId || null,
+      });
+      setWorkflowMatch(response.data?.workflow || null);
+    } catch (error) {
+      console.error("Failed to test budget workflow match:", error);
+      setWorkflowMatch(null);
+    } finally {
+      setWorkflowChecked(true);
+    }
+  };
+
   const handleSubmitForApproval = async () => {
     setSubmitting(true);
     try {
       const response = await budgetsApi.submitForApproval(budgetId, {
         workflow_type: "budget_creation",
         priority: "normal",
+        comments,
       });
       if (response.success) {
         toast.success("Budget submitted for approval");
@@ -57,7 +85,7 @@ export function BudgetApprovalPanel({ budgetId, budgetStatus, onApprovalChange }
       }
     } catch (error: any) {
       const msg = error?.message || "";
-      if (msg.includes("APPROVAL_ALREADY_PENDING")) {
+      if (msg.includes("APPROVAL_ALREADY_PENDING") || msg.includes("ALREADY_PENDING_APPROVAL")) {
         toast.error("An approval is already pending for this budget");
       } else {
         toast.error(error?.message || "Failed to submit for approval");
@@ -84,6 +112,8 @@ export function BudgetApprovalPanel({ budgetId, budgetStatus, onApprovalChange }
       const msg = error?.message || "";
       if (msg.includes("ALREADY_APPROVED")) {
         toast.error("You have already approved this step");
+      } else if (msg.includes("authorized") || msg.includes("APPROVER_NOT_AUTHORIZED")) {
+        toast.error("You are not assigned to approve the current workflow step");
       } else {
         toast.error(error?.message || "Failed to approve");
       }
@@ -165,6 +195,33 @@ export function BudgetApprovalPanel({ budgetId, budgetStatus, onApprovalChange }
           </Button>
         )}
       </div>
+
+      {budgetStatus === "draft" && (
+        <Card>
+          <CardContent className="py-4">
+            {!workflowChecked ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Checking matching workflow...
+              </div>
+            ) : workflowMatch ? (
+              <div className="space-y-1">
+                <div className="text-sm font-medium">Matched workflow: {workflowMatch.name}</div>
+                <div className="text-xs text-muted-foreground">
+                  {workflowMatch.steps.length} approval step{workflowMatch.steps.length !== 1 ? "s" : ""} will be copied when this budget is submitted.
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-1">
+                <div className="text-sm font-medium text-amber-600">No configured workflow matches this budget</div>
+                <div className="text-xs text-muted-foreground">
+                  Submitting will use the system fallback approval steps. Create a matching workflow in Budget Workflow Settings for controlled routing.
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Current Approval Status */}
       {pendingApproval ? (

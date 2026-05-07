@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { productsApi, categoriesApi, suppliersApi } from '@/lib/api';
 import { Layout } from '../layout/Layout';
@@ -10,13 +10,13 @@ import {
   ToggleLeft,
   ToggleRight,
   Download,
-  Upload,
   Loader2,
   Package,
   AlertTriangle,
-  X,
   Trash2,
-  Bell
+  Bell,
+  Layers,
+  ShieldCheck
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
@@ -125,8 +125,6 @@ interface PaginationInfo {
 }
 
 export default function ProductsListPage() {
-  console.log('[ProductsListPage] Component mounted - Starting render');
-  console.log('[ProductsListPage] Current state - rendering at:', new Date().toISOString());
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
@@ -181,7 +179,6 @@ export default function ProductsListPage() {
   };
 
   const loadProducts = useCallback(async () => {
-    console.log('[ProductsListPage] loadProducts called');
     setLoading(true);
     setError(null);
     try {
@@ -352,7 +349,6 @@ export default function ProductsListPage() {
 
   // Loading state
   if (loading) {
-    console.log('[ProductsListPage] Rendering: loading state');
     return (
       <Layout>
         <div className="flex items-center justify-center h-64">
@@ -367,7 +363,6 @@ export default function ProductsListPage() {
 
   // Error state
   if (error) {
-    console.log('[ProductsListPage] Rendering: error state:', error);
     return (
       <Layout>
         <div className="flex items-center justify-center h-64">
@@ -384,12 +379,30 @@ export default function ProductsListPage() {
     );
   }
 
-  console.log('[ProductsListPage] Rendering: main content, products count:', products.length);
+  const inventorySummary = products.reduce(
+    (summary, product) => {
+      const stock = Number(product.currentStock) || 0;
+      const avgCost = Number(product.averageCost) || 0;
+      const costPrice = Number(product.costPrice) || 0;
+      const effectiveCost = avgCost > 0 ? avgCost : costPrice;
+      const threshold = product.lowStockThreshold || 10;
+
+      summary.stockValue += stock * effectiveCost;
+      summary.units += stock;
+      if (stock === 0) summary.outOfStock += 1;
+      if (stock > 0 && stock <= threshold) summary.lowStock += 1;
+      if (product.isActive && !product.isArchived) summary.active += 1;
+      return summary;
+    },
+    { stockValue: 0, units: 0, lowStock: 0, outOfStock: 0, active: 0 }
+  );
+  const riskCount = inventorySummary.lowStock + inventorySummary.outOfStock;
+
   return (
     <Layout>
       <div className="container mx-auto py-4 sm:py-6 px-3 sm:px-4 max-w-7xl">
         {/* Page Header - Responsive */}
-        <div className="flex flex-col gap-3 mb-6">
+        <div className="flex flex-col gap-3 mb-5">
           {/* Title Row */}
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
             <div>
@@ -418,8 +431,59 @@ export default function ProductsListPage() {
           </div>
         </div>
 
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 mb-5">
+          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Catalog Coverage</p>
+                <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">{pagination.total}</p>
+              </div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-md bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-300">
+                <Package className="h-5 w-5" />
+              </div>
+            </div>
+            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{inventorySummary.active} active on this view</p>
+          </div>
+          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Inventory Value</p>
+                <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">{formatCurrency(inventorySummary.stockValue)}</p>
+              </div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-md bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-300">
+                <Layers className="h-5 w-5" />
+              </div>
+            </div>
+            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{inventorySummary.units.toLocaleString()} units represented</p>
+          </div>
+          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Stock Risk</p>
+                <p className={`mt-2 text-2xl font-bold ${riskCount > 0 ? 'text-amber-600 dark:text-amber-300' : 'text-emerald-600 dark:text-emerald-300'}`}>{riskCount}</p>
+              </div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-md bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-300">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+            </div>
+            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{inventorySummary.lowStock} low, {inventorySummary.outOfStock} out of stock</p>
+          </div>
+          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Data Readiness</p>
+                <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">{products.length ? Math.round((products.filter(p => p.category && p.unit && p.costingMethod).length / products.length) * 100) : 0}%</p>
+              </div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-md bg-violet-50 text-violet-600 dark:bg-violet-950/60 dark:text-violet-300">
+                <ShieldCheck className="h-5 w-5" />
+              </div>
+            </div>
+            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Category, unit, and costing assigned</p>
+          </div>
+        </div>
+
         {/* Search and Filters */}
-        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4 mb-6">
+        <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 p-4 mb-5 shadow-sm">
           <form onSubmit={handleSearch} className="flex flex-col lg:flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
@@ -480,7 +544,7 @@ export default function ProductsListPage() {
         </div>
 
         {/* Products Table */}
-        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm">
           {loading ? (
             <div className="flex items-center justify-center p-12">
               <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
@@ -498,7 +562,7 @@ export default function ProductsListPage() {
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-slate-50 dark:bg-slate-900/50">
+                  <TableRow className="bg-slate-100/80 dark:bg-slate-800/80">
                     <TableHead className="font-semibold">{t('products.code') || 'Code'}</TableHead>
                     <TableHead className="font-semibold">{t('products.name') || 'Name'}</TableHead>
                     <TableHead className="font-semibold">{t('products.category') || 'Category'}</TableHead>
@@ -524,7 +588,7 @@ export default function ProductsListPage() {
                     const effectiveCost = avgCost > 0 ? avgCost : costP;
                     
                     return (
-                      <TableRow key={product._id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
+                      <TableRow key={product._id} className="hover:bg-slate-50 dark:hover:bg-slate-800/60">
                         <TableCell className="font-medium">
                           <span className="text-slate-900 dark:text-white">{product.sku}</span>
                         </TableCell>
@@ -566,7 +630,7 @@ export default function ProductsListPage() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-center">
-                          <span className={stockStatus.color}>
+                          <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${stockStatus.color}`}>
                             {stockStatus.label}
                           </span>
                         </TableCell>

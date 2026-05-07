@@ -35,6 +35,14 @@ export default function AuditCreatePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const isDark = () => document.documentElement.classList.contains('dark');
+  const [dark, setDark] = useState(isDark());
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => setDark(isDark()));
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
 
   const [formData, setFormData] = useState({
     warehouse: '',
@@ -121,15 +129,29 @@ export default function AuditCreatePage() {
     );
   }
 
+  const fieldSx = {
+    '& .MuiInputBase-root': {
+      backgroundColor: dark ? '#0f172a' : 'white',
+      color: dark ? '#e2e8f0' : '#1e293b',
+    },
+    '& .MuiInputLabel-root': {
+      color: dark ? '#94a3b8' : '#64748b',
+    },
+    '& .MuiOutlinedInput-notchedOutline': {
+      borderColor: dark ? '#334155' : '#cbd5e1',
+    },
+  };
+
   return (
     <Layout>
-      <Box sx={{ p: 3, maxWidth: 800, mx: 'auto' }}>
+      <Box sx={{ p: 3 }} className="min-h-screen bg-slate-50 dark:bg-slate-950">
+        <Box sx={{ maxWidth: 860, mx: 'auto' }}>
         {/* Header */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-          <IconButton onClick={() => navigate('/stock-audits')}>
+          <IconButton onClick={() => navigate('/stock-audits')} sx={{ color: dark ? '#93c5fd' : '#2563eb' }}>
             <ArrowLeftIcon />
           </IconButton>
-          <Typography variant="h5" component="h1">
+          <Typography variant="h5" component="h1" sx={{ color: dark ? '#f8fafc' : '#0f172a', fontWeight: 700 }}>
             {t('common.stockAudits.newAudit')}
           </Typography>
         </Box>
@@ -142,10 +164,16 @@ export default function AuditCreatePage() {
         )}
 
         {/* Form */}
-        <Paper sx={{ p: 3 }}>
+        <Paper sx={{ p: 4, backgroundColor: dark ? '#111827' : 'white', border: `1px solid ${dark ? '#334155' : '#e2e8f0'}`, boxShadow: 'none' }}>
+          <Typography variant="subtitle1" sx={{ color: dark ? '#f8fafc' : '#0f172a', fontWeight: 700, mb: 0.5 }}>
+            Audit Setup
+          </Typography>
+          <Typography variant="body2" sx={{ color: dark ? '#94a3b8' : '#64748b', mb: 3 }}>
+            Select the warehouse and count method before opening the physical stock count.
+          </Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
             {/* Warehouse */}
-            <FormControl fullWidth required>
+            <FormControl fullWidth required sx={fieldSx}>
               <InputLabel>{t('common.stockAudits.warehouse')}</InputLabel>
               <Select
                 value={formData.warehouse}
@@ -168,10 +196,11 @@ export default function AuditCreatePage() {
               onChange={(e) => handleChange('auditDate', e.target.value)}
               InputLabelProps={{ shrink: true }}
               fullWidth
+              sx={fieldSx}
             />
 
             {/* Type */}
-            <FormControl fullWidth>
+            <FormControl fullWidth sx={fieldSx}>
               <InputLabel>{t('common.stockAudits.type')}</InputLabel>
               <Select
                 value={formData.type}
@@ -193,6 +222,7 @@ export default function AuditCreatePage() {
               multiline
               rows={3}
               fullWidth
+              sx={fieldSx}
             />
 
             {/* Submit Button */}
@@ -215,6 +245,7 @@ export default function AuditCreatePage() {
             </Box>
           </Box>
         </Paper>
+        </Box>
       </Box>
     </Layout>
   );

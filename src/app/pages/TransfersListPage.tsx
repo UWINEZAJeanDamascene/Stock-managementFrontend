@@ -2,12 +2,6 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableContainer, 
-  TableHead, 
-  TableRow,
   Paper,
   Box,
   TextField,
@@ -27,7 +21,6 @@ import {
 import { 
   Search as SearchIcon,
   Download as DownloadIcon,
-  MoreHorizontal as MoreHorizontalIcon,
   Plus as PlusIcon,
   Eye as EyeIcon,
   CheckCircle as CheckCircleIcon,
@@ -234,17 +227,37 @@ export default function TransfersListPage() {
     }
   };
 
+  const statusCounts = transfers.reduce(
+    (acc, transfer) => {
+      acc[transfer.status] = (acc[transfer.status] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>
+  );
+  const totalLines = transfers.reduce((sum, transfer) => sum + (transfer.items?.length || 0), 0);
+  const linkedJournals = transfers.filter(transfer => transfer.journalEntry).length;
+  const completedCount = statusCounts.completed || 0;
+  const completionRate = transfers.length ? Math.round((completedCount / transfers.length) * 100) : 0;
+
   return (
     <Layout>
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
         <Box sx={{ p: { xs: 2, sm: 3 } }}>
           {/* Header - Responsive */}
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
-            <div className="flex items-center gap-3">
-              <TruckIcon className="text-primary flex-shrink-0" style={{ fontSize: 28 }} />
-              <Typography variant="h5" component="h1" sx={{ color: dark ? '#f1f5f9' : '#1e293b' }} className="text-xl sm:text-2xl">
+          <div className="mb-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-300">
+                <TruckIcon size={28} />
+              </div>
+              <div>
+              <Typography variant="h4" component="h1" sx={{ color: dark ? '#f8fafc' : '#0f172a', fontWeight: 800, fontSize: { xs: 24, sm: 30 } }}>
                 {t('transfers.title', 'Stock Transfers')}
               </Typography>
+                <Typography variant="body2" sx={{ color: dark ? '#94a3b8' : '#64748b' }}>
+                  Control warehouse-to-warehouse movement, confirmation, completion, and accounting linkage.
+                </Typography>
+              </div>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <Button
@@ -265,6 +278,71 @@ export default function TransfersListPage() {
                 {t('transfers.newTransfer', 'New Transfer')}
               </Button>
             </div>
+            </div>
+          </div>
+
+          <div className="mb-5 grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4">
+            {[
+              { label: 'Transfers in View', value: pagination.total || transfers.length, detail: `${totalLines} item lines`, color: '#3b82f6' },
+              { label: 'Pending Confirmation', value: statusCounts.draft || 0, detail: 'Draft transfers awaiting action', color: '#f59e0b' },
+              { label: 'In Movement', value: statusCounts.confirmed || 0, detail: 'Confirmed but not completed', color: '#8b5cf6' },
+              { label: 'Posted Journals', value: linkedJournals, detail: 'Transfers linked to accounting', color: '#10b981' },
+            ].map((metric) => (
+              <Paper
+                key={metric.label}
+                sx={{
+                  p: 3.5,
+                  backgroundColor: dark ? '#111827' : 'white',
+                  border: `1px solid ${dark ? '#334155' : '#e2e8f0'}`,
+                  boxShadow: 'none',
+                  borderRadius: 2,
+                }}
+              >
+                <Typography variant="caption" sx={{ color: dark ? '#94a3b8' : '#64748b', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  {metric.label}
+                </Typography>
+                <Typography variant="h5" sx={{ color: dark ? '#f8fafc' : '#0f172a', mt: 1, fontWeight: 700 }}>
+                  {metric.value}
+                </Typography>
+                <Box sx={{ mt: 1, height: 3, width: 48, borderRadius: 999, backgroundColor: metric.color }} />
+                <Typography variant="caption" sx={{ color: dark ? '#94a3b8' : '#64748b', display: 'block', mt: 1 }}>
+                  {metric.detail}
+                </Typography>
+              </Paper>
+            ))}
+          </div>
+
+          <div className="mb-5 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+            <Paper sx={{ p: 3, backgroundColor: dark ? '#111827' : 'white', border: `1px solid ${dark ? '#334155' : '#e2e8f0'}`, boxShadow: 'none', borderRadius: 2 }}>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <Typography variant="subtitle2" sx={{ color: dark ? '#f8fafc' : '#0f172a', fontWeight: 800 }}>Transfer Pipeline</Typography>
+                  <Typography variant="caption" sx={{ color: dark ? '#94a3b8' : '#64748b' }}>Draft, confirmed, completed, and cancelled transfer distribution.</Typography>
+                </div>
+                <Typography variant="subtitle2" sx={{ color: dark ? '#93c5fd' : '#2563eb', fontWeight: 800 }}>{completionRate}% completed</Typography>
+              </div>
+              <div className="mt-4 flex h-3 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+                <div className="bg-amber-500" style={{ width: `${((statusCounts.draft || 0) / Math.max(transfers.length, 1)) * 100}%` }} />
+                <div className="bg-blue-500" style={{ width: `${((statusCounts.confirmed || 0) / Math.max(transfers.length, 1)) * 100}%` }} />
+                <div className="bg-emerald-500" style={{ width: `${((statusCounts.completed || 0) / Math.max(transfers.length, 1)) * 100}%` }} />
+                <div className="bg-red-500" style={{ width: `${((statusCounts.cancelled || 0) / Math.max(transfers.length, 1)) * 100}%` }} />
+              </div>
+              <div className="mt-3 flex flex-wrap gap-3 text-xs text-slate-500 dark:text-slate-400">
+                <span>{statusCounts.draft || 0} draft</span>
+                <span>{statusCounts.confirmed || 0} confirmed</span>
+                <span>{statusCounts.completed || 0} completed</span>
+                <span>{statusCounts.cancelled || 0} cancelled</span>
+              </div>
+            </Paper>
+            <Paper sx={{ p: 3, backgroundColor: dark ? '#111827' : 'white', border: `1px solid ${dark ? '#334155' : '#e2e8f0'}`, boxShadow: 'none', borderRadius: 2 }}>
+              <Typography variant="subtitle2" sx={{ color: dark ? '#f8fafc' : '#0f172a', fontWeight: 800 }}>Operational Focus</Typography>
+              <Typography variant="h6" sx={{ color: (statusCounts.draft || 0) + (statusCounts.confirmed || 0) > 0 ? '#f59e0b' : '#22c55e', mt: 1, fontWeight: 800 }}>
+                {(statusCounts.draft || 0) + (statusCounts.confirmed || 0)} open transfers
+              </Typography>
+              <Typography variant="caption" sx={{ color: dark ? '#94a3b8' : '#64748b' }}>
+                Confirm drafts and complete in-movement transfers to keep stock availability accurate.
+              </Typography>
+            </Paper>
           </div>
 
           {/* Error Alert */}
@@ -387,91 +465,104 @@ export default function TransfersListPage() {
             </div>
           </Paper>
 
-          {/* Table */}
-          <Paper sx={{ backgroundColor: dark ? '#1e293b' : 'white', border: `1px solid ${dark ? '#334155' : '#e2e8f0'}` }}>
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow sx={{ backgroundColor: dark ? '#0f172a' : '#f1f5f9' }}>
-                    <TableCell sx={{ color: dark ? '#e2e8f0' : '#1e293b', fontWeight: 600 }}>{t('transfers.reference', 'Reference')}</TableCell>
-                    <TableCell sx={{ color: dark ? '#e2e8f0' : '#1e293b', fontWeight: 600 }}>{t('transfers.fromWarehouse', 'From Warehouse')}</TableCell>
-                    <TableCell sx={{ color: dark ? '#e2e8f0' : '#1e293b', fontWeight: 600 }}>{t('transfers.toWarehouse', 'To Warehouse')}</TableCell>
-                    <TableCell sx={{ color: dark ? '#e2e8f0' : '#1e293b', fontWeight: 600 }}>{t('transfers.status', 'Status')}</TableCell>
-                    <TableCell sx={{ color: dark ? '#e2e8f0' : '#1e293b', fontWeight: 600 }}>{t('transfers.date', 'Date')}</TableCell>
-                    <TableCell align="center" sx={{ color: dark ? '#e2e8f0' : '#1e293b', fontWeight: 600 }}>{t('transfers.linesCount', 'Lines')}</TableCell>
-                    <TableCell sx={{ color: dark ? '#e2e8f0' : '#1e293b', fontWeight: 600 }}>{t('transfers.journalEntry', 'Journal Entry')}</TableCell>
-                    <TableCell align="right" sx={{ color: dark ? '#e2e8f0' : '#1e293b', fontWeight: 600 }}>{t('common.actions', 'Actions')}</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody sx={{ backgroundColor: dark ? '#1e293b' : 'white' }}>
-                  {loading ? (
-                    <TableRow>
-                      <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
-                        <CircularProgress />
-                      </TableCell>
-                  </TableRow>
-                  ) : transfers.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={8} align="center" sx={{ py: 4, color: dark ? '#94a3b8' : '#64748b' }}>
-                        {t('transfers.noData', 'No transfers found')}
-                      </TableCell>
-                  </TableRow>
-                  ) : (
-                    transfers.map((item) => (
-                      <TableRow key={item._id} hover sx={{ backgroundColor: dark ? '#1e293b' : 'white', '&:hover': { backgroundColor: dark ? '#0f172a' : '#f1f5f9' } }}>
-                        <TableCell>
-                          <Typography variant="body2" fontWeight="medium" sx={{ color: dark ? '#f1f5f9' : '#1e293b' }}>
-                            {item.reference}
-                          </Typography>
-                        </TableCell>
-                        <TableCell sx={{ color: dark ? '#e2e8f0' : '#1e293b' }}>{item.fromWarehouse?.name || '-'}</TableCell>
-                        <TableCell sx={{ color: dark ? '#e2e8f0' : '#1e293b' }}>{item.toWarehouse?.name || '-'}</TableCell>
-                        <TableCell>{getStatusChip(item.status)}</TableCell>
-                        <TableCell sx={{ color: dark ? '#e2e8f0' : '#1e293b' }}>
-                          {item.transferDate ? new Date(item.transferDate).toLocaleDateString() : '-'}
-                        </TableCell>
-                        <TableCell align="center">
-                          <Chip label={item.items?.length || 0} size="small" variant="outlined" sx={{ borderColor: dark ? '#475569' : '#cbd5e1', color: dark ? '#e2e8f0' : '#475569' }} />
-                        </TableCell>
-                        <TableCell sx={{ color: dark ? '#e2e8f0' : '#1e293b' }}>{item.journalEntry || '-'}</TableCell>
-                        <TableCell align="right">
-                          <div className="flex items-center gap-1">
+          {/* Register */}
+          <Paper sx={{ backgroundColor: dark ? '#111827' : 'white', border: `1px solid ${dark ? '#334155' : '#e2e8f0'}`, boxShadow: 'none', borderRadius: 2, overflow: 'hidden' }}>
+            <Box sx={{ px: 3, py: 2.25, borderBottom: `1px solid ${dark ? '#334155' : '#e2e8f0'}` }}>
+              <Typography variant="subtitle1" sx={{ color: dark ? '#f8fafc' : '#0f172a', fontWeight: 800 }}>Transfer Register</Typography>
+              <Typography variant="caption" sx={{ color: dark ? '#94a3b8' : '#64748b' }}>Warehouse routing, status, item lines, journal link, and actions.</Typography>
+            </Box>
+            <Box sx={{ p: 2.5 }}>
+              {loading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 7 }}>
+                  <CircularProgress />
+                </Box>
+              ) : transfers.length === 0 ? (
+                <Box sx={{ py: 8, textAlign: 'center', color: dark ? '#94a3b8' : '#64748b' }}>
+                  <TruckIcon className="mx-auto mb-3" size={34} />
+                  <Typography variant="body2" sx={{ color: dark ? '#cbd5e1' : '#475569', fontWeight: 800 }}>
+                    {t('transfers.noData', 'No transfers found')}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: dark ? '#94a3b8' : '#64748b' }}>
+                    Warehouse transfer activity will appear here after you create a transfer.
+                  </Typography>
+                </Box>
+              ) : (
+                <div className="grid gap-3">
+                  {transfers.map((item) => {
+                    const lineCount = item.items?.length || 0;
+                    const transferValue = item.items?.reduce((sum, transferItem) => sum + ((Number(transferItem.quantity) || 0) * (Number(transferItem.unitCost) || 0)), 0) || 0;
+                    const firstItem = item.items?.[0];
+                    return (
+                      <div
+                        key={item._id}
+                        className="grid gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition hover:border-blue-300 dark:border-slate-700 dark:bg-slate-950/60 dark:hover:border-blue-800 lg:grid-cols-[1fr_1.25fr_0.85fr_0.9fr_auto]"
+                      >
+                        <div className="min-w-0">
+                          <p className="font-mono text-sm font-black text-slate-950 dark:text-white">{item.reference}</p>
+                          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{item.transferDate ? new Date(item.transferDate).toLocaleDateString() : '-'}</p>
+                          <div className="mt-2">{getStatusChip(item.status)}</div>
+                        </div>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <div className="rounded-md bg-slate-50 p-3 dark:bg-slate-900">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('transfers.fromWarehouse', 'From Warehouse')}</p>
+                            <p className="mt-1 text-sm font-bold text-slate-950 dark:text-white">{item.fromWarehouse?.name || '-'}</p>
+                          </div>
+                          <div className="rounded-md bg-slate-50 p-3 dark:bg-slate-900">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('transfers.toWarehouse', 'To Warehouse')}</p>
+                            <p className="mt-1 text-sm font-bold text-slate-950 dark:text-white">{item.toWarehouse?.name || '-'}</p>
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('transfers.linesCount', 'Lines')}</p>
+                          <p className="mt-1 text-xl font-black text-slate-950 dark:text-white">{lineCount}</p>
+                          <p className="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">
+                            {firstItem ? `${firstItem.product?.name || '-'}${lineCount > 1 ? ` +${lineCount - 1} more` : ''}` : 'No item lines'}
+                          </p>
+                        </div>
+                        <div className="rounded-md bg-slate-50 p-3 text-right dark:bg-slate-900">
+                          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Transfer Value</p>
+                          <p className="mt-1 font-mono text-sm font-bold text-slate-950 dark:text-white">
+                            {transferValue.toLocaleString(undefined, { style: 'currency', currency: 'USD' })}
+                          </p>
+                          <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{item.journalEntry || 'No journal link'}</p>
+                        </div>
+                        <div className="flex flex-wrap items-center justify-end gap-2">
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            startIcon={<EyeIcon />}
+                            onClick={() => navigate(`/stock-transfers/${item._id}`)}
+                            sx={{ borderColor: dark ? '#334155' : '#cbd5e1', color: dark ? '#e2e8f0' : '#334155' }}
+                          >
+                            {t('common.view', 'View')}
+                          </Button>
+                          {item.status === 'draft' && (
                             <Button
                               size="small"
-                              startIcon={<EyeIcon />}
-                              onClick={() => navigate(`/stock-transfers/${item._id}`)}
-                              sx={{ color: dark ? '#94a3b8' : '#64748b' }}
+                              color="success"
+                              startIcon={<CheckCircleIcon />}
+                              onClick={() => handleConfirm(item._id)}
                             >
-                              {t('common.view', 'View')}
+                              {t('transfers.confirm', 'Confirm')}
                             </Button>
-                            {item.status === 'draft' && (
-                              <Button
-                                size="small"
-                                color="success"
-                                startIcon={<CheckCircleIcon />}
-                                onClick={() => handleConfirm(item._id)}
-                              >
-                                {t('transfers.confirm', 'Confirm')}
-                              </Button>
-                            )}
-                            {item.status === 'confirmed' && (
-                              <Button
-                                size="small"
-                                color="error"
-                                startIcon={<XCircleIcon />}
-                                onClick={() => handleCancel(item._id)}
-                              >
-                                {t('transfers.cancel', 'Cancel')}
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                          )}
+                          {item.status === 'confirmed' && (
+                            <Button
+                              size="small"
+                              color="error"
+                              startIcon={<XCircleIcon />}
+                              onClick={() => handleCancel(item._id)}
+                            >
+                              {t('transfers.cancel', 'Cancel')}
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </Box>
             <TablePagination
               component="div"
               count={pagination.total}

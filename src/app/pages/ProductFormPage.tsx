@@ -96,7 +96,7 @@ interface ProductFormData {
 }
 
 // Unit options - will be translated in the render
-const UNIT_OPTIONS = ['kg', 'g', 'pcs', 'box', 'm', 'm²', 'm³', 'l', 'ml', 'ton', 'bag', 'roll', 'sheet', 'set'];
+const UNIT_OPTIONS = ['kg', 'g', 'pcs', 'box', 'm', 'm2', 'm3', 'l', 'ml', 'ton', 'bag', 'roll', 'sheet', 'set'];
 
 // Get translated options helper
 const getUnitLabel = (t: Function, unit: string) => t(`products.units.${unit}`) || unit;
@@ -131,6 +131,10 @@ const flattenCategories = (cats: Category[], prefix = ''): { _id: string; label:
 
 export default function ProductFormPage() {
   const { t } = useTranslation();
+  const tr = (key: string, fallback: string) => {
+    const translated = t(key);
+    return translated === key ? fallback : translated;
+  };
   const navigate = useNavigate();
   const { id } = useParams();
   const isEditMode = Boolean(id);
@@ -226,15 +230,11 @@ export default function ProductFormPage() {
 
   const loadAccounts = async () => {
     try {
-      console.log('[ProductForm] Loading accounts...');
       const response = await chartOfAccountsApi.getAll({ isActive: true });
-      console.log('[ProductForm] Accounts API response:', response);
       if (response.success && response.data) {
         const accountsData = Array.isArray(response.data) ? response.data : [];
-        console.log('[ProductForm] Loaded accounts count:', accountsData.length);
         setAccounts(accountsData as ChartAccount[]);
       } else {
-        console.log('[ProductForm] Accounts API returned no data:', response);
         setAccounts([]);
       }
     } catch (error) {
@@ -345,7 +345,6 @@ export default function ProductFormPage() {
 
     setSaving(true);
     try {
-      console.log('[ProductForm] Submitting product with data:', formData);
       const payload = {
         name: formData.name.trim(),
         sku: formData.sku.trim().toUpperCase(),
@@ -381,8 +380,6 @@ export default function ProductFormPage() {
       } else {
         response = await productsApi.create(payload);
       }
-      console.log('[ProductForm] API response:', response);
-
       if (response.success) {
         toast.success(isEditMode ? t('products.updated') || 'Product updated successfully' : t('products.created') || 'Product created successfully');
         navigate('/products');
@@ -436,10 +433,10 @@ export default function ProductFormPage() {
           </Button>
           <div className="flex-1 min-w-0">
             <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white leading-tight">
-              {isEditMode ? t('products.editProduct') || 'Edit Product' : t('products.newProduct') || 'New Product'}
+              {isEditMode ? tr('products.editProduct', 'Edit Product') : tr('products.newProduct', 'New Product')}
             </h1>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-              {isEditMode ? t('products.editSubtitle') || 'Update product information' : t('products.createSubtitle') || 'Add a new product to your inventory'}
+              {isEditMode ? tr('products.editSubtitle', 'Update product information') : tr('products.createSubtitle', 'Add a new product to your inventory')}
             </p>
           </div>
         </div>
@@ -451,10 +448,10 @@ export default function ProductFormPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 dark:text-white">
                   <Package className="h-5 w-5" />
-                  {t('products.basicInfo') || 'Basic Information'}
+                  {tr('products.basicInfo', 'Basic Information')}
                 </CardTitle>
                 <CardDescription className="dark:text-slate-400">
-                  {t('products.basicInfoDesc') || 'Core product details'}
+                  {tr('products.basicInfoDesc', 'Core product details')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4 md:grid-cols-2">
@@ -1007,7 +1004,7 @@ export default function ProductFormPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="weight" className="dark:text-slate-200">{t('products.weight') || 'Weight'}</Label>
+                  <Label htmlFor="weight" className="dark:text-slate-200">{tr('products.weight', 'Weight')}</Label>
                   <Input
                     id="weight"
                     type="number"
@@ -1015,7 +1012,7 @@ export default function ProductFormPage() {
                     min="0"
                     value={formData.weight}
                     onChange={(e) => handleChange('weight', e.target.value)}
-                    placeholder={t('products.weightPlaceholder') || 'Weight in kg'}
+                    placeholder={tr('products.weightPlaceholder', 'Weight in kg')}
                     className="dark:bg-slate-700 dark:text-white dark:border-slate-600 dark:placeholder:text-slate-400"
                   />
                 </div>

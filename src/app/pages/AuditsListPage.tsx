@@ -2,12 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Paper,
   Box,
   TextField,
@@ -75,6 +69,14 @@ export default function AuditsListPage() {
   const [postDialogOpen, setPostDialogOpen] = useState(false);
   const [selectedAudit, setSelectedAudit] = useState<StockAudit | null>(null);
   const [postLoading, setPostLoading] = useState(false);
+  const isDark = () => document.documentElement.classList.contains('dark');
+  const [dark, setDark] = useState(isDark());
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => setDark(isDark()));
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
 
   // Load warehouses
   useEffect(() => {
@@ -198,6 +200,26 @@ export default function AuditsListPage() {
 
   // Check if has active filters
   const hasActiveFilters = statusFilter || warehouseFilter || dateFrom || dateTo;
+  const auditCounts = audits.reduce(
+    (acc, audit) => {
+      acc[audit.status] = (acc[audit.status] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>
+  );
+  const totalVariance = audits.reduce((sum, audit) => sum + (parseFloat(audit.totalVarianceValue || '0') || 0), 0);
+  const fieldSx = {
+    '& .MuiInputBase-root': {
+      backgroundColor: dark ? '#0f172a' : 'white',
+      color: dark ? '#e2e8f0' : '#1e293b',
+    },
+    '& .MuiInputLabel-root': {
+      color: dark ? '#94a3b8' : '#64748b',
+    },
+    '& .MuiOutlinedInput-notchedOutline': {
+      borderColor: dark ? '#334155' : '#cbd5e1',
+    },
+  };
 
   return (
     <Layout>
@@ -221,10 +243,25 @@ export default function AuditsListPage() {
             </Button>
           </Box>
 
+          <div className="mb-6 grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4">
+            {[
+              { label: 'Audits in View', value: pagination.total || audits.length, detail: 'Current filtered register' },
+              { label: 'Counting', value: auditCounts.counting || 0, detail: 'Open counts awaiting posting' },
+              { label: 'Posted', value: auditCounts.posted || 0, detail: 'Completed audit records' },
+              { label: 'Variance Value', value: formatCurrency(String(totalVariance)), detail: 'Net variance in view' },
+            ].map((metric) => (
+              <Paper key={metric.label} sx={{ p: 3, backgroundColor: dark ? '#111827' : 'white', border: `1px solid ${dark ? '#334155' : '#e2e8f0'}`, boxShadow: 'none' }}>
+                <Typography variant="caption" sx={{ color: dark ? '#94a3b8' : '#64748b', textTransform: 'uppercase', letterSpacing: 0.5 }}>{metric.label}</Typography>
+                <Typography variant="h5" sx={{ color: dark ? '#f8fafc' : '#0f172a', fontWeight: 700, mt: 1 }}>{metric.value}</Typography>
+                <Typography variant="caption" sx={{ color: dark ? '#94a3b8' : '#64748b' }}>{metric.detail}</Typography>
+              </Paper>
+            ))}
+          </div>
+
           {/* Filters */}
-          <Paper sx={{ p: 2, mb: 3 }} className="dark:!bg-slate-800 dark:border dark:border-slate-700">
+          <Paper sx={{ p: 3, mb: 3, backgroundColor: dark ? '#111827' : 'white', border: `1px solid ${dark ? '#334155' : '#e2e8f0'}`, boxShadow: 'none' }}>
             <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
-              <FormControl size="small" sx={{ minWidth: 150 }}>
+              <FormControl size="small" sx={{ minWidth: 150, ...fieldSx }}>
                 <InputLabel className="dark:text-slate-400">{t('common.stockAudits.status')}</InputLabel>
                 <Select
                   value={statusFilter}
@@ -245,7 +282,7 @@ export default function AuditsListPage() {
                 </Select>
               </FormControl>
 
-              <FormControl size="small" sx={{ minWidth: 180 }}>
+              <FormControl size="small" sx={{ minWidth: 180, ...fieldSx }}>
                 <InputLabel className="dark:text-slate-400">{t('common.stockAudits.warehouse')}</InputLabel>
                 <Select
                   value={warehouseFilter}
@@ -274,7 +311,7 @@ export default function AuditsListPage() {
                 value={dateFrom}
                 onChange={(e) => setDateFrom(e.target.value)}
                 InputLabelProps={{ shrink: true }}
-                sx={{ width: 160 }}
+                sx={{ width: 160, ...fieldSx }}
                 className="dark:text-white"
               />
 
@@ -285,7 +322,7 @@ export default function AuditsListPage() {
                 value={dateTo}
                 onChange={(e) => setDateTo(e.target.value)}
                 InputLabelProps={{ shrink: true }}
-                sx={{ width: 160 }}
+                sx={{ width: 160, ...fieldSx }}
                 className="dark:text-white"
               />
 
@@ -310,92 +347,88 @@ export default function AuditsListPage() {
             </Alert>
           )}
 
-          {/* Loading */}
-          {loading && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-              <CircularProgress />
+          <Paper sx={{ backgroundColor: dark ? '#111827' : 'white', border: `1px solid ${dark ? '#334155' : '#e2e8f0'}`, boxShadow: 'none', borderRadius: 2, overflow: 'hidden' }}>
+            <Box sx={{ px: 3, py: 2.25, borderBottom: `1px solid ${dark ? '#334155' : '#e2e8f0'}` }}>
+              <Typography variant="subtitle1" sx={{ color: dark ? '#f8fafc' : '#0f172a', fontWeight: 850 }}>Audit Register</Typography>
+              <Typography variant="caption" sx={{ color: dark ? '#94a3b8' : '#64748b' }}>
+                Cycle counts, variance exposure, posting status, warehouse scope, and review actions.
+              </Typography>
             </Box>
-          )}
-
-          {/* Table */}
-          {!loading && (
-            <Paper className="dark:!bg-slate-800 dark:border dark:border-slate-700">
-              <TableContainer>
-                <Table>
-                  <TableHead>
-                    <TableRow className="dark:bg-slate-800">
-                      <TableCell className="dark:text-slate-200">{t('common.stockAudits.reference')}</TableCell>
-                      <TableCell className="dark:text-slate-200">{t('common.stockAudits.warehouse')}</TableCell>
-                      <TableCell className="dark:text-slate-200">{t('common.stockAudits.auditDate')}</TableCell>
-                      <TableCell className="dark:text-slate-200">{t('common.stockAudits.status')}</TableCell>
-                      <TableCell align="right" className="dark:text-slate-200">{t('common.stockAudits.totalVarianceValue')}</TableCell>
-                      <TableCell className="dark:text-slate-200">{t('common.stockAudits.postedBy')}</TableCell>
-                      <TableCell align="center" className="dark:text-slate-200">{t('common.actions')}</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody className="dark:bg-slate-800">
-                    {audits.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
-                          <Typography color="text.secondary" className="dark:text-slate-400">
-                            {t('common.stockAudits.noAudits')}
-                          </Typography>
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      audits.map((audit) => (
-                        <TableRow key={audit._id} hover className="dark:bg-slate-800 dark:hover:bg-slate-700/50">
-                          <TableCell>
-                            <Typography variant="body2" fontWeight={500} className="dark:text-white">
-                              {audit.referenceNo}
-                            </Typography>
-                          </TableCell>
-                          <TableCell className="dark:text-slate-200">{audit.warehouse?.name || '-'}</TableCell>
-                          <TableCell className="dark:text-slate-200">{formatDate(audit.auditDate)}</TableCell>
-                          <TableCell>
-                            <Chip
-                              label={t(`common.stockAudits.statuses.${audit.status}`)}
-                              color={STATUS_COLORS[audit.status] || 'default'}
-                              size="small"
-                            />
-                          </TableCell>
-                          <TableCell align="right" className="dark:text-slate-200">
+            <Box sx={{ p: 2.5 }}>
+              {loading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 7 }}>
+                  <CircularProgress />
+                </Box>
+              ) : audits.length === 0 ? (
+                <Box sx={{ py: 8, textAlign: 'center' }}>
+                  <ClipboardListIcon className="mx-auto mb-3 text-slate-400" size={34} />
+                  <Typography sx={{ color: dark ? '#cbd5e1' : '#475569', fontWeight: 800 }}>
+                    {t('common.stockAudits.noAudits')}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: dark ? '#94a3b8' : '#64748b' }}>
+                    Create an audit to compare system stock with physical count.
+                  </Typography>
+                </Box>
+              ) : (
+                <div className="grid gap-3">
+                  {audits.map((audit) => {
+                    const variance = parseFloat(audit.totalVarianceValue || '0') || 0;
+                    return (
+                      <div
+                        key={audit._id}
+                        className="grid gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition hover:border-blue-300 dark:border-slate-700 dark:bg-slate-950/60 dark:hover:border-blue-800 lg:grid-cols-[1.1fr_1fr_0.9fr_0.9fr_auto]"
+                      >
+                        <div className="min-w-0">
+                          <p className="font-mono text-sm font-black text-slate-950 dark:text-white">{audit.referenceNo}</p>
+                          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('common.stockAudits.auditDate')}: {formatDate(audit.auditDate)}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('common.stockAudits.warehouse')}</p>
+                          <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{audit.warehouse?.name || '-'}</p>
+                          <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{t('common.stockAudits.postedBy')}: {audit.postedBy?.name || '-'}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('common.stockAudits.status')}</p>
+                          <Chip
+                            label={t(`common.stockAudits.statuses.${audit.status}`)}
+                            color={STATUS_COLORS[audit.status] || 'default'}
+                            size="small"
+                            sx={{ mt: 1 }}
+                          />
+                        </div>
+                        <div className="rounded-md bg-slate-50 p-3 text-right dark:bg-slate-900">
+                          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('common.stockAudits.totalVarianceValue')}</p>
+                          <p className={`mt-1 font-mono text-lg font-black ${variance < 0 ? 'text-red-500' : variance > 0 ? 'text-emerald-500' : 'text-slate-950 dark:text-white'}`}>
                             {formatCurrency(audit.totalVarianceValue)}
-                          </TableCell>
-                          <TableCell className="dark:text-slate-200">{audit.postedBy?.name || '-'}</TableCell>
-                          <TableCell align="center">
-                            <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-                              {/* View button - always visible */}
-                              <IconButton
-                                size="small"
-                                onClick={() => handleView(audit)}
-                                title={t('common.view')}
-                                className="dark:text-slate-300 dark:hover:text-white"
-                              >
-                                <EyeIcon size={18} />
-                              </IconButton>
-
-                              {/* Post button - only for counting status */}
-                              {audit.status === 'counting' && (
-                                <IconButton
-                                  size="small"
-                                  color="success"
-                                  onClick={() => handlePostClick(audit)}
-                                  title={t('common.stockAudits.post')}
-                                >
-                                  <CheckCircleIcon size={18} />
-                                </IconButton>
-                              )}
-                            </Box>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-
-              {/* Pagination */}
+                          </p>
+                        </div>
+                        <div className="flex items-center justify-end gap-2">
+                          <IconButton
+                            size="small"
+                            onClick={() => handleView(audit)}
+                            title={t('common.view')}
+                            sx={{ border: `1px solid ${dark ? '#334155' : '#cbd5e1'}`, color: dark ? '#e2e8f0' : '#334155' }}
+                          >
+                            <EyeIcon size={18} />
+                          </IconButton>
+                          {audit.status === 'counting' && (
+                            <IconButton
+                              size="small"
+                              color="success"
+                              onClick={() => handlePostClick(audit)}
+                              title={t('common.stockAudits.post')}
+                              sx={{ border: `1px solid ${dark ? '#14532d' : '#bbf7d0'}` }}
+                            >
+                              <CheckCircleIcon size={18} />
+                            </IconButton>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </Box>
               <TablePagination
                 component="div"
                 count={pagination.total}
@@ -404,10 +437,13 @@ export default function AuditsListPage() {
                 rowsPerPage={pagination.limit}
                 onRowsPerPageChange={handleRowsPerPageChange}
                 rowsPerPageOptions={[10, 25, 50, 100]}
-                className="dark:bg-slate-800 dark:text-slate-300"
+                sx={{
+                  backgroundColor: dark ? '#0f172a' : '#f8fafc',
+                  color: dark ? '#e2e8f0' : '#334155',
+                  borderTop: `1px solid ${dark ? '#334155' : '#e2e8f0'}`,
+                }}
               />
             </Paper>
-          )}
 
           {/* Post Confirmation Dialog */}
           <Dialog open={postDialogOpen} onClose={() => setPostDialogOpen(false)}>

@@ -167,6 +167,7 @@ export default function BudgetSettingsPage() {
   const [testDepartmentId, setTestDepartmentId] = useState('');
   const [testResult, setTestResult] = useState<WorkflowConfig | null>(null);
   const [testLoading, setTestLoading] = useState(false);
+  const [testHasRun, setTestHasRun] = useState(false);
 
   const fetchConfigs = async () => {
     setLoading(true);
@@ -203,6 +204,7 @@ export default function BudgetSettingsPage() {
     setFormSettings(defaultSettings());
     setExpandedSteps([0]);
     setTestResult(null);
+    setTestHasRun(false);
     setTestAmount('');
     setTestDepartmentId('');
   };
@@ -243,6 +245,7 @@ export default function BudgetSettingsPage() {
     setTestAmount('');
     setTestDepartmentId('');
     setTestResult(null);
+    setTestHasRun(false);
     setDrawerMode('test');
   };
 
@@ -372,6 +375,7 @@ export default function BudgetSettingsPage() {
 
   const handleTestWorkflow = async () => {
     setTestLoading(true);
+    setTestHasRun(true);
     try {
       const response = await budgetsApi.testWorkflowMatch({
         workflow_type: testWorkflowType,
@@ -972,7 +976,7 @@ export default function BudgetSettingsPage() {
                       </Card>
                     )}
 
-                    {testResult === null && !testLoading && (
+                    {testHasRun && testResult === null && !testLoading && (
                       <div className="text-center py-8">
                         <AlertTriangle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
                         <h3 className="text-lg font-medium mb-2">No Matching Workflow</h3>

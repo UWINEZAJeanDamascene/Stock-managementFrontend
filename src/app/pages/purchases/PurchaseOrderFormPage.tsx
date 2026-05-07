@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { purchaseOrdersApi, suppliersApi, warehousesApi, productsApi, budgetsApi, chartOfAccountsApi } from '@/lib/api';
+import { purchaseOrdersApi, suppliersApi, warehousesApi, productsApi, budgetsApi, chartOfAccountsApi, type BudgetLine } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
 import { 
   ArrowLeft, 
@@ -95,6 +95,7 @@ export default function PurchaseOrderFormPage() {
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [budgets, setBudgets] = useState<any[]>([]);
+  const [budgetLinesByBudget, setBudgetLinesByBudget] = useState<Record<string, BudgetLine[]>>({});
   const [expenseAccounts, setExpenseAccounts] = useState<any[]>([]);
 
   const [formData, setFormData] = useState<PurchaseOrderFormData>({
@@ -174,6 +175,26 @@ export default function PurchaseOrderFormPage() {
     }
   }, []);
 
+  const fetchBudgetLines = useCallback(async (budgetId: string) => {
+    if (!budgetId || budgetLinesByBudget[budgetId]) return;
+
+    try {
+      const response = await budgetsApi.getLines(budgetId);
+      if (response.success) {
+        setBudgetLinesByBudget((prev) => ({
+          ...prev,
+          [budgetId]: response.data || [],
+        }));
+      }
+    } catch (error) {
+      console.error('Failed to fetch budget lines:', error);
+      setBudgetLinesByBudget((prev) => ({
+        ...prev,
+        [budgetId]: [],
+      }));
+    }
+  }, [budgetLinesByBudget]);
+
   const fetchPurchaseOrder = useCallback(async () => {
     if (!id) return;
     setLoading(true);
@@ -198,6 +219,7 @@ export default function PurchaseOrderFormPage() {
             taxAmount: line.taxAmount || 0,
             lineTotal: line.lineTotal || 0,
             budgetId: line.budgetId || '',
+            budget_line_id: line.budget_line_id || '',
             accountId: line.accountId || '',
           })) || [],
         });
@@ -223,6 +245,11 @@ export default function PurchaseOrderFormPage() {
     }
   }, [isEdit, id, fetchPurchaseOrder]);
 
+  useEffect(() => {
+    const budgetIds = [...new Set(formData.lines.map((line) => line.budgetId).filter(Boolean))];
+    budgetIds.forEach((budgetId) => fetchBudgetLines(budgetId!));
+  }, [formData.lines, fetchBudgetLines]);
+
   const calculateLineTotals = (line: POLine) => {
     const subtotal = line.qtyOrdered * line.unitCost;
     const tax = subtotal * (line.taxRate / 100);
@@ -243,6 +270,50 @@ export default function PurchaseOrderFormPage() {
       newLines[index].lineTotal = calculated.lineTotal;
     }
     
+    setFormData({ ...formData, lines: newLines });
+  };
+
+  const getBudgetLineAccountId = (line: BudgetLine) => {
+    return typeof line.account_id === 'object' ? line.account_id._id : line.account_id;
+  };
+
+  const getBudgetLineLabel = (line: BudgetLine) => {
+    const account = typeof line.account_id === 'object' ? line.account_id : null;
+    const project =
+      line.project_id && typeof line.project_id === 'object'
+        ? line.project_id.wbs_code || line.wbs_code || line.project_id.project_code
+        : line.wbs_code;
+    const available =
+      Number(line.budgeted_amount || 0) -
+      Number(line.encumbered_amount || 0) -
+      Number(line.actual_amount || 0);
+
+    return `${account?.code || ''} - ${account?.name || 'Budget line'}${project ? ` - ${project}` : ''} (${formatCurrency(available)})`;
+  };
+
+  const handleLineBudgetChange = (index: number, budgetId: string) => {
+    const newLines = [...formData.lines];
+    newLines[index] = {
+      ...newLines[index],
+      budgetId,
+      budget_line_id: '',
+      accountId: '',
+    };
+    setFormData({ ...formData, lines: newLines });
+    if (budgetId) {
+      fetchBudgetLines(budgetId);
+    }
+  };
+
+  const handleLineBudgetLineChange = (index: number, budgetLineId: string) => {
+    const lineOptions = budgetLinesByBudget[formData.lines[index].budgetId || ''] || [];
+    const selectedLine = lineOptions.find((line) => line._id === budgetLineId);
+    const newLines = [...formData.lines];
+    newLines[index] = {
+      ...newLines[index],
+      budget_line_id: budgetLineId,
+      accountId: selectedLine ? getBudgetLineAccountId(selectedLine) : '',
+    };
     setFormData({ ...formData, lines: newLines });
   };
 
@@ -308,6 +379,10 @@ export default function PurchaseOrderFormPage() {
     const validLines = formData.lines.filter(line => line.product && line.product.trim() !== '');
     if (validLines.length === 0) {
       alert(t('purchase.form.addProduct', 'Please add at least one product'));
+      return;
+    }
+    if (validLines.some((line) => line.budgetId && !line.budget_line_id)) {
+      alert('Please select a budget line for each line that uses a budget');
       return;
     }
 
@@ -595,7 +670,7 @@ export default function PurchaseOrderFormPage() {
                           <TableCell className="min-w-[140px]">
                             <Select
                               value={line.budgetId || 'none'}
-                              onValueChange={(value) => handleLineChange(index, 'budgetId', value === 'none' ? '' : value)}
+                              onValueChange={(value) => handleLineBudgetChange(index, value === 'none' ? '' : value)}
                             >
                               <SelectTrigger className="w-full bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600 text-xs">
                                 <SelectValue placeholder={t('purchase.form.selectBudget', 'Select budget...')} />
@@ -619,29 +694,48 @@ export default function PurchaseOrderFormPage() {
                             </Select>
                           </TableCell>
                           <TableCell className="min-w-[160px]">
-                            <Select
-                              value={line.accountId || 'none'}
-                              onValueChange={(value) => handleLineChange(index, 'accountId', value === 'none' ? '' : value)}
-                            >
-                              <SelectTrigger className="w-full bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600 text-xs">
-                                <SelectValue placeholder={t('purchase.form.selectAccount', 'Select account...')} />
-                              </SelectTrigger>
-                              <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 max-h-[200px]">
-                                <SelectItem value="none" className="dark:text-slate-200">{t('common.none', 'None')}</SelectItem>
-                                {expenseAccounts.length === 0 && (
-                                  <div className="px-2 py-1 text-xs text-muted-foreground dark:text-slate-400">
-                                    {t('purchase.form.noAccounts', 'No expense accounts found')}
-                                  </div>
-                                )}
-                                {expenseAccounts.map((account) => (
-                                  <SelectItem key={account._id} value={account._id} className="dark:text-slate-200">
-                                    <div className="flex flex-col">
-                                      <span className="font-medium">{account.code} - {account.name}</span>
+                            {line.budgetId ? (
+                              <Select
+                                value={line.budget_line_id || 'none'}
+                                onValueChange={(value) => handleLineBudgetLineChange(index, value === 'none' ? '' : value)}
+                              >
+                                <SelectTrigger className="w-full bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600 text-xs">
+                                  <SelectValue placeholder="Select budget line..." />
+                                </SelectTrigger>
+                                <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 max-h-[240px]">
+                                  <SelectItem value="none" className="dark:text-slate-200">{t('common.none', 'None')}</SelectItem>
+                                  {(budgetLinesByBudget[line.budgetId] || []).map((budgetLine) => (
+                                    <SelectItem key={budgetLine._id} value={budgetLine._id} className="dark:text-slate-200">
+                                      {getBudgetLineLabel(budgetLine)}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              <Select
+                                value={line.accountId || 'none'}
+                                onValueChange={(value) => handleLineChange(index, 'accountId', value === 'none' ? '' : value)}
+                              >
+                                <SelectTrigger className="w-full bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600 text-xs">
+                                  <SelectValue placeholder={t('purchase.form.selectAccount', 'Select account...')} />
+                                </SelectTrigger>
+                                <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 max-h-[200px]">
+                                  <SelectItem value="none" className="dark:text-slate-200">{t('common.none', 'None')}</SelectItem>
+                                  {expenseAccounts.length === 0 && (
+                                    <div className="px-2 py-1 text-xs text-muted-foreground dark:text-slate-400">
+                                      {t('purchase.form.noAccounts', 'No expense accounts found')}
                                     </div>
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                                  )}
+                                  {expenseAccounts.map((account) => (
+                                    <SelectItem key={account._id} value={account._id} className="dark:text-slate-200">
+                                      <div className="flex flex-col">
+                                        <span className="font-medium">{account.code} - {account.name}</span>
+                                      </div>
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
                           </TableCell>
                           <TableCell>
                             <Button 

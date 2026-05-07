@@ -18,7 +18,6 @@ import {
   Chip,
   TablePagination,
   InputAdornment,
-  Tooltip,
   Alert,
   CircularProgress
 } from '@mui/material';
@@ -56,23 +55,15 @@ interface ProductStock {
   isActive: boolean;
 }
 
-interface Warehouse {
-  _id: string;
-  name: string;
-}
-
-interface PaginationInfo {
-  total: number;
-  page: number;
-  limit: number;
-  pages: number;
-}
+const toNumber = (value: unknown): number => {
+  const parsed = typeof value === 'string' ? Number.parseFloat(value) : Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
 
 export default function StockLevelsPage() {
   const { t } = useTranslation();
   const { formatCurrency } = useCurrency();
   const [products, setProducts] = useState<ProductStock[]>([]);
-  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -123,29 +114,17 @@ export default function StockLevelsPage() {
         params.status = stockStatusFilter;
       }
 
-      console.log('[StockLevels] Fetching products with params:', params);
-      
       const response = await productsApi.getAll(params);
-      
-      console.log('[StockLevels] API Response:', response);
       
       if (response && response.success) {
         const productData = (response.data as any[]) || [];
         
         // Transform product data to stock format
         const stockData: ProductStock[] = productData.map((product: any) => {
-          const currentStock = typeof product.currentStock === 'string' 
-            ? parseFloat(product.currentStock) 
-            : (product.currentStock || 0);
-          
-          const avgCost = typeof product.averageCost === 'string' 
-            ? parseFloat(product.averageCost) 
-            : (product.averageCost || 0);
-
-          const costPrice = typeof product.costPrice === 'string'
-            ? parseFloat(product.costPrice)
-            : (product.costPrice || 0);
-
+          const currentStock = toNumber(product.currentStock);
+          const reservedQuantity = toNumber(product.reservedQuantity);
+          const avgCost = toNumber(product.averageCost);
+          const costPrice = toNumber(product.costPrice);
           const effectiveCost = avgCost > 0 ? avgCost : costPrice;
           
           return {
@@ -155,11 +134,11 @@ export default function StockLevelsPage() {
             category: product.category,
             unit: product.unit || 'pcs',
             currentStock: currentStock,
-            reservedQuantity: product.reservedQuantity || 0,
-            availableQuantity: currentStock - (product.reservedQuantity || 0),
+            reservedQuantity,
+            availableQuantity: Math.max(currentStock - reservedQuantity, 0),
             averageCost: effectiveCost,
             totalValue: currentStock * effectiveCost,
-            lowStockThreshold: product.lowStockThreshold || 10,
+            lowStockThreshold: toNumber(product.lowStockThreshold) || 10,
             defaultWarehouse: product.defaultWarehouse,
             isActive: product.isActive !== false,
           };
@@ -251,21 +230,31 @@ export default function StockLevelsPage() {
   // Calculate totals
   const totalValue = products.reduce((sum, item) => sum + item.totalValue, 0);
   const totalQuantity = products.reduce((sum, item) => sum + item.currentStock, 0);
+  const totalReserved = products.reduce((sum, item) => sum + item.reservedQuantity, 0);
+  const totalAvailable = products.reduce((sum, item) => sum + item.availableQuantity, 0);
   const lowStockCount = products.filter(item => 
     item.currentStock > 0 && item.currentStock <= item.lowStockThreshold
   ).length;
   const outOfStockCount = products.filter(item => item.currentStock === 0).length;
+  const valueAtRisk = products
+    .filter(item => item.currentStock <= item.lowStockThreshold)
+    .reduce((sum, item) => sum + item.totalValue, 0);
+  const availabilityRate = totalQuantity > 0 ? (totalAvailable / totalQuantity) * 100 : 0;
+  const topValueItem = [...products].sort((a, b) => b.totalValue - a.totalValue)[0];
 
   return (
     <Layout>
-      <Box sx={{ p: { xs: 2, sm: 3 } }} className="min-h-screen bg-slate-50 dark:bg-slate-900">
+      <Box sx={{ p: { xs: 2, sm: 3 } }} className="min-h-screen bg-slate-50 dark:bg-slate-950">
       {/* Header - Responsive */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
-        <div className="flex items-center gap-3">
-          <InventoryIcon className="text-primary flex-shrink-0" style={{ fontSize: 28 }} />
-          <Typography variant="h5" component="h1" className="text-slate-900 dark:text-white text-xl sm:text-2xl">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-6">
+        <div>
+          <div className="flex items-center gap-3">
+          <InventoryIcon className="text-primary flex-shrink-0" style={{ fontSize: 30 }} />
+          <Typography variant="h5" component="h1" className="text-slate-900 dark:text-white text-xl sm:text-2xl font-bold">
             {t('stockLevels.title', 'Stock Levels')}
           </Typography>
+          </div>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Real-time quantity, availability, reserved stock, and valuation controls.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button
@@ -296,8 +285,8 @@ export default function StockLevelsPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-4 flex items-center gap-4 border border-slate-200 dark:border-slate-700">
+      <div className="mb-6 grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4">
+        <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm p-4 flex items-center gap-4 border border-slate-200 dark:border-slate-700">
           <InventoryIcon color="primary" />
           <div>
             <Typography variant="body2" className="text-slate-500 dark:text-slate-400">
@@ -306,7 +295,7 @@ export default function StockLevelsPage() {
             <Typography variant="h6" className="text-slate-900 dark:text-white">{total}</Typography>
           </div>
         </div>
-        <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-4 flex items-center gap-4 border border-slate-200 dark:border-slate-700">
+        <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm p-4 flex items-center gap-4 border border-slate-200 dark:border-slate-700">
           <TrendingUpIcon color="success" />
           <div>
             <Typography variant="body2" className="text-slate-500 dark:text-slate-400">
@@ -315,7 +304,7 @@ export default function StockLevelsPage() {
             <Typography variant="h6" className="text-slate-900 dark:text-white">{totalQuantity.toLocaleString()}</Typography>
           </div>
         </div>
-        <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-4 flex items-center gap-4 border border-slate-200 dark:border-slate-700">
+        <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm p-4 flex items-center gap-4 border border-slate-200 dark:border-slate-700">
           <WarningIcon color="warning" />
           <div>
             <Typography variant="body2" className="text-slate-500 dark:text-slate-400">
@@ -324,7 +313,7 @@ export default function StockLevelsPage() {
             <Typography variant="h6" className="text-slate-900 dark:text-white">{lowStockCount}</Typography>
           </div>
         </div>
-        <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-4 flex items-center gap-4 border border-slate-200 dark:border-slate-700">
+        <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm p-4 flex items-center gap-4 border border-slate-200 dark:border-slate-700">
           <TrendingUpIcon color="success" />
           <div>
             <Typography variant="body2" className="text-slate-500 dark:text-slate-400">
@@ -332,6 +321,49 @@ export default function StockLevelsPage() {
             </Typography>
             <Typography variant="h6" className="text-slate-900 dark:text-white">{formatCurrency(totalValue)}</Typography>
           </div>
+        </div>
+        <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm p-4 flex items-center gap-4 border border-slate-200 dark:border-slate-700">
+          <WarningIcon color={availabilityRate < 80 ? 'warning' : 'success'} />
+          <div>
+            <Typography variant="body2" className="text-slate-500 dark:text-slate-400">
+              Availability
+            </Typography>
+            <Typography variant="h6" className="text-slate-900 dark:text-white">{availabilityRate.toFixed(1)}%</Typography>
+          </div>
+        </div>
+        <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm p-4 flex items-center gap-4 border border-slate-200 dark:border-slate-700">
+          <InventoryIcon color="secondary" />
+          <div>
+            <Typography variant="body2" className="text-slate-500 dark:text-slate-400">
+              Reserved
+            </Typography>
+            <Typography variant="h6" className="text-slate-900 dark:text-white">{totalReserved.toLocaleString(undefined, { maximumFractionDigits: 2 })}</Typography>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-3 mb-6">
+        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Inventory Exposure</p>
+          <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">{formatCurrency(valueAtRisk)}</p>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Value held in low or out-of-stock SKUs</p>
+        </div>
+        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Top Value SKU</p>
+          <p className="mt-2 truncate text-lg font-bold text-slate-950 dark:text-white">{topValueItem?.name || '-'}</p>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{topValueItem ? `${topValueItem.sku} · ${formatCurrency(topValueItem.totalValue)}` : 'No stock valuation available'}</p>
+        </div>
+        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Stock Health Mix</p>
+            <p className="text-sm font-semibold text-slate-900 dark:text-white">{products.length ? Math.round(((products.length - lowStockCount - outOfStockCount) / products.length) * 100) : 0}% healthy</p>
+          </div>
+          <div className="mt-3 flex h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+            <div className="bg-emerald-500" style={{ width: `${products.length ? ((products.length - lowStockCount - outOfStockCount) / products.length) * 100 : 0}%` }} />
+            <div className="bg-amber-500" style={{ width: `${products.length ? (lowStockCount / products.length) * 100 : 0}%` }} />
+            <div className="bg-red-500" style={{ width: `${products.length ? (outOfStockCount / products.length) * 100 : 0}%` }} />
+          </div>
+          <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{lowStockCount} low stock, {outOfStockCount} out of stock</p>
         </div>
       </div>
 
@@ -343,7 +375,7 @@ export default function StockLevelsPage() {
       )}
 
       {/* Filters */}
-      <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-4 mb-4 border border-slate-200 dark:border-slate-700">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm p-4 mb-4 border border-slate-200 dark:border-slate-700">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
           <TextField
             fullWidth
@@ -423,7 +455,7 @@ export default function StockLevelsPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-slate-800 rounded-lg shadow border border-slate-200 dark:border-slate-700 overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
         <TableContainer>
           <Table>
             <TableHead>
@@ -480,7 +512,15 @@ export default function StockLevelsPage() {
                           fontWeight: item.availableQuantity <= item.lowStockThreshold ? 'bold' : 'normal'
                         }}
                       >
-                        {item.availableQuantity.toLocaleString()}
+                        <div className="flex min-w-[110px] flex-col items-end gap-1">
+                          <span>{item.availableQuantity.toLocaleString()}</span>
+                          <div className="h-1.5 w-24 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+                            <div
+                              className={item.availableQuantity <= item.lowStockThreshold ? 'h-full rounded-full bg-amber-500' : 'h-full rounded-full bg-emerald-500'}
+                              style={{ width: `${Math.max(4, Math.min(100, (item.availableQuantity / Math.max(item.currentStock, 1)) * 100))}%` }}
+                            />
+                          </div>
+                        </div>
                       </TableCell>
                       <TableCell align="right" sx={{ color: 'inherit' }}>{formatCurrency(item.averageCost)}</TableCell>
                       <TableCell align="right" sx={{ color: 'inherit' }}>{formatCurrency(item.totalValue)}</TableCell>

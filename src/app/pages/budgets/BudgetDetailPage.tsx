@@ -110,6 +110,11 @@ const MONTHS = [
   { value: 12, label: "Dec" },
 ];
 
+const toAmount = (value: unknown) => {
+  const amount = Number(value);
+  return Number.isFinite(amount) ? amount : 0;
+};
+
 export default function BudgetDetailPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -484,32 +489,86 @@ export default function BudgetDetailPage() {
   };
 
   const totalBudgeted = lines.reduce(
-    (sum, l) => sum + (l.budgeted_amount || 0),
+    (sum, l) => sum + toAmount(l.budgeted_amount),
     0,
   );
   const totalCommitted = lines.reduce(
-    (sum, l) => sum + (l.encumbered_amount || 0),
+    (sum, l) => sum + toAmount(l.encumbered_amount),
     0,
   );
   const totalActualConsumed = lines.reduce(
-    (sum, l) => sum + (l.actual_amount || 0),
+    (sum, l) => sum + toAmount(l.actual_amount),
     0,
   );
   const totalAvailable = lines.reduce(
-    (sum, l) => sum + ((l.budgeted_amount || 0) - (l.encumbered_amount || 0) - (l.actual_amount || 0)),
+    (sum, l) => sum + (toAmount(l.budgeted_amount) - toAmount(l.encumbered_amount) - toAmount(l.actual_amount)),
     0,
   );
   const linkedProjectLines = lines.filter((line) => Boolean(line.project_id)).length;
   const headerBudgetAmount =
     budget?.amount && Number(budget.amount) > 0 ? Number(budget.amount) : totalBudgeted;
   const getLineAvailable = (line: BudgetLine) =>
-    (line.budgeted_amount || 0) - (line.encumbered_amount || 0) - (line.actual_amount || 0);
+    toAmount(line.budgeted_amount) - toAmount(line.encumbered_amount) - toAmount(line.actual_amount);
 
   const getLineUtilization = (line: BudgetLine) => {
-    const budgeted = line.budgeted_amount || 0;
+    const budgeted = toAmount(line.budgeted_amount);
     if (!budgeted) return 0;
-    return (((line.encumbered_amount || 0) + (line.actual_amount || 0)) / budgeted) * 100;
+    return ((toAmount(line.encumbered_amount) + toAmount(line.actual_amount)) / budgeted) * 100;
   };
+
+  const lineComparisonItems = lines.reduce<Record<string, {
+    category: string;
+    budgetedAmount: number;
+    actualAmount: number;
+    variance: number;
+    utilizationPercent: number;
+  }>>((groups, line) => {
+    const category =
+      line.category ||
+      (typeof line.account_id === "object"
+        ? line.account_id.name
+        : getAccountName(line.account_id)) ||
+      "Uncategorized";
+    const current = groups[category] || {
+      category,
+      budgetedAmount: 0,
+      actualAmount: 0,
+      variance: 0,
+      utilizationPercent: 0,
+    };
+    current.budgetedAmount += toAmount(line.budgeted_amount);
+    current.actualAmount += toAmount(line.actual_amount);
+    current.variance = current.budgetedAmount - current.actualAmount;
+    current.utilizationPercent = current.budgetedAmount
+      ? (current.actualAmount / current.budgetedAmount) * 100
+      : 0;
+    groups[category] = current;
+    return groups;
+  }, {});
+
+  const comparisonBudgeted = toAmount(comparison?.summary?.budgetedAmount) || totalBudgeted;
+  const comparisonActual = totalActualConsumed || toAmount(comparison?.summary?.actualAmount);
+  const comparisonVariance = comparisonBudgeted - comparisonActual;
+  const comparisonUtilization = comparisonBudgeted
+    ? (comparisonActual / comparisonBudgeted) * 100
+    : 0;
+  const comparisonItems =
+    comparison?.itemComparisons && comparison.itemComparisons.length > 0
+      ? comparison.itemComparisons.map((item: any) => {
+          const category = item.category || item.description || "Uncategorized";
+          const liveItem = lineComparisonItems[category];
+          const budgetedAmount = toAmount(item.budgetedAmount) || liveItem?.budgetedAmount || 0;
+          const actualAmount = liveItem?.actualAmount ?? toAmount(item.actualAmount);
+          return {
+            ...item,
+            category,
+            budgetedAmount,
+            actualAmount,
+            variance: budgetedAmount - actualAmount,
+            utilizationPercent: budgetedAmount ? (actualAmount / budgetedAmount) * 100 : 0,
+          };
+        })
+      : Object.values(lineComparisonItems);
 
   const getLineStatus = (line: BudgetLine) => {
     const available = getLineAvailable(line);
@@ -800,11 +859,11 @@ export default function BudgetDetailPage() {
                     <div className="mt-1 text-xl font-semibold">{formatCurrency(totalBudgeted)}</div>
                   </div>
                   <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900">
-                    <div className="text-xs uppercase text-slate-500">Committed</div>
+                    <div className="text-xs uppercase text-slate-500">Open committed</div>
                     <div className="mt-1 text-xl font-semibold">{formatCurrency(totalCommitted)}</div>
                   </div>
                   <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900">
-                    <div className="text-xs uppercase text-slate-500">Actual</div>
+                    <div className="text-xs uppercase text-slate-500">Actual consumed</div>
                     <div className="mt-1 text-xl font-semibold">{formatCurrency(totalActualConsumed)}</div>
                   </div>
                   <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900">
@@ -1038,7 +1097,7 @@ export default function BudgetDetailPage() {
                         <TableHead className="text-right">
                           {t("budgets.budgetedAmount", "Budgeted")}
                         </TableHead>
-                        <TableHead className="text-right">Committed</TableHead>
+                        <TableHead className="text-right">Open committed</TableHead>
                         <TableHead className="text-right">Actual</TableHead>
                         <TableHead className="text-right">Available</TableHead>
                         <TableHead className="text-right">Use %</TableHead>
@@ -1047,7 +1106,7 @@ export default function BudgetDetailPage() {
                           {t("budgets.category", "Category")}
                         </TableHead>
                         <TableHead>{t("budgets.notes", "Notes")}</TableHead>
-                        <TableHead className="text-right">Consumption</TableHead>
+                        <TableHead className="sticky right-0 bg-card text-right shadow-[-8px_0_8px_-8px_rgba(0,0,0,0.35)]">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -1111,7 +1170,7 @@ export default function BudgetDetailPage() {
                           <TableCell className="text-muted-foreground text-sm">
                             {line.notes || "-"}
                           </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="sticky right-0 bg-card text-right shadow-[-8px_0_8px_-8px_rgba(0,0,0,0.35)]">
                             <Button
                               variant="ghost"
                               size="sm"
@@ -1145,7 +1204,7 @@ export default function BudgetDetailPage() {
                         </TableCell>
                         <TableCell></TableCell>
                         <TableCell colSpan={2}></TableCell>
-                        <TableCell></TableCell>
+                        <TableCell className="sticky right-0 bg-muted/30"></TableCell>
                       </TableRow>
                     </TableBody>
                   </Table>
@@ -1169,7 +1228,7 @@ export default function BudgetDetailPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {comparison ? (
+                {comparison || lines.length > 0 ? (
                   <div className="space-y-6">
                     {/* Summary Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1180,7 +1239,7 @@ export default function BudgetDetailPage() {
                           </div>
                           <div className="text-2xl font-bold text-blue-600">
                             {formatCurrency(
-                              comparison.summary?.budgetedAmount || 0,
+                              comparisonBudgeted,
                             )}
                           </div>
                         </CardContent>
@@ -1192,7 +1251,7 @@ export default function BudgetDetailPage() {
                           </div>
                           <div className="text-2xl font-bold">
                             {formatCurrency(
-                              comparison.summary?.actualAmount || 0,
+                              comparisonActual,
                             )}
                           </div>
                         </CardContent>
@@ -1203,22 +1262,20 @@ export default function BudgetDetailPage() {
                             {t("budgets.variance", "Variance")}
                           </div>
                           <div
-                            className={`text-2xl font-bold ${(comparison.summary?.varianceAmount || 0) >= 0 ? "text-green-600" : "text-red-600"}`}
+                            className={`text-2xl font-bold ${comparisonVariance >= 0 ? "text-green-600" : "text-red-600"}`}
                           >
                             {formatCurrency(
-                              comparison.summary?.varianceAmount || 0,
+                              comparisonVariance,
                             )}
                           </div>
                           <div className="flex items-center gap-1 mt-1">
-                            {(comparison.summary?.varianceAmount || 0) >= 0 ? (
+                            {comparisonVariance >= 0 ? (
                               <TrendingDown className="h-3 w-3 text-green-600" />
                             ) : (
                               <TrendingUp className="h-3 w-3 text-red-600" />
                             )}
                             <span className="text-xs text-muted-foreground">
-                              {(
-                                comparison.summary?.variancePercent || 0
-                              ).toFixed(1)}
+                              {comparisonUtilization.toFixed(1)}
                               %
                             </span>
                           </div>
@@ -1227,8 +1284,7 @@ export default function BudgetDetailPage() {
                     </div>
 
                     {/* Item Comparison Table */}
-                    {comparison.itemComparisons &&
-                      comparison.itemComparisons.length > 0 && (
+                    {comparisonItems.length > 0 && (
                         <Table>
                           <TableHeader>
                             <TableRow>
@@ -1250,7 +1306,7 @@ export default function BudgetDetailPage() {
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {comparison.itemComparisons.map(
+                            {comparisonItems.map(
                               (item: any, idx: number) => (
                                 <TableRow key={idx}>
                                   <TableCell className="font-medium">
@@ -1270,8 +1326,8 @@ export default function BudgetDetailPage() {
                                     {formatCurrency(item.variance || 0)}
                                   </TableCell>
                                   <TableCell className="text-right">
-                                    {item.variancePercent !== undefined
-                                      ? `${item.variancePercent.toFixed(1)}%`
+                                    {item.utilizationPercent !== undefined
+                                      ? `${item.utilizationPercent.toFixed(1)}%`
                                       : "-"}
                                   </TableCell>
                                 </TableRow>
@@ -1462,6 +1518,12 @@ export default function BudgetDetailPage() {
             <BudgetApprovalPanel
               budgetId={id!}
               budgetStatus={budget.status}
+              budgetAmount={totalBudgeted}
+              departmentId={
+                typeof budget.department === "object"
+                  ? budget.department?._id || null
+                  : budget.department || null
+              }
               onApprovalChange={fetchBudget}
             />
           </TabsContent>

@@ -38,6 +38,11 @@ const STATUS_COLORS: Record<string, string> = {
   cancelled: "bg-red-500/10 text-red-500 border-red-500/20",
 };
 
+const toAmount = (value: unknown) => {
+  const amount = Number(value);
+  return Number.isFinite(amount) ? amount : 0;
+};
+
 export default function ProjectDetailPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -123,9 +128,24 @@ export default function ProjectDetailPage() {
     );
   }
 
-  const progressPercent = project.budget_allocated > 0
-    ? Math.min(100, Math.round(((project.budget_spent || 0) / (project.budget_allocated || 1)) * 100))
-    : 0;
+  const allocatedAmount =
+    toAmount(project.budget_allocated) ||
+    toAmount(budgetSummary?.budget_summary?.total_budgeted);
+  const spentAmount =
+    toAmount(budgetSummary?.budget_summary?.total_actual) ||
+    toAmount(project.budget_spent);
+  const encumberedAmount = toAmount(budgetSummary?.budget_summary?.total_encumbered);
+  const remainingAmount =
+    budgetSummary
+      ? allocatedAmount - spentAmount - encumberedAmount
+      : toAmount(project.budget_remaining);
+  const progressPercent = allocatedAmount > 0
+    ? Math.min(100, (spentAmount / allocatedAmount) * 100)
+    : toAmount(project.progress_percent);
+  const displayedWbsTree: WBSTreeNode[] =
+    wbsTree.length > 0
+      ? wbsTree
+      : [{ ...project, children: [] } as WBSTreeNode];
 
   return (
     <Layout>
@@ -171,7 +191,7 @@ export default function ProjectDetailPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(project.budget_allocated)}</div>
+              <div className="text-2xl font-bold">{formatCurrency(allocatedAmount)}</div>
             </CardContent>
           </Card>
           <Card>
@@ -182,7 +202,7 @@ export default function ProjectDetailPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-500">{formatCurrency(project.budget_spent || 0)}</div>
+              <div className="text-2xl font-bold text-red-500">{formatCurrency(spentAmount)}</div>
             </CardContent>
           </Card>
           <Card>
@@ -194,7 +214,7 @@ export default function ProjectDetailPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-500">
-                {formatCurrency(project.budget_remaining || 0)}
+                {formatCurrency(remainingAmount)}
               </div>
             </CardContent>
           </Card>
@@ -206,8 +226,8 @@ export default function ProjectDetailPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{project.progress_percent}%</div>
-              <Progress value={project.progress_percent} className="mt-2 h-2" />
+              <div className="text-2xl font-bold">{progressPercent.toFixed(1)}%</div>
+              <Progress value={progressPercent} className="mt-2 h-2" />
             </CardContent>
           </Card>
         </div>
@@ -269,20 +289,20 @@ export default function ProjectDetailPage() {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">{t("projects.budgetAllocated", "Budget Allocated")}</span>
-                    <span className="font-medium">{formatCurrency(budgetSummary.budget_summary.total_budgeted)}</span>
+                    <span className="font-medium">{formatCurrency(allocatedAmount)}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">{t("budgets.actual", "Actual")}</span>
-                    <span className="font-medium text-red-500">{formatCurrency(budgetSummary.budget_summary.total_actual)}</span>
+                    <span className="font-medium text-red-500">{formatCurrency(spentAmount)}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">{t("budgets.encumbered", "Encumbered")}</span>
-                    <span className="font-medium text-orange-500">{formatCurrency(budgetSummary.budget_summary.total_encumbered)}</span>
+                    <span className="text-sm text-muted-foreground">{t("budgets.encumbered", "Open Encumbered")}</span>
+                    <span className="font-medium text-orange-500">{formatCurrency(encumberedAmount)}</span>
                   </div>
                   <div className="flex justify-between items-center border-t pt-2">
                     <span className="text-sm font-medium">{t("projects.remaining", "Remaining")}</span>
                     <span className="font-bold text-green-500">
-                      {formatCurrency(budgetSummary.budget_summary.total_remaining)}
+                      {formatCurrency(remainingAmount)}
                     </span>
                   </div>
                   <div className="text-sm text-muted-foreground text-center">
@@ -314,8 +334,9 @@ export default function ProjectDetailPage() {
               </CardHeader>
               <CardContent>
                 <WBSTree
-                  nodes={wbsTree}
+                  nodes={displayedWbsTree}
                   onSelect={(node) => navigate(`/projects/${node._id}`)}
+                  selectedId={project._id}
                 />
               </CardContent>
             </Card>

@@ -9,7 +9,10 @@ import {
   AlertCircle,
   MapPin,
   CheckCircle,
-  XCircle
+  XCircle,
+  Search,
+  Boxes,
+  Landmark
 } from 'lucide-react';
 import { Layout } from '@/app/layout/Layout';
 import { Button } from '@/app/components/ui/button';
@@ -280,26 +283,41 @@ export default function WarehousesPage() {
     return parts.length > 0 ? parts.join(', ') : '-';
   };
 
+  const warehouseSummary = warehouses.reduce(
+    (summary, warehouse) => {
+      if (warehouse.isActive) summary.active += 1;
+      if (warehouse.isDefault) summary.defaults += 1;
+      summary.products += warehouse.totalProducts || 0;
+      summary.quantity += warehouse.totalQuantity || 0;
+      summary.value += warehouse.totalValue || 0;
+      return summary;
+    },
+    { active: 0, defaults: 0, products: 0, quantity: 0, value: 0 }
+  );
+
   return (
     <Layout>
-      <div className="container mx-auto py-6 space-y-6 bg-slate-50 dark:bg-slate-900 min-h-screen">
+      <div className="container mx-auto py-6 px-4 space-y-6 bg-slate-50 dark:bg-slate-950 min-h-screen">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-slate-900 dark:text-white">{t('pages.warehouses.title')}</h1>
             <p className="text-muted-foreground">{t('pages.warehouses.subtitle')}</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Input
-              placeholder={t('pages.warehouses.searchPlaceholder')}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-64 bg-white dark:bg-slate-800 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
-            />
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Input
+                placeholder={t('pages.warehouses.searchPlaceholder')}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-9 sm:w-72 bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-slate-200 dark:border-slate-700"
+              />
+            </div>
             <select
               value={filterActive === undefined ? '' : filterActive.toString()}
               onChange={(e) => setFilterActive(e.target.value === '' ? undefined : e.target.value === 'true')}
-              className="px-3 py-2 border rounded-md bg-background dark:bg-slate-800 dark:border-slate-700 text-slate-900 dark:text-white"
+              className="h-10 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
             >
               <option value="">{t('common.all')}</option>
               <option value="true">{t('common.active')}</option>
@@ -312,8 +330,51 @@ export default function WarehousesPage() {
           </div>
         </div>
 
+        <div className="grid gap-4 md:grid-cols-4">
+          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Locations</p>
+                <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">{warehouses.length}</p>
+              </div>
+              <WarehouseIcon className="h-9 w-9 text-blue-500" />
+            </div>
+            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{warehouseSummary.active} active</p>
+          </div>
+          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Inventory Assigned</p>
+                <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">{warehouseSummary.quantity.toLocaleString()}</p>
+              </div>
+              <Boxes className="h-9 w-9 text-emerald-500" />
+            </div>
+            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{warehouseSummary.products.toLocaleString()} product links</p>
+          </div>
+          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Default Control</p>
+                <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">{warehouseSummary.defaults}</p>
+              </div>
+              <CheckCircle className="h-9 w-9 text-violet-500" />
+            </div>
+            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Primary receiving location</p>
+          </div>
+          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Stored Value</p>
+                <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">{warehouseSummary.value.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+              </div>
+              <Landmark className="h-9 w-9 text-amber-500" />
+            </div>
+            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">From warehouse stock totals</p>
+          </div>
+        </div>
+
         {/* Warehouse List */}
-        <Card className="dark:bg-slate-800">
+        <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
           <CardContent className="p-0">
             {loading ? (
               <div className="flex items-center justify-center p-8">
@@ -335,7 +396,7 @@ export default function WarehousesPage() {
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="border-b bg-muted/50 dark:bg-slate-700/50">
+                  <thead className="border-b bg-slate-100/80 dark:bg-slate-800/80">
                     <tr>
                       <th className="px-4 py-3 text-left text-sm font-medium text-slate-900 dark:text-white">{t('pages.warehouses.code')}</th>
                       <th className="px-4 py-3 text-left text-sm font-medium text-slate-900 dark:text-white">{t('pages.warehouses.name')}</th>
@@ -348,9 +409,14 @@ export default function WarehousesPage() {
                   </thead>
                   <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
                     {warehouses.map((warehouse) => (
-                      <tr key={warehouse._id} className="hover:bg-muted/50 dark:hover:bg-slate-700/50">
+                      <tr key={warehouse._id} className="hover:bg-slate-50 dark:hover:bg-slate-800/60">
                         <td className="px-4 py-3 text-sm font-mono text-slate-900 dark:text-white">{warehouse.code}</td>
-                        <td className="px-4 py-3 text-sm font-medium text-slate-900 dark:text-white">{warehouse.name}</td>
+                        <td className="px-4 py-3 text-sm font-medium text-slate-900 dark:text-white">
+                          <div>{warehouse.name}</div>
+                          {warehouse.description && (
+                            <div className="mt-0.5 text-xs font-normal text-slate-500 dark:text-slate-400">{warehouse.description}</div>
+                          )}
+                        </td>
                         <td className="px-4 py-3 text-sm text-muted-foreground">
                           <div className="flex items-center gap-1">
                             <MapPin className="h-3 w-3" />
@@ -372,12 +438,12 @@ export default function WarehousesPage() {
                         </td>
                         <td className="px-4 py-3">
                           {warehouse.isActive ? (
-                            <span className="inline-flex items-center gap-1 text-green-600 dark:text-green-400">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
                               <CheckCircle className="h-4 w-4" />
                               {t('common.active')}
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 text-muted-foreground">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
                               <XCircle className="h-4 w-4" />
                               {t('common.inactive')}
                             </span>
@@ -427,8 +493,8 @@ export default function WarehousesPage() {
 
         {/* Create/Edit Dialog */}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="max-w-2xl bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
-            <DialogHeader>
+          <DialogContent className="flex max-h-[88vh] max-w-2xl flex-col overflow-hidden bg-white p-0 dark:bg-slate-900 border-slate-200 dark:border-slate-700">
+            <DialogHeader className="border-b border-slate-200 px-6 py-5 dark:border-slate-700">
               <DialogTitle className="text-slate-900 dark:text-white">
                 {editingWarehouse
                   ? t('pages.warehouses.editWarehouse')
@@ -440,8 +506,8 @@ export default function WarehousesPage() {
                   : t('pages.warehouses.addWarehouseDesc')}
               </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto">
-              <div className="grid grid-cols-2 gap-4">
+            <div className="grid flex-1 gap-4 overflow-y-auto px-6 py-5 [scrollbar-width:thin] [scrollbar-color:#64748b_transparent]">
+              <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="name" className="text-slate-900 dark:text-white">{t('pages.warehouses.warehouseName')} *</Label>
                   <Input
@@ -452,7 +518,16 @@ export default function WarehousesPage() {
                     className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                   />
                 </div>
-
+                <div className="space-y-2">
+                  <Label htmlFor="code" className="text-slate-900 dark:text-white">{t('pages.warehouses.code')}</Label>
+                  <Input
+                    id="code"
+                    value={formData.code}
+                    onChange={(e) => setFormData(prev => ({ ...prev, code: e.target.value.toUpperCase() }))}
+                    placeholder="Auto generated if blank"
+                    className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
+                  />
+                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="description" className="text-slate-900 dark:text-white">{t('pages.warehouses.description')}</Label>
@@ -474,7 +549,7 @@ export default function WarehousesPage() {
                   className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="city" className="text-slate-900 dark:text-white">{t('pages.warehouses.city')}</Label>
                   <Input
@@ -496,7 +571,7 @@ export default function WarehousesPage() {
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="contactPerson" className="text-slate-900 dark:text-white">{t('pages.warehouses.contactPerson')}</Label>
                   <Input
@@ -562,7 +637,7 @@ export default function WarehousesPage() {
                 )}
               </div>
             </div>
-            <DialogFooter>
+            <DialogFooter className="border-t border-slate-200 bg-white px-6 py-4 dark:border-slate-700 dark:bg-slate-900">
               <Button variant="outline" onClick={() => setDialogOpen(false)} className="border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white">
                 {t('common.cancel')}
               </Button>

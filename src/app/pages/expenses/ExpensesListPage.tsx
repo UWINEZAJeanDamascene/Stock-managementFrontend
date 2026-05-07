@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router';
-import { expensesApi, budgetsApi, departmentsApi, rraTaxCategories, supportedCurrencies, CurrencyCode, RRATaxCategory } from '@/lib/api';
+import { expensesApi, budgetsApi, departmentsApi, rraTaxCategories, supportedCurrencies, CurrencyCode, RRATaxCategory, type BudgetLine } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
 import {
   Plus,
@@ -152,6 +152,7 @@ export default function ExpensesListPage() {
     isRecurring: false,
     recurringFrequency: 'monthly',
     budgetId: '',
+    budgetLineId: '',
     // Rwanda-specific fields
     currencyCode: 'RWF' as CurrencyCode,
     exchangeRate: 1,
@@ -163,6 +164,7 @@ export default function ExpensesListPage() {
   const [expenseAccounts, setExpenseAccounts] = useState<any[]>([]);
   const [bankAccounts, setBankAccounts] = useState<any[]>([]);
   const [budgets, setBudgets] = useState<any[]>([]);
+  const [selectedBudgetLines, setSelectedBudgetLines] = useState<BudgetLine[]>([]);
   const [departments, setDepartments] = useState<any[]>([]);
 
   const fetchExpenses = useCallback(async () => {
@@ -234,6 +236,23 @@ export default function ExpensesListPage() {
     }
   }, []);
 
+  const fetchBudgetLines = useCallback(async (budgetId: string) => {
+    if (!budgetId) {
+      setSelectedBudgetLines([]);
+      return;
+    }
+
+    try {
+      const response = await budgetsApi.getLines(budgetId);
+      if (response.success) {
+        setSelectedBudgetLines(response.data || []);
+      }
+    } catch (error) {
+      console.error('[ExpensesListPage] Failed to fetch budget lines:', error);
+      setSelectedBudgetLines([]);
+    }
+  }, []);
+
   const fetchDepartments = useCallback(async () => {
     try {
       console.log('[ExpensesListPage] Fetching departments...');
@@ -268,6 +287,10 @@ export default function ExpensesListPage() {
       toast.error('Please select an expense account');
       return;
     }
+    if (newExpenseForm.budgetId && !newExpenseForm.budgetLineId) {
+      toast.error('Please select a budget line');
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -287,6 +310,7 @@ export default function ExpensesListPage() {
         isRecurring: newExpenseForm.isRecurring,
         recurringFrequency: newExpenseForm.recurringFrequency,
         budget_id: newExpenseForm.budgetId || undefined,
+        budget_line_id: newExpenseForm.budgetLineId || undefined,
         // Rwanda-specific fields
         currencyCode: newExpenseForm.currencyCode,
         exchangeRate: newExpenseForm.currencyCode === 'RWF' ? 1 : newExpenseForm.exchangeRate,
@@ -313,6 +337,7 @@ export default function ExpensesListPage() {
           isRecurring: false,
           recurringFrequency: 'monthly',
           budgetId: '',
+          budgetLineId: '',
           // Reset Rwanda-specific fields
           currencyCode: 'RWF',
           exchangeRate: 1,
@@ -320,6 +345,7 @@ export default function ExpensesListPage() {
           isVATRecoverable: true,
           departmentId: '',
         });
+        setSelectedBudgetLines([]);
         fetchExpenses();
       } else {
         toast.error('Failed to create expense');
@@ -392,6 +418,24 @@ export default function ExpensesListPage() {
       currency: currency,
       minimumFractionDigits: 2,
     }).format(amount || 0);
+  };
+
+  const getBudgetLineAccountId = (line: BudgetLine) => {
+    return typeof line.account_id === 'object' ? line.account_id._id : line.account_id;
+  };
+
+  const getBudgetLineLabel = (line: BudgetLine) => {
+    const account = typeof line.account_id === 'object' ? line.account_id : null;
+    const project =
+      line.project_id && typeof line.project_id === 'object'
+        ? line.project_id.wbs_code || line.wbs_code || line.project_id.project_code
+        : line.wbs_code;
+    const available =
+      Number(line.budgeted_amount || 0) -
+      Number(line.encumbered_amount || 0) -
+      Number(line.actual_amount || 0);
+
+    return `${account?.code || ''} - ${account?.name || 'Budget line'}${project ? ` - ${project}` : ''} (${formatCurrency(available)} left)`;
   };
 
   const formatRWF = (amount: number) => {
@@ -879,7 +923,15 @@ export default function ExpensesListPage() {
                 <Label className="dark:text-slate-200">Budget (Optional)</Label>
                 <Select
                   value={newExpenseForm.budgetId || "_none"}
-                  onValueChange={(value) => setNewExpenseForm({ ...newExpenseForm, budgetId: value === "_none" ? "" : value })}
+                  onValueChange={(value) => {
+                    const budgetId = value === "_none" ? "" : value;
+                    setNewExpenseForm({
+                      ...newExpenseForm,
+                      budgetId,
+                      budgetLineId: '',
+                    });
+                    fetchBudgetLines(budgetId);
+                  }}
                 >
                   <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
                     <SelectValue placeholder="Select budget for tracking" />
@@ -894,6 +946,35 @@ export default function ExpensesListPage() {
                   </SelectContent>
                 </Select>
               </div>
+              {newExpenseForm.budgetId && (
+                <div className="space-y-2">
+                  <Label className="dark:text-slate-200">Budget Line *</Label>
+                  <Select
+                    value={newExpenseForm.budgetLineId || "_none"}
+                    onValueChange={(value) => {
+                      const budgetLineId = value === "_none" ? "" : value;
+                      const selectedLine = selectedBudgetLines.find((line) => line._id === budgetLineId);
+                      setNewExpenseForm({
+                        ...newExpenseForm,
+                        budgetLineId,
+                        expenseAccountId: selectedLine ? getBudgetLineAccountId(selectedLine) : newExpenseForm.expenseAccountId,
+                      });
+                    }}
+                  >
+                    <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
+                      <SelectValue placeholder="Select budget line" />
+                    </SelectTrigger>
+                    <SelectContent className="dark:bg-slate-800">
+                      <SelectItem value="_none" className="dark:text-slate-200">None</SelectItem>
+                      {selectedBudgetLines.map((line) => (
+                        <SelectItem key={line._id} value={line._id} className="dark:text-slate-200">
+                          {getBudgetLineLabel(line)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <div className="space-y-2">
                 <Label className="dark:text-slate-200">Payment Method *</Label>
                 <Select
