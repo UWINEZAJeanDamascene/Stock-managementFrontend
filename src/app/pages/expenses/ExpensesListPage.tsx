@@ -177,7 +177,7 @@ export default function ExpensesListPage() {
         type: filters.type || undefined,
         status: filters.status || undefined,
         search: searchQuery || undefined,
-        startDate: filters.startDate || undefined,
+        startDate: filters.startDate || undefined, 
         endDate: filters.endDate || undefined,
       });
 
