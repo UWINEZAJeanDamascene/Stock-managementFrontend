@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { payrollApi, PayrollRecord } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
@@ -373,7 +373,7 @@ export default function PayrollDetailPage() {
   if (loading) {
     return (
       <Layout>
-        <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground dark:text-slate-400" />
         </div>
       </Layout>
@@ -383,8 +383,8 @@ export default function PayrollDetailPage() {
   if (!record) {
     return (
       <Layout>
-        <div className="container mx-auto py-6">
-          <div className="flex flex-col items-center py-12">
+        <div className="min-h-screen bg-slate-50 px-4 py-6 dark:bg-slate-950">
+          <div className="mx-auto flex max-w-3xl flex-col items-center rounded-xl border border-slate-200 bg-white py-12 shadow-sm dark:border-slate-800 dark:bg-slate-950">
             <AlertCircle className="h-12 w-12 mb-4 text-muted-foreground dark:text-slate-400" />
             <p className="text-muted-foreground dark:text-slate-400">Payroll record not found</p>
             <Button variant="outline" className="mt-4 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700" onClick={() => navigate('/payroll')}>
@@ -396,29 +396,53 @@ export default function PayrollDetailPage() {
     );
   }
 
+  const employeeName = `${record.employee.firstName} ${record.employee.lastName}`;
+  const rssbEmployerTotal =
+    (record.contributions?.rssbEmployerPension || 0) +
+    (record.contributions?.rssbEmployerMaternity || 0) +
+    (record.contributions?.occupationalHazard || 0);
+  const employerCost = record.salary.grossSalary + rssbEmployerTotal;
+  const netPayRate =
+    record.salary.grossSalary > 0
+      ? Math.round((record.netPay / record.salary.grossSalary) * 100)
+      : 0;
+  const deductionRate =
+    record.salary.grossSalary > 0
+      ? Math.round(
+          (record.deductions.totalDeductions / record.salary.grossSalary) * 100,
+        )
+      : 0;
+
   return (
     <Layout>
-      <div className="container mx-auto py-6 space-y-6 bg-gray-50 dark:bg-slate-900 min-h-screen">
+      <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1400px] space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={() => navigate('/payroll')} className="dark:text-slate-300 dark:hover:bg-slate-700">
+        <div className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/70 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex min-w-0 items-center gap-4">
+            <Button variant="outline" size="icon" onClick={() => navigate('/payroll')} className="h-10 w-10 dark:border-slate-700 dark:text-slate-200">
               <ArrowLeft className="h-4 w-4" />
             </Button>
-            <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold dark:text-white">
-                  {record.employee.firstName} {record.employee.lastName}
+            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-blue-50 text-lg font-bold text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60">
+              {record.employee.firstName?.charAt(0) || ''}
+              {record.employee.lastName?.charAt(0) || ''}
+            </div>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-3">
+                <h1 className="truncate text-2xl font-bold tracking-tight text-slate-950 dark:text-white sm:text-3xl">
+                  {employeeName}
                 </h1>
                 {getStatusBadge(record)}
               </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground dark:text-slate-400">
-                <span>Employee ID: {record.employee.employeeId} | {record.period.monthName} {record.period.year}</span>
+              <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+                <span>{record.employee.employeeId}</span>
+                <span>-</span>
+                <span>{record.period.monthName} {record.period.year}</span>
                 {record.employee_id ? (
                   <Link to={`/employees/${record.employee_id}`}>
-                    <Badge variant="outline" className="cursor-pointer hover:bg-slate-100 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700">
-                      <User className="mr-1 h-3 w-3" />
-                      View Employee Master
+                    <Badge variant="outline" className="cursor-pointer gap-1 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">
+                      <User className="h-3 w-3" />
+                      Employee Master
                     </Badge>
                   </Link>
                 ) : (
@@ -429,26 +453,57 @@ export default function PayrollDetailPage() {
               </div>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {!editing && canEdit(record) && (
-              <Button variant="outline" onClick={() => setEditing(true)} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
-                <Edit className="mr-2 h-4 w-4" />
+              <Button variant="outline" onClick={() => setEditing(true)} className="h-10 gap-2 dark:border-slate-700 dark:text-slate-200">
+                <Edit className="h-4 w-4" />
                 {t('common.edit')}
               </Button>
             )}
             {canFinalise(record) && (
-              <Button variant="outline" onClick={handleFinalise} disabled={submitting} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
-                {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
+              <Button variant="outline" onClick={handleFinalise} disabled={submitting} className="h-10 gap-2 dark:border-slate-700 dark:text-slate-200">
+                {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
                 {t('payroll.finaliseSelected') || 'Finalise'}
               </Button>
             )}
             {canDelete(record) && (
-              <Button variant="destructive" onClick={() => setShowDeleteDialog(true)}>
-                <Trash2 className="mr-2 h-4 w-4" />
+              <Button variant="destructive" onClick={() => setShowDeleteDialog(true)} className="h-10 gap-2">
+                <Trash2 className="h-4 w-4" />
                 {t('common.delete')}
               </Button>
             )}
           </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+          <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <CardContent className="p-5">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Gross Salary</p>
+              <p className="mt-3 truncate text-2xl font-bold text-slate-950 dark:text-white">{formatCurrency(record.salary.grossSalary)}</p>
+              <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Base payroll value</p>
+            </CardContent>
+          </Card>
+          <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <CardContent className="p-5">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Net Pay</p>
+              <p className="mt-3 truncate text-2xl font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(record.netPay)}</p>
+              <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{netPayRate}% take-home rate</p>
+            </CardContent>
+          </Card>
+          <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <CardContent className="p-5">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Deductions</p>
+              <p className="mt-3 truncate text-2xl font-bold text-red-600 dark:text-red-400">{formatCurrency(record.deductions.totalDeductions)}</p>
+              <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{deductionRate}% of gross salary</p>
+            </CardContent>
+          </Card>
+          <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <CardContent className="p-5">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Employer Cost</p>
+              <p className="mt-3 truncate text-2xl font-bold text-blue-600 dark:text-blue-400">{formatCurrency(employerCost)}</p>
+              <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Gross plus employer charges</p>
+            </CardContent>
+          </Card>
         </div>
 
         {editing ? (
@@ -680,7 +735,7 @@ export default function PayrollDetailPage() {
           <div className="space-y-6">
             {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-              <Card className="dark:bg-slate-800">
+              <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium flex items-center gap-2 dark:text-slate-200">
                     <User className="h-4 w-4 text-muted-foreground dark:text-slate-400" /> Employee
@@ -691,7 +746,7 @@ export default function PayrollDetailPage() {
                   <p className="text-xs text-muted-foreground dark:text-slate-400">{record.employee.employeeId}</p>
                 </CardContent>
               </Card>
-              <Card className="dark:bg-slate-800">
+              <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium flex items-center gap-2 dark:text-slate-200">
                     <DollarSign className="h-4 w-4 text-muted-foreground dark:text-slate-400" /> Gross Salary
@@ -701,7 +756,7 @@ export default function PayrollDetailPage() {
                   <div className="text-2xl font-bold dark:text-white">{formatCurrency(record.salary.grossSalary)}</div>
                 </CardContent>
               </Card>
-              <Card className="dark:bg-slate-800">
+              <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-red-600 dark:text-red-400">Total Deductions</CardTitle>
                 </CardHeader>
@@ -709,7 +764,7 @@ export default function PayrollDetailPage() {
                   <div className="text-2xl font-bold text-red-600 dark:text-red-400">{formatCurrency(record.deductions.totalDeductions)}</div>
                 </CardContent>
               </Card>
-              <Card className="dark:bg-slate-800">
+              <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-green-600 dark:text-green-400">Net Pay</CardTitle>
                 </CardHeader>
@@ -728,7 +783,7 @@ export default function PayrollDetailPage() {
             </div>
 
             {/* Employee Details */}
-            <Card className="dark:bg-slate-800">
+            <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
               <CardHeader>
                 <CardTitle className="text-sm font-medium flex items-center gap-2 dark:text-white">
                   <User className="h-4 w-4" /> Employee Details
@@ -785,7 +840,7 @@ export default function PayrollDetailPage() {
             </Card>
 
             {/* Salary Breakdown */}
-            <Card className="dark:bg-slate-800">
+            <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
               <CardHeader>
                 <CardTitle className="text-sm font-medium flex items-center gap-2 dark:text-white">
                   <DollarSign className="h-4 w-4" /> Salary Breakdown
@@ -842,7 +897,7 @@ export default function PayrollDetailPage() {
             </Card>
 
             {/* Deductions & Contributions */}
-            <Card className="dark:bg-slate-800">
+            <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
               <CardHeader>
                 <CardTitle className="text-sm font-medium flex items-center gap-2 dark:text-white">
                   <TrendingDown className="h-4 w-4" /> Deductions & Contributions
@@ -906,7 +961,7 @@ export default function PayrollDetailPage() {
 
             {/* Notes */}
             {record.notes && (
-              <Card className="dark:bg-slate-800">
+              <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
                 <CardHeader>
                   <CardTitle className="text-sm font-medium dark:text-white">Notes</CardTitle>
                 </CardHeader>
@@ -919,7 +974,7 @@ export default function PayrollDetailPage() {
         )}
 
         {/* Delete Confirmation */}
-<Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
           <DialogContent className="dark:bg-slate-800">
             <DialogHeader>
               <DialogTitle className="dark:text-white">{t('common.delete')}</DialogTitle>
@@ -937,6 +992,7 @@ export default function PayrollDetailPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
     </Layout>
   );

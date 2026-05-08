@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { payrollApi, PayrollRecord } from "@/lib/api";
 import { Layout } from "../../layout/Layout";
@@ -10,7 +10,6 @@ import {
   Users,
   DollarSign,
   TrendingDown,
-  AlertCircle,
   Search,
   ChevronLeft,
   ChevronRight,
@@ -32,7 +31,6 @@ import { Badge } from "@/app/components/ui/badge";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/app/components/ui/card";
@@ -633,234 +631,441 @@ export default function PayrollListPage() {
 
   const currentYearNum = new Date().getFullYear();
   const yearOptions = Array.from({ length: 5 }, (_, i) => currentYearNum - 2 + i);
+  const selectedMonthLabel =
+    MONTHS.find((month) => String(month.value) === filterMonth)?.label || "All months";
+  const selectedPeriodLabel = `${selectedMonthLabel} ${filterYear || "All years"}`;
+  const totalPayrollCost =
+    summary.totalGrossSalary + summary.totalRssbEmployer;
+  const netPayRate =
+    summary.totalGrossSalary > 0
+      ? Math.round((summary.totalNetPay / summary.totalGrossSalary) * 100)
+      : 0;
+  const deductionLoad =
+    summary.totalGrossSalary > 0
+      ? Math.round(
+          ((summary.totalPAYE + summary.totalRssbEmployee) /
+            summary.totalGrossSalary) *
+            100,
+        )
+      : 0;
+  const employerLoad =
+    summary.totalGrossSalary > 0
+      ? Math.round((summary.totalRssbEmployer / summary.totalGrossSalary) * 100)
+      : 0;
 
   return (
     <Layout>
-      <div className="container mx-auto py-6 space-y-6 bg-gray-50 dark:bg-slate-900 min-h-screen">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
-              <Users className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold dark:text-white">{t("payroll.title")}</h1>
-              <p className="text-sm text-muted-foreground dark:text-slate-400">
-                {t("payroll.subtitle")}
-              </p>
+      <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1600px] space-y-6">
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+            <div className="grid gap-5 p-5 xl:grid-cols-[1fr_420px] xl:items-stretch">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="rounded-lg bg-blue-50 p-2.5 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60">
+                    <Users className="h-5 w-5" />
+                  </div>
+                  <h1 className="text-2xl font-bold tracking-tight text-slate-950 dark:text-white sm:text-3xl">
+                    {t("payroll.title")}
+                  </h1>
+                  <Badge variant="secondary" className="h-6">
+                    {selectedPeriodLabel}
+                  </Badge>
+                </div>
+                <p className="mt-2 max-w-3xl text-sm text-slate-500 dark:text-slate-400">
+                  {t("payroll.subtitle")}
+                </p>
+
+                <div className="mt-5 flex flex-wrap gap-2">
+                  <Button
+                    onClick={() => navigate("/payroll-runs/new")}
+                    className="h-10 gap-2 bg-blue-600 hover:bg-blue-700"
+                  >
+                    <Users className="h-4 w-4" />
+                    Generate Payroll Run
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate("/payroll-runs")}
+                    className="h-10 gap-2"
+                  >
+                    <Play className="h-4 w-4" />
+                    Payroll Runs
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowCreateDialog(true)}
+                    className="h-10 gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    New Record
+                  </Button>
+                  <Button variant="outline" onClick={handleExport} className="h-10 gap-2">
+                    <Download className="h-4 w-4" />
+                    Export
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={handleBackfill}
+                    disabled={backfilling}
+                    className="h-10 gap-2 text-slate-500 dark:text-slate-400"
+                  >
+                    {backfilling ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <BookOpen className="h-4 w-4" />
+                    )}
+                    Backfill Journals
+                  </Button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3 rounded-lg border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-950/40">
+                <div className="rounded-lg bg-white p-3 shadow-sm dark:bg-slate-900">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Net pay rate</p>
+                  <p className="mt-1 text-xl font-bold text-emerald-600 dark:text-emerald-400">
+                    {netPayRate}%
+                  </p>
+                </div>
+                <div className="rounded-lg bg-white p-3 shadow-sm dark:bg-slate-900">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Deductions</p>
+                  <p className="mt-1 text-xl font-bold text-amber-600 dark:text-amber-400">
+                    {deductionLoad}%
+                  </p>
+                </div>
+                <div className="rounded-lg bg-white p-3 shadow-sm dark:bg-slate-900">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Employer load</p>
+                  <p className="mt-1 text-xl font-bold text-blue-600 dark:text-blue-400">
+                    {employerLoad}%
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
-          <div className="flex gap-2 flex-wrap">
-            <Button
-              variant="default"
-              onClick={() => navigate("/payroll-runs/new")}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              <Users className="mr-2 h-4 w-4" />
-              Generate Payroll Run
-            </Button>
-            <Button variant="outline" onClick={() => navigate("/payroll-runs")}>
-              <Play className="mr-2 h-4 w-4" />
-              Payroll Runs
-            </Button>
-            <Button onClick={() => setShowCreateDialog(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              New Record
-            </Button>
-            <Button variant="outline" onClick={handleExport}>
-              <Download className="mr-2 h-4 w-4" />
-              Export
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleBackfill}
-              disabled={backfilling}
-              className="text-muted-foreground"
-            >
-              {backfilling ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <BookOpen className="mr-2 h-4 w-4" />
-              )}
-              Backfill Journals
-            </Button>
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      Employees
+                    </p>
+                    <p className="mt-3 text-2xl font-bold text-slate-950 dark:text-white">
+                      {summary.employeeCount}
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-blue-50 p-2.5 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60">
+                    <Users className="h-5 w-5" />
+                  </div>
+                </div>
+                <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+                  {totalCount} record(s) in current view
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      Gross Payroll
+                    </p>
+                    <p className="mt-3 truncate text-2xl font-bold text-slate-950 dark:text-white">
+                      {formatCurrency(summary.totalGrossSalary)}
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-emerald-50 p-2.5 text-emerald-700 ring-1 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60">
+                    <DollarSign className="h-5 w-5" />
+                  </div>
+                </div>
+                <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+                  Before taxes and statutory deductions
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      Net Pay
+                    </p>
+                    <p className="mt-3 truncate text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                      {formatCurrency(summary.totalNetPay)}
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-violet-50 p-2.5 text-violet-700 ring-1 ring-violet-100 dark:bg-violet-950/40 dark:text-violet-300 dark:ring-violet-900/60">
+                    <CheckCircle className="h-5 w-5" />
+                  </div>
+                </div>
+                <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+                  Employee take-home total
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      Total Cost
+                    </p>
+                    <p className="mt-3 truncate text-2xl font-bold text-slate-950 dark:text-white">
+                      {formatCurrency(totalPayrollCost)}
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-amber-50 p-2.5 text-amber-700 ring-1 ring-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/60">
+                    <Calculator className="h-5 w-5" />
+                  </div>
+                </div>
+                <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+                  Gross plus employer RSSB
+                </p>
+              </CardContent>
+            </Card>
           </div>
-        </div>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Employees</CardDescription>
-              <CardTitle className="text-2xl">
-                {summary.employeeCount}
-              </CardTitle>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Total Gross</CardDescription>
-              <CardTitle className="text-xl">
-                {formatCurrency(summary.totalGrossSalary)}
-              </CardTitle>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>PAYE</CardDescription>
-              <CardTitle className="text-xl text-red-600">
-                {formatCurrency(summary.totalPAYE)}
-              </CardTitle>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>RSSB Employee</CardDescription>
-              <CardTitle className="text-xl text-orange-600">
-                {formatCurrency(summary.totalRssbEmployee)}
-              </CardTitle>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>RSSB Employer</CardDescription>
-              <CardTitle className="text-xl text-blue-600">
-                {formatCurrency(summary.totalRssbEmployer)}
-              </CardTitle>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Total Net</CardDescription>
-              <CardTitle className="text-xl text-green-600">
-                {formatCurrency(summary.totalNetPay)}
-              </CardTitle>
-            </CardHeader>
-          </Card>
-        </div>
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+            <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950 xl:col-span-2">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-950 dark:text-white">
+                  <TrendingDown className="h-4 w-4 text-amber-500" />
+                  Payroll Burden Mix
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <div className="mb-2 flex items-center justify-between text-sm">
+                    <span className="text-slate-600 dark:text-slate-300">PAYE</span>
+                    <span className="font-mono font-semibold text-red-600 dark:text-red-400">
+                      {formatCurrency(summary.totalPAYE)}
+                    </span>
+                  </div>
+                  <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800">
+                    <div
+                      className="h-2 rounded-full bg-red-500"
+                      style={{ width: `${Math.min(deductionLoad, 100)}%` }}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <div className="mb-2 flex items-center justify-between text-sm">
+                    <span className="text-slate-600 dark:text-slate-300">
+                      RSSB Employee
+                    </span>
+                    <span className="font-mono font-semibold text-orange-600 dark:text-orange-400">
+                      {formatCurrency(summary.totalRssbEmployee)}
+                    </span>
+                  </div>
+                  <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800">
+                    <div
+                      className="h-2 rounded-full bg-orange-500"
+                      style={{
+                        width: `${Math.min(
+                          summary.totalGrossSalary > 0
+                            ? Math.round(
+                                (summary.totalRssbEmployee /
+                                  summary.totalGrossSalary) *
+                                  100,
+                              )
+                            : 0,
+                          100,
+                        )}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <div className="mb-2 flex items-center justify-between text-sm">
+                    <span className="text-slate-600 dark:text-slate-300">
+                      RSSB Employer
+                    </span>
+                    <span className="font-mono font-semibold text-blue-600 dark:text-blue-400">
+                      {formatCurrency(summary.totalRssbEmployer)}
+                    </span>
+                  </div>
+                  <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800">
+                    <div
+                      className="h-2 rounded-full bg-blue-500"
+                      style={{ width: `${Math.min(employerLoad, 100)}%` }}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-        {/* Filters */}
-        <Card className="dark:bg-slate-800">
-          <CardContent className="pt-4">
-            <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-              <div className="relative md:col-span-2">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground dark:text-slate-400" />
-                <Input
-                  placeholder={t("payroll.searchPlaceholder")}
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
+            <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-950 dark:text-white">
+                  <FileText className="h-4 w-4 text-blue-500" />
+                  Pay Cycle Control
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="grid grid-cols-2 gap-3">
+                <div className="rounded-lg border border-slate-200 p-3 dark:border-slate-800">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Period</p>
+                  <p className="mt-1 font-semibold text-slate-950 dark:text-white">
+                    {selectedPeriodLabel}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-slate-200 p-3 dark:border-slate-800">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Selected</p>
+                  <p className="mt-1 font-semibold text-slate-950 dark:text-white">
+                    {selectedIds.size}
+                  </p>
+                </div>
+                <div className="col-span-2 rounded-lg border border-slate-200 p-3 dark:border-slate-800">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Payroll status
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <Badge variant={records.length > 0 ? "secondary" : "outline"}>
+                      {records.length} visible
+                    </Badge>
+                    <Badge variant={selectedIds.size > 0 ? "secondary" : "outline"}>
+                      {selectedIds.size > 0 ? "Ready to finalise" : "No selection"}
+                    </Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <CardContent className="p-4">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-6">
+                <div className="relative md:col-span-2">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <Input
+                    placeholder={t("payroll.searchPlaceholder")}
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="h-10 pl-10 dark:bg-slate-900 dark:text-white dark:border-slate-700"
+                  />
+                </div>
+                <Select
+                  value={filterMonth || "all"}
+                  onValueChange={(v) => {
+                    setFilterMonth(v === "all" ? "" : v);
                     setCurrentPage(1);
                   }}
-                  className="pl-10 dark:bg-slate-700 dark:text-white dark:border-slate-600"
-                />
+                >
+                  <SelectTrigger className="h-10 dark:bg-slate-900 dark:text-white dark:border-slate-700">
+                    <SelectValue placeholder={t("payroll.month")} />
+                  </SelectTrigger>
+                  <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
+                    <SelectItem value="all" className="dark:text-slate-200">{t("payroll.allPeriods")}</SelectItem>
+                    {MONTHS.map((m) => (
+                      <SelectItem key={m.value} value={String(m.value)} className="dark:text-slate-200">
+                        {m.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={filterYear || "all"}
+                  onValueChange={(v) => {
+                    setFilterYear(v === "all" ? "" : v);
+                    setCurrentPage(1);
+                  }}
+                >
+                  <SelectTrigger className="h-10 dark:bg-slate-900 dark:text-white dark:border-slate-700">
+                    <SelectValue placeholder={t("payroll.year")} />
+                  </SelectTrigger>
+                  <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
+                    <SelectItem value="all" className="dark:text-slate-200">{t("payroll.year")}</SelectItem>
+                    {yearOptions.map((y) => (
+                      <SelectItem key={y} value={String(y)} className="dark:text-slate-200">
+                        {y}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={filterStatus || "all"}
+                  onValueChange={(v) => {
+                    setFilterStatus(v === "all" ? "" : v);
+                    setCurrentPage(1);
+                  }}
+                >
+                  <SelectTrigger className="h-10 dark:bg-slate-900 dark:text-white dark:border-slate-700">
+                    <SelectValue placeholder={t("payroll.filterByStatus")} />
+                  </SelectTrigger>
+                  <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
+                    <SelectItem value="all" className="dark:text-slate-200">
+                      {t("payroll.allStatuses")}
+                    </SelectItem>
+                    <SelectItem value="draft" className="dark:text-slate-200">
+                      {t("payroll.statuses.draft")}
+                    </SelectItem>
+                    <SelectItem value="finalised" className="dark:text-slate-200">
+                      {t("payroll.statuses.finalised")}
+                    </SelectItem>
+                    <SelectItem value="paid" className="dark:text-slate-200">
+                      {t("payroll.statuses.paid")}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setFilterMonth("");
+                    setFilterYear("");
+                    setFilterStatus("");
+                    setSearchQuery("");
+                    setCurrentPage(1);
+                  }}
+                  className="h-10 gap-2 dark:border-slate-700 dark:text-slate-200"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  {t("common.clearFilters")}
+                </Button>
               </div>
-              <Select
-                value={filterMonth || "all"}
-                onValueChange={(v) => {
-                  setFilterMonth(v === "all" ? "" : v);
-                  setCurrentPage(1);
-                }}
-              >
-                <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
-                  <SelectValue placeholder={t("payroll.month")} />
-                </SelectTrigger>
-                <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
-                  <SelectItem value="all" className="dark:text-slate-200">{t("payroll.allPeriods")}</SelectItem>
-                  {MONTHS.map((m) => (
-                    <SelectItem key={m.value} value={String(m.value)} className="dark:text-slate-200">
-                      {m.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={filterYear || "all"}
-                onValueChange={(v) => {
-                  setFilterYear(v === "all" ? "" : v);
-                  setCurrentPage(1);
-                }}
-              >
-                <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
-                  <SelectValue placeholder={t("payroll.year")} />
-                </SelectTrigger>
-                <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
-                  <SelectItem value="all" className="dark:text-slate-200">{t("payroll.year")}</SelectItem>
-                  {yearOptions.map((y) => (
-                    <SelectItem key={y} value={String(y)} className="dark:text-slate-200">
-                      {y}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={filterStatus || "all"}
-                onValueChange={(v) => {
-                  setFilterStatus(v === "all" ? "" : v);
-                  setCurrentPage(1);
-                }}
-              >
-                <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
-                  <SelectValue placeholder={t("payroll.filterByStatus")} />
-                </SelectTrigger>
-                <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
-                  <SelectItem value="all" className="dark:text-slate-200">
-                    {t("payroll.allStatuses")}
-                  </SelectItem>
-                  <SelectItem value="draft" className="dark:text-slate-200">
-                    {t("payroll.statuses.draft")}
-                  </SelectItem>
-                  <SelectItem value="finalised" className="dark:text-slate-200">
-                    {t("payroll.statuses.finalised")}
-                  </SelectItem>
-                  <SelectItem value="paid" className="dark:text-slate-200">
-                    {t("payroll.statuses.paid")}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setFilterMonth("");
-                  setFilterYear("");
-                  setFilterStatus("");
-                  setSearchQuery("");
-                  setCurrentPage(1);
-                }}
-                className="dark:text-slate-300 dark:hover:bg-slate-700"
-              >
-                <RefreshCw className="mr-2 h-4 w-4" />
-                {t("common.clearFilters")}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        {/* Actions bar */}
-        {selectedIds.size > 0 && (
-          <div className="flex items-center gap-2 px-1">
-            <span className="text-sm text-muted-foreground dark:text-slate-400">
-              {selectedIds.size} selected
-            </span>
-            <Button
-              size="sm"
-              onClick={handleFinaliseSelected}
-              disabled={submitting}
-              className="dark:bg-primary dark:text-primary-foreground"
-            >
-              {submitting ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <CheckCircle className="mr-2 h-4 w-4" />
-              )}
-              {t("payroll.finaliseSelected")}
-            </Button>
-          </div>
-        )}
+          {selectedIds.size > 0 && (
+            <Card className="border-blue-200 bg-blue-50 shadow-sm dark:border-blue-900/70 dark:bg-blue-950/30">
+              <CardContent className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center">
+                <CheckCircle className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                  {selectedIds.size} draft payroll record(s) selected
+                </p>
+                <Button
+                  size="sm"
+                  onClick={handleFinaliseSelected}
+                  disabled={submitting}
+                  className="gap-2 sm:ml-auto"
+                >
+                  {submitting ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <CheckCircle className="h-4 w-4" />
+                  )}
+                  {t("payroll.finaliseSelected")}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
 
-        {/* Table */}
-        <Card className="dark:bg-slate-800">
+          <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <CardHeader className="flex flex-row items-start justify-between gap-4 pb-3">
+              <div className="min-w-0">
+                <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-950 dark:text-white">
+                  <FileText className="h-4 w-4 text-blue-500" />
+                  Payroll Register
+                </CardTitle>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  Employee pay, deductions, employer contributions, and workflow state
+                </p>
+              </div>
+              <Badge variant="outline" className="hidden sm:inline-flex">
+                {totalCount} total
+              </Badge>
+            </CardHeader>
           <CardContent className="p-0">
             {loading ? (
               <div className="flex items-center justify-center py-12">
@@ -869,12 +1074,12 @@ export default function PayrollListPage() {
             ) : records.length === 0 ? (
               <div className="text-center py-12">
                 <div className="mb-4">
-                  <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
+                  <FileText className="mx-auto h-12 w-12 text-slate-400" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">
+                <h3 className="text-lg font-semibold mb-2 text-slate-950 dark:text-white">
                   No payroll records found
                 </h3>
-                <p className="text-muted-foreground mb-4">
+                <p className="text-slate-500 dark:text-slate-400 mb-4">
                   {filterMonth || filterYear || filterStatus
                     ? "Try adjusting your filters."
                     : "Generate a payroll run for all employees, or create an individual record."}
@@ -897,7 +1102,7 @@ export default function PayrollListPage() {
               <>
                 <Table>
                   <TableHeader>
-                    <TableRow className="dark:bg-slate-700/50 dark:border-slate-600">
+                    <TableRow className="bg-slate-50 hover:bg-slate-50 dark:bg-slate-900/70 dark:hover:bg-slate-900/70">
                       <TableHead className="w-10 dark:text-slate-200">
                         <input
                           type="checkbox"
@@ -934,7 +1139,7 @@ export default function PayrollListPage() {
                   </TableHeader>
                   <TableBody>
                     {records.map((record) => (
-                      <TableRow key={record._id} className="dark:border-slate-600">
+                      <TableRow key={record._id} className="dark:border-slate-800">
                         <TableCell>
                           {canFinalise(record) && (
                             <input
@@ -945,8 +1150,21 @@ export default function PayrollListPage() {
                             />
                           )}
                         </TableCell>
-                        <TableCell className="font-medium dark:text-white">
-                          {record.employee.firstName} {record.employee.lastName}
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-slate-100 text-sm font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                              {record.employee.firstName?.charAt(0) || ""}
+                              {record.employee.lastName?.charAt(0) || ""}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="truncate font-medium text-slate-950 dark:text-white">
+                                {record.employee.firstName} {record.employee.lastName}
+                              </p>
+                              <p className="truncate text-xs text-slate-500 dark:text-slate-400">
+                                {record.employee.department || record.employee.position || "Payroll employee"}
+                              </p>
+                            </div>
+                          </div>
                         </TableCell>
                         <TableCell className="text-muted-foreground dark:text-slate-400">
                           {record.employee.employeeId}
@@ -1020,7 +1238,7 @@ export default function PayrollListPage() {
                 </Table>
 
                 {/* Pagination */}
-                <div className="flex items-center justify-between px-4 py-4 border-t dark:border-slate-600">
+                <div className="flex flex-col gap-3 border-t px-4 py-4 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
                   <div className="text-sm text-muted-foreground dark:text-slate-400">
                     Showing {(currentPage - 1) * limit + 1} to{" "}
                     {Math.min(currentPage * limit, totalCount)} of {totalCount}
@@ -1071,19 +1289,25 @@ export default function PayrollListPage() {
             )}
           </CardContent>
         </Card>
+        </div>
 
         {/* Create Dialog */}
         <Dialog open={showCreateDialog} onOpenChange={(open) => { if (!open) resetCreateForm(); setShowCreateDialog(open); }}>
-          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto dark:bg-slate-800">
+          <DialogContent className="max-h-[90vh] max-w-5xl overflow-y-auto border-slate-200 bg-slate-50 p-0 dark:border-slate-800 dark:bg-slate-950">
             <DialogHeader>
-              <DialogTitle className="dark:text-white">{t("payroll.newRecord")}</DialogTitle>
-              <DialogDescription className="dark:text-slate-400">
+              <div className="border-b border-slate-200 bg-white px-6 py-5 dark:border-slate-800 dark:bg-slate-900/70">
+              <DialogTitle className="flex items-center gap-2 text-xl font-bold text-slate-950 dark:text-white">
+                <Plus className="h-5 w-5 text-blue-500" />
+                {t("payroll.newRecord")}
+              </DialogTitle>
+              <DialogDescription className="mt-1 dark:text-slate-400">
                 Create a new payroll record. Select an employee from Employee Master or enter details manually.
               </DialogDescription>
+              </div>
             </DialogHeader>
-            <div className="space-y-6 py-4">
+            <div className="space-y-4 px-6 py-5">
               {/* Employee Master Select */}
-              <div>
+              <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-sm font-semibold flex items-center gap-2 dark:text-white">
                     <Users className="h-4 w-4" />{" "}
@@ -1119,7 +1343,7 @@ export default function PayrollListPage() {
               </div>
 
               {/* Employee Information */}
-              <div>
+              <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
                 <h3 className="text-sm font-semibold mb-3 flex items-center gap-2 dark:text-white">
                   <Users className="h-4 w-4" />{" "}
                   {t("payroll.form.employeeInformation")}
@@ -1287,7 +1511,7 @@ export default function PayrollListPage() {
               </div>
 
               {/* Period */}
-              <div>
+              <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
                 <h3 className="text-sm font-semibold mb-3 flex items-center gap-2 dark:text-white">
                   <FileText className="h-4 w-4" />{" "}
                   {t("payroll.form.periodInformation")}
@@ -1337,7 +1561,7 @@ export default function PayrollListPage() {
               </div>
 
               {/* Salary */}
-              <div>
+              <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
                 <h3 className="text-sm font-semibold mb-3 flex items-center gap-2 dark:text-white">
                   <DollarSign className="h-4 w-4" />{" "}
                   {t("payroll.form.salaryInformation")}
@@ -1407,7 +1631,7 @@ export default function PayrollListPage() {
               </div>
 
               {/* Additional Income (Rwanda-specific) */}
-              <div>
+              <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
                 <h3 className="text-sm font-semibold mb-3 flex items-center gap-2 dark:text-white">
                   <TrendingUp className="h-4 w-4" /> Additional Income
                 </h3>
@@ -1456,7 +1680,7 @@ export default function PayrollListPage() {
               </div>
 
               {/* Additional Deductions (Rwanda-specific) */}
-              <div>
+              <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
                 <h3 className="text-sm font-semibold mb-3 flex items-center gap-2 dark:text-white">
                   <TrendingDown className="h-4 w-4" /> Other Deductions
                 </h3>
@@ -1507,7 +1731,7 @@ export default function PayrollListPage() {
               </div>
 
               {/* Calculated Fields */}
-              <div className="border rounded-lg p-4 bg-muted/30 dark:bg-slate-700/30">
+              <div className="rounded-lg border border-blue-200 bg-blue-50/70 p-4 shadow-sm dark:border-blue-900/60 dark:bg-blue-950/20">
                 <h3 className="text-sm font-semibold mb-3 flex items-center gap-2 dark:text-white">
                   <Calculator className="h-4 w-4" />{" "}
                   {t("payroll.form.calculatedFields")}
@@ -1601,7 +1825,7 @@ export default function PayrollListPage() {
               </div>
 
               {/* Notes */}
-              <div className="space-y-1">
+              <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
                 <Label className="dark:text-slate-200">{t("payroll.form.notes")}</Label>
                 <Input
                   value={createForm.notes}
@@ -1613,7 +1837,7 @@ export default function PayrollListPage() {
                 />
               </div>
             </div>
-            <DialogFooter>
+            <DialogFooter className="border-t border-slate-200 bg-white px-6 py-4 dark:border-slate-800 dark:bg-slate-900/70">
               <Button
                 variant="outline"
                 onClick={() => setShowCreateDialog(false)}
