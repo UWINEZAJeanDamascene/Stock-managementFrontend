@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { payrollApi, PayrollRecord } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
@@ -76,6 +76,14 @@ export default function PayrollDetailPage() {
     transportAllowance: 0,
     housingAllowance: 0,
     otherAllowances: 0,
+    overtime: 0,
+    bonuses: 0,
+    commissions: 0,
+    benefitsInKind: 0,
+    healthInsurance: 0,
+    loanDeductions: 0,
+    otherDeductions: 0,
+    occupationalHazardRate: 2.0,
     month: 1,
     year: new Date().getFullYear(),
     notes: '',
@@ -90,6 +98,7 @@ export default function PayrollDetailPage() {
     rssbEmployerPension: 0,
     rssbEmployerMaternity: 0,
     occupationalHazard: 0,
+    occupationalHazardRate: 2.0,
     totalDeductions: 0,
     netPay: 0,
     totalEmployerCost: 0,
@@ -104,7 +113,14 @@ export default function PayrollDetailPage() {
     const transport = editForm.transportAllowance || 0;
     const housing = editForm.housingAllowance || 0;
     const other = editForm.otherAllowances || 0;
-    const gross = basic + transport + housing + other;
+    const overtime = editForm.overtime || 0;
+    const bonuses = editForm.bonuses || 0;
+    const commissions = editForm.commissions || 0;
+    const benefitsInKind = editForm.benefitsInKind || 0;
+    const healthInsurance = editForm.healthInsurance || 0;
+    const loanDeductions = editForm.loanDeductions || 0;
+    const otherDeductions = editForm.otherDeductions || 0;
+    const gross = basic + transport + housing + other + overtime + bonuses + commissions + benefitsInKind;
 
     let paye = 0;
     if (gross > 200000) {
@@ -116,13 +132,17 @@ export default function PayrollDetailPage() {
     }
     paye = Math.round(paye * 100) / 100;
 
-    const rssbEmployeePension = Math.round(gross * 0.06 * 100) / 100;
-    const rssbEmployeeMaternity = Math.round(gross * 0.003 * 100) / 100;
-    const rssbEmployerPension = Math.round(gross * 0.06 * 100) / 100;
-    const rssbEmployerMaternity = Math.round(gross * 0.003 * 100) / 100;
-    const occupationalHazard = Math.round(gross * 0.02 * 100) / 100;
+    // Pension contribution base: Basic + Transport only (Rwanda 2025)
+    const pensionBase = basic + transport;
 
-    const totalDeductions = paye + rssbEmployeePension + rssbEmployeeMaternity;
+    const rssbEmployeePension = Math.round(pensionBase * 0.06 * 100) / 100;
+    const rssbEmployeeMaternity = Math.round(pensionBase * 0.003 * 100) / 100;
+    const rssbEmployerPension = Math.round(pensionBase * 0.06 * 100) / 100;
+    const rssbEmployerMaternity = Math.round(pensionBase * 0.003 * 100) / 100;
+    const hazardRate = editForm.occupationalHazardRate || 2.0;
+    const occupationalHazard = Math.round(gross * (hazardRate / 100) * 100) / 100;
+
+    const totalDeductions = paye + rssbEmployeePension + rssbEmployeeMaternity + healthInsurance + loanDeductions + otherDeductions;
     const netPay = Math.round((gross - totalDeductions) * 100) / 100;
     const totalEmployerCost = Math.round(
       (gross + rssbEmployerPension + rssbEmployerMaternity + occupationalHazard) * 100
@@ -136,11 +156,12 @@ export default function PayrollDetailPage() {
       rssbEmployerPension,
       rssbEmployerMaternity,
       occupationalHazard,
+      occupationalHazardRate: hazardRate,
       totalDeductions,
       netPay,
       totalEmployerCost,
     });
-  }, [editForm.basicSalary, editForm.transportAllowance, editForm.housingAllowance, editForm.otherAllowances]);
+  }, [editForm.basicSalary, editForm.transportAllowance, editForm.housingAllowance, editForm.otherAllowances, editForm.overtime, editForm.bonuses, editForm.commissions, editForm.benefitsInKind, editForm.healthInsurance, editForm.loanDeductions, editForm.otherDeductions, editForm.occupationalHazardRate]);
 
   const fetchRecord = async () => {
     if (!id) return;
@@ -175,6 +196,14 @@ export default function PayrollDetailPage() {
       transportAllowance: r.salary.transportAllowance,
       housingAllowance: r.salary.housingAllowance,
       otherAllowances: r.salary.otherAllowances,
+      overtime: r.additionalIncome?.overtime || 0,
+      bonuses: r.additionalIncome?.bonuses || 0,
+      commissions: r.additionalIncome?.commissions || 0,
+      benefitsInKind: r.additionalIncome?.benefitsInKind || 0,
+      healthInsurance: r.deductions?.healthInsurance || 0,
+      loanDeductions: r.deductions?.loanDeductions || 0,
+      otherDeductions: r.deductions?.otherDeductions || 0,
+      occupationalHazardRate: r.contributions?.occupationalHazardRate || 2.0,
       month: r.period.month,
       year: r.period.year,
       notes: r.notes || '',
@@ -183,6 +212,43 @@ export default function PayrollDetailPage() {
 
   const handleUpdate = async () => {
     if (!record) return;
+
+    // If linked to Employee Master, only allow period/notes/overrides updates
+    if (record.employee_id) {
+      setSubmitting(true);
+      try {
+        const overrides: any = {};
+        if (editForm.basicSalary > 0) overrides.basicSalary = editForm.basicSalary;
+        if (editForm.transportAllowance > 0) overrides.transportAllowance = editForm.transportAllowance;
+        if (editForm.housingAllowance > 0) overrides.housingAllowance = editForm.housingAllowance;
+        if (editForm.otherAllowances > 0) overrides.otherAllowances = editForm.otherAllowances;
+        if (editForm.overtime > 0) overrides.overtime = editForm.overtime;
+        if (editForm.bonuses > 0) overrides.bonuses = editForm.bonuses;
+        if (editForm.commissions > 0) overrides.commissions = editForm.commissions;
+        if (editForm.benefitsInKind > 0) overrides.benefitsInKind = editForm.benefitsInKind;
+        if (editForm.healthInsurance > 0) overrides.healthInsurance = editForm.healthInsurance;
+        if (editForm.loanDeductions > 0) overrides.loanDeductions = editForm.loanDeductions;
+        if (editForm.otherDeductions > 0) overrides.otherDeductions = editForm.otherDeductions;
+
+        const response = await payrollApi.update(record._id, {
+          period: { month: editForm.month, year: editForm.year },
+          notes: editForm.notes || undefined,
+          ...(Object.keys(overrides).length > 0 ? { salaryOverrides: overrides } : {}),
+        });
+        if (response.success) {
+          toast.success(t('payroll.messages.updated') || 'Payroll record updated');
+          setEditing(false);
+          setRecord(response.data);
+        }
+      } catch (error: any) {
+        console.error('[PayrollDetailPage] Update error:', error);
+        toast.error(error?.message || t('payroll.messages.updateFailed') || 'Update failed');
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
+
     if (!editForm.firstName || !editForm.lastName || !editForm.employeeId) {
       toast.error('Please fill in all required employee fields');
       return;
@@ -212,6 +278,15 @@ export default function PayrollDetailPage() {
           transportAllowance: editForm.transportAllowance,
           housingAllowance: editForm.housingAllowance,
           otherAllowances: editForm.otherAllowances,
+          overtime: editForm.overtime,
+          bonuses: editForm.bonuses,
+          commissions: editForm.commissions,
+          benefitsInKind: editForm.benefitsInKind,
+        },
+        deductions: {
+          healthInsurance: editForm.healthInsurance,
+          loanDeductions: editForm.loanDeductions,
+          otherDeductions: editForm.otherDeductions,
         },
         period: { month: editForm.month, year: editForm.year },
         notes: editForm.notes || undefined,
@@ -337,9 +412,21 @@ export default function PayrollDetailPage() {
                 </h1>
                 {getStatusBadge(record)}
               </div>
-              <p className="text-sm text-muted-foreground dark:text-slate-400">
-                Employee ID: {record.employee.employeeId} | {record.period.monthName} {record.period.year}
-              </p>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground dark:text-slate-400">
+                <span>Employee ID: {record.employee.employeeId} | {record.period.monthName} {record.period.year}</span>
+                {record.employee_id ? (
+                  <Link to={`/employees/${record.employee_id}`}>
+                    <Badge variant="outline" className="cursor-pointer hover:bg-slate-100 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700">
+                      <User className="mr-1 h-3 w-3" />
+                      View Employee Master
+                    </Badge>
+                  </Link>
+                ) : (
+                  <Badge variant="secondary" className="text-xs dark:bg-slate-700 dark:text-slate-400">
+                    Legacy record — no employee master link
+                  </Badge>
+                )}
+              </div>
             </div>
           </div>
           <div className="flex gap-2">
@@ -367,11 +454,32 @@ export default function PayrollDetailPage() {
         {editing ? (
           /* Edit Mode */
           <div className="space-y-6">
+            {record.employee_id && (
+              <div className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800 dark:bg-amber-950/20 dark:text-amber-300">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4" />
+                  <span className="font-medium">Employee Master Link Active</span>
+                </div>
+                <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
+                  This payroll is linked to an Employee Master record. Employee and salary details are auto-populated and should be updated via the Employee Master page. You can still edit period and notes.
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-2 text-xs dark:border-slate-600"
+                  onClick={() => navigate(`/employees/${record.employee_id}`)}
+                >
+                  <User className="mr-1 h-3 w-3" />
+                  Open Employee Master
+                </Button>
+              </div>
+            )}
             {/* Employee Information */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
                   <User className="h-4 w-4" /> {t('payroll.form.employeeInformation')}
+                  {record.employee_id && <Badge variant="outline" className="ml-2 text-xs dark:border-slate-600">Read-only</Badge>}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -479,6 +587,38 @@ export default function PayrollDetailPage() {
                   <div className="space-y-1">
                     <Label>{t('payroll.form.otherAllowances')}</Label>
                     <Input type="number" min="0" value={editForm.otherAllowances || ''} onChange={(e) => setEditForm({ ...editForm, otherAllowances: parseFloat(e.target.value) || 0 })} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Overtime</Label>
+                    <Input type="number" min="0" value={editForm.overtime || ''} onChange={(e) => setEditForm({ ...editForm, overtime: parseFloat(e.target.value) || 0 })} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Bonuses</Label>
+                    <Input type="number" min="0" value={editForm.bonuses || ''} onChange={(e) => setEditForm({ ...editForm, bonuses: parseFloat(e.target.value) || 0 })} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Commissions</Label>
+                    <Input type="number" min="0" value={editForm.commissions || ''} onChange={(e) => setEditForm({ ...editForm, commissions: parseFloat(e.target.value) || 0 })} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Benefits in Kind (Taxable)</Label>
+                    <Input type="number" min="0" value={editForm.benefitsInKind || ''} onChange={(e) => setEditForm({ ...editForm, benefitsInKind: parseFloat(e.target.value) || 0 })} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Health Insurance</Label>
+                    <Input type="number" min="0" value={editForm.healthInsurance || ''} onChange={(e) => setEditForm({ ...editForm, healthInsurance: parseFloat(e.target.value) || 0 })} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Loan Repayments</Label>
+                    <Input type="number" min="0" value={editForm.loanDeductions || ''} onChange={(e) => setEditForm({ ...editForm, loanDeductions: parseFloat(e.target.value) || 0 })} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Other Deductions</Label>
+                    <Input type="number" min="0" value={editForm.otherDeductions || ''} onChange={(e) => setEditForm({ ...editForm, otherDeductions: parseFloat(e.target.value) || 0 })} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Occ. Hazard Rate (%)</Label>
+                    <Input type="number" min="0.2" max="2.0" step="0.1" value={editForm.occupationalHazardRate || 2.0} onChange={(e) => setEditForm({ ...editForm, occupationalHazardRate: parseFloat(e.target.value) || 2.0 })} />
                   </div>
                 </div>
               </CardContent>
@@ -669,6 +809,30 @@ export default function PayrollDetailPage() {
                     <p className="text-xs text-muted-foreground dark:text-slate-400">Other Allowances</p>
                     <p className="font-medium dark:text-white">{formatCurrency(record.salary.otherAllowances)}</p>
                   </div>
+                  {record.additionalIncome && record.additionalIncome.overtime > 0 && (
+                    <div>
+                      <p className="text-xs text-muted-foreground dark:text-slate-400">Overtime</p>
+                      <p className="font-medium dark:text-white">{formatCurrency(record.additionalIncome.overtime)}</p>
+                    </div>
+                  )}
+                  {record.additionalIncome && record.additionalIncome.bonuses > 0 && (
+                    <div>
+                      <p className="text-xs text-muted-foreground dark:text-slate-400">Bonuses</p>
+                      <p className="font-medium dark:text-white">{formatCurrency(record.additionalIncome.bonuses)}</p>
+                    </div>
+                  )}
+                  {record.additionalIncome && record.additionalIncome.commissions > 0 && (
+                    <div>
+                      <p className="text-xs text-muted-foreground dark:text-slate-400">Commissions</p>
+                      <p className="font-medium dark:text-white">{formatCurrency(record.additionalIncome.commissions)}</p>
+                    </div>
+                  )}
+                  {record.additionalIncome && record.additionalIncome.benefitsInKind > 0 && (
+                    <div>
+                      <p className="text-xs text-muted-foreground dark:text-slate-400">Benefits in Kind (Taxable)</p>
+                      <p className="font-medium dark:text-white">{formatCurrency(record.additionalIncome.benefitsInKind)}</p>
+                    </div>
+                  )}
                   <div className="col-span-2">
                     <p className="text-xs text-muted-foreground dark:text-slate-400">Gross Salary</p>
                     <p className="font-bold text-lg dark:text-white">{formatCurrency(record.salary.grossSalary)}</p>
@@ -711,9 +875,27 @@ export default function PayrollDetailPage() {
                     <p className="font-medium text-blue-600 dark:text-blue-400">{formatCurrency(record.contributions?.rssbEmployerMaternity || 0)}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground dark:text-slate-400">Occupational Hazard (2%)</p>
+                    <p className="text-xs text-muted-foreground dark:text-slate-400">Occupational Hazard ({record.contributions?.occupationalHazardRate || 2}%)</p>
                     <p className="font-medium text-blue-600 dark:text-blue-400">{formatCurrency(record.contributions?.occupationalHazard || 0)}</p>
                   </div>
+                  {record.deductions.healthInsurance > 0 && (
+                    <div>
+                      <p className="text-xs text-muted-foreground dark:text-slate-400">Health Insurance</p>
+                      <p className="font-medium text-red-600 dark:text-red-400">{formatCurrency(record.deductions.healthInsurance)}</p>
+                    </div>
+                  )}
+                  {record.deductions.loanDeductions > 0 && (
+                    <div>
+                      <p className="text-xs text-muted-foreground dark:text-slate-400">Loan Repayments</p>
+                      <p className="font-medium text-red-600 dark:text-red-400">{formatCurrency(record.deductions.loanDeductions)}</p>
+                    </div>
+                  )}
+                  {record.deductions.otherDeductions > 0 && (
+                    <div>
+                      <p className="text-xs text-muted-foreground dark:text-slate-400">Other Deductions</p>
+                      <p className="font-medium text-red-600 dark:text-red-400">{formatCurrency(record.deductions.otherDeductions)}</p>
+                    </div>
+                  )}
                   <div>
                     <p className="text-xs text-muted-foreground font-bold dark:text-slate-400">Net Pay</p>
                     <p className="font-bold text-lg text-green-600 dark:text-green-400">{formatCurrency(record.netPay)}</p>

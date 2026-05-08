@@ -643,14 +643,14 @@ export default function BankAccountDetailPage() {
           <TabsContent value="transactions">
             <Card className="dark:bg-slate-800 dark:border-slate-700">
               <CardHeader>
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                   <CardTitle className="dark:text-white">
                     {t(
                       "bankAccounts.journalTransactions",
                       "Journal Transactions",
                     )}
                   </CardTitle>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     {/* Fix A — Deposit button */}
                     <Button
                       size="sm"
@@ -692,29 +692,29 @@ export default function BankAccountDetailPage() {
               <CardContent>
                 {/* Fix C — Filter row */}
                 <div className="flex flex-wrap gap-3 mb-4 p-3 bg-muted/40 rounded-lg border dark:bg-slate-700/50 dark:border-slate-600">
-                  <div className="flex flex-col gap-1">
+                  <div className="flex flex-col gap-1 flex-1 min-w-[140px]">
                     <Label className="text-xs text-muted-foreground dark:text-slate-400">
                       {t("bankAccount.dateFrom", "Date From")}
                     </Label>
                     <Input
                       type="date"
-                      className="h-8 text-sm w-36 dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                      className="h-8 text-sm w-full dark:bg-slate-700 dark:text-white dark:border-slate-600"
                       value={txStartDate}
                       onChange={(e) => setTxStartDate(e.target.value)}
                     />
                   </div>
-                  <div className="flex flex-col gap-1">
+                  <div className="flex flex-col gap-1 flex-1 min-w-[140px]">
                     <Label className="text-xs text-muted-foreground dark:text-slate-400">
                       {t("bankAccount.dateTo", "Date To")}
                     </Label>
                     <Input
                       type="date"
-                      className="h-8 text-sm w-36 dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                      className="h-8 text-sm w-full dark:bg-slate-700 dark:text-white dark:border-slate-600"
                       value={txEndDate}
                       onChange={(e) => setTxEndDate(e.target.value)}
                     />
                   </div>
-                  <div className="flex flex-col gap-1">
+                  <div className="flex flex-col gap-1 flex-1 min-w-[140px]">
                     <Label className="text-xs text-muted-foreground dark:text-slate-400">
                       {t("bankAccount.type", "Type")}
                     </Label>
@@ -722,7 +722,7 @@ export default function BankAccountDetailPage() {
                       value={txTypeFilter}
                       onValueChange={setTxTypeFilter}
                     >
-                      <SelectTrigger className="h-8 text-sm w-40 dark:bg-slate-700 dark:text-white dark:border-slate-600">
+                      <SelectTrigger className="h-8 text-sm w-full dark:bg-slate-700 dark:text-white dark:border-slate-600">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="dark:bg-slate-800">
@@ -755,6 +755,7 @@ export default function BankAccountDetailPage() {
                 </div>
 
                 {/* Transactions table */}
+                <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow className="dark:bg-slate-700/50">
@@ -838,6 +839,7 @@ export default function BankAccountDetailPage() {
                     )}
                   </TableBody>
                 </Table>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -846,7 +848,7 @@ export default function BankAccountDetailPage() {
           <TabsContent value="reconciliation">
             <Card className="dark:bg-slate-800 dark:border-slate-700">
               <CardHeader>
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                   <CardTitle className="dark:text-white">
                     {t("bankAccount.bankReconciliation", "Bank Reconciliation")}
                   </CardTitle>
@@ -935,7 +937,7 @@ export default function BankAccountDetailPage() {
                 </div>
 
                 {/* Statement Lines Table */}
-                <div className="border rounded-lg dark:border-slate-600">
+                <div className="border rounded-lg dark:border-slate-600 overflow-hidden">
                   <h3 className="font-medium p-4 border-b dark:border-slate-600 dark:text-slate-200">
                     {t("bankAccount.importedStatementLines", "Imported Statement Lines")}
                     <span className="ml-2 text-sm text-muted-foreground dark:text-slate-400">
@@ -947,6 +949,7 @@ export default function BankAccountDetailPage() {
                       {t("bankAccount.noImportedLines", "No statement lines imported yet. Click 'Import Statement' to upload a CSV file.")}
                     </div>
                   ) : (
+                  <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow className="dark:bg-slate-700/50">
@@ -1014,6 +1017,7 @@ export default function BankAccountDetailPage() {
                       ))}
                     </TableBody>
                   </Table>
+                  </div>
                 )}
                 </div>
               </CardContent>

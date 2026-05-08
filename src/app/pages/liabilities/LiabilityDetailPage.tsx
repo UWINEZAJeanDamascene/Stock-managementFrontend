@@ -589,113 +589,100 @@ export default function LiabilityDetailPage() {
     <Layout>
       <div className="container mx-auto py-6 bg-gray-50 dark:bg-slate-900 min-h-screen p-6">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/liabilities')} className="dark:text-slate-200">
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold dark:text-white">{liability.name}</h1>
-            <p className="text-muted-foreground dark:text-slate-400">{liability.loanNumber}</p>
-          </div>
-          <Button variant="outline" onClick={() => navigate(`/liabilities/${id}/edit`)} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
-            <Pencil className="mr-2 h-4 w-4" />
-            {t('liabilities.editLiability')}
-          </Button>
-          {liability.status !== 'cancelled' && liability.status !== 'fully_repaid' && liability.status !== 'paid-off' && (
-            <Button variant="outline" onClick={() => setCancelDialogOpen(true)} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
-              <XCircle className="mr-2 h-4 w-4" />
-              {t('liabilities.actions.cancel')}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+          <div className="flex items-start gap-3 min-w-0">
+            <Button variant="ghost" size="sm" onClick={() => navigate('/liabilities')} className="mt-0.5 h-8 w-8 p-0 dark:text-slate-200">
+              <ArrowLeft className="h-4 w-4" />
             </Button>
-          )}
-          <Button variant="destructive" onClick={() => setDeleteDialogOpen(true)}>
-            <Trash2 className="mr-2 h-4 w-4" />
-            {t('liabilities.actions.delete')}
-          </Button>
-          {/* Repayment Button Group */}
-          {(() => {
-            const liabAccount = (liability as any).liabilityAccountId;
-            const liabIsValid = (liabAccount && typeof liabAccount === 'object' && liabAccount.name) || (typeof liabAccount === 'string' && liabAccount.length > 0);
-            const liabNotConfigured = !liabAccount || (typeof liabAccount === 'string' && !liabAccount);
+            <div className="min-w-0">
+              <h1 className="text-2xl sm:text-3xl font-bold dark:text-white leading-tight">{liability.name}</h1>
+              <p className="text-muted-foreground dark:text-slate-400 text-sm">{liability.loanNumber}</p>
+            </div>
+          </div>
 
-            if (!liabIsValid) {
-              return (
+          {/* Action buttons arranged in 2x2 grid - each button fills its column */}
+          <div className="w-full md:w-auto">
+            <div className="grid grid-cols-2 gap-3 w-full max-w-full items-center">
+              {/* Top-left: Edit */}
+              <div>
                 <Button
-                  disabled
-                  title={liabNotConfigured ? 'Liability account not configured - Please edit to add account' : 'Liability account is invalid - Please edit to select a valid account'}
-                  className="dark:bg-primary dark:text-primary-foreground"
-                >
-                  <RefreshCcw className="mr-2 h-4 w-4" />
-                  {t('liabilities.actions.recordRepayment')}
-                </Button>
-              );
-            }
-
-            return (
-              <div className="flex">
-                <Button
-                  onClick={handleQuickRepayment}
-                  disabled={submitting}
-                  className="dark:bg-primary dark:text-primary-foreground rounded-r-none"
-                >
-                  <Zap className="mr-2 h-4 w-4" />
-                  Quick Repay
-                </Button>
-                <Button
-                  onClick={() => setRepaymentOpen(true)}
-                  disabled={submitting}
                   variant="outline"
-                  className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700 rounded-l-none border-l-0"
+                  onClick={() => navigate(`/liabilities/${id}/edit`)}
+                  className="w-full h-10 px-4 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
                 >
-                  <RefreshCcw className="mr-2 h-4 w-4" />
-                  Manual
+                  <Pencil className="mr-2 h-4 w-4" />
+                  {t('liabilities.editLiability')}
                 </Button>
               </div>
-            );
-          })()}
 
-          {/* Interest Button Group */}
-          {(() => {
-            const intAccount = (liability as any).interestExpenseAccountId;
-            const intIsValid = (intAccount && typeof intAccount === 'object' && intAccount.name) || (typeof intAccount === 'string' && intAccount.length > 0);
-            const intNotConfigured = !intAccount || (typeof intAccount === 'string' && !intAccount);
-
-            if (!intIsValid) {
-              return (
+              {/* Top-right: Delete */}
+              <div>
                 <Button
-                  variant="outline"
-                  disabled
-                  title={intNotConfigured ? 'Interest expense account not configured' : 'Interest expense account is invalid'}
-                  className="dark:border-slate-600 dark:text-slate-200"
+                  variant="destructive"
+                  onClick={() => setDeleteDialogOpen(true)}
+                  className="w-full h-10 px-4"
                 >
-                  <TrendingUp className="mr-2 h-4 w-4" />
-                  {t('liabilities.actions.recordInterest')}
-                </Button>
-              );
-            }
-
-            return (
-              <div className="flex">
-                <Button
-                  onClick={handleQuickInterest}
-                  disabled={submitting}
-                  variant="outline"
-                  className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700 rounded-r-none"
-                >
-                  <Zap className="mr-2 h-4 w-4 text-yellow-500" />
-                  Quick Interest
-                </Button>
-                <Button
-                  onClick={() => setInterestOpen(true)}
-                  disabled={submitting}
-                  variant="outline"
-                  className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700 rounded-l-none border-l-0"
-                >
-                  <TrendingUp className="mr-2 h-4 w-4" />
-                  Manual
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  {t('liabilities.actions.delete')}
                 </Button>
               </div>
-            );
-          })()}
+
+              {/* Bottom-left: Cancel (or placeholder) */}
+              <div>
+                {liability.status !== 'cancelled' && liability.status !== 'fully_repaid' && liability.status !== 'paid-off' ? (
+                  <Button
+                    variant="outline"
+                    onClick={() => setCancelDialogOpen(true)}
+                    className="w-full h-10 px-4 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
+                  >
+                    <XCircle className="mr-2 h-4 w-4" />
+                    {t('liabilities.actions.cancel')}
+                  </Button>
+                ) : (
+                  <div />
+                )}
+              </div>
+
+              {/* Bottom-right: Quick Actions */}
+              <div>
+                {(() => {
+                  const liabAccount = (liability as any).liabilityAccountId;
+                  const liabIsValid = (liabAccount && typeof liabAccount === 'object' && liabAccount.name) || (typeof liabAccount === 'string' && liabAccount.length > 0);
+                  const intAccount = (liability as any).interestExpenseAccountId;
+                  const intIsValid = (intAccount && typeof intAccount === 'object' && intAccount.name) || (typeof intAccount === 'string' && intAccount.length > 0);
+
+                  return (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="secondary" className="w-full h-10 px-4 dark:border-slate-600 dark:text-slate-200">
+                          Quick Actions
+                          <ChevronDown className="ml-2 h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="dark:bg-slate-800">
+                        <DropdownMenuItem onClick={handleQuickRepayment} disabled={!liabIsValid || submitting}>
+                          <Zap className="mr-2 h-4 w-4" />
+                          Quick Repay
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setRepaymentOpen(true)} disabled={submitting}>
+                          <RefreshCcw className="mr-2 h-4 w-4" />
+                          Manual Repayment
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleQuickInterest} disabled={!intIsValid || submitting}>
+                          <Zap className="mr-2 h-4 w-4 text-yellow-400" />
+                          Quick Interest
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setInterestOpen(true)} disabled={submitting}>
+                          <TrendingUp className="mr-2 h-4 w-4" />
+                          Manual Interest
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  );
+                })()}
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Details Cards */}
@@ -789,7 +776,7 @@ export default function LiabilityDetailPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
               <div>
                 <p className="text-xs text-slate-500">Classification</p>
                 <Badge variant="outline" className="mt-1">
@@ -830,7 +817,7 @@ export default function LiabilityDetailPage() {
               </div>
             </div>
             {(liability.probabilityOfDefault || liability.lossGivenDefault || liability.effectiveInterestRate) && (
-              <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-slate-700/50">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4 pt-4 border-t border-slate-700/50">
                 <div>
                   <p className="text-xs text-slate-500">Probability of Default (PD)</p>
                   <p className="text-sm font-semibold text-slate-200">
@@ -876,6 +863,7 @@ export default function LiabilityDetailPage() {
                   <p className="dark:text-slate-400">{t('liabilities.noRepayments')}</p>
                 </div>
               ) : (
+                <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow className="dark:bg-slate-700/50 dark:border-slate-600">
@@ -900,6 +888,7 @@ export default function LiabilityDetailPage() {
                       ))}
                   </TableBody>
                 </Table>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -917,6 +906,7 @@ export default function LiabilityDetailPage() {
                   <p className="dark:text-slate-400">{t('liabilities.noInterestCharges')}</p>
                 </div>
               ) : (
+                <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow className="dark:bg-slate-700/50 dark:border-slate-600">
@@ -939,6 +929,7 @@ export default function LiabilityDetailPage() {
                       ))}
                   </TableBody>
                 </Table>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -952,6 +943,7 @@ export default function LiabilityDetailPage() {
               <CardDescription className="dark:text-slate-400">{t('liabilities.drawdownHistoryDescription')}</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
+              <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow className="dark:bg-slate-700/50 dark:border-slate-600">
@@ -974,6 +966,7 @@ export default function LiabilityDetailPage() {
                     ))}
                 </TableBody>
               </Table>
+              </div>
             </CardContent>
           </Card>
         )}
@@ -1013,7 +1006,7 @@ export default function LiabilityDetailPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="dark:text-slate-200">{t('liabilities.principalPortion')}</Label>
                   <Input 

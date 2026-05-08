@@ -444,7 +444,7 @@ export default function PurchaseDashboardPage() {
               />
               <CardContent>
                 {loading ? (
-                  <Skeleton className="h-[220px] w-full" />
+                  <Skeleton className="h-[120px] sm:h-[160px] md:h-[220px] w-full" />
                 ) : !apAging || apAging.total_outstanding === 0 ? (
                   <EmptyState
                     icon={<CheckCircle className="h-8 w-8 text-emerald-500" />}
@@ -454,7 +454,7 @@ export default function PurchaseDashboardPage() {
                   <div className="space-y-5">
                     <ChartContainer
                       config={agingChartConfig}
-                      className="h-[92px] w-full"
+                      className="h-[92px] sm:h-[120px] md:h-[160px] w-full -ml-2"
                     >
                       <BarChart
                         accessibilityLayer
@@ -652,7 +652,7 @@ export default function PurchaseDashboardPage() {
               />
               <CardContent>
                 {loading ? (
-                  <Skeleton className="h-[300px] w-full" />
+                  <Skeleton className="h-[160px] sm:h-[220px] md:h-[300px] w-full" />
                 ) : supplierChartData.length === 0 ? (
                   <EmptyState
                     icon={<Users className="h-8 w-8" />}
@@ -661,27 +661,27 @@ export default function PurchaseDashboardPage() {
                 ) : (
                   <ChartContainer
                     config={supplierChartConfig}
-                    className="h-[300px] w-full"
+                    className="h-[160px] sm:h-[220px] md:h-[300px] w-full -ml-4"
                   >
                     <BarChart
                       accessibilityLayer
                       data={supplierChartData}
                       layout="vertical"
-                      margin={{ left: 8, right: 20, top: 8, bottom: 8 }}
+                      margin={{ left: 0, right: 20, top: 8, bottom: 8 }}
                     >
                       <YAxis
                         dataKey="name"
                         type="category"
                         tickLine={false}
                         axisLine={false}
-                        tick={{ fontSize: 12 }}
-                        width={132}
+                        tick={{ fontSize: 11 }}
+                        width={100}
                       />
                       <XAxis
                         type="number"
                         tickLine={false}
                         axisLine={false}
-                        tick={{ fontSize: 12 }}
+                        tick={{ fontSize: 11 }}
                         tickFormatter={(value) => `$${formatNumber(Number(value))}`}
                       />
                       <ChartTooltip
@@ -699,7 +699,7 @@ export default function PurchaseDashboardPage() {
                         dataKey="total_value"
                         fill="var(--color-total_value)"
                         radius={[0, 6, 6, 0]}
-                        barSize={26}
+                        barSize={20}
                       />
                     </BarChart>
                   </ChartContainer>
@@ -715,7 +715,7 @@ export default function PurchaseDashboardPage() {
               />
               <CardContent>
                 {loading ? (
-                  <Skeleton className="h-[300px] w-full" />
+                  <Skeleton className="h-[160px] sm:h-[200px] md:h-[300px] w-full" />
                 ) : pieData.length === 0 ? (
                   <EmptyState
                     icon={<ShoppingCart className="h-8 w-8" />}
@@ -725,7 +725,7 @@ export default function PurchaseDashboardPage() {
                   <div className="grid gap-5 md:grid-cols-[260px_1fr] md:items-center">
                     <ChartContainer
                       config={statusChartConfig}
-                      className="mx-auto h-[250px] w-full"
+                      className="mx-auto h-[160px] sm:h-[200px] md:h-[250px] w-full -ml-2"
                     >
                       <PieChart>
                         <ChartTooltip

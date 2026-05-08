@@ -604,7 +604,7 @@ export default function InventoryDashboardPage() {
               />
               <CardContent>
                 {loading ? (
-                  <Skeleton className="h-[300px] w-full" />
+                  <Skeleton className="h-[160px] sm:h-[220px] md:h-[300px] w-full" />
                 ) : movementData.length === 0 ? (
                   <EmptyState
                     icon={<Package className="h-8 w-8" />}
@@ -613,21 +613,21 @@ export default function InventoryDashboardPage() {
                 ) : (
                   <ChartContainer
                     config={topMovingChartConfig}
-                    className="h-[300px] w-full"
+                    className="h-[160px] sm:h-[220px] md:h-[300px] w-full -ml-4"
                   >
                     <BarChart
                       accessibilityLayer
                       data={movementData}
                       layout="vertical"
-                      margin={{ left: 8, right: 20, top: 8, bottom: 8 }}
+                      margin={{ left: 0, right: 20, top: 8, bottom: 8 }}
                     >
                       <YAxis
                         dataKey="name"
                         type="category"
                         tickLine={false}
                         axisLine={false}
-                        tick={{ fontSize: 12 }}
-                        width={126}
+                        tick={{ fontSize: 11 }}
+                        width={100}
                       />
                       <XAxis
                         type="number"
@@ -640,7 +640,7 @@ export default function InventoryDashboardPage() {
                         dataKey="total_qty"
                         fill="var(--color-total_qty)"
                         radius={[0, 6, 6, 0]}
-                        barSize={26}
+                        barSize={20}
                       />
                     </BarChart>
                   </ChartContainer>
@@ -656,7 +656,7 @@ export default function InventoryDashboardPage() {
               />
               <CardContent>
                 {loading ? (
-                  <Skeleton className="h-[300px] w-full" />
+                  <Skeleton className="h-[160px] sm:h-[200px] md:h-[300px] w-full" />
                 ) : pieData.length === 0 ? (
                   <EmptyState
                     icon={<Archive className="h-8 w-8" />}
@@ -666,7 +666,7 @@ export default function InventoryDashboardPage() {
                   <div className="grid gap-5 md:grid-cols-[260px_1fr] md:items-center">
                     <ChartContainer
                       config={warehouseChartConfig}
-                      className="mx-auto h-[250px] w-full"
+                      className="mx-auto h-[160px] sm:h-[200px] md:h-[250px] w-full -ml-2"
                     >
                       <PieChart>
                         <ChartTooltip

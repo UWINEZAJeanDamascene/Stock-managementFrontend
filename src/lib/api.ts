@@ -2861,6 +2861,20 @@ export { ApiError };
 export { request as api };
 export default request;
 
+// ═══════════════════════════════════════════════════════════
+// Employee Master Types (re-exports for convenience)
+// ═══════════════════════════════════════════════════════════
+export type {
+  Employee,
+  SalarySnapshot,
+  SalaryHistoryRecord,
+  CreateEmployeePayload,
+  UpdateEmployeePayload,
+  ChangeSalaryPayload,
+  GeneratePayrollPayload,
+  PayrollHistoryItem,
+} from "./api.employees";
+
 // Exchange Rates API
 export interface ExchangeRateData {
   USD: number;
@@ -6234,6 +6248,7 @@ export const receivablesApi = {
 export interface PayrollRecord {
   _id: string;
   company: string;
+  employee_id?: string | null;
   employee: {
     employeeId: string;
     firstName: string;
@@ -6254,12 +6269,17 @@ export interface PayrollRecord {
     transportAllowance: number;
     housingAllowance: number;
     otherAllowances: number;
+    overtime?: number;
+    bonuses?: number;
+    commissions?: number;
+    benefitsInKind?: number;
     grossSalary: number;
   };
   deductions: {
     paye: number;
     rssbEmployeePension: number;
     rssbEmployeeMaternity: number;
+    rssbPensionTotal?: number;
     healthInsurance: number;
     otherDeductions: number;
     loanDeductions: number;
@@ -6270,6 +6290,13 @@ export interface PayrollRecord {
     rssbEmployerPension: number;
     rssbEmployerMaternity: number;
     occupationalHazard: number;
+    occupationalHazardRate?: number;
+  };
+  additionalIncome?: {
+    overtime: number;
+    bonuses: number;
+    commissions: number;
+    benefitsInKind: number;
   };
   period: {
     month: number;
@@ -6326,7 +6353,8 @@ export const payrollApi = {
   getById: (id: string) =>
     request<{ success: boolean; data: PayrollRecord }>(`/payroll/${id}`),
   create: (data: {
-    employee: {
+    employee_id?: string;
+    employee?: {
       employeeId: string;
       firstName: string;
       lastName: string;
@@ -6338,11 +6366,33 @@ export const payrollApi = {
       bankName?: string;
       bankAccount?: string;
     };
-    salary: {
+    salary?: {
       basicSalary: number;
       transportAllowance?: number;
       housingAllowance?: number;
       otherAllowances?: number;
+      overtime?: number;
+      bonuses?: number;
+      commissions?: number;
+      benefitsInKind?: number;
+    };
+    deductions?: {
+      healthInsurance?: number;
+      loanDeductions?: number;
+      otherDeductions?: number;
+    };
+    salaryOverrides?: {
+      basicSalary?: number;
+      transportAllowance?: number;
+      housingAllowance?: number;
+      otherAllowances?: number;
+      overtime?: number;
+      bonuses?: number;
+      commissions?: number;
+      benefitsInKind?: number;
+      healthInsurance?: number;
+      loanDeductions?: number;
+      otherDeductions?: number;
     };
     period: { month: number; year: number };
     notes?: string;
@@ -6351,11 +6401,25 @@ export const payrollApi = {
       method: "POST",
       body: data,
     }),
+  /** Generate payroll from Employee Master for all active or selected employees */
+  generate: (data: {
+    period: { month: number; year: number };
+    employeeIds?: string[];
+    payrollRunId?: string;
+  }) =>
+    request<{
+      success: boolean;
+      count: number;
+      data: PayrollRecord[];
+      errors?: Array<{ employeeId: string; name: string; reason: string }>;
+    }>("/payroll/generate", { method: "POST", body: data }),
   update: (
     id: string,
     data: Partial<{
       employee: Record<string, any>;
       salary: Record<string, any>;
+      deductions: Record<string, any>;
+      additionalIncome: Record<string, any>;
       period: { month: number; year: number };
       notes: string;
     }>,
@@ -6518,10 +6582,34 @@ export const payrollApi = {
 export interface PayrollRunLine {
   employee_name: string;
   employee_id: string;
+  employee_ref_id?: string;
+  // Income components
+  basic_salary: number;
+  transport_allowance: number;
+  housing_allowance: number;
+  other_allowances: number;
+  overtime: number;
+  bonuses: number;
+  commissions: number;
+  benefits_in_kind: number;
   gross_salary: number;
+  // PAYE
   tax_deduction: number;
+  // RSSB Employee deductions
+  rssb_employee_pension: number;
+  rssb_employee_maternity: number;
+  rssb_employee_total: number;
+  // RSSB Employer contributions
+  rssb_employer_pension: number;
+  rssb_employer_maternity: number;
+  occupational_hazard: number;
+  occupational_hazard_rate: number;
+  rssb_employer_total: number;
+  // Other deductions
+  health_insurance: number;
+  loan_deductions: number;
   other_deductions: number;
-  rssb_employer: number;
+  total_deductions: number;
   net_pay: number;
   payroll_id?: string;
 }
@@ -6551,6 +6639,28 @@ export interface PayrollRun {
   posted_by?: { _id: string; name: string } | null;
   lines: PayrollRunLine[];
   employee_count: number;
+  // Remittance tracking (Rwanda RRA / RSSB)
+  remittance?: {
+    paye?: {
+      remitted: boolean;
+      remitted_date?: string | null;
+      reference_no?: string | null;
+      amount: number;
+    };
+    rssb?: {
+      remitted: boolean;
+      remitted_date?: string | null;
+      reference_no?: string | null;
+      amount: number;
+    };
+  };
+  // Bank transfer export
+  bank_transfer?: {
+    generated: boolean;
+    generated_at?: string | null;
+    file_name?: string | null;
+    format?: 'csv' | 'excel' | 'xml';
+  };
   createdAt: string;
   updatedAt: string;
 }
@@ -6668,6 +6778,37 @@ export const payrollRunApi = {
       "/payroll-runs/from-records",
       { method: "POST", body: data },
     ),
+  remitPaye: (id: string, data: { remitted_date?: string; reference_no?: string; amount?: number }) =>
+    request<{ success: boolean; data: PayrollRun; message: string }>(
+      `/payroll-runs/${id}/remit-paye`,
+      { method: "POST", body: data },
+    ),
+  remitRssb: (id: string, data: { remitted_date?: string; reference_no?: string; amount?: number }) =>
+    request<{ success: boolean; data: PayrollRun; message: string }>(
+      `/payroll-runs/${id}/remit-rssb`,
+      { method: "POST", body: data },
+    ),
+  generateBankTransfer: (id: string) =>
+    request<{
+      success: boolean;
+      data: {
+        reference_no: string;
+        payment_date: string;
+        period_start: string;
+        period_end: string;
+        total_net: number;
+        bank_name: string;
+        bank_account: string;
+        records: Array<{
+          employee_name: string;
+          employee_id: string;
+          bank_name: string;
+          bank_account: string;
+          net_pay: number;
+          currency: string;
+        }>;
+      };
+    }>(`/payroll-runs/${id}/bank-transfer`),
   // Returns months that have finalised, unprocessed payroll records
   getAvailablePeriods: () =>
     request<{

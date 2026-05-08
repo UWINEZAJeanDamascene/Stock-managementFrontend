@@ -580,7 +580,7 @@ export default function BankAccountsListPage() {
     <TooltipProvider>
       <Layout>
         <div className="container mx-auto py-6">
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <div>
               <h1 className="text-2xl font-bold dark:text-white">
                 {t("bankAccount.title", "Bank Accounts")}
@@ -589,7 +589,7 @@ export default function BankAccountsListPage() {
                 {t("bankAccount.description", "Manage your bank accounts")}
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button
                 variant="outline"
                 onClick={() => setShowTransferDialog(true)}
@@ -666,12 +666,13 @@ export default function BankAccountsListPage() {
           </div>
 
           {/* Table */}
-          <div className="bg-card rounded-lg border dark:bg-slate-800 dark:border-slate-700">
+          <div className="bg-card rounded-lg border dark:bg-slate-800 dark:border-slate-700 overflow-hidden">
             {loading ? (
               <div className="flex items-center justify-center p-8">
                 <Loader2 className="h-8 w-8 animate-spin dark:text-slate-400" />
               </div>
             ) : (
+              <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow className="dark:bg-slate-700/50">
@@ -839,6 +840,7 @@ export default function BankAccountsListPage() {
                   )}
                 </TableBody>
               </Table>
+              </div>
             )}
           </div>
         </div>

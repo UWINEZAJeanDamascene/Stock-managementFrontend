@@ -420,7 +420,7 @@ export default function SalesDashboardPage() {
               />
               <CardContent>
                 {loading ? (
-                  <Skeleton className="h-[220px] w-full" />
+                  <Skeleton className="h-[120px] sm:h-[160px] md:h-[220px] w-full" />
                 ) : !arAging || arAging.total_ar_outstanding === 0 ? (
                   <EmptyState
                     icon={<CheckCircle className="h-8 w-8 text-emerald-500" />}
@@ -430,7 +430,7 @@ export default function SalesDashboardPage() {
                   <div className="space-y-5">
                     <ChartContainer
                       config={agingChartConfig}
-                      className="h-[92px] w-full"
+                      className="h-[92px] sm:h-[120px] md:h-[160px] w-full -ml-2"
                     >
                       <BarChart
                         accessibilityLayer
@@ -696,7 +696,7 @@ export default function SalesDashboardPage() {
               />
               <CardContent>
                 {loading ? (
-                  <Skeleton className="h-[300px] w-full" />
+                  <Skeleton className="h-[160px] sm:h-[200px] md:h-[250px] w-full" />
                 ) : pieData.length === 0 ? (
                   <EmptyState
                     icon={<FileText className="h-8 w-8" />}
@@ -706,7 +706,7 @@ export default function SalesDashboardPage() {
                   <div className="grid gap-5 md:grid-cols-[260px_1fr] md:items-center">
                     <ChartContainer
                       config={statusChartConfig}
-                      className="mx-auto h-[250px] w-full"
+                      className="mx-auto h-[160px] sm:h-[200px] md:h-[250px] w-full -ml-2"
                     >
                       <PieChart>
                         <ChartTooltip

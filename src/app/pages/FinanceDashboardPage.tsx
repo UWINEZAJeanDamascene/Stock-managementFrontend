@@ -506,12 +506,12 @@ export default function FinanceDashboardPage() {
                   <div className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
                     <ChartContainer
                       config={cashFlowChartConfig}
-                      className="h-[240px] w-full"
+                      className="h-[160px] sm:h-[200px] md:h-[240px] w-full -ml-4"
                     >
                       <BarChart
                         accessibilityLayer
                         data={cashFlowBarData}
-                        margin={{ left: 20, right: 20, top: 10, bottom: 10 }}
+                        margin={{ left: 4, right: 20, top: 10, bottom: 10 }}
                       >
                         <XAxis dataKey="label" hide />
                         <YAxis hide />
@@ -537,14 +537,14 @@ export default function FinanceDashboardPage() {
                           dataKey="inflows"
                           fill="var(--color-inflows)"
                           radius={[6, 6, 0, 0]}
-                          barSize={70}
+                          barSize={48}
                           name="Inflows"
                         />
                         <Bar
                           dataKey="outflows"
                           fill="var(--color-outflows)"
                           radius={[6, 6, 0, 0]}
-                          barSize={70}
+                          barSize={48}
                           name="Outflows"
                         />
                       </BarChart>
@@ -725,7 +725,7 @@ export default function FinanceDashboardPage() {
                   <div className="grid gap-5 md:grid-cols-[230px_1fr] md:items-center">
                     <ChartContainer
                       config={{ value: { label: "Balance", color: "#2563eb" } }}
-                      className="mx-auto h-[220px] w-full"
+                      className="mx-auto h-[160px] sm:h-[200px] md:h-[220px] w-full -ml-2"
                     >
                       <PieChart>
                         <ChartTooltip
@@ -825,7 +825,7 @@ export default function FinanceDashboardPage() {
                   <div className="space-y-4">
                     <ChartContainer
                       config={budgetChartConfig}
-                      className="h-[160px] w-full"
+                      className="h-[120px] sm:h-[140px] md:h-[160px] w-full -ml-2"
                     >
                       <BarChart
                         accessibilityLayer
@@ -856,13 +856,13 @@ export default function FinanceDashboardPage() {
                           dataKey="budgeted"
                           fill="var(--color-budgeted)"
                           radius={[6, 6, 0, 0]}
-                          barSize={70}
+                          barSize={40}
                         />
                         <Bar
                           dataKey="actual"
                           fill="var(--color-actual)"
                           radius={[6, 6, 0, 0]}
-                          barSize={70}
+                          barSize={40}
                         />
                       </BarChart>
                     </ChartContainer>

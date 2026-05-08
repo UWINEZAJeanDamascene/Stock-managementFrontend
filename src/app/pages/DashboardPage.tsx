@@ -339,7 +339,7 @@ export default function DashboardPage() {
   return (
     <Layout>
       <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-[1700px] space-y-6">
+          <div className="mx-auto max-w-[1700px] w-full space-y-6">
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 text-white shadow-sm dark:border-slate-800">
             <div className="grid gap-0 lg:grid-cols-[1.2fr_0.8fr]">
               <div className="p-6 lg:p-7">
@@ -467,11 +467,11 @@ export default function DashboardPage() {
                   </Badge>
                 </div>
                 {loading ? (
-                  <Skeleton className="h-[260px] w-full bg-white/10" />
+                  <Skeleton className="h-[160px] sm:h-[200px] md:h-[260px] w-full bg-white/10" />
                 ) : (
                   <ChartContainer
                     config={pulseChartConfig}
-                    className="h-[260px] w-full"
+                    className="h-[160px] sm:h-[200px] md:h-[260px] w-full"
                   >
                     <AreaChart
                       accessibilityLayer
@@ -630,17 +630,17 @@ export default function DashboardPage() {
               />
               <CardContent>
                 {loading ? (
-                  <Skeleton className="h-[300px] w-full" />
+                  <Skeleton className="h-[200px] sm:h-[240px] md:h-[300px] w-full" />
                 ) : (
                   <div className="grid gap-5 lg:grid-cols-[1fr_260px] lg:items-center">
                     <ChartContainer
                       config={bridgeChartConfig}
-                      className="h-[300px] w-full"
+                      className="h-[200px] sm:h-[240px] md:h-[300px] w-full -ml-4"
                     >
                       <BarChart
                         accessibilityLayer
                         data={bridgeData}
-                        margin={{ left: 16, right: 20, top: 16, bottom: 8 }}
+                        margin={{ left: 4, right: 20, top: 16, bottom: 8 }}
                       >
                         <CartesianGrid strokeDasharray="3 3" vertical={false} />
                         <XAxis dataKey="name" tickLine={false} axisLine={false} />
@@ -729,7 +729,7 @@ export default function DashboardPage() {
               />
               <CardContent>
                 {loading ? (
-                  <Skeleton className="h-[300px] w-full" />
+                  <Skeleton className="h-[180px] sm:h-[220px] md:h-[300px] w-full" />
                 ) : arOutstanding === 0 ? (
                   <EmptyState
                     icon={<ShieldCheck className="h-8 w-8 text-emerald-500" />}
@@ -739,7 +739,7 @@ export default function DashboardPage() {
                   <div className="grid gap-5 sm:grid-cols-[220px_1fr] sm:items-center">
                     <ChartContainer
                       config={arChartConfig}
-                      className="mx-auto h-[220px] w-full"
+                      className="mx-auto h-[180px] sm:h-[220px] md:h-[260px] w-full"
                     >
                       <PieChart>
                         <ChartTooltip
@@ -819,7 +819,7 @@ export default function DashboardPage() {
               />
               <CardContent>
                 {loading ? (
-                  <Skeleton className="h-[260px] w-full" />
+                  <Skeleton className="h-[160px] sm:h-[200px] md:h-[260px] w-full" />
                 ) : !upcomingDebt || upcomingDebt.totalUpcoming === 0 ? (
                   <EmptyState
                     icon={<Landmark className="h-8 w-8" />}
@@ -966,7 +966,7 @@ export default function DashboardPage() {
               {loading ? (
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                   {[...Array(4)].map((_, i) => (
-                    <Skeleton key={i} className="h-20 w-full" />
+                    <Skeleton key={i} className="h-[120px] sm:h-[160px] md:h-[200px] w-full" />
                   ))}
                 </div>
               ) : (

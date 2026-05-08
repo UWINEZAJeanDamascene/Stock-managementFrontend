@@ -444,17 +444,17 @@ export default function ProductFormPage() {
         <form onSubmit={handleSubmit} className="overflow-x-hidden">
           <div className="grid gap-6">
             {/* Basic Information */}
-            <Card className="dark:bg-slate-800 dark:border-slate-700">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 dark:text-white">
+            <Card className="rounded-2xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-950 shadow-xl">
+              <CardHeader className="px-6 py-4 border-b border-slate-200 dark:border-slate-800">
+                <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white">
                   <Package className="h-5 w-5" />
                   {tr('products.basicInfo', 'Basic Information')}
                 </CardTitle>
-                <CardDescription className="dark:text-slate-400">
+                <CardDescription className="text-slate-500 dark:text-slate-300">
                   {tr('products.basicInfoDesc', 'Core product details')}
                 </CardDescription>
               </CardHeader>
-              <CardContent className="grid gap-4 md:grid-cols-2">
+              <CardContent className="grid gap-4 md:grid-cols-2 px-6 py-6">
                 <div className="space-y-2">
                   <Label htmlFor="name" className="dark:text-slate-200">{t('products.productName') || 'Product Name'} *</Label>
                   <Input
@@ -463,7 +463,7 @@ export default function ProductFormPage() {
                     onChange={(e) => handleChange('name', e.target.value)}
                     placeholder={t('products.namePlaceholder') || 'Enter product name'}
                     required
-                    className="dark:bg-slate-700 dark:text-white dark:border-slate-600 dark:placeholder:text-slate-400"
+                    className="h-10 rounded-md px-3"
                   />
                 </div>
                 
@@ -478,7 +478,7 @@ export default function ProductFormPage() {
                     }}
                     placeholder={t('products.skuPlaceholder') || 'e.g., PRD-001'}
                     required
-                    className="dark:bg-slate-700 dark:text-white dark:border-slate-600 dark:placeholder:text-slate-400"
+                    className="h-10 rounded-md px-3"
                   />
                   {skuWarning && (
                     <p className="text-xs text-amber-600 dark:text-amber-400">{skuWarning}</p>
@@ -492,7 +492,7 @@ export default function ProductFormPage() {
                     value={formData.barcode}
                     onChange={(e) => handleChange('barcode', e.target.value)}
                     placeholder={t('products.barcodePlaceholder') || 'Scan or enter barcode'}
-                    className="dark:bg-slate-700 dark:text-white dark:border-slate-600 dark:placeholder:text-slate-400"
+                    className="h-10 rounded-md px-3"
                   />
                 </div>
 
@@ -502,7 +502,7 @@ export default function ProductFormPage() {
                     value={formData.barcodeType} 
                     onValueChange={(value) => handleChange('barcodeType', value)}
                   >
-                    <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
+                    <SelectTrigger className="h-10 rounded-md flex items-center px-3">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="dark:bg-slate-800">
@@ -519,7 +519,7 @@ export default function ProductFormPage() {
                     value={formData.category} 
                     onValueChange={(value) => handleChange('category', value)}
                   >
-                    <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
+                    <SelectTrigger className="h-10 rounded-md flex items-center px-3">
                       <SelectValue placeholder={t('products.selectCategory') || 'Select category'} />
                     </SelectTrigger>
                     <SelectContent className="dark:bg-slate-800">
@@ -536,7 +536,7 @@ export default function ProductFormPage() {
                     value={formData.unit} 
                     onValueChange={(value) => handleChange('unit', value)}
                   >
-                    <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
+                    <SelectTrigger className="h-10 rounded-md flex items-center px-3">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="dark:bg-slate-800">
@@ -553,7 +553,7 @@ export default function ProductFormPage() {
                     value={formData.supplier} 
                     onValueChange={(value) => handleChange('supplier', value)}
                   >
-                    <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
+                    <SelectTrigger className="h-10 rounded-md flex items-center px-3">
                       <SelectValue placeholder={t('products.selectSupplier') || 'Select supplier'} />
                     </SelectTrigger>
                     <SelectContent className="dark:bg-slate-800">
@@ -580,7 +580,7 @@ export default function ProductFormPage() {
                       value={formData.preferredSupplier} 
                       onValueChange={(value) => handleChange('preferredSupplier', value)}
                     >
-                      <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
+                      <SelectTrigger className="h-10 rounded-md flex items-center px-3">
                         <SelectValue placeholder={t('products.selectPreferredSupplier') || 'Select preferred supplier'} />
                       </SelectTrigger>
                       <SelectContent className="dark:bg-slate-800">
@@ -600,47 +600,47 @@ export default function ProductFormPage() {
                     onChange={(e) => handleChange('description', e.target.value)}
                     placeholder={t('products.descriptionPlaceholder') || 'Enter product description'}
                     rows={3}
-                    className="dark:bg-slate-700 dark:text-white dark:border-slate-600 dark:placeholder:text-slate-400"
+                    className="rounded-md px-3"
                   />
                 </div>
               </CardContent>
             </Card>
 
             {/* Pricing */}
-            <Card className="dark:bg-slate-800 dark:border-slate-700">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 dark:text-white">
+              <Card className="rounded-2xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-950 shadow-xl">
+              <CardHeader className="px-6 py-4 border-b border-slate-200 dark:border-slate-800">
+                <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white">
                   <DollarSign className="h-5 w-5" />
                   {t('products.pricing') || 'Pricing'}
                 </CardTitle>
-                <CardDescription className="dark:text-slate-400">
+                <CardDescription className="text-slate-500 dark:text-slate-300">
                   {t('products.pricingDesc') || 'Cost and selling price configuration'}
                 </CardDescription>
               </CardHeader>
-              <CardContent className="grid gap-4 md:grid-cols-2">
+              <CardContent className="grid gap-4 md:grid-cols-2 px-6 py-6">
                 <div className="space-y-2">
                   <Label htmlFor="costPrice" className="dark:text-slate-200">{t('products.costPrice') || 'Cost Price'}</Label>
-                  <Input
+                    <Input
                     id="costPrice"
                     type="number"
                     step="0.01"
                     min="0"
                     value={formData.costPrice}
                     onChange={(e) => handleChange('costPrice', e.target.value)}
-                    className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                    className="h-10 rounded-md px-3"
                   />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="sellingPrice" className="dark:text-slate-200">{t('products.sellingPrice') || 'Selling Price'}</Label>
-                  <Input
+                    <Input
                     id="sellingPrice"
                     type="number"
                     step="0.01"
                     min="0"
                     value={formData.sellingPrice}
                     onChange={(e) => handleChange('sellingPrice', e.target.value)}
-                    className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                    className="h-10 rounded-md px-3"
                   />
                 </div>
 
@@ -650,7 +650,7 @@ export default function ProductFormPage() {
                     value={formData.taxCode} 
                     onValueChange={(value) => handleChange('taxCode', value)}
                   >
-                    <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
+                    <SelectTrigger className="h-10 rounded-md flex items-center px-3">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="dark:bg-slate-800">
@@ -664,31 +664,31 @@ export default function ProductFormPage() {
                 <div className="space-y-2">
                   <Label htmlFor="taxRate" className="dark:text-slate-200">{t('products.taxRate') || 'Tax Rate (%)'}</Label>
                   <Input
-                    id="taxRate"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max="100"
-                    value={formData.taxRate}
-                    onChange={(e) => handleChange('taxRate', e.target.value)}
-                    className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
-                  />
+                      id="taxRate"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="100"
+                      value={formData.taxRate}
+                      onChange={(e) => handleChange('taxRate', e.target.value)}
+                      className="h-10 rounded-md px-3"
+                    />
                 </div>
               </CardContent>
             </Card>
 
             {/* Accounting */}
-            <Card className="dark:bg-slate-800 dark:border-slate-700">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 dark:text-white">
+            <Card className="rounded-2xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-950 shadow-xl">
+              <CardHeader className="px-6 py-4 border-b border-slate-200 dark:border-slate-800">
+                <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white">
                   <Settings className="h-5 w-5" />
                   {t('products.accounting') || 'Accounting'}
                 </CardTitle>
-                <CardDescription className="dark:text-slate-400">
+                <CardDescription className="text-slate-500 dark:text-slate-300">
                   {t('products.accountingDesc') || 'Map product to inventory, COGS, and revenue accounts for accurate financial tracking'}
                 </CardDescription>
               </CardHeader>
-              <CardContent className="grid gap-4 md:grid-cols-3">
+              <CardContent className="grid gap-4 md:grid-cols-3 px-6 py-6">
                 <TooltipProvider>
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
@@ -705,7 +705,7 @@ export default function ProductFormPage() {
                       value={formData.inventory_account_id} 
                       onValueChange={(value) => handleChange('inventory_account_id', value)}
                     >
-                      <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
+                      <SelectTrigger className="h-10 rounded-md flex items-center px-3">
                         <SelectValue placeholder={t('products.selectAccount') || 'Select account'} />
                       </SelectTrigger>
                       <SelectContent className="dark:bg-slate-800">
@@ -731,7 +731,7 @@ export default function ProductFormPage() {
                       value={formData.cogs_account_id} 
                       onValueChange={(value) => handleChange('cogs_account_id', value)}
                     >
-                      <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
+                      <SelectTrigger className="h-10 rounded-md flex items-center px-3">
                         <SelectValue placeholder={t('products.selectAccount') || 'Select account'} />
                       </SelectTrigger>
                       <SelectContent className="dark:bg-slate-800">
@@ -757,7 +757,7 @@ export default function ProductFormPage() {
                       value={formData.revenue_account_id} 
                       onValueChange={(value) => handleChange('revenue_account_id', value)}
                     >
-                      <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
+                      <SelectTrigger className="h-10 rounded-md flex items-center px-3">
                         <SelectValue placeholder={t('products.selectAccount') || 'Select account'} />
                       </SelectTrigger>
                       <SelectContent className="dark:bg-slate-800">
@@ -772,17 +772,17 @@ export default function ProductFormPage() {
             </Card>
 
             {/* Inventory */}
-            <Card className="dark:bg-slate-800 dark:border-slate-700">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 dark:text-white">
+            <Card className="rounded-2xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-950 shadow-xl">
+              <CardHeader className="px-6 py-4 border-b border-slate-200 dark:border-slate-800">
+                <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white">
                   <Warehouse className="h-5 w-5" />
                   {t('products.inventory') || 'Inventory'}
                 </CardTitle>
-                <CardDescription className="dark:text-slate-400">
+                <CardDescription className="text-slate-500 dark:text-slate-300">
                   {t('products.inventoryDesc') || 'Stock and inventory settings'}
                 </CardDescription>
               </CardHeader>
-              <CardContent className="grid gap-4 md:grid-cols-3">
+              <CardContent className="grid gap-4 md:grid-cols-3 px-6 py-6">
                 <div className="space-y-2">
                   <TooltipProvider>
                     <div className="flex items-center gap-2">
@@ -817,7 +817,7 @@ export default function ProductFormPage() {
                       onValueChange={(value) => handleChange('costingMethod', value)}
                       disabled={costingMethodLocked}
                     >
-                      <SelectTrigger className={`${costingMethodLocked ? 'opacity-60 cursor-not-allowed' : ''} dark:bg-slate-700 dark:text-white dark:border-slate-600`}>
+                      <SelectTrigger className={`${costingMethodLocked ? 'opacity-60 cursor-not-allowed' : ''} h-10 rounded-md flex items-center px-3`}>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="dark:bg-slate-800">
@@ -855,7 +855,7 @@ export default function ProductFormPage() {
                       value={formData.trackingType} 
                       onValueChange={(value) => handleChange('trackingType', value)}
                     >
-                      <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
+                      <SelectTrigger className="h-10 rounded-md flex items-center px-3">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="dark:bg-slate-800">
@@ -911,7 +911,7 @@ export default function ProductFormPage() {
                       value={formData.reorderPoint}
                       onChange={(e) => handleChange('reorderPoint', e.target.value)}
                       disabled={!formData.isStockable}
-                      className="dark:bg-slate-700 dark:text-white dark:border-slate-600 dark:disabled:bg-slate-800 dark:disabled:text-slate-500"
+                      className="h-10 rounded-md px-3"
                     />
                   </TooltipProvider>
                 </div>
@@ -935,7 +935,7 @@ export default function ProductFormPage() {
                       value={formData.reorderQuantity}
                       onChange={(e) => handleChange('reorderQuantity', e.target.value)}
                       disabled={!formData.isStockable}
-                      className="dark:bg-slate-700 dark:text-white dark:border-slate-600 dark:disabled:bg-slate-800 dark:disabled:text-slate-500"
+                      className="h-10 rounded-md px-3"
                     />
                   </TooltipProvider>
                 </div>
@@ -959,7 +959,7 @@ export default function ProductFormPage() {
                       value={formData.lowStockThreshold}
                       onChange={(e) => handleChange('lowStockThreshold', e.target.value)}
                       disabled={!formData.isStockable}
-                      className="dark:bg-slate-700 dark:text-white dark:border-slate-600 dark:disabled:bg-slate-800 dark:disabled:text-slate-500"
+                      className="h-10 rounded-md px-3"
                     />
                   </TooltipProvider>
                 </div>
@@ -970,7 +970,7 @@ export default function ProductFormPage() {
                     value={formData.defaultWarehouse} 
                     onValueChange={(value) => handleChange('defaultWarehouse', value)}
                   >
-                    <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
+                    <SelectTrigger className="h-10 rounded-md flex items-center px-3">
                       <SelectValue placeholder={t('products.selectWarehouse') || 'Select warehouse'} />
                     </SelectTrigger>
                     <SelectContent className="dark:bg-slate-800">
@@ -988,7 +988,7 @@ export default function ProductFormPage() {
                     value={formData.brand}
                     onChange={(e) => handleChange('brand', e.target.value)}
                     placeholder={t('products.brandPlaceholder') || 'Enter brand name'}
-                    className="dark:bg-slate-700 dark:text-white dark:border-slate-600 dark:placeholder:text-slate-400"
+                    className="h-10 rounded-md px-3"
                   />
                 </div>
 
@@ -999,7 +999,7 @@ export default function ProductFormPage() {
                     value={formData.location}
                     onChange={(e) => handleChange('location', e.target.value)}
                     placeholder={t('products.locationPlaceholder') || 'e.g., Warehouse A, Shelf 3'}
-                    className="dark:bg-slate-700 dark:text-white dark:border-slate-600 dark:placeholder:text-slate-400"
+                    className="h-10 rounded-md px-3"
                   />
                 </div>
 
@@ -1013,18 +1013,18 @@ export default function ProductFormPage() {
                     value={formData.weight}
                     onChange={(e) => handleChange('weight', e.target.value)}
                     placeholder={tr('products.weightPlaceholder', 'Weight in kg')}
-                    className="dark:bg-slate-700 dark:text-white dark:border-slate-600 dark:placeholder:text-slate-400"
+                    className="h-10 rounded-md px-3"
                   />
                 </div>
               </CardContent>
             </Card>
 
             {/* Form Actions */}
-            <div className="flex items-center justify-end gap-4">
-              <Button type="button" variant="outline" onClick={() => navigate('/products')} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
+              <div className="flex items-center justify-end gap-4">
+              <Button type="button" variant="outline" onClick={() => navigate('/products')} className="h-10 px-4 rounded-md dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
                 {t('common.cancel') || 'Cancel'}
               </Button>
-              <Button type="submit" disabled={saving}>
+              <Button type="submit" disabled={saving} className="bg-indigo-600 hover:bg-indigo-700 text-white h-10 px-4 rounded-md">
                 {saving ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />

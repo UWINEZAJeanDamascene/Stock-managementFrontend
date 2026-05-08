@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { payrollApi, PayrollRecord } from "@/lib/api";
 import { Layout } from "../../layout/Layout";
@@ -23,13 +23,16 @@ import {
   Download,
   Calculator,
   BookOpen,
+  TrendingUp,
 } from "lucide-react";
+import EmployeeSelect from "@/app/components/EmployeeSelect";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Badge } from "@/app/components/ui/badge";
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/app/components/ui/card";
@@ -86,6 +89,8 @@ export default function PayrollListPage() {
     totalNetPay: 0,
     totalPAYE: 0,
     totalRSSB: 0,
+    totalRssbEmployee: 0,
+    totalRssbEmployer: 0,
     employeeCount: 0,
   });
   const [searchQuery, setSearchQuery] = useState("");
@@ -98,13 +103,17 @@ export default function PayrollListPage() {
   const [limit, setLimit] = useState(20);
 
   // Filters
-  const [filterMonth, setFilterMonth] = useState<string>("");
-  const [filterYear, setFilterYear] = useState<string>("");
+  const currentMonth = String(new Date().getMonth() + 1);
+  const currentYear = String(new Date().getFullYear());
+  const [filterMonth, setFilterMonth] = useState<string>(currentMonth);
+  const [filterYear, setFilterYear] = useState<string>(currentYear);
   const [filterStatus, setFilterStatus] = useState<string>("");
 
   // Dialogs
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
+  const [createManualMode, setCreateManualMode] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<PayrollRecord | null>(
     null,
   );
@@ -127,6 +136,14 @@ export default function PayrollListPage() {
     transportAllowance: 0,
     housingAllowance: 0,
     otherAllowances: 0,
+    overtime: 0,
+    bonuses: 0,
+    commissions: 0,
+    benefitsInKind: 0,
+    healthInsurance: 0,
+    loanDeductions: 0,
+    otherDeductions: 0,
+    occupationalHazardRate: 2.0,
     month: new Date().getMonth() + 1,
     year: new Date().getFullYear(),
     notes: "",
@@ -141,6 +158,7 @@ export default function PayrollListPage() {
     rssbEmployerPension: 0,
     rssbEmployerMaternity: 0,
     occupationalHazard: 0,
+    occupationalHazardRate: 2.0,
     totalDeductions: 0,
     netPay: 0,
     totalEmployerCost: 0,
@@ -152,35 +170,44 @@ export default function PayrollListPage() {
     const transport = createForm.transportAllowance || 0;
     const housing = createForm.housingAllowance || 0;
     const other = createForm.otherAllowances || 0;
-    const gross = basic + transport + housing + other;
+    const overtime = createForm.overtime || 0;
+    const bonuses = createForm.bonuses || 0;
+    const commissions = createForm.commissions || 0;
+    const benefitsInKind = createForm.benefitsInKind || 0;
+    const healthInsurance = createForm.healthInsurance || 0;
+    const loanDeductions = createForm.loanDeductions || 0;
+    const otherDeductions = createForm.otherDeductions || 0;
+    const gross = basic + transport + housing + other + overtime + bonuses + commissions + benefitsInKind;
 
     // Rwanda PAYE 2025 brackets
     let paye = 0;
-    if (gross > 200000) {
-      paye = 4000 + 20000 + (gross - 200000) * 0.3;
-    } else if (gross > 100000) {
-      paye = 4000 + (gross - 100000) * 0.2;
-    } else if (gross > 60000) {
-      paye = (gross - 60000) * 0.1;
-    }
+    if (gross <= 60000) paye = 0;
+    else if (gross <= 100000) paye = (gross - 60000) * 0.10;
+    else if (gross <= 200000) paye = 4000 + (gross - 100000) * 0.20;
+    else paye = 4000 + 20000 + (gross - 200000) * 0.30;
     paye = Math.round(paye * 100) / 100;
 
-    const rssbEmployeePension = Math.round(gross * 0.06 * 100) / 100;
-    const rssbEmployeeMaternity = Math.round(gross * 0.003 * 100) / 100;
-    const rssbEmployerPension = Math.round(gross * 0.06 * 100) / 100;
-    const rssbEmployerMaternity = Math.round(gross * 0.003 * 100) / 100;
-    const occupationalHazard = Math.round(gross * 0.02 * 100) / 100;
+    // Pension contribution base: Basic + Transport only (Rwanda 2025)
+    const pensionBase = basic + transport;
 
-    const totalDeductions = paye + rssbEmployeePension + rssbEmployeeMaternity;
+    // RSSB Employee contributions
+    const rssbEmployeePension = Math.round(pensionBase * 0.06 * 100) / 100;
+    const rssbEmployeeMaternity = Math.round(pensionBase * 0.003 * 100) / 100;
+    const rssbPensionTotal = rssbEmployeePension + rssbEmployeeMaternity;
+
+    // Total deductions
+    const totalDeductions = paye + rssbPensionTotal + healthInsurance + loanDeductions + otherDeductions;
     const netPay = Math.round((gross - totalDeductions) * 100) / 100;
-    const totalEmployerCost =
-      Math.round(
-        (gross +
-          rssbEmployerPension +
-          rssbEmployerMaternity +
-          occupationalHazard) *
-          100,
-      ) / 100;
+
+    // RSSB Employer contributions
+    const rssbEmployerPension = Math.round(pensionBase * 0.06 * 100) / 100;
+    const rssbEmployerMaternity = Math.round(pensionBase * 0.003 * 100) / 100;
+    const hazardRate = createForm.occupationalHazardRate || 2.0;
+    const occupationalHazard = Math.round(gross * (hazardRate / 100) * 100) / 100;
+
+    const totalEmployerCost = Math.round(
+      (gross + rssbEmployerPension + rssbEmployerMaternity + occupationalHazard) * 100
+    ) / 100;
 
     setCalculations({
       grossSalary: gross,
@@ -190,6 +217,7 @@ export default function PayrollListPage() {
       rssbEmployerPension,
       rssbEmployerMaternity,
       occupationalHazard,
+      occupationalHazardRate: hazardRate,
       totalDeductions,
       netPay,
       totalEmployerCost,
@@ -199,6 +227,14 @@ export default function PayrollListPage() {
     createForm.transportAllowance,
     createForm.housingAllowance,
     createForm.otherAllowances,
+    createForm.overtime,
+    createForm.bonuses,
+    createForm.commissions,
+    createForm.benefitsInKind,
+    createForm.healthInsurance,
+    createForm.loanDeductions,
+    createForm.otherDeductions,
+    createForm.occupationalHazardRate,
   ]);
 
   const fetchRecords = useCallback(async () => {
@@ -220,7 +256,12 @@ export default function PayrollListPage() {
           setTotalPages(response.pagination.pages || 1);
         }
         if (response.summary) {
-          setSummary(response.summary);
+          setSummary(prev => ({
+            ...prev,
+            ...response.summary,
+            totalRssbEmployee: (response.summary as any).totalRssbEmployee ?? (response.summary.totalRSSB ? response.summary.totalRSSB * 0.5 : 0),
+            totalRssbEmployer: (response.summary as any).totalRssbEmployer ?? (response.summary.totalRSSB ? response.summary.totalRSSB * 0.5 : 0),
+          }));
         }
       }
     } catch (error) {
@@ -244,6 +285,55 @@ export default function PayrollListPage() {
   }, [fetchRecords]);
 
   const handleCreate = async () => {
+    if (selectedEmployeeId && !createManualMode) {
+      // Employee master mode: send full salary so backend can use it as fallback
+      // when the employee has no SalaryHistory record
+      setSubmitting(true);
+      try {
+        const salaryPayload = {
+          basicSalary: createForm.basicSalary || 0,
+          transportAllowance: createForm.transportAllowance || 0,
+          housingAllowance: createForm.housingAllowance || 0,
+          otherAllowances: createForm.otherAllowances || 0,
+          overtime: createForm.overtime || 0,
+          bonuses: createForm.bonuses || 0,
+          commissions: createForm.commissions || 0,
+          benefitsInKind: createForm.benefitsInKind || 0,
+          healthInsurance: createForm.healthInsurance || 0,
+          loanDeductions: createForm.loanDeductions || 0,
+          otherDeductions: createForm.otherDeductions || 0,
+          occupationalHazardRate: createForm.occupationalHazardRate || 2,
+        };
+        const overrides: any = {};
+        if (createForm.overtime > 0) overrides.overtime = createForm.overtime;
+        if (createForm.bonuses > 0) overrides.bonuses = createForm.bonuses;
+        if (createForm.commissions > 0) overrides.commissions = createForm.commissions;
+        if (createForm.benefitsInKind > 0) overrides.benefitsInKind = createForm.benefitsInKind;
+        if (createForm.healthInsurance > 0) overrides.healthInsurance = createForm.healthInsurance;
+        if (createForm.loanDeductions > 0) overrides.loanDeductions = createForm.loanDeductions;
+        if (createForm.otherDeductions > 0) overrides.otherDeductions = createForm.otherDeductions;
+        const response = await payrollApi.create({
+          employee_id: selectedEmployeeId,
+          period: { month: createForm.month, year: createForm.year },
+          salary: salaryPayload,
+          ...(Object.keys(overrides).length > 0 ? { salaryOverrides: overrides } : {}),
+          notes: createForm.notes || undefined,
+        });
+        if (response.success) {
+          toast.success(t("payroll.messages.created"));
+          setShowCreateDialog(false);
+          resetCreateForm();
+          fetchRecords();
+        }
+      } catch (error: any) {
+        console.error("[PayrollListPage] Create error:", error);
+        toast.error(error?.message || t("payroll.messages.createFailed"));
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
+
     if (
       !createForm.firstName ||
       !createForm.lastName ||
@@ -277,6 +367,15 @@ export default function PayrollListPage() {
           transportAllowance: createForm.transportAllowance,
           housingAllowance: createForm.housingAllowance,
           otherAllowances: createForm.otherAllowances,
+          overtime: createForm.overtime,
+          bonuses: createForm.bonuses,
+          commissions: createForm.commissions,
+          benefitsInKind: createForm.benefitsInKind,
+        },
+        deductions: {
+          healthInsurance: createForm.healthInsurance,
+          loanDeductions: createForm.loanDeductions,
+          otherDeductions: createForm.otherDeductions,
         },
         period: { month: createForm.month, year: createForm.year },
         notes: createForm.notes || undefined,
@@ -438,9 +537,53 @@ export default function PayrollListPage() {
       transportAllowance: 0,
       housingAllowance: 0,
       otherAllowances: 0,
+      overtime: 0,
+      bonuses: 0,
+      commissions: 0,
+      benefitsInKind: 0,
+      healthInsurance: 0,
+      loanDeductions: 0,
+      otherDeductions: 0,
+      occupationalHazardRate: 2.0,
       month: new Date().getMonth() + 1,
       year: new Date().getFullYear(),
       notes: "",
+    });
+    setSelectedEmployeeId(null);
+    setCreateManualMode(false);
+  };
+
+  const handleEmployeeSelect = (emp: any) => {
+    if (!emp) {
+      setSelectedEmployeeId(null);
+      return;
+    }
+    setSelectedEmployeeId(emp._id);
+    setCreateForm({
+      ...createForm,
+      employeeId: emp.employeeId || "",
+      firstName: emp.firstName || "",
+      lastName: emp.lastName || "",
+      email: emp.email || "",
+      phone: emp.phone || "",
+      department: emp.department || "",
+      position: emp.position || "",
+      nationalId: emp.nationalId || "",
+      bankName: emp.bankName || "",
+      bankAccount: emp.bankAccount || "",
+      employmentType: emp.employmentType || "full-time",
+      basicSalary: emp.currentSalary?.basicSalary || 0,
+      transportAllowance: emp.currentSalary?.transportAllowance || 0,
+      housingAllowance: emp.currentSalary?.housingAllowance || 0,
+      otherAllowances: emp.currentSalary?.otherAllowances || 0,
+      overtime: 0,
+      bonuses: 0,
+      commissions: 0,
+      benefitsInKind: 0,
+      healthInsurance: 0,
+      loanDeductions: 0,
+      otherDeductions: 0,
+      occupationalHazardRate: 2.0,
     });
   };
 
@@ -488,8 +631,8 @@ export default function PayrollListPage() {
   const canEdit = (record: PayrollRecord) => record.record_status === "draft";
   const canDelete = (record: PayrollRecord) => record.record_status === "draft";
 
-  const currentYear = new Date().getFullYear();
-  const yearOptions = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i);
+  const currentYearNum = new Date().getFullYear();
+  const yearOptions = Array.from({ length: 5 }, (_, i) => currentYearNum - 2 + i);
 
   return (
     <Layout>
@@ -509,12 +652,31 @@ export default function PayrollListPage() {
           </div>
           <div className="flex gap-2 flex-wrap">
             <Button
-              variant="outline"
+              variant="default"
+              onClick={() => navigate("/payroll-runs/new")}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              <Users className="mr-2 h-4 w-4" />
+              Generate Payroll Run
+            </Button>
+            <Button variant="outline" onClick={() => navigate("/payroll-runs")}>
+              <Play className="mr-2 h-4 w-4" />
+              Payroll Runs
+            </Button>
+            <Button onClick={() => setShowCreateDialog(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              New Record
+            </Button>
+            <Button variant="outline" onClick={handleExport}>
+              <Download className="mr-2 h-4 w-4" />
+              Export
+            </Button>
+            <Button
+              variant="ghost"
               size="sm"
               onClick={handleBackfill}
               disabled={backfilling}
-              title="Create missing journal entries for all finalised/paid payroll records"
-              className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
+              className="text-muted-foreground"
             >
               {backfilling ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -523,85 +685,58 @@ export default function PayrollListPage() {
               )}
               Backfill Journals
             </Button>
-            <Button variant="outline" onClick={() => navigate("/payroll-runs")} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
-              <Play className="mr-2 h-4 w-4" />
-              {t("payroll.payrollRuns")}
-            </Button>
-            <Button variant="outline" onClick={handleExport} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
-              <Download className="mr-2 h-4 w-4" />
-              {t("common.export")}
-            </Button>
-            <Button onClick={() => setShowCreateDialog(true)} className="dark:bg-primary dark:text-primary-foreground">
-              <Plus className="mr-2 h-4 w-4" />
-              {t("payroll.newRecord")}
-            </Button>
           </div>
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          <Card className="dark:bg-slate-800">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+          <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center gap-2 dark:text-slate-200">
-                <Users className="h-4 w-4 text-muted-foreground dark:text-slate-400" />
-                {t("payroll.summary.totalEmployees")}
+              <CardDescription>Employees</CardDescription>
+              <CardTitle className="text-2xl">
+                {summary.employeeCount}
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold dark:text-white">{summary.employeeCount}</div>
-            </CardContent>
           </Card>
-          <Card className="dark:bg-slate-800">
+          <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center gap-2 dark:text-slate-200">
-                <DollarSign className="h-4 w-4 text-muted-foreground dark:text-slate-400" />
-                {t("payroll.summary.totalGross")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold dark:text-white">
+              <CardDescription>Total Gross</CardDescription>
+              <CardTitle className="text-xl">
                 {formatCurrency(summary.totalGrossSalary)}
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="dark:bg-slate-800">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center gap-2 dark:text-slate-200">
-                <TrendingDown className="h-4 w-4 text-red-500 dark:text-red-400" />
-                {t("payroll.summary.totalPAYE")}
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-red-600 dark:text-red-400">
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>PAYE</CardDescription>
+              <CardTitle className="text-xl text-red-600">
                 {formatCurrency(summary.totalPAYE)}
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="dark:bg-slate-800">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center gap-2 dark:text-slate-200">
-                <TrendingDown className="h-4 w-4 text-orange-500 dark:text-orange-400" />
-                {t("payroll.summary.totalRSSB")}
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                {formatCurrency(summary.totalRSSB)}
-              </div>
-            </CardContent>
           </Card>
-          <Card className="dark:bg-slate-800">
+          <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center gap-2 dark:text-slate-200">
-                <DollarSign className="h-4 w-4 text-green-500 dark:text-green-400" />
-                {t("payroll.summary.totalNet")}
+              <CardDescription>RSSB Employee</CardDescription>
+              <CardTitle className="text-xl text-orange-600">
+                {formatCurrency(summary.totalRssbEmployee)}
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>RSSB Employer</CardDescription>
+              <CardTitle className="text-xl text-blue-600">
+                {formatCurrency(summary.totalRssbEmployer)}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>Total Net</CardDescription>
+              <CardTitle className="text-xl text-green-600">
                 {formatCurrency(summary.totalNetPay)}
-              </div>
-            </CardContent>
+              </CardTitle>
+            </CardHeader>
           </Card>
         </div>
 
@@ -732,15 +867,31 @@ export default function PayrollListPage() {
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground dark:text-slate-400" />
               </div>
             ) : records.length === 0 ? (
-              <div className="flex flex-col items-center py-12">
-                <AlertCircle className="h-12 w-12 mb-4 text-muted-foreground dark:text-slate-400" />
-                <p className="text-muted-foreground dark:text-slate-400 mb-4">
+              <div className="text-center py-12">
+                <div className="mb-4">
+                  <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">
                   No payroll records found
+                </h3>
+                <p className="text-muted-foreground mb-4">
+                  {filterMonth || filterYear || filterStatus
+                    ? "Try adjusting your filters."
+                    : "Generate a payroll run for all employees, or create an individual record."}
                 </p>
-                <Button onClick={() => setShowCreateDialog(true)} className="dark:bg-primary dark:text-primary-foreground">
-                  <Plus className="mr-2 h-4 w-4" />
-                  {t("payroll.newRecord")}
-                </Button>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <Button
+                    onClick={() => navigate("/payroll-runs/new")}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    <Users className="mr-2 h-4 w-4" />
+                    Generate Payroll Run
+                  </Button>
+                  <Button variant="outline" onClick={() => setShowCreateDialog(true)}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    New Individual Record
+                  </Button>
+                </div>
               </div>
             ) : (
               <>
@@ -922,21 +1073,59 @@ export default function PayrollListPage() {
         </Card>
 
         {/* Create Dialog */}
-        <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <Dialog open={showCreateDialog} onOpenChange={(open) => { if (!open) resetCreateForm(); setShowCreateDialog(open); }}>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto dark:bg-slate-800">
             <DialogHeader>
               <DialogTitle className="dark:text-white">{t("payroll.newRecord")}</DialogTitle>
               <DialogDescription className="dark:text-slate-400">
-                Create a new payroll record. Calculated fields update
-                automatically.
+                Create a new payroll record. Select an employee from Employee Master or enter details manually.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-6 py-4">
+              {/* Employee Master Select */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-semibold flex items-center gap-2 dark:text-white">
+                    <Users className="h-4 w-4" />{" "}
+                    Select from Employee Master
+                  </h3>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setCreateManualMode(!createManualMode);
+                      if (!createManualMode) setSelectedEmployeeId(null);
+                    }}
+                    className="text-xs dark:text-slate-300"
+                  >
+                    {createManualMode ? "← Back to Employee Select" : "Enter manually instead"}
+                  </Button>
+                </div>
+                {!createManualMode && (
+                  <EmployeeSelect
+                    value={selectedEmployeeId || undefined}
+                    onChange={handleEmployeeSelect}
+                    status="active"
+                  />
+                )}
+                {selectedEmployeeId && !createManualMode && (
+                  <div className="mt-2 flex items-center gap-2 rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300">
+                    <CheckCircle className="h-4 w-4" />
+                    <span>
+                      Employee data auto-filled from master record. Salary will use current active salary unless overridden below.
+                    </span>
+                  </div>
+                )}
+              </div>
+
               {/* Employee Information */}
               <div>
                 <h3 className="text-sm font-semibold mb-3 flex items-center gap-2 dark:text-white">
                   <Users className="h-4 w-4" />{" "}
                   {t("payroll.form.employeeInformation")}
+                  {selectedEmployeeId && !createManualMode && (
+                    <Badge variant="outline" className="ml-2 text-xs font-normal dark:border-slate-600 dark:text-slate-300">Read-only</Badge>
+                  )}
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   <div className="space-y-1">
@@ -949,6 +1138,7 @@ export default function PayrollListPage() {
                           firstName: e.target.value,
                         })
                       }
+                      disabled={!!selectedEmployeeId && !createManualMode}
                       className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                     />
                   </div>
@@ -962,6 +1152,7 @@ export default function PayrollListPage() {
                           lastName: e.target.value,
                         })
                       }
+                      disabled={!!selectedEmployeeId && !createManualMode}
                       className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                     />
                   </div>
@@ -975,6 +1166,7 @@ export default function PayrollListPage() {
                           employeeId: e.target.value,
                         })
                       }
+                      disabled={!!selectedEmployeeId && !createManualMode}
                       className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                     />
                   </div>
@@ -1208,6 +1400,106 @@ export default function PayrollListPage() {
                           otherAllowances: parseFloat(e.target.value) || 0,
                         })
                       }
+                      className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Additional Income (Rwanda-specific) */}
+              <div>
+                <h3 className="text-sm font-semibold mb-3 flex items-center gap-2 dark:text-white">
+                  <TrendingUp className="h-4 w-4" /> Additional Income
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="space-y-1">
+                    <Label className="dark:text-slate-200">Overtime</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={createForm.overtime || ""}
+                      onChange={(e) => setCreateForm({ ...createForm, overtime: parseFloat(e.target.value) || 0 })}
+                      className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="dark:text-slate-200">Bonuses</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={createForm.bonuses || ""}
+                      onChange={(e) => setCreateForm({ ...createForm, bonuses: parseFloat(e.target.value) || 0 })}
+                      className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="dark:text-slate-200">Commissions</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={createForm.commissions || ""}
+                      onChange={(e) => setCreateForm({ ...createForm, commissions: parseFloat(e.target.value) || 0 })}
+                      className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="dark:text-slate-200">Benefits in Kind (Taxable)</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={createForm.benefitsInKind || ""}
+                      onChange={(e) => setCreateForm({ ...createForm, benefitsInKind: parseFloat(e.target.value) || 0 })}
+                      className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Additional Deductions (Rwanda-specific) */}
+              <div>
+                <h3 className="text-sm font-semibold mb-3 flex items-center gap-2 dark:text-white">
+                  <TrendingDown className="h-4 w-4" /> Other Deductions
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="space-y-1">
+                    <Label className="dark:text-slate-200">Health Insurance</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={createForm.healthInsurance || ""}
+                      onChange={(e) => setCreateForm({ ...createForm, healthInsurance: parseFloat(e.target.value) || 0 })}
+                      className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="dark:text-slate-200">Loan Repayments</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={createForm.loanDeductions || ""}
+                      onChange={(e) => setCreateForm({ ...createForm, loanDeductions: parseFloat(e.target.value) || 0 })}
+                      className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="dark:text-slate-200">Other Deductions</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={createForm.otherDeductions || ""}
+                      onChange={(e) => setCreateForm({ ...createForm, otherDeductions: parseFloat(e.target.value) || 0 })}
+                      className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="dark:text-slate-200">Occ. Hazard Rate (%)</Label>
+                    <Input
+                      type="number"
+                      min="0.2"
+                      max="2.0"
+                      step="0.1"
+                      value={createForm.occupationalHazardRate || 2.0}
+                      onChange={(e) => setCreateForm({ ...createForm, occupationalHazardRate: parseFloat(e.target.value) || 2.0 })}
                       className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                     />
                   </div>

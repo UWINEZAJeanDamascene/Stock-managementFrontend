@@ -446,6 +446,7 @@ export default function ChartOfAccountsPage() {
         </div>
 
         {isExpanded && (
+          <div className="overflow-x-auto">
           <Table className="mt-2">
             <TableHeader>
               <TableRow className="dark:bg-slate-700/50">
@@ -461,6 +462,7 @@ export default function ChartOfAccountsPage() {
             </TableHeader>
             <TableBody className="dark:bg-slate-800">{sectionAccounts.map(renderAccountRow)}</TableBody>
           </Table>
+          </div>
         )}
       </div>
     );
@@ -470,7 +472,7 @@ export default function ChartOfAccountsPage() {
     <Layout>
       <div className="container mx-auto py-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <div className="flex items-center gap-4">
             <BookOpen className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
             <div>
@@ -480,7 +482,7 @@ export default function ChartOfAccountsPage() {
               </p>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
               variant="outline"
               onClick={handleSyncPreview}
@@ -519,7 +521,7 @@ export default function ChartOfAccountsPage() {
                 value={filterType}
                 onValueChange={(v) => setFilterType(v === "all" ? "" : v)}
               >
-                <SelectTrigger className="w-48 dark:bg-slate-700 dark:text-white dark:border-slate-600">
+                <SelectTrigger className="w-full sm:w-48 dark:bg-slate-700 dark:text-white dark:border-slate-600">
                   <SelectValue placeholder="All Types" />
                 </SelectTrigger>
                 <SelectContent className="dark:bg-slate-800">
@@ -593,7 +595,7 @@ export default function ChartOfAccountsPage() {
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="dark:text-slate-200">Code *</Label>
                   <Input
@@ -644,7 +646,7 @@ export default function ChartOfAccountsPage() {
                   className="dark:bg-slate-700 dark:text-white dark:border-slate-600 dark:placeholder:text-slate-400"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="dark:text-slate-200">Subtype</Label>
                   <Input
@@ -721,7 +723,7 @@ export default function ChartOfAccountsPage() {
             </DialogHeader>
             {selectedAccount && (
               <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="dark:text-slate-200">Code</Label>
                     <Input
@@ -749,7 +751,7 @@ export default function ChartOfAccountsPage() {
                     className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="dark:text-slate-200">Subtype</Label>
                     <Input

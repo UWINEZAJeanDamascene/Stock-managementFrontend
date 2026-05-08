@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router";
+import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   payrollRunApi,
@@ -23,6 +23,10 @@ import {
   AlertCircle,
   Calendar,
   Info,
+  Download,
+  XCircle,
+  AlertTriangle,
+  Plus,
 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
@@ -31,6 +35,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  CardDescription,
 } from "@/app/components/ui/card";
 import {
   Dialog,
@@ -58,10 +63,13 @@ import {
   TableRow,
 } from "@/app/components/ui/table";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function PayrollRunDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const isCreateMode = !id;
   const { t } = useTranslation();
+  const { hasPermission, hasAnyPermission } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [run, setRun] = useState<PayrollRun | null>(null);
@@ -78,6 +86,11 @@ export default function PayrollRunDetailPage() {
   // Reverse dialog
   const [showReverseDialog, setShowReverseDialog] = useState(false);
   const [reversalReason, setReversalReason] = useState("");
+  const [showRemitPayeDialog, setShowRemitPayeDialog] = useState(false);
+  const [showRemitRssbDialog, setShowRemitRssbDialog] = useState(false);
+  const [remitForm, setRemitForm] = useState({ remitted_date: "", reference_no: "", amount: "" });
+  const [showBankTransferDialog, setShowBankTransferDialog] = useState(false);
+  const [bankTransferLoading, setBankTransferLoading] = useState(false);
 
   const [chartAccounts, setChartAccounts] = useState<
     Array<{ _id: string; code: string; name: string; type: string }>
@@ -114,7 +127,7 @@ export default function PayrollRunDetailPage() {
   });
 
   useEffect(() => {
-    if (id) {
+    if (id && !isCreateMode) {
       fetchRun();
     } else {
       setLoading(false);
@@ -228,6 +241,77 @@ export default function PayrollRunDetailPage() {
       }
     } catch (error: any) {
       toast.error(error?.message || t("payroll.messages.runPostFailed"));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleRemitPaye = async () => {
+    try {
+      setSubmitting(true);
+      await payrollRunApi.remitPaye(id!, {
+        remitted_date: remitForm.remitted_date || undefined,
+        reference_no: remitForm.reference_no || undefined,
+        amount: remitForm.amount ? parseFloat(remitForm.amount) : undefined,
+      });
+      toast.success("PAYE remitted successfully");
+      setShowRemitPayeDialog(false);
+      setRemitForm({ remitted_date: "", reference_no: "", amount: "" });
+      fetchRun();
+    } catch (error) {
+      toast.error("Failed to remit PAYE");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleRemitRssb = async () => {
+    try {
+      setSubmitting(true);
+      await payrollRunApi.remitRssb(id!, {
+        remitted_date: remitForm.remitted_date || undefined,
+        reference_no: remitForm.reference_no || undefined,
+        amount: remitForm.amount ? parseFloat(remitForm.amount) : undefined,
+      });
+      toast.success("RSSB contributions remitted successfully");
+      setShowRemitRssbDialog(false);
+      setRemitForm({ remitted_date: "", reference_no: "", amount: "" });
+      fetchRun();
+    } catch (error) {
+      toast.error("Failed to remit RSSB");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleBankTransfer = async () => {
+    try {
+      setSubmitting(true);
+      const response = await payrollRunApi.generateBankTransfer(id!);
+      const data = response.data;
+      // Generate CSV content
+      const headers = ["Employee Name", "Employee ID", "Bank Name", "Bank Account", "Net Pay", "Currency"];
+      const rows = data.records.map((r) => [
+        r.employee_name,
+        r.employee_id,
+        r.bank_name,
+        r.bank_account,
+        r.net_pay.toString(),
+        r.currency,
+      ]);
+      const csvContent = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+      const blob = new Blob([csvContent], { type: "text/csv" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `bank-transfer-${data.reference_no}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      toast.success("Bank transfer file generated");
+    } catch (error) {
+      toast.error("Failed to generate bank transfer file");
     } finally {
       setSubmitting(false);
     }
@@ -355,7 +439,7 @@ export default function PayrollRunDetailPage() {
       minimumFractionDigits: 0,
     }).format(amount || 0);
 
-  const formatDate = (date: string) => {
+  const formatDate = (date: string | null | undefined) => {
     if (!date) return "-";
     return new Date(date).toLocaleDateString("en-US", {
       year: "numeric",
@@ -440,23 +524,22 @@ export default function PayrollRunDetailPage() {
                   Loading available periods…
                 </div>
               ) : availablePeriods.length === 0 ? (
-                <div className="flex items-start gap-3 p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700">
-                  <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-medium text-amber-800 dark:text-amber-300">
-                      No finalised payroll records found
-                    </p>
-                    <p className="text-sm text-amber-700 dark:text-amber-400 mt-1">
-                      Before creating a payroll run, go to the{" "}
-                      <button
-                        className="underline font-medium"
-                        onClick={() => navigate("/payroll")}
-                      >
-                        Payroll page
-                      </button>{" "}
-                      and finalise at least one employee payroll record.
-                    </p>
-                  </div>
+                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-8 text-center max-w-md mx-auto">
+                  <AlertTriangle className="h-8 w-8 text-amber-500 mx-auto mb-3" />
+                  <h3 className="text-lg font-semibold text-amber-800 dark:text-amber-200 mb-2">
+                    No Payroll Records Available
+                  </h3>
+                  <p className="text-sm text-amber-700 dark:text-amber-300 mb-4">
+                    To generate a payroll run, you first need to create and finalise individual payroll records for your employees. A payroll run groups these existing records together.
+                  </p>
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate("/payroll")}
+                    className="border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/40"
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Go to Payroll Page — Create Records
+                  </Button>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -1008,7 +1091,7 @@ export default function PayrollRunDetailPage() {
                       {formatCurrency(line.other_deductions)}
                     </TableCell>
                     <TableCell className="text-right text-blue-600 dark:text-blue-400">
-                      {formatCurrency(line.rssb_employer)}
+                      {formatCurrency(line.rssb_employer_total)}
                     </TableCell>
                     <TableCell className="text-right font-semibold text-green-600 dark:text-green-400">
                       {formatCurrency(line.net_pay)}
@@ -1029,7 +1112,7 @@ export default function PayrollRunDetailPage() {
                   </TableCell>
                   <TableCell className="text-right text-blue-600 dark:text-blue-400">
                     {formatCurrency(
-                      run.lines.reduce((s, l) => s + (l.rssb_employer || 0), 0),
+                      run.lines.reduce((s, l) => s + (l.rssb_employer_total || 0), 0),
                     )}
                   </TableCell>
                   <TableCell className="text-right text-green-600 dark:text-green-400">
@@ -1040,6 +1123,98 @@ export default function PayrollRunDetailPage() {
             </Table>
           </CardContent>
         </Card>
+
+        {/* Remittance Tracking */}
+        {run.status === "posted" && (
+          <Card className="dark:bg-slate-800">
+            <CardHeader>
+              <CardTitle className="text-base font-medium dark:text-white">Remittance & Compliance</CardTitle>
+              <CardDescription className="dark:text-slate-400">
+                Track PAYE and RSSB remittances to RRA / RSSB
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* PAYE Remittance */}
+                <div className="border rounded-lg p-4 space-y-3 dark:border-slate-700">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Badge variant={run.remittance?.paye?.remitted ? "default" : "secondary"}>
+                        {run.remittance?.paye?.remitted ? "Remitted" : "Pending"}
+                      </Badge>
+                      <span className="font-semibold dark:text-white">PAYE</span>
+                    </div>
+                    {run.remittance?.paye?.remitted ? (
+                      <CheckCircle className="h-5 w-5 text-green-500" />
+                    ) : (
+                      <XCircle className="h-5 w-5 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div className="text-sm space-y-1">
+                    <p className="text-muted-foreground">Amount: {formatCurrency(run.remittance?.paye?.amount || run.total_tax)}</p>
+                    {run.remittance?.paye?.remitted && (
+                      <>
+                        <p className="text-muted-foreground">Date: {formatDate(run.remittance.paye.remitted_date)}</p>
+                        <p className="text-muted-foreground">Ref: {run.remittance.paye.reference_no || "-"}</p>
+                      </>
+                    )}
+                  </div>
+                  {!run.remittance?.paye?.remitted && hasPermission("admin") && (
+                    <Button variant="outline" size="sm" className="w-full" onClick={() => setShowRemitPayeDialog(true)}>
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                      Mark PAYE Remitted
+                    </Button>
+                  )}
+                </div>
+
+                {/* RSSB Remittance */}
+                <div className="border rounded-lg p-4 space-y-3 dark:border-slate-700">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Badge variant={run.remittance?.rssb?.remitted ? "default" : "secondary"}>
+                        {run.remittance?.rssb?.remitted ? "Remitted" : "Pending"}
+                      </Badge>
+                      <span className="font-semibold dark:text-white">RSSB</span>
+                    </div>
+                    {run.remittance?.rssb?.remitted ? (
+                      <CheckCircle className="h-5 w-5 text-green-500" />
+                    ) : (
+                      <XCircle className="h-5 w-5 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div className="text-sm space-y-1">
+                    <p className="text-muted-foreground">
+                      Amount: {formatCurrency(
+                        run.remittance?.rssb?.amount ||
+                        run.lines.reduce((s, l) => s + (l.rssb_employee_total || 0) + (l.rssb_employer_total || 0), 0)
+                      )}
+                    </p>
+                    {run.remittance?.rssb?.remitted && (
+                      <>
+                        <p className="text-muted-foreground">Date: {formatDate(run.remittance.rssb.remitted_date)}</p>
+                        <p className="text-muted-foreground">Ref: {run.remittance.rssb.reference_no || "-"}</p>
+                      </>
+                    )}
+                  </div>
+                  {!run.remittance?.rssb?.remitted && hasPermission("admin") && (
+                    <Button variant="outline" size="sm" className="w-full" onClick={() => setShowRemitRssbDialog(true)}>
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                      Mark RSSB Remitted
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              {/* Bank Transfer Export */}
+              {hasAnyPermission(["admin", "manager"]) && (
+                <Button variant="secondary" className="w-full" onClick={handleBankTransfer} disabled={submitting}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Export Bank Transfer File (CSV)
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Notes */}
         {run.notes && (
@@ -1225,6 +1400,113 @@ export default function PayrollRunDetailPage() {
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
                 {t("payroll.run.reverseRun")}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Remit PAYE Dialog */}
+        <Dialog open={showRemitPayeDialog} onOpenChange={setShowRemitPayeDialog}>
+          <DialogContent className="dark:bg-slate-800 dark:border-slate-700">
+            <DialogHeader>
+              <DialogTitle className="dark:text-white">Mark PAYE as Remitted</DialogTitle>
+              <DialogDescription className="dark:text-slate-400">
+                Record PAYE remittance to RRA for this payroll run.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-1">
+                <Label className="dark:text-slate-200">Remittance Date</Label>
+                <Input
+                  type="date"
+                  value={remitForm.remitted_date}
+                  onChange={(e) => setRemitForm({ ...remitForm, remitted_date: e.target.value })}
+                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="dark:text-slate-200">Reference / Receipt No</Label>
+                <Input
+                  placeholder="e.g. RRA-123456"
+                  value={remitForm.reference_no}
+                  onChange={(e) => setRemitForm({ ...remitForm, reference_no: e.target.value })}
+                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="dark:text-slate-200">Amount (RWF)</Label>
+                <Input
+                  type="number"
+                  placeholder={run?.total_tax?.toString()}
+                  value={remitForm.amount}
+                  onChange={(e) => setRemitForm({ ...remitForm, amount: e.target.value })}
+                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                />
+                <p className="text-xs text-muted-foreground">Leave blank to use run total: {formatCurrency(run?.total_tax)}</p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowRemitPayeDialog(false)}>
+                {t("common.cancel")}
+              </Button>
+              <Button onClick={handleRemitPaye} disabled={submitting}>
+                {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Confirm Remittance
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Remit RSSB Dialog */}
+        <Dialog open={showRemitRssbDialog} onOpenChange={setShowRemitRssbDialog}>
+          <DialogContent className="dark:bg-slate-800 dark:border-slate-700">
+            <DialogHeader>
+              <DialogTitle className="dark:text-white">Mark RSSB as Remitted</DialogTitle>
+              <DialogDescription className="dark:text-slate-400">
+                Record RSSB contribution remittance for this payroll run.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-1">
+                <Label className="dark:text-slate-200">Remittance Date</Label>
+                <Input
+                  type="date"
+                  value={remitForm.remitted_date}
+                  onChange={(e) => setRemitForm({ ...remitForm, remitted_date: e.target.value })}
+                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="dark:text-slate-200">Reference / Receipt No</Label>
+                <Input
+                  placeholder="e.g. RSSB-789012"
+                  value={remitForm.reference_no}
+                  onChange={(e) => setRemitForm({ ...remitForm, reference_no: e.target.value })}
+                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="dark:text-slate-200">Amount (RWF)</Label>
+                <Input
+                  type="number"
+                  value={remitForm.amount}
+                  onChange={(e) => setRemitForm({ ...remitForm, amount: e.target.value })}
+                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Total RSSB (Employee + Employer): {formatCurrency(
+                    run?.lines?.reduce((s, l) => s + (l.rssb_employee_total || 0) + (l.rssb_employer_total || 0), 0) || 0
+                  )}
+                </p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowRemitRssbDialog(false)}>
+                {t("common.cancel")}
+              </Button>
+              <Button onClick={handleRemitRssb} disabled={submitting}>
+                {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Confirm Remittance
               </Button>
             </DialogFooter>
           </DialogContent>

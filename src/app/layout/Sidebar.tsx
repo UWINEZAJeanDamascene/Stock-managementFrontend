@@ -349,6 +349,12 @@ const financeNav: NavSection = {
       permission: "budgets:read",
     },
     {
+      nameKey: "nav.employees",
+      href: "/employees",
+      icon: Users,
+      permission: "payroll:read",
+    },
+    {
       nameKey: "nav.payroll",
       href: "/payroll",
       icon: DollarSign,

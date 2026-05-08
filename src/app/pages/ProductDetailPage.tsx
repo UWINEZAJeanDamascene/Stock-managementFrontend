@@ -448,17 +448,20 @@ export default function ProductDetailPage() {
                 {product.description || 'Inventory, pricing, stock controls, and lifecycle activity for this SKU.'}
               </p>
             </div>
-            <div className="flex flex-col items-start gap-3 sm:flex-row lg:items-center">
-              <div className="rounded-md border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-800">
-                <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Stock Health</p>
-                <p className={`mt-1 text-lg font-bold ${stock <= threshold ? 'text-amber-600 dark:text-amber-300' : 'text-emerald-600 dark:text-emerald-300'}`}>
-                  {stockCoverage}%
-                </p>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-between rounded-md border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-800 w-full max-w-xs">
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Stock Health</p>
+                  <p className={`mt-1 text-lg font-bold ${stock <= threshold ? 'text-amber-600 dark:text-amber-300' : 'text-emerald-600 dark:text-emerald-300'}`}>
+                    {stockCoverage}%
+                  </p>
+                </div>
+                <div className="ml-3 flex-shrink-0">
+                  <Button size="sm" variant="ghost" onClick={() => navigate(`/products/${product._id}/edit`)}>
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
-              <Button onClick={() => navigate(`/products/${product._id}/edit`)}>
-                <Edit className="h-4 w-4 mr-2" />
-                {t('common.edit') || 'Edit'}
-              </Button>
             </div>
           </div>
         </div>

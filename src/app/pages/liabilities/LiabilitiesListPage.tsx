@@ -80,7 +80,7 @@ export default function LiabilitiesListPage() {
   return (
     <Layout>
       <div className="container mx-auto py-6 bg-gray-50 dark:bg-slate-900 min-h-screen p-6">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <div>
             <h1 className="text-3xl font-bold dark:text-white">{t('liabilities.title')}</h1>
             <p className="text-muted-foreground dark:text-slate-400">{t('liabilities.subtitle')}</p>
@@ -134,8 +134,9 @@ export default function LiabilitiesListPage() {
         </div>
 
         {/* Table */}
-        <Card className="dark:bg-slate-800">
+        <Card className="dark:bg-slate-800 overflow-hidden">
           <CardContent className="p-0">
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow className="dark:bg-slate-700/50 dark:border-slate-600">
@@ -211,6 +212,7 @@ export default function LiabilitiesListPage() {
                 )}
               </TableBody>
             </Table>
+            </div>
           </CardContent>
         </Card>
       </div>

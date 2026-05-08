@@ -124,10 +124,14 @@ import ARReconciliationPage from './pages/ar/ARReconciliationPage';
 import ExpensesListPage from './pages/expenses/ExpensesListPage';
 import ExpenseDetailPage from './pages/expenses/ExpenseDetailPage';
 import ChartOfAccountsPage from './pages/settings/ChartOfAccountsPage';
+import EmployeesListPage from './pages/employees/EmployeesListPage';
+import EmployeeFormPage from './pages/employees/EmployeeFormPage';
+import EmployeeDetailPage from './pages/employees/EmployeeDetailPage';
 import PayrollListPage from './pages/payroll/PayrollListPage';
 import PayrollRunsListPage from './pages/payroll/PayrollRunsListPage';
 import PayrollDetailPage from './pages/payroll/PayrollDetailPage';
 import PayrollRunDetailPage from './pages/payroll/PayrollRunDetailPage';
+import PayrollGenerationPage from './pages/payroll/PayrollGenerationPage';
 import JournalEntriesPage from './pages/journal/JournalEntriesPage';
 import JournalEntryDetailPage from './pages/journal/JournalEntryDetailPage';
 import JournalEntryFormPage from './pages/journal/JournalEntryFormPage';
@@ -642,6 +646,28 @@ function AppRoutes() {
         <Route path="/audit-trail" element={<AuditTrailPage />} />
         <Route path="/platform-admin" element={<PlatformAdminPage />} />
         
+        {/* Employee Master routes */}
+        <Route path="/employees" element={
+          <ErrorBoundary>
+            <EmployeesListPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/employees/new" element={
+          <ErrorBoundary>
+            <EmployeeFormPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/employees/:id" element={
+          <ErrorBoundary>
+            <EmployeeDetailPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/employees/:id/edit" element={
+          <ErrorBoundary>
+            <EmployeeFormPage />
+          </ErrorBoundary>
+        } />
+
         {/* Payroll routes */}
         <Route path="/payroll" element={
           <ErrorBoundary>
@@ -671,6 +697,11 @@ function AppRoutes() {
         <Route path="/payroll/:id/edit" element={
           <ErrorBoundary>
             <PayrollDetailPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/payroll/generate" element={
+          <ErrorBoundary>
+            <PayrollGenerationPage />
           </ErrorBoundary>
         } />
 
