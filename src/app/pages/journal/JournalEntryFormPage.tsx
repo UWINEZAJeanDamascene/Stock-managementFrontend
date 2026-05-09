@@ -7,12 +7,19 @@ import {
   Loader2,
   Plus,
   Trash2,
-  BookOpen,
-  Save
+  Save,
+  ScrollText,
+  TrendingUp,
+  TrendingDown,
+  AlertTriangle,
+  BadgeCheck,
+  Layers,
+  FilePenLine,
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
+import { Badge } from '@/app/components/ui/badge';
 import {
   Select,
   SelectContent,
@@ -151,168 +158,240 @@ export default function JournalEntryFormPage() {
 
   return (
     <Layout>
-      <div className="space-y-6 bg-gray-50 dark:bg-slate-900 min-h-screen p-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="outline" size="sm" onClick={() => navigate('/journal')} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold flex items-center gap-2 dark:text-white">
-                <BookOpen className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
-                New Journal Entry
-              </h1>
-              <p className="text-muted-foreground dark:text-slate-400">Create a manual journal entry</p>
+      <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1200px] space-y-6">
+          {/* Hero Header */}
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+            <div className="grid gap-5 p-5 xl:grid-cols-[1fr_auto] xl:items-center">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button variant="outline" size="icon" onClick={() => navigate('/journal')} className="h-10 w-10 dark:border-slate-700 dark:text-slate-200">
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                  <div className="rounded-lg bg-indigo-50 p-2.5 text-indigo-700 ring-1 ring-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-300 dark:ring-indigo-900/60">
+                    <FilePenLine className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h1 className="text-2xl font-bold tracking-tight text-slate-950 dark:text-white">New Journal Entry</h1>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Create a manual journal entry</p>
+                  </div>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="outline" className={`h-6 gap-1 ${isBalanced ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-400' : 'border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-400'}`}>
+                  {isBalanced ? <BadgeCheck className="h-3.5 w-3.5" /> : <AlertTriangle className="h-3.5 w-3.5" />}
+                  {isBalanced ? 'Balanced' : 'Unbalanced'}
+                </Badge>
+                <Button onClick={handleSubmit} disabled={saving} className="h-9 gap-2 bg-indigo-600 hover:bg-indigo-700">
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  Save as Draft
+                </Button>
+              </div>
             </div>
           </div>
-          <Button onClick={handleSubmit} disabled={saving} className="dark:bg-primary dark:text-primary-foreground">
-            {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-            Save as Draft
-          </Button>
-        </div>
 
-        {/* Entry Details */}
-        <Card className="dark:bg-slate-800">
-          <CardHeader><CardTitle className="dark:text-white">Entry Details</CardTitle></CardHeader>
-          <CardContent className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label className="dark:text-slate-200">Date *</Label>
-              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="dark:bg-slate-700 dark:text-white dark:border-slate-600" />
-            </div>
-            <div className="space-y-2">
-              <Label className="dark:text-slate-200">Description *</Label>
-              <Input
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="e.g., Monthly adjustment entry"
-                className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Total Debit</p>
+                    <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">{totalDebit.toLocaleString()}</p>
+                  </div>
+                  <div className="rounded-lg bg-blue-50 p-2.5 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60">
+                    <TrendingUp className="h-4 w-4" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Total Credit</p>
+                    <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">{totalCredit.toLocaleString()}</p>
+                  </div>
+                  <div className="rounded-lg bg-emerald-50 p-2.5 text-emerald-700 ring-1 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60">
+                    <TrendingDown className="h-4 w-4" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Difference</p>
+                    <p className={`mt-2 text-2xl font-bold ${isBalanced ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                      {Math.abs(totalDebit - totalCredit).toLocaleString()}
+                    </p>
+                  </div>
+                  <div className={`rounded-lg p-2.5 ring-1 ${isBalanced ? 'bg-emerald-50 text-emerald-700 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60' : 'bg-red-50 text-red-700 ring-red-100 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900/60'}`}>
+                    {isBalanced ? <BadgeCheck className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Entry Details */}
+          <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base font-semibold dark:text-white">
+                <FilePenLine className="h-4 w-4 text-indigo-500" />
+                Entry Details
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">Date *</Label>
+                <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="dark:bg-slate-900 dark:text-white dark:border-slate-700" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">Description *</Label>
+                <Input
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="e.g., Monthly adjustment entry"
+                  className="dark:bg-slate-900 dark:text-white dark:border-slate-700 dark:placeholder:text-slate-500"
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Journal Lines */}
+          <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center justify-between text-base font-semibold dark:text-white">
+                <span className="flex items-center gap-2">
+                  <Layers className="h-4 w-4 text-indigo-500" />
+                  Journal Lines
+                </span>
+                <Button variant="outline" size="sm" onClick={addLine} className="h-8 gap-1 dark:border-slate-700 dark:text-slate-200">
+                  <Plus className="h-3.5 w-3.5" />
+                  Add Line
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-slate-50 hover:bg-slate-50 dark:bg-slate-900/50 dark:hover:bg-slate-900/50">
+                      <TableHead className="w-[220px] text-xs font-semibold text-slate-600 dark:text-slate-400">Account</TableHead>
+                      <TableHead className="text-xs font-semibold text-slate-600 dark:text-slate-400">Description</TableHead>
+                      <TableHead className="w-[150px] text-right text-xs font-semibold text-slate-600 dark:text-slate-400">Debit</TableHead>
+                      <TableHead className="w-[150px] text-right text-xs font-semibold text-slate-600 dark:text-slate-400">Credit</TableHead>
+                      <TableHead className="w-[60px]"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {lines.map((line, idx) => (
+                      <TableRow key={idx} className="dark:border-slate-800">
+                        <TableCell>
+                          <Select
+                            value={line.accountCode}
+                            onValueChange={(value) => updateLine(idx, 'accountCode', value)}
+                          >
+                            <SelectTrigger className="h-9 font-mono text-sm dark:bg-slate-900 dark:text-white dark:border-slate-700">
+                              <SelectValue placeholder="Select account" />
+                            </SelectTrigger>
+                            <SelectContent className="dark:bg-slate-900 dark:border-slate-700">
+                              {accounts.map(acc => (
+                                <SelectItem key={acc.code} value={acc.code} className="dark:text-slate-200">
+                                  {acc.code} - {acc.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            value={line.description}
+                            onChange={(e) => updateLine(idx, 'description', e.target.value)}
+                            placeholder="Line description"
+                            className="h-9 dark:bg-slate-900 dark:text-white dark:border-slate-700 dark:placeholder:text-slate-500"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={line.debit || ''}
+                            onChange={(e) => updateLine(idx, 'debit', parseFloat(e.target.value) || 0)}
+                            className="h-9 text-right font-mono dark:bg-slate-900 dark:text-white dark:border-slate-700"
+                            placeholder="0.00"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={line.credit || ''}
+                            onChange={(e) => updateLine(idx, 'credit', parseFloat(e.target.value) || 0)}
+                            className="h-9 text-right font-mono dark:bg-slate-900 dark:text-white dark:border-slate-700"
+                            placeholder="0.00"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeLine(idx)}
+                            disabled={lines.length <= 2}
+                            className="h-8 w-8 dark:hover:bg-slate-800"
+                          >
+                            <Trash2 className="h-3.5 w-3.5 text-red-500 dark:text-red-400" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Totals */}
+              <div className="flex flex-wrap justify-end gap-6 border-t border-slate-100 px-5 py-4 dark:border-slate-800">
+                <div className="text-right">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Total Debit</p>
+                  <p className="mt-1 text-lg font-bold font-mono text-slate-950 dark:text-white">{totalDebit.toLocaleString()}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Total Credit</p>
+                  <p className="mt-1 text-lg font-bold font-mono text-slate-950 dark:text-white">{totalCredit.toLocaleString()}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Difference</p>
+                  <p className={`mt-1 text-lg font-bold font-mono ${isBalanced ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                    {Math.abs(totalDebit - totalCredit).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Notes */}
+          <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base font-semibold dark:text-white">
+                <ScrollText className="h-4 w-4 text-indigo-500" />
+                Notes
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Optional notes..."
+                rows={3}
+                className="dark:bg-slate-900 dark:text-white dark:border-slate-700 dark:placeholder:text-slate-500"
               />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Journal Lines */}
-        <Card className="dark:bg-slate-800">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between dark:text-white">
-              <span>Journal Lines</span>
-              <Button variant="outline" size="sm" onClick={addLine} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Line
-              </Button>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow className="dark:bg-slate-700/50 dark:border-slate-600">
-                  <TableHead className="w-[200px] dark:text-slate-200">Account</TableHead>
-                  <TableHead className="dark:text-slate-200">Description</TableHead>
-                  <TableHead className="w-[150px] text-right dark:text-slate-200">Debit</TableHead>
-                  <TableHead className="w-[150px] text-right dark:text-slate-200">Credit</TableHead>
-                  <TableHead className="w-[60px]"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {lines.map((line, idx) => (
-                  <TableRow key={idx} className="dark:border-slate-600">
-                    <TableCell>
-                      <Select
-                        value={line.accountCode}
-                        onValueChange={(value) => updateLine(idx, 'accountCode', value)}
-                      >
-                        <SelectTrigger className="font-mono text-sm dark:bg-slate-700 dark:text-white dark:border-slate-600">
-                          <SelectValue placeholder="Select account" />
-                        </SelectTrigger>
-                        <SelectContent className="dark:bg-slate-800">
-                          {accounts.map(acc => (
-                            <SelectItem key={acc.code} value={acc.code} className="dark:text-slate-200">
-                              {acc.code} - {acc.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        value={line.description}
-                        onChange={(e) => updateLine(idx, 'description', e.target.value)}
-                        placeholder="Line description"
-                        className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={line.debit || ''}
-                        onChange={(e) => updateLine(idx, 'debit', parseFloat(e.target.value) || 0)}
-                        className="text-right font-mono dark:bg-slate-700 dark:text-white dark:border-slate-600"
-                        placeholder="0.00"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={line.credit || ''}
-                        onChange={(e) => updateLine(idx, 'credit', parseFloat(e.target.value) || 0)}
-                        className="text-right font-mono dark:bg-slate-700 dark:text-white dark:border-slate-600"
-                        placeholder="0.00"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeLine(idx)}
-                        disabled={lines.length <= 2}
-                        className="dark:hover:bg-slate-700"
-                      >
-                        <Trash2 className="h-4 w-4 text-red-500 dark:text-red-400" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-
-            {/* Totals */}
-            <div className="flex justify-end gap-8 pt-4 border-t mt-4 dark:border-slate-600">
-              <div className="text-right">
-                <p className="text-sm text-slate-500 dark:text-slate-400">Total Debit</p>
-                <p className="text-xl font-bold font-mono dark:text-white">{totalDebit.toLocaleString()}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-sm text-slate-500 dark:text-slate-400">Total Credit</p>
-                <p className="text-xl font-bold font-mono dark:text-white">{totalCredit.toLocaleString()}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-sm text-slate-500 dark:text-slate-400">Difference</p>
-                <p className={`text-xl font-bold font-mono ${isBalanced ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                  {Math.abs(totalDebit - totalCredit).toLocaleString()}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Notes */}
-        <Card className="dark:bg-slate-800">
-          <CardHeader><CardTitle className="dark:text-white">Notes</CardTitle></CardHeader>
-          <CardContent>
-            <Textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Optional notes..."
-              rows={3}
-              className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
-            />
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </Layout>
   );

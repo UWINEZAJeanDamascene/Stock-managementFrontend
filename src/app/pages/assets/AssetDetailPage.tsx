@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router";
 import {
   fixedAssetsApi,
@@ -27,6 +27,10 @@ import {
   Wrench,
   History,
   Truck,
+  BadgeCheck,
+  Layers,
+  Banknote,
+  X,
 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import {
@@ -109,23 +113,16 @@ export default function AssetDetailPage() {
   const [changingStatus, setChangingStatus] = useState(false);
   const [statusHistory, setStatusHistory] = useState<any[]>([]);
 
-  useEffect(() => {
-    if (id) {
-      fetchAsset();
-      fetchBankAccounts();
-    }
-  }, [id]);
-
-  const fetchBankAccounts = async () => {
+  const fetchBankAccounts = useCallback(async () => {
     try {
       const res: any = await bankAccountsApi.getAll({ isActive: true });
       if (res.success) setBankAccounts(res.data || []);
     } catch {
       // non-fatal
     }
-  };
+  }, []);
 
-  const fetchAsset = async () => {
+  const fetchAsset = useCallback(async () => {
     if (!id) return;
     setLoading(true);
     try {
@@ -146,9 +143,9 @@ export default function AssetDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, navigate, t]);
 
-  const fetchDepreciationEntries = async () => {
+  const fetchDepreciationEntries = useCallback(async () => {
     if (!id) return;
     try {
       const response: any = await fixedAssetsApi.getDepreciationEntries(id);
@@ -161,13 +158,38 @@ export default function AssetDetailPage() {
         error,
       );
     }
-  };
+  }, [id]);
+
+  const fetchStatusHistory = useCallback(async () => {
+    if (!id) return;
+    try {
+      const response: any = await fixedAssetsApi.getStatusHistory(id);
+      if (response.success) {
+        setStatusHistory(response.data || []);
+      }
+    } catch (error) {
+      console.error("[AssetDetailPage] Failed to fetch status history:", error);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    if (id) {
+      fetchAsset();
+      fetchBankAccounts();
+    }
+  }, [id, fetchAsset, fetchBankAccounts]);
 
   useEffect(() => {
     if (activeTab === "entries" && id) {
       fetchDepreciationEntries();
     }
-  }, [activeTab, id]);
+  }, [activeTab, id, fetchDepreciationEntries]);
+
+  useEffect(() => {
+    if (activeTab === "history" && id) {
+      fetchStatusHistory();
+    }
+  }, [activeTab, id, fetchStatusHistory]);
 
   const handleDepreciate = async () => {
     if (!id) return;
@@ -296,24 +318,6 @@ export default function AssetDetailPage() {
     return transitions[currentStatus] || [];
   };
 
-  const fetchStatusHistory = async () => {
-    if (!id) return;
-    try {
-      const response: any = await fixedAssetsApi.getStatusHistory(id);
-      if (response.success) {
-        setStatusHistory(response.data || []);
-      }
-    } catch (error) {
-      console.error("[AssetDetailPage] Failed to fetch status history:", error);
-    }
-  };
-
-  useEffect(() => {
-    if (activeTab === "history" && id) {
-      fetchStatusHistory();
-    }
-  }, [activeTab, id]);
-
   const handlePlaceInService = async () => {
     if (!id) return;
     setChangingStatus(true);
@@ -360,8 +364,13 @@ export default function AssetDetailPage() {
   if (loading) {
     return (
       <Layout>
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="flex min-h-[60vh] items-center justify-center bg-slate-50 dark:bg-slate-950">
+          <div className="flex flex-col items-center gap-3">
+            <div className="rounded-xl bg-white p-4 shadow-sm dark:bg-slate-900/70">
+              <Loader2 className="h-8 w-8 animate-spin text-indigo-600 dark:text-indigo-400" />
+            </div>
+            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Loading asset details...</p>
+          </div>
         </div>
       </Layout>
     );
@@ -370,8 +379,18 @@ export default function AssetDetailPage() {
   if (!asset) {
     return (
       <Layout>
-        <div className="container mx-auto py-6">
-          <p>{t("assets.errors.notFound")}</p>
+        <div className="flex min-h-[60vh] items-center justify-center bg-slate-50 px-4 dark:bg-slate-950">
+          <div className="mx-auto max-w-md text-center">
+            <div className="mb-4 inline-flex rounded-xl bg-slate-100 p-4 dark:bg-slate-900/70">
+              <Package className="h-8 w-8 text-slate-400 dark:text-slate-500" />
+            </div>
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-white">{t("assets.errors.notFound")}</h2>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">The asset you are looking for could not be found.</p>
+            <Button variant="outline" size="sm" className="mt-4 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800" onClick={() => navigate("/assets")}>
+              <ArrowLeft className="mr-1 h-4 w-4" />
+              Back to Assets
+            </Button>
+          </div>
         </div>
       </Layout>
     );
@@ -379,86 +398,125 @@ export default function AssetDetailPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-6 space-y-6 bg-gray-50 dark:bg-slate-900 min-h-screen p-6">
-        {/* Header */}
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate("/assets")}
-            className="dark:text-slate-200"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div className="flex-1">
-            <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold dark:text-white">{asset.name}</h1>
-              {getStatusBadge(asset.status)}
+      <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1400px] space-y-6">
+          {/* ── Hero Header ── */}
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+            <div className="grid gap-5 p-5 xl:grid-cols-[1fr_auto] xl:items-center">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button variant="ghost" size="icon" onClick={() => navigate("/assets")} className="h-9 w-9 dark:text-slate-300 dark:hover:bg-slate-800">
+                    <ArrowLeft className="h-5 w-5" />
+                  </Button>
+                  <div className="rounded-lg bg-indigo-50 p-2.5 text-indigo-700 ring-1 ring-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-300 dark:ring-indigo-900/60">
+                    <Package className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h1 className="text-2xl font-bold tracking-tight text-slate-950 dark:text-white">{asset.name}</h1>
+                      {getStatusBadge(asset.status)}
+                    </div>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">{asset.referenceNo}</p>
+                  </div>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {asset.status === "in_transit" && (
+                  <Button size="sm" onClick={handlePlaceInService} disabled={changingStatus} className="h-9 gap-2 bg-emerald-600 hover:bg-emerald-700">
+                    <Play className="h-4 w-4" />
+                    Place In Service
+                  </Button>
+                )}
+                {getValidTransitions(asset.status).length > 0 && (
+                  <Button variant="outline" size="sm" onClick={() => setStatusDialogOpen(true)} className="h-9 gap-2 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
+                    <RefreshCw className="h-4 w-4" />
+                    Change Status
+                  </Button>
+                )}
+                {(asset.status === "in_service" || asset.status === "active") && (
+                  <Button variant="outline" size="sm" onClick={() => setDepreciateDialogOpen(true)} className="h-9 gap-2 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
+                    <Calculator className="h-4 w-4" />
+                    {t("assets.actions.depreciate")}
+                  </Button>
+                )}
+                {asset.status !== "disposed" && (
+                  <Button size="sm" variant="destructive" onClick={() => setDisposeDialogOpen(true)} className="h-9 gap-2">
+                    <Trash2 className="h-4 w-4" />
+                    {t("assets.actions.dispose")}
+                  </Button>
+                )}
+              </div>
             </div>
-            <p className="text-muted-foreground dark:text-slate-400">{asset.referenceNo}</p>
           </div>
-          <div className="flex gap-2">
-            {/* Status-specific actions */}
-            {asset.status === "in_transit" && (
-              <Button
-                onClick={handlePlaceInService}
-                disabled={changingStatus}
-                className="dark:bg-blue-600 dark:text-white"
-              >
-                <Play className="mr-2 h-4 w-4" />
-                Place In Service
-              </Button>
-            )}
 
-            {/* Status transition button for valid transitions */}
-            {getValidTransitions(asset.status).length > 0 && (
-              <Button
-                variant="outline"
-                onClick={() => setStatusDialogOpen(true)}
-                className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
-              >
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Change Status
-              </Button>
-            )}
-
-            {/* Depreciate button for active assets */}
-            {(asset.status === "in_service" || asset.status === "active") && (
-              <Button
-                variant="outline"
-                onClick={() => setDepreciateDialogOpen(true)}
-                className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
-              >
-                <Calculator className="mr-2 h-4 w-4" />
-                {t("assets.actions.depreciate")}
-              </Button>
-            )}
-
-            {/* Dispose button (not for already disposed) */}
-            {asset.status !== "disposed" && (
-              <Button
-                variant="destructive"
-                onClick={() => setDisposeDialogOpen(true)}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                {t("assets.actions.dispose")}
-              </Button>
-            )}
+          {/* ── Summary Cards ── */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Purchase Cost</p>
+                    <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">{formatCurrency(asset.purchaseCost)}</p>
+                  </div>
+                  <div className="rounded-lg bg-emerald-50 p-2.5 text-emerald-700 ring-1 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60">
+                    <Banknote className="h-4 w-4" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Accumulated Depreciation</p>
+                    <p className="mt-2 text-2xl font-bold text-red-600 dark:text-red-400">{formatCurrency(asset.accumulatedDepreciation)}</p>
+                  </div>
+                  <div className="rounded-lg bg-red-50 p-2.5 text-red-700 ring-1 ring-red-100 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900/60">
+                    <TrendingDown className="h-4 w-4" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Net Book Value</p>
+                    <p className="mt-2 text-2xl font-bold text-blue-600 dark:text-blue-400">{formatCurrency(asset.netBookValue)}</p>
+                  </div>
+                  <div className="rounded-lg bg-blue-50 p-2.5 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60">
+                    <Calculator className="h-4 w-4" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Useful Life</p>
+                    <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">{asset.usefulLifeMonths} <span className="text-base font-normal text-slate-500 dark:text-slate-400">months</span></p>
+                  </div>
+                  <div className="rounded-lg bg-indigo-50 p-2.5 text-indigo-700 ring-1 ring-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-300 dark:ring-indigo-900/60">
+                    <Layers className="h-4 w-4" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
-        </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="dark:bg-slate-800">
-            <TabsTrigger value="details" className="dark:text-slate-300 dark:data-[state=active]:bg-slate-700">
+          <TabsList className="h-10 rounded-lg border border-slate-200 bg-white p-1 shadow-sm dark:border-slate-700 dark:bg-slate-950">
+            <TabsTrigger value="details" className="text-sm font-medium text-slate-600 data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 dark:text-slate-300 dark:data-[state=active]:bg-indigo-950/30 dark:data-[state=active]:text-indigo-300">
               {t("assets.tabs.details")}
             </TabsTrigger>
-            <TabsTrigger value="schedule" className="dark:text-slate-300 dark:data-[state=active]:bg-slate-700">
+            <TabsTrigger value="schedule" className="text-sm font-medium text-slate-600 data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 dark:text-slate-300 dark:data-[state=active]:bg-indigo-950/30 dark:data-[state=active]:text-indigo-300">
               {t("assets.tabs.schedule")}
             </TabsTrigger>
-            <TabsTrigger value="entries" className="dark:text-slate-300 dark:data-[state=active]:bg-slate-700">
+            <TabsTrigger value="entries" className="text-sm font-medium text-slate-600 data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 dark:text-slate-300 dark:data-[state=active]:bg-indigo-950/30 dark:data-[state=active]:text-indigo-300">
               {t("assets.tabs.entries")}
             </TabsTrigger>
-            <TabsTrigger value="history" className="dark:text-slate-300 dark:data-[state=active]:bg-slate-700">
+            <TabsTrigger value="history" className="text-sm font-medium text-slate-600 data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 dark:text-slate-300 dark:data-[state=active]:bg-indigo-950/30 dark:data-[state=active]:text-indigo-300">
               <History className="h-4 w-4 mr-1" />
               History
             </TabsTrigger>
@@ -468,7 +526,7 @@ export default function AssetDetailPage() {
           <TabsContent value="details" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Asset Info */}
-              <Card className="lg:col-span-2 dark:bg-slate-800">
+              <Card className="overflow-hidden border-slate-200 bg-white shadow-sm lg:col-span-2 dark:border-slate-800 dark:bg-slate-950">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 dark:text-white">
                     <Package className="h-5 w-5" />
@@ -476,81 +534,57 @@ export default function AssetDetailPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                     <div>
-                      <Label className="text-muted-foreground dark:text-slate-400">
-                        {t("assets.fields.referenceNo")}
-                      </Label>
-                      <p className="font-medium dark:text-white">{asset.referenceNo}</p>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("assets.fields.referenceNo")}</p>
+                      <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{asset.referenceNo}</p>
                     </div>
                     <div>
-                      <Label className="text-muted-foreground dark:text-slate-400">
-                        {t("assets.fields.name")}
-                      </Label>
-                      <p className="font-medium dark:text-white">{asset.name}</p>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("assets.fields.name")}</p>
+                      <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{asset.name}</p>
                     </div>
-                    <div className="col-span-2">
-                      <Label className="text-muted-foreground dark:text-slate-400">
-                        {t("assets.fields.description")}
-                      </Label>
-                      <p className="dark:text-slate-300">{asset.description || "-"}</p>
+                    <div className="sm:col-span-2">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("assets.fields.description")}</p>
+                      <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">{asset.description || "-"}</p>
                     </div>
                     <div>
-                      <Label className="text-muted-foreground dark:text-slate-400">
-                        {t("assets.fields.category")}
-                      </Label>
-                      <p className="dark:text-slate-300">{(asset.categoryId as any)?.name || "-"}</p>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("assets.fields.category")}</p>
+                      <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">{(asset.categoryId as any)?.name || "-"}</p>
                     </div>
                     <div>
-                      <Label className="text-muted-foreground dark:text-slate-400">
-                        {t("assets.fields.status")}
-                      </Label>
-                      <p className="dark:text-slate-300">{asset.status}</p>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("assets.fields.status")}</p>
+                      <div className="mt-1">{getStatusBadge(asset.status)}</div>
                     </div>
                     <div>
-                      <Label className="text-muted-foreground dark:text-slate-400">
-                        {t("assets.fields.serialNumber")}
-                      </Label>
-                      <p className="dark:text-slate-300">{asset.serialNumber || "-"}</p>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("assets.fields.serialNumber")}</p>
+                      <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">{asset.serialNumber || "-"}</p>
                     </div>
                     <div>
-                      <Label className="text-muted-foreground dark:text-slate-400">
-                        {t("assets.fields.location")}
-                      </Label>
-                      <p className="dark:text-slate-300">{asset.location || "-"}</p>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("assets.fields.location")}</p>
+                      <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">{asset.location || "-"}</p>
                     </div>
                     <div>
-                      <Label className="text-muted-foreground dark:text-slate-400">
-                        {t("assets.fields.department")}
-                      </Label>
-                      <p className="dark:text-slate-300">{(asset.departmentId as any)?.name || "-"}</p>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("assets.fields.department")}</p>
+                      <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">{(asset.departmentId as any)?.name || "-"}</p>
                     </div>
                     <div>
-                      <Label className="text-muted-foreground dark:text-slate-400">
-                        {t("assets.fields.supplier")}
-                      </Label>
-                      <p className="dark:text-slate-300">{(asset.supplierId as any)?.name || "-"}</p>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("assets.fields.supplier")}</p>
+                      <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">{(asset.supplierId as any)?.name || "-"}</p>
                     </div>
                     <div>
-                      <Label className="text-muted-foreground dark:text-slate-400">
-                        {t("assets.fields.purchaseDate")}
-                      </Label>
-                      <p className="dark:text-slate-300">{formatDate(asset.purchaseDate)}</p>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("assets.fields.purchaseDate")}</p>
+                      <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">{formatDate(asset.purchaseDate)}</p>
                     </div>
                     <div>
-                      <Label className="text-muted-foreground dark:text-slate-400">
-                        {t("assets.fields.purchaseCost")}
-                      </Label>
-                      <p className="font-medium dark:text-white">
-                        {formatCurrency(asset.purchaseCost)}
-                      </p>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("assets.fields.purchaseCost")}</p>
+                      <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{formatCurrency(asset.purchaseCost)}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
               {/* Depreciation Summary */}
-              <Card className="dark:bg-slate-800">
+              <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 dark:text-white">
                     <TrendingDown className="h-5 w-5" />
@@ -558,58 +592,41 @@ export default function AssetDetailPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label className="text-muted-foreground dark:text-slate-400">
-                      {t("assets.fields.purchaseCost")}
-                    </Label>
-                    <p className="text-2xl font-bold dark:text-white">
-                      {formatCurrency(asset.purchaseCost)}
-                    </p>
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("assets.fields.purchaseCost")}</p>
+                      <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">{formatCurrency(asset.purchaseCost)}</p>
+                    </div>
+                    <div className="rounded-lg bg-emerald-50 p-2 text-emerald-700 ring-1 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60">
+                      <Banknote className="h-4 w-4" />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-muted-foreground dark:text-slate-400">
-                      {t("assets.fields.accumulatedDepreciation")}
-                    </Label>
-                    <p className="text-xl dark:text-slate-300">
-                      {formatCurrency(asset.accumulatedDepreciation)}
-                    </p>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("assets.fields.accumulatedDepreciation")}</p>
+                    <p className="mt-1 text-xl font-semibold text-red-600 dark:text-red-400">{formatCurrency(asset.accumulatedDepreciation)}</p>
                   </div>
-                  <div className="border-t pt-4 space-y-2">
-                    <Label className="text-muted-foreground dark:text-slate-400">
-                      {t("assets.fields.netBookValue")}
-                    </Label>
-                    <p className="text-2xl font-bold text-primary dark:text-primary">
-                      {formatCurrency(asset.netBookValue)}
-                    </p>
+                  <div className="rounded-lg border border-slate-100 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900/50">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("assets.fields.netBookValue")}</p>
+                    <p className="mt-1 text-2xl font-bold text-blue-600 dark:text-blue-400">{formatCurrency(asset.netBookValue)}</p>
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-muted-foreground dark:text-slate-400">
-                      {t("assets.fields.salvageValue")}
-                    </Label>
-                    <p className="dark:text-slate-300">{formatCurrency(asset.salvageValue)}</p>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("assets.fields.salvageValue")}</p>
+                    <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">{formatCurrency(asset.salvageValue)}</p>
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-muted-foreground dark:text-slate-400">
-                      {t("assets.fields.usefulLifeMonths")}
-                    </Label>
-                    <p className="dark:text-slate-300">{asset.usefulLifeMonths} months</p>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("assets.fields.usefulLifeMonths")}</p>
+                    <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">{asset.usefulLifeMonths} months</p>
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-muted-foreground dark:text-slate-400">
-                      {t("assets.fields.depreciationMethod")}
-                    </Label>
-                    <p className="dark:text-slate-300">
-                      {asset.depreciationMethod === "straight_line"
-                        ? t("assets.depreciation.straightLine")
-                        : t("assets.depreciation.decliningBalance")}
-                    </p>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("assets.fields.depreciationMethod")}</p>
+                    <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">{asset.depreciationMethod === "straight_line" ? t("assets.depreciation.straightLine") : t("assets.depreciation.decliningBalance")}</p>
                   </div>
                 </CardContent>
               </Card>
 
               {/* Warranty & Insurance */}
               {(asset.warrantyStartDate || asset.warrantyEndDate || asset.insuredValue) && (
-                <Card className="lg:col-span-3 dark:bg-slate-800">
+                <Card className="overflow-hidden border-slate-200 bg-white shadow-sm lg:col-span-3 dark:border-slate-800 dark:bg-slate-950">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 dark:text-white">
                       <Shield className="h-5 w-5" />
@@ -617,26 +634,18 @@ export default function AssetDetailPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
                       <div>
-                        <Label className="text-muted-foreground dark:text-slate-400">
-                          {t("assets.fields.warrantyStartDate")}
-                        </Label>
-                        <p className="dark:text-slate-300">{formatDate(asset.warrantyStartDate)}</p>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("assets.fields.warrantyStartDate")}</p>
+                        <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">{formatDate(asset.warrantyStartDate)}</p>
                       </div>
                       <div>
-                        <Label className="text-muted-foreground dark:text-slate-400">
-                          {t("assets.fields.warrantyEndDate")}
-                        </Label>
-                        <p className="dark:text-slate-300">{formatDate(asset.warrantyEndDate)}</p>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("assets.fields.warrantyEndDate")}</p>
+                        <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">{formatDate(asset.warrantyEndDate)}</p>
                       </div>
                       <div>
-                        <Label className="text-muted-foreground dark:text-slate-400">
-                          {t("assets.fields.insuredValue")}
-                        </Label>
-                        <p className="font-medium dark:text-white">
-                          {formatCurrency(asset.insuredValue)}
-                        </p>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("assets.fields.insuredValue")}</p>
+                        <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{formatCurrency(asset.insuredValue)}</p>
                       </div>
                     </div>
                   </CardContent>
@@ -644,7 +653,7 @@ export default function AssetDetailPage() {
               )}
 
               {/* Account Codes */}
-              <Card className="lg:col-span-3 dark:bg-slate-800">
+              <Card className="overflow-hidden border-slate-200 bg-white shadow-sm lg:col-span-3 dark:border-slate-800 dark:bg-slate-950">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 dark:text-white">
                     <FileText className="h-5 w-5" />
@@ -652,28 +661,18 @@ export default function AssetDetailPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
                     <div>
-                      <Label className="text-muted-foreground dark:text-slate-400">
-                        {t("assets.fields.assetAccount")}
-                      </Label>
-                      <p className="font-mono dark:text-white">{asset.assetAccountCode}</p>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("assets.fields.assetAccount")}</p>
+                      <p className="mt-1 font-mono text-sm font-semibold text-slate-900 dark:text-white">{asset.assetAccountCode}</p>
                     </div>
                     <div>
-                      <Label className="text-muted-foreground dark:text-slate-400">
-                        {t("assets.fields.accumDepreciationAccount")}
-                      </Label>
-                      <p className="font-mono dark:text-white">
-                        {asset.accumDepreciationAccountCode}
-                      </p>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("assets.fields.accumDepreciationAccount")}</p>
+                      <p className="mt-1 font-mono text-sm font-semibold text-slate-900 dark:text-white">{asset.accumDepreciationAccountCode}</p>
                     </div>
                     <div>
-                      <Label className="text-muted-foreground dark:text-slate-400">
-                        {t("assets.fields.depreciationExpenseAccount")}
-                      </Label>
-                      <p className="font-mono dark:text-white">
-                        {asset.depreciationExpenseAccountCode}
-                      </p>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("assets.fields.depreciationExpenseAccount")}</p>
+                      <p className="mt-1 font-mono text-sm font-semibold text-slate-900 dark:text-white">{asset.depreciationExpenseAccountCode}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -683,7 +682,7 @@ export default function AssetDetailPage() {
 
           {/* Depreciation Schedule Tab */}
           <TabsContent value="schedule">
-            <Card className="dark:bg-slate-800">
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
               <CardHeader>
                 <CardTitle className="dark:text-white">
                   {t("assets.sections.depreciationSchedule")}
@@ -694,45 +693,35 @@ export default function AssetDetailPage() {
               </CardHeader>
               <CardContent>
                 {schedule.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground dark:text-slate-400">
-                    <Calculator className="h-12 w-12 mx-auto mb-4 dark:text-slate-500" />
-                    <p>{t("assets.noSchedule")}</p>
+                  <div className="flex min-h-[200px] flex-col items-center justify-center rounded-xl p-8 text-center">
+                    <Calculator className="mb-2 h-8 w-8 text-slate-300 dark:text-slate-600" />
+                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{t("assets.noSchedule")}</p>
                   </div>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="dark:bg-slate-700/50 dark:border-slate-600">
-                        <TableHead className="dark:text-slate-200">{t("assets.schedule.period")}</TableHead>
-                        <TableHead className="dark:text-slate-200">{t("assets.schedule.date")}</TableHead>
-                        <TableHead className="text-right dark:text-slate-200">
-                          {t("assets.schedule.openingNBV")}
-                        </TableHead>
-                        <TableHead className="text-right dark:text-slate-200">
-                          {t("assets.schedule.depreciation")}
-                        </TableHead>
-                        <TableHead className="text-right dark:text-slate-200">
-                          {t("assets.schedule.closingNBV")}
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {schedule.map((item) => (
-                        <TableRow key={item.period} className="dark:border-slate-600">
-                          <TableCell className="dark:text-slate-300">{item.label}</TableCell>
-                          <TableCell className="dark:text-slate-300">{formatDate(item.date)}</TableCell>
-                          <TableCell className="text-right dark:text-slate-300">
-                            {formatCurrency(item.openingNBV)}
-                          </TableCell>
-                          <TableCell className="text-right dark:text-slate-300">
-                            {formatCurrency(item.depreciation)}
-                          </TableCell>
-                          <TableCell className="text-right font-medium dark:text-white">
-                            {formatCurrency(item.closingNBV)}
-                          </TableCell>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-slate-50 dark:bg-slate-900/60">
+                          <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">{t("assets.schedule.period")}</TableHead>
+                          <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">{t("assets.schedule.date")}</TableHead>
+                          <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">{t("assets.schedule.openingNBV")}</TableHead>
+                          <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">{t("assets.schedule.depreciation")}</TableHead>
+                          <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">{t("assets.schedule.closingNBV")}</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody className="divide-y dark:divide-slate-800">
+                        {schedule.map((item) => (
+                          <TableRow key={item.period} className="transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-900/40">
+                            <TableCell className="text-sm text-slate-600 dark:text-slate-300">{item.label}</TableCell>
+                            <TableCell className="text-sm text-slate-600 dark:text-slate-300">{formatDate(item.date)}</TableCell>
+                            <TableCell className="text-right text-sm text-slate-600 dark:text-slate-300">{formatCurrency(item.openingNBV)}</TableCell>
+                            <TableCell className="text-right text-sm text-slate-600 dark:text-slate-300">{formatCurrency(item.depreciation)}</TableCell>
+                            <TableCell className="text-right text-sm font-medium text-slate-900 dark:text-white">{formatCurrency(item.closingNBV)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -740,7 +729,7 @@ export default function AssetDetailPage() {
 
           {/* Posted Entries Tab */}
           <TabsContent value="entries">
-            <Card className="dark:bg-slate-800">
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
               <CardHeader>
                 <CardTitle className="dark:text-white">{t("assets.sections.postedEntries")}</CardTitle>
                 <CardDescription className="dark:text-slate-400">
@@ -749,45 +738,35 @@ export default function AssetDetailPage() {
               </CardHeader>
               <CardContent>
                 {depreciationEntries.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground dark:text-slate-400">
-                    <FileText className="h-12 w-12 mx-auto mb-4 dark:text-slate-500" />
-                    <p>{t("assets.noEntries")}</p>
+                  <div className="flex min-h-[200px] flex-col items-center justify-center rounded-xl p-8 text-center">
+                    <FileText className="mb-2 h-8 w-8 text-slate-300 dark:text-slate-600" />
+                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{t("assets.noEntries")}</p>
                   </div>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="dark:bg-slate-700/50 dark:border-slate-600">
-                        <TableHead className="dark:text-slate-200">{t("assets.entries.period")}</TableHead>
-                        <TableHead className="dark:text-slate-200">{t("assets.entries.date")}</TableHead>
-                        <TableHead className="text-right dark:text-slate-200">
-                          {t("assets.entries.depreciation")}
-                        </TableHead>
-                        <TableHead className="text-right dark:text-slate-200">
-                          {t("assets.entries.accumAfter")}
-                        </TableHead>
-                        <TableHead className="text-right dark:text-slate-200">
-                          {t("assets.entries.nbvAfter")}
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {depreciationEntries.map((entry) => (
-                        <TableRow key={entry._id} className="dark:border-slate-600">
-                          <TableCell className="dark:text-slate-300">{formatDate(entry.periodDate)}</TableCell>
-                          <TableCell className="dark:text-slate-300">{formatDate(entry.createdAt)}</TableCell>
-                          <TableCell className="text-right dark:text-slate-300">
-                            {formatCurrency(entry.depreciationAmount)}
-                          </TableCell>
-                          <TableCell className="text-right dark:text-slate-300">
-                            {formatCurrency(entry.accumulatedAfter)}
-                          </TableCell>
-                          <TableCell className="text-right font-medium dark:text-white">
-                            {formatCurrency(entry.netBookValueAfter)}
-                          </TableCell>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-slate-50 dark:bg-slate-900/60">
+                          <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">{t("assets.entries.period")}</TableHead>
+                          <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">{t("assets.entries.date")}</TableHead>
+                          <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">{t("assets.entries.depreciation")}</TableHead>
+                          <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">{t("assets.entries.accumAfter")}</TableHead>
+                          <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">{t("assets.entries.nbvAfter")}</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody className="divide-y dark:divide-slate-800">
+                        {depreciationEntries.map((entry) => (
+                          <TableRow key={entry._id} className="transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-900/40">
+                            <TableCell className="text-sm text-slate-600 dark:text-slate-300">{formatDate(entry.periodDate)}</TableCell>
+                            <TableCell className="text-sm text-slate-600 dark:text-slate-300">{formatDate(entry.createdAt)}</TableCell>
+                            <TableCell className="text-right text-sm text-slate-600 dark:text-slate-300">{formatCurrency(entry.depreciationAmount)}</TableCell>
+                            <TableCell className="text-right text-sm text-slate-600 dark:text-slate-300">{formatCurrency(entry.accumulatedAfter)}</TableCell>
+                            <TableCell className="text-right text-sm font-medium text-slate-900 dark:text-white">{formatCurrency(entry.netBookValueAfter)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -795,7 +774,7 @@ export default function AssetDetailPage() {
 
           {/* Status History Tab */}
           <TabsContent value="history">
-            <Card className="dark:bg-slate-800">
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 dark:text-white">
                   <History className="h-5 w-5" />
@@ -807,35 +786,35 @@ export default function AssetDetailPage() {
               </CardHeader>
               <CardContent>
                 {statusHistory.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground dark:text-slate-400">
-                    <History className="h-12 w-12 mx-auto mb-4 dark:text-slate-500" />
-                    <p>No status history recorded yet</p>
+                  <div className="flex min-h-[200px] flex-col items-center justify-center rounded-xl p-8 text-center">
+                    <History className="mb-2 h-8 w-8 text-slate-300 dark:text-slate-600" />
+                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">No status history recorded yet</p>
                   </div>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="dark:bg-slate-700/50 dark:border-slate-600">
-                        <TableHead className="dark:text-slate-200">Date</TableHead>
-                        <TableHead className="dark:text-slate-200">From</TableHead>
-                        <TableHead className="dark:text-slate-200">To</TableHead>
-                        <TableHead className="dark:text-slate-200">Changed By</TableHead>
-                        <TableHead className="dark:text-slate-200">Reason</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {statusHistory.map((entry) => (
-                        <TableRow key={entry._id} className="dark:border-slate-600">
-                          <TableCell className="dark:text-slate-300">{formatDate(entry.changedAt)}</TableCell>
-                          <TableCell>{getStatusBadge(entry.fromStatus)}</TableCell>
-                          <TableCell>{getStatusBadge(entry.toStatus)}</TableCell>
-                          <TableCell className="dark:text-slate-300">
-                            {entry.changedBy?.name || "System"}
-                          </TableCell>
-                          <TableCell className="dark:text-slate-300">{entry.reason || "-"}</TableCell>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-slate-50 dark:bg-slate-900/60">
+                          <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">Date</TableHead>
+                          <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">From</TableHead>
+                          <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">To</TableHead>
+                          <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">Changed By</TableHead>
+                          <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">Reason</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody className="divide-y dark:divide-slate-800">
+                        {statusHistory.map((entry) => (
+                          <TableRow key={entry._id} className="transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-900/40">
+                            <TableCell className="text-sm text-slate-600 dark:text-slate-300">{formatDate(entry.changedAt)}</TableCell>
+                            <TableCell>{getStatusBadge(entry.fromStatus)}</TableCell>
+                            <TableCell>{getStatusBadge(entry.toStatus)}</TableCell>
+                            <TableCell className="text-sm text-slate-600 dark:text-slate-300">{entry.changedBy?.name || "System"}</TableCell>
+                            <TableCell className="text-sm text-slate-600 dark:text-slate-300">{entry.reason || "-"}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -843,40 +822,31 @@ export default function AssetDetailPage() {
         </Tabs>
 
         {/* Depreciate Dialog */}
-        <Dialog
-          open={depreciateDialogOpen}
-          onOpenChange={setDepreciateDialogOpen}
-        >
-          <DialogContent className="dark:bg-slate-800">
-            <DialogHeader>
-              <DialogTitle className="dark:text-white">{t("assets.dialogs.depreciate.title")}</DialogTitle>
-              <DialogDescription className="dark:text-slate-400">
-                {t("assets.dialogs.depreciate.description")}
-              </DialogDescription>
+        <Dialog open={depreciateDialogOpen} onOpenChange={setDepreciateDialogOpen}>
+          <DialogContent className="border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-950">
+            <DialogHeader className="gap-1">
+              <div className="flex items-center gap-2">
+                <div className="rounded-lg bg-indigo-50 p-2 text-indigo-700 ring-1 ring-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-300 dark:ring-indigo-900/60">
+                  <Calculator className="h-4 w-4" />
+                </div>
+                <DialogTitle className="text-lg dark:text-white">{t("assets.dialogs.depreciate.title")}</DialogTitle>
+              </div>
+              <DialogDescription className="dark:text-slate-400">{t("assets.dialogs.depreciate.description")}</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label className="dark:text-slate-200">{t("assets.fields.periodDate")}</Label>
-                <Input
-                  type="date"
-                  value={depreciateDate}
-                  onChange={(e) => setDepreciateDate(e.target.value)}
-                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
-                />
+                <Label className="text-sm font-medium dark:text-slate-200">{t("assets.fields.periodDate")}</Label>
+                <Input type="date" value={depreciateDate} onChange={(e) => setDepreciateDate(e.target.value)} className="dark:bg-slate-900 dark:text-white dark:border-slate-700" />
               </div>
             </div>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setDepreciateDialogOpen(false)}
-                className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
-              >
+            <DialogFooter className="gap-2">
+              <Button variant="outline" size="sm" onClick={() => setDepreciateDialogOpen(false)} className="dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
+                <X className="mr-1 h-4 w-4" />
                 {t("common.cancel")}
               </Button>
-              <Button onClick={handleDepreciate} disabled={depreciating} className="dark:bg-primary dark:text-primary-foreground">
-                {depreciating && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
+              <Button size="sm" onClick={handleDepreciate} disabled={depreciating} className="bg-indigo-600 hover:bg-indigo-700">
+                {depreciating && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+                <Calculator className="mr-1 h-4 w-4" />
                 {t("assets.actions.depreciate")}
               </Button>
             </DialogFooter>
@@ -885,52 +855,41 @@ export default function AssetDetailPage() {
 
         {/* Status Transition Dialog */}
         <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
-          <DialogContent className="dark:bg-slate-800">
-            <DialogHeader>
-              <DialogTitle className="dark:text-white">Change Asset Status</DialogTitle>
-              <DialogDescription className="dark:text-slate-400">
-                Transition asset from {asset.status.replace("_", " ")} to a new status
-              </DialogDescription>
+          <DialogContent className="border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-950">
+            <DialogHeader className="gap-1">
+              <div className="flex items-center gap-2">
+                <div className="rounded-lg bg-amber-50 p-2 text-amber-700 ring-1 ring-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/60">
+                  <RefreshCw className="h-4 w-4" />
+                </div>
+                <DialogTitle className="text-lg dark:text-white">Change Asset Status</DialogTitle>
+              </div>
+              <DialogDescription className="dark:text-slate-400">Transition asset from {asset.status.replace("_", " ")} to a new status</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label className="dark:text-slate-200">New Status</Label>
-                <select
-                  className="w-full border border-input rounded-md px-3 py-2 text-sm bg-background dark:bg-slate-700 dark:text-white dark:border-slate-600"
-                  value={statusForm.toStatus}
-                  onChange={(e) => setStatusForm({ ...statusForm, toStatus: e.target.value })}
-                >
+                <Label className="text-sm font-medium dark:text-slate-200">New Status</Label>
+                <select className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200" value={statusForm.toStatus} onChange={(e) => setStatusForm({ ...statusForm, toStatus: e.target.value })}>
                   <option value="">Select new status...</option>
-                  {getValidTransitions(asset.status).map((t) => (
-                    <option key={t.value} value={t.value}>{t.label}</option>
-                  ))}
+                  {getValidTransitions(asset.status).map((t) => (<option key={t.value} value={t.value}>{t.label}</option>))}
                 </select>
               </div>
               <div className="space-y-2">
-                <Label className="dark:text-slate-200">Reason</Label>
-                <Input
-                  value={statusForm.reason}
-                  onChange={(e) => setStatusForm({ ...statusForm, reason: e.target.value })}
-                  placeholder="e.g., Scheduled maintenance, Seasonal idle"
-                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
-                />
+                <Label className="text-sm font-medium dark:text-slate-200">Reason</Label>
+                <Input value={statusForm.reason} onChange={(e) => setStatusForm({ ...statusForm, reason: e.target.value })} placeholder="e.g., Scheduled maintenance, Seasonal idle" className="dark:bg-slate-900 dark:text-white dark:border-slate-700" />
               </div>
               <div className="space-y-2">
-                <Label className="dark:text-slate-200">Notes</Label>
-                <Input
-                  value={statusForm.notes}
-                  onChange={(e) => setStatusForm({ ...statusForm, notes: e.target.value })}
-                  placeholder="Additional details..."
-                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
-                />
+                <Label className="text-sm font-medium dark:text-slate-200">Notes</Label>
+                <Input value={statusForm.notes} onChange={(e) => setStatusForm({ ...statusForm, notes: e.target.value })} placeholder="Additional details..." className="dark:bg-slate-900 dark:text-white dark:border-slate-700" />
               </div>
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setStatusDialogOpen(false)}>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" size="sm" onClick={() => setStatusDialogOpen(false)} className="dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
+                <X className="mr-1 h-4 w-4" />
                 Cancel
               </Button>
-              <Button onClick={handleStatusTransition} disabled={changingStatus || !statusForm.toStatus}>
-                {changingStatus && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              <Button size="sm" onClick={handleStatusTransition} disabled={changingStatus || !statusForm.toStatus} className="bg-amber-600 hover:bg-amber-700">
+                {changingStatus && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+                <RefreshCw className="mr-1 h-4 w-4" />
                 Change Status
               </Button>
             </DialogFooter>
@@ -939,22 +898,20 @@ export default function AssetDetailPage() {
 
         {/* Dispose Dialog - Enhanced */}
         <Dialog open={disposeDialogOpen} onOpenChange={setDisposeDialogOpen}>
-          <DialogContent className="dark:bg-slate-800 max-w-lg">
-            <DialogHeader>
-              <DialogTitle className="dark:text-white">{t("assets.dialogs.dispose.title")}</DialogTitle>
-              <DialogDescription className="dark:text-slate-400">
-                Record asset disposal with complete financial details
-              </DialogDescription>
+          <DialogContent className="max-w-lg border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-950">
+            <DialogHeader className="gap-1">
+              <div className="flex items-center gap-2">
+                <div className="rounded-lg bg-red-50 p-2 text-red-700 ring-1 ring-red-100 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900/60">
+                  <Trash2 className="h-4 w-4" />
+                </div>
+                <DialogTitle className="text-lg dark:text-white">{t("assets.dialogs.dispose.title")}</DialogTitle>
+              </div>
+              <DialogDescription className="dark:text-slate-400">Record asset disposal with complete financial details</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
-              {/* Disposal Method */}
               <div className="space-y-2">
-                <Label className="dark:text-slate-200">Disposal Method</Label>
-                <select
-                  className="w-full border border-input rounded-md px-3 py-2 text-sm bg-background dark:bg-slate-700 dark:text-white dark:border-slate-600"
-                  value={disposalForm.disposalMethod}
-                  onChange={(e) => setDisposalForm({ ...disposalForm, disposalMethod: e.target.value })}
-                >
+                <Label className="text-sm font-medium dark:text-slate-200">Disposal Method</Label>
+                <select className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200" value={disposalForm.disposalMethod} onChange={(e) => setDisposalForm({ ...disposalForm, disposalMethod: e.target.value })}>
                   <option value="sale">Sale (Sold to third party)</option>
                   <option value="scrap">Scrap (No proceeds)</option>
                   <option value="donation">Donation (Given away)</option>
@@ -962,128 +919,68 @@ export default function AssetDetailPage() {
                   <option value="theft_loss">Theft/Loss (Insurance claim)</option>
                 </select>
               </div>
-
-              {/* Disposal Date */}
               <div className="space-y-2">
-                <Label className="dark:text-slate-200">{t("assets.fields.disposalDate")}</Label>
-                <Input
-                  type="date"
-                  value={disposalForm.disposalDate}
-                  onChange={(e) => setDisposalForm({ ...disposalForm, disposalDate: e.target.value })}
-                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
-                />
+                <Label className="text-sm font-medium dark:text-slate-200">{t("assets.fields.disposalDate")}</Label>
+                <Input type="date" value={disposalForm.disposalDate} onChange={(e) => setDisposalForm({ ...disposalForm, disposalDate: e.target.value })} className="dark:bg-slate-900 dark:text-white dark:border-slate-700" />
               </div>
-
-              {/* Financial Summary */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="dark:text-slate-200">Gross Proceeds</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={disposalForm.disposalProceeds}
-                    onChange={(e) => setDisposalForm({ ...disposalForm, disposalProceeds: parseFloat(e.target.value) || 0 })}
-                    className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
-                  />
+                  <Label className="text-sm font-medium dark:text-slate-200">Gross Proceeds</Label>
+                  <Input type="number" min="0" step="0.01" value={disposalForm.disposalProceeds} onChange={(e) => setDisposalForm({ ...disposalForm, disposalProceeds: parseFloat(e.target.value) || 0 })} className="dark:bg-slate-900 dark:text-white dark:border-slate-700" />
                 </div>
                 <div className="space-y-2">
-                  <Label className="dark:text-slate-200">Disposal Costs</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={disposalForm.disposalCosts}
-                    onChange={(e) => setDisposalForm({ ...disposalForm, disposalCosts: parseFloat(e.target.value) || 0 })}
-                    className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
-                  />
+                  <Label className="text-sm font-medium dark:text-slate-200">Disposal Costs</Label>
+                  <Input type="number" min="0" step="0.01" value={disposalForm.disposalCosts} onChange={(e) => setDisposalForm({ ...disposalForm, disposalCosts: parseFloat(e.target.value) || 0 })} className="dark:bg-slate-900 dark:text-white dark:border-slate-700" />
                 </div>
               </div>
-
-              {/* Net Proceeds Preview */}
-              <div className="p-3 bg-muted rounded dark:bg-slate-700">
-                <div className="flex justify-between text-sm">
-                  <span className="dark:text-slate-300">Net Proceeds:</span>
-                  <span className="font-semibold dark:text-white">
-                    {formatCurrency(disposalForm.disposalProceeds - disposalForm.disposalCosts)}
-                  </span>
+              <div className="rounded-lg border border-slate-100 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900/50">
+                <div className="flex justify-between text-sm text-slate-600 dark:text-slate-300">
+                  <span>Net Proceeds:</span>
+                  <span className="font-semibold text-slate-900 dark:text-white">{formatCurrency(disposalForm.disposalProceeds - disposalForm.disposalCosts)}</span>
                 </div>
-                <div className="flex justify-between text-sm mt-1">
-                  <span className="dark:text-slate-300">Current Book Value:</span>
-                  <span className="font-semibold dark:text-white">{formatCurrency(asset.netBookValue)}</span>
+                <div className="mt-1 flex justify-between text-sm text-slate-600 dark:text-slate-300">
+                  <span>Current Book Value:</span>
+                  <span className="font-semibold text-slate-900 dark:text-white">{formatCurrency(asset.netBookValue)}</span>
                 </div>
-                <div className="flex justify-between text-sm mt-1 pt-2 border-t dark:border-slate-600">
-                  <span className="dark:text-slate-300">Expected Gain/Loss:</span>
-                  <span className={`font-semibold ${
-                    (disposalForm.disposalProceeds - disposalForm.disposalCosts - parseFloat(asset.netBookValue?.toString() || "0")) >= 0
-                      ? "text-green-600 dark:text-green-400"
-                      : "text-red-600 dark:text-red-400"
-                  }`}>
+                <div className="mt-2 flex justify-between border-t border-slate-200 pt-2 text-sm dark:border-slate-800">
+                  <span className="text-slate-600 dark:text-slate-300">Expected Gain/Loss:</span>
+                  <span className={`font-semibold ${(disposalForm.disposalProceeds - disposalForm.disposalCosts - parseFloat(asset.netBookValue?.toString() || "0")) >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
                     {formatCurrency(disposalForm.disposalProceeds - disposalForm.disposalCosts - parseFloat(asset.netBookValue?.toString() || "0"))}
                   </span>
                 </div>
               </div>
-
-              {/* Bank Account for Proceeds */}
               {disposalForm.disposalProceeds > 0 && (
                 <div className="space-y-2">
-                  <Label className="dark:text-slate-200">Deposit Proceeds to Bank Account</Label>
-                  <select
-                    className="w-full border border-input rounded-md px-3 py-2 text-sm bg-background dark:bg-slate-700 dark:text-white dark:border-slate-600"
-                    value={disposalForm.bankAccountId}
-                    onChange={(e) => setDisposalForm({ ...disposalForm, bankAccountId: e.target.value })}
-                  >
+                  <Label className="text-sm font-medium dark:text-slate-200">Deposit Proceeds to Bank Account</Label>
+                  <select className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200" value={disposalForm.bankAccountId} onChange={(e) => setDisposalForm({ ...disposalForm, bankAccountId: e.target.value })}>
                     <option value="">Select bank account...</option>
-                    {bankAccounts.map((acc: any) => (
-                      <option key={acc._id} value={acc._id}>
-                        {acc.name} (Bal: {formatCurrency(acc.cachedBalance || 0)})
-                      </option>
-                    ))}
+                    {bankAccounts.map((acc: any) => (<option key={acc._id} value={acc._id}>{acc.name} (Bal: {formatCurrency(acc.cachedBalance || 0)})</option>))}
                   </select>
                 </div>
               )}
-
-              {/* RRA Disposal Authorization */}
               <div className="space-y-2">
-                <Label className="dark:text-slate-200">RRA Disposal Auth Number (Optional)</Label>
-                <Input
-                  value={disposalForm.disposalAuthNumber}
-                  onChange={(e) => setDisposalForm({ ...disposalForm, disposalAuthNumber: e.target.value })}
-                  placeholder="e.g., RRA-2024-001234"
-                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
-                />
+                <Label className="text-sm font-medium dark:text-slate-200">RRA Disposal Auth Number (Optional)</Label>
+                <Input value={disposalForm.disposalAuthNumber} onChange={(e) => setDisposalForm({ ...disposalForm, disposalAuthNumber: e.target.value })} placeholder="e.g., RRA-2024-001234" className="dark:bg-slate-900 dark:text-white dark:border-slate-700" />
               </div>
-
-              {/* Notes */}
               <div className="space-y-2">
-                <Label className="dark:text-slate-200">Notes</Label>
-                <Input
-                  value={disposalForm.notes}
-                  onChange={(e) => setDisposalForm({ ...disposalForm, notes: e.target.value })}
-                  placeholder="Additional disposal details..."
-                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
-                />
+                <Label className="text-sm font-medium dark:text-slate-200">Notes</Label>
+                <Input value={disposalForm.notes} onChange={(e) => setDisposalForm({ ...disposalForm, notes: e.target.value })} placeholder="Additional disposal details..." className="dark:bg-slate-900 dark:text-white dark:border-slate-700" />
               </div>
             </div>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setDisposeDialogOpen(false)}
-                className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
-              >
+            <DialogFooter className="gap-2">
+              <Button variant="outline" size="sm" onClick={() => setDisposeDialogOpen(false)} className="dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
+                <X className="mr-1 h-4 w-4" />
                 {t("common.cancel")}
               </Button>
-              <Button
-                variant="destructive"
-                onClick={handleDispose}
-                disabled={disposing}
-              >
-                {disposing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              <Button size="sm" variant="destructive" onClick={handleDispose} disabled={disposing}>
+                {disposing && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+                <Trash2 className="mr-1 h-4 w-4" />
                 {t("assets.actions.dispose")}
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
+      </div>
       </div>
     </Layout>
   );

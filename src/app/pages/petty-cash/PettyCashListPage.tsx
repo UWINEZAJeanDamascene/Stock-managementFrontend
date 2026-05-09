@@ -19,9 +19,20 @@ import {
   ClipboardCheck,
   Scale,
   ArrowUpCircle,
+  ScrollText,
+  BadgeCheck,
+  Banknote,
+  PiggyBank,
+  FileText,
+  Receipt,
+  Layers,
+  Landmark,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
+import { Skeleton } from "@/app/components/ui/skeleton";
 import { Badge } from "@/app/components/ui/badge";
 import {
   Card,
@@ -952,262 +963,256 @@ export default function PettyCashListPage() {
 
   // ── Render ────────────────────────────────────────────────────────────────────
 
+  const totalBalance = funds.reduce((sum, f) => sum + (f.currentBalance || 0), 0);
+  const activeFundsCount = funds.filter((f) => f.isActive).length;
+
   return (
     <Layout>
-      <div className="container mx-auto py-6 space-y-6 bg-gray-50 dark:bg-slate-900 min-h-screen p-6">
-        {/* ── Header ── */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold flex items-center gap-2 dark:text-white">
-              <Wallet className="h-8 w-8" />
-              {t("pettyCash.title", "Petty Cash Funds")}
-            </h1>
-            <p className="text-muted-foreground mt-1 dark:text-slate-400">
-              {t(
-                "pettyCash.list.description",
-                "Manage your petty cash funds and transactions",
-              )}
-            </p>
-          </div>
-          <Button onClick={() => setShowCreateDialog(true)} className="gap-2 dark:bg-primary dark:text-primary-foreground">
-            <Plus className="h-4 w-4" />
-            {t("pettyCash.createFund", "Create Fund")}
-          </Button>
-        </div>
-
-        {/* ── Search + Inactive toggle ── */}
-        <div className="flex flex-wrap gap-4 items-center">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground dark:text-slate-400" />
-            <Input
-              placeholder={t("pettyCash.search", "Search funds...")}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 dark:bg-slate-700 dark:text-white dark:border-slate-600"
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            <Switch
-              id="show-inactive"
-              checked={showInactive}
-              onCheckedChange={handleToggleInactive}
-            />
-            <Label
-              htmlFor="show-inactive"
-              className="cursor-pointer text-sm text-muted-foreground dark:text-slate-400"
-            >
-              Show inactive funds
-            </Label>
-          </div>
-          <Button variant="outline" onClick={() => fetchFunds()} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-          </Button>
-        </div>
-
-        {/* ── Funds Grid ── */}
-        {loading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin" />
-          </div>
-        ) : filteredFunds.length === 0 ? (
-          <Card className="dark:bg-slate-800">
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <Wallet className="h-12 w-12 text-muted-foreground mb-4 dark:text-slate-400" />
-              <p className="text-muted-foreground dark:text-slate-400">No petty cash funds found</p>
-              <Button
-                onClick={() => setShowCreateDialog(true)}
-                className="mt-4 dark:bg-primary dark:text-primary-foreground"
-              >
-                Create your first fund
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
-            {filteredFunds.map((fund) => (
-              <Card
-                key={fund._id}
-                className="hover:shadow-lg transition-shadow dark:bg-slate-800"
-              >
-                <CardHeader className="pb-3">
-                  <div className="flex justify-between items-start gap-2">
-                    <CardTitle className="text-lg font-semibold leading-tight dark:text-white">
-                      {fund.name}
-                    </CardTitle>
-                    <div className="flex items-center gap-1 shrink-0">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 dark:text-slate-300"
-                        title="Edit fund"
-                        onClick={() => openEditDialog(fund)}
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                      <Badge variant={fund.isActive ? "default" : "secondary"} className="dark:bg-slate-700 dark:text-slate-200">
-                        {fund.isActive ? "Active" : "Inactive"}
-                      </Badge>
-                    </div>
+      <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1400px] space-y-6">
+          {/* ── Hero Header ── */}
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+            <div className="grid gap-5 p-5 xl:grid-cols-[1fr_auto] xl:items-center">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="rounded-lg bg-amber-50 p-2.5 text-amber-700 ring-1 ring-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/60">
+                    <Wallet className="h-5 w-5" />
                   </div>
-                  {fund.custodian && (
-                    <p className="text-sm text-muted-foreground dark:text-slate-400">
-                      {t("pettyCash.custodian", "Custodian")}:{" "}
-                      {fund.custodian.name}
+                  <div>
+                    <h1 className="text-2xl font-bold tracking-tight text-slate-950 dark:text-white">
+                      {t("pettyCash.title", "Petty Cash Funds")}
+                    </h1>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      {t("pettyCash.list.description", "Manage your petty cash funds and transactions")}
                     </p>
-                  )}
-                </CardHeader>
-
-                <CardContent className="space-y-4">
-                  {/* Balance Info */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="p-3 bg-muted rounded-lg dark:bg-slate-700">
-                      <p className="text-xs text-muted-foreground mb-1 dark:text-slate-400">
-                        {t("pettyCash.currentBalance", "Current Balance")}
-                      </p>
-                      <p className="text-lg font-semibold text-green-600 dark:text-green-400">
-                        {formatCurrency(fund.currentBalance)}
-                      </p>
-                    </div>
-                    <div className="p-3 bg-muted rounded-lg dark:bg-slate-700">
-                      <p className="text-xs text-muted-foreground mb-1 dark:text-slate-400">
-                        {t("pettyCash.floatAmount", "Float Amount")}
-                      </p>
-                      <p className="text-lg font-semibold dark:text-white">
-                        {formatCurrency(fund.floatAmount)}
-                      </p>
-                    </div>
                   </div>
-
-                  {/* Imprest Mode Badge */}
-                  {fund.imprestMode && (
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800">
-                        <Scale className="h-3 w-3 mr-1" />
-                        Imprest Mode
-                      </Badge>
-                    </div>
-                  )}
-
-                  {/* Replenishment Alert */}
-                  {fund.replenishmentNeeded > 0 && (
-                    <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg dark:bg-amber-900/20 dark:border-amber-800">
-                      <AlertCircle className="h-4 w-4 text-amber-600 shrink-0 dark:text-amber-400" />
-                      <span className="text-sm text-amber-800 dark:text-amber-300">
-                        {t(
-                          "pettyCash.replenishmentNeeded",
-                          "Replenishment needed",
-                        )}
-                        : {formatCurrency(fund.replenishmentNeeded)}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Imprest Replenishment Alert */}
-                  {fund.imprestMode && fund.imprestReplenishmentAmount > 0 && (
-                    <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg dark:bg-blue-900/20 dark:border-blue-800">
-                      <Calculator className="h-4 w-4 text-blue-600 shrink-0 dark:text-blue-400" />
-                      <span className="text-sm text-blue-800 dark:text-blue-300">
-                        Imprest replenishment: {formatCurrency(fund.imprestReplenishmentAmount)}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Actions */}
-                  <div className="flex gap-2 pt-1 flex-wrap">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 gap-1 min-w-[70px] dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
-                      onClick={() => openTopUpDialog(fund)}
-                    >
-                      <TrendingUp className="h-3 w-3" />
-                      {t("pettyCash.topUp", "Top Up")}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 gap-1 min-w-[70px] dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
-                      onClick={() => openExpenseDialog(fund)}
-                    >
-                      <TrendingDown className="h-3 w-3" />
-                      {t("pettyCash.recordExpense", "Expense")}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 gap-1 min-w-[80px] dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
-                      onClick={() => openReplenishDialog(fund)}
-                    >
-                      <RotateCcw className="h-3 w-3" />
-                      Replenish
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      title="View transactions"
-                      className="dark:text-slate-300"
-                      onClick={() => viewTransactions(fund)}
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                  </div>
-
-                  {/* Advanced Actions */}
-                  <div className="flex gap-2 flex-wrap border-t border-slate-200 dark:border-slate-700 pt-3 mt-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 gap-1 min-w-[90px] dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
-                      onClick={() => openCashCountDialog(fund)}
-                    >
-                      <ClipboardCheck className="h-3 w-3" />
-                      Cash Count
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 gap-1 min-w-[100px] dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
-                      onClick={() => openReconciliationsDialog(fund)}
-                    >
-                      <RefreshCw className="h-3 w-3" />
-                      Reconciliations
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 gap-1 min-w-[100px] dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
-                      onClick={() => openReplenishmentsDialog(fund)}
-                    >
-                      <ArrowUpCircle className="h-3 w-3" />
-                      Replenishments
-                    </Button>
-                    {fund.imprestMode && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1 gap-1 min-w-[90px] dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
-                        onClick={() => openImprestDialog(fund)}
-                      >
-                        <Calculator className="h-3 w-3" />
-                        Imprest
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                </div>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <Badge variant="outline" className="h-6 border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-400">
+                    <BadgeCheck className="h-3.5 w-3.5 mr-1" />
+                    {activeFundsCount} Active
+                  </Badge>
+                  <Badge variant="outline" className="h-6 border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-950/30 dark:text-slate-400">
+                    {funds.length - activeFundsCount} Inactive
+                  </Badge>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" onClick={() => setShowCreateDialog(true)} className="h-9 gap-2 bg-indigo-600 hover:bg-indigo-700">
+                  <Plus className="h-4 w-4" />
+                  {t("pettyCash.createFund", "Create Fund")}
+                </Button>
+              </div>
+            </div>
           </div>
-        )}
+
+          {/* ── Summary Cards ── */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Total Funds</p>
+                    <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">{funds.length}</p>
+                  </div>
+                  <div className="rounded-lg bg-indigo-50 p-2.5 text-indigo-700 ring-1 ring-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-300 dark:ring-indigo-900/60">
+                    <Layers className="h-4 w-4" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Total Balance</p>
+                    <p className="mt-2 text-2xl font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(totalBalance)}</p>
+                  </div>
+                  <div className="rounded-lg bg-emerald-50 p-2.5 text-emerald-700 ring-1 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60">
+                    <Banknote className="h-4 w-4" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Active Funds</p>
+                    <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">{activeFundsCount}</p>
+                  </div>
+                  <div className="rounded-lg bg-blue-50 p-2.5 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60">
+                    <BadgeCheck className="h-4 w-4" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* ── Search + Inactive toggle ── */}
+          <div className="flex flex-wrap items-end gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500" />
+              <Input
+                placeholder={t("pettyCash.search", "Search funds...")}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 h-9 dark:bg-slate-900 dark:text-white dark:border-slate-700 dark:placeholder:text-slate-500"
+              />
+            </div>
+            <div className="flex items-center gap-2 pb-0.5">
+              <Switch id="show-inactive" checked={showInactive} onCheckedChange={handleToggleInactive} />
+              <Label htmlFor="show-inactive" className="cursor-pointer text-sm text-slate-600 dark:text-slate-300">
+                Show inactive
+              </Label>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => fetchFunds()} className="h-9 dark:border-slate-700 dark:text-slate-200">
+              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            </Button>
+          </div>
+
+          {/* ── Funds Grid ── */}
+          {loading ? (
+            <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
+              {[...Array(4)].map((_, i) => (
+                <Skeleton key={i} className="h-80 w-full rounded-lg" />
+              ))}
+            </div>
+          ) : filteredFunds.length === 0 ? (
+            <div className="flex min-h-[200px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <Wallet className="mb-2 h-8 w-8 text-slate-300 dark:text-slate-600" />
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">No petty cash funds found</p>
+              <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">Create your first fund to get started</p>
+              <Button onClick={() => setShowCreateDialog(true)} className="mt-4 h-9 gap-2 bg-indigo-600 hover:bg-indigo-700">
+                <Plus className="h-4 w-4" />
+                Create Fund
+              </Button>
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
+              {filteredFunds.map((fund) => (
+                <Card key={fund._id} className="overflow-hidden border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md dark:border-slate-800 dark:bg-slate-950">
+                  <CardHeader className="pb-3">
+                    <div className="flex justify-between items-start gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="rounded-md bg-amber-50 p-1.5 text-amber-700 ring-1 ring-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/60">
+                          <Landmark className="h-4 w-4" />
+                        </div>
+                        <CardTitle className="text-base font-semibold leading-tight dark:text-white truncate">
+                          {fund.name}
+                        </CardTitle>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button variant="ghost" size="icon" className="h-7 w-7 dark:text-slate-300 dark:hover:bg-slate-800" title="Edit fund" onClick={() => openEditDialog(fund)}>
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Badge variant="outline" className={`h-5 text-xs ${fund.isActive ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-400' : 'border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-950/30 dark:text-slate-400'}`}>
+                          {fund.isActive ? "Active" : "Inactive"}
+                        </Badge>
+                      </div>
+                    </div>
+                    {fund.custodian && (
+                      <p className="text-xs text-slate-500 dark:text-slate-400 pl-8">
+                        {t("pettyCash.custodian", "Custodian")}: {fund.custodian.name}
+                      </p>
+                    )}
+                  </CardHeader>
+
+                  <CardContent className="space-y-3">
+                    {/* Balance Info */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="rounded-lg border border-slate-100 bg-slate-50/50 p-3 dark:border-slate-800 dark:bg-slate-900/50">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Current Balance</p>
+                        <p className="mt-1 text-lg font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(fund.currentBalance)}</p>
+                      </div>
+                      <div className="rounded-lg border border-slate-100 bg-slate-50/50 p-3 dark:border-slate-800 dark:bg-slate-900/50">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Float Amount</p>
+                        <p className="mt-1 text-lg font-bold text-slate-700 dark:text-slate-300">{formatCurrency(fund.floatAmount)}</p>
+                      </div>
+                    </div>
+
+                    {/* Alerts */}
+                    <div className="flex flex-wrap gap-2">
+                      {fund.imprestMode && (
+                        <Badge variant="outline" className="h-6 gap-1 border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900 dark:bg-blue-950/30 dark:text-blue-400">
+                          <Scale className="h-3 w-3" />
+                          Imprest Mode
+                        </Badge>
+                      )}
+                      {fund.replenishmentNeeded > 0 && (
+                        <Badge variant="outline" className="h-6 gap-1 border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-400">
+                          <AlertCircle className="h-3 w-3" />
+                          Replenish {formatCurrency(fund.replenishmentNeeded)}
+                        </Badge>
+                      )}
+                      {fund.imprestMode && fund.imprestReplenishmentAmount > 0 && (
+                        <Badge variant="outline" className="h-6 gap-1 border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-900 dark:bg-indigo-950/30 dark:text-indigo-400">
+                          <Calculator className="h-3 w-3" />
+                          Imprest {formatCurrency(fund.imprestReplenishmentAmount)}
+                        </Badge>
+                      )}
+                    </div>
+
+                    {/* Primary Actions */}
+                    <div className="flex gap-2 flex-wrap">
+                      <Button variant="outline" size="sm" className="flex-1 gap-1 h-8 min-w-[70px] dark:border-slate-700 dark:text-slate-200" onClick={() => openTopUpDialog(fund)}>
+                        <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
+                        Top Up
+                      </Button>
+                      <Button variant="outline" size="sm" className="flex-1 gap-1 h-8 min-w-[70px] dark:border-slate-700 dark:text-slate-200" onClick={() => openExpenseDialog(fund)}>
+                        <TrendingDown className="h-3.5 w-3.5 text-red-500" />
+                        Expense
+                      </Button>
+                      <Button variant="outline" size="sm" className="flex-1 gap-1 h-8 min-w-[80px] dark:border-slate-700 dark:text-slate-200" onClick={() => openReplenishDialog(fund)}>
+                        <RotateCcw className="h-3.5 w-3.5 text-blue-500" />
+                        Replenish
+                      </Button>
+                      <Button variant="ghost" size="icon" title="View transactions" className="h-8 w-8 dark:text-slate-300 dark:hover:bg-slate-800" onClick={() => viewTransactions(fund)}>
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </div>
+
+                    {/* Advanced Actions */}
+                    <div className="flex gap-2 flex-wrap border-t border-slate-100 pt-3 dark:border-slate-800">
+                      <Button variant="outline" size="sm" className="flex-1 gap-1 h-8 min-w-[90px] dark:border-slate-700 dark:text-slate-200" onClick={() => openCashCountDialog(fund)}>
+                        <ClipboardCheck className="h-3.5 w-3.5" />
+                        Cash Count
+                      </Button>
+                      <Button variant="outline" size="sm" className="flex-1 gap-1 h-8 min-w-[100px] dark:border-slate-700 dark:text-slate-200" onClick={() => openReconciliationsDialog(fund)}>
+                        <RefreshCw className="h-3.5 w-3.5" />
+                        Reconciliations
+                      </Button>
+                      <Button variant="outline" size="sm" className="flex-1 gap-1 h-8 min-w-[100px] dark:border-slate-700 dark:text-slate-200" onClick={() => openReplenishmentsDialog(fund)}>
+                        <ArrowUpCircle className="h-3.5 w-3.5" />
+                        Replenishments
+                      </Button>
+                      {fund.imprestMode && (
+                        <Button variant="outline" size="sm" className="flex-1 gap-1 h-8 min-w-[90px] dark:border-slate-700 dark:text-slate-200" onClick={() => openImprestDialog(fund)}>
+                          <Calculator className="h-3.5 w-3.5" />
+                          Imprest
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
 
         {/* ══════════════════════════════════════════════════════════
             Create Fund Dialog
         ══════════════════════════════════════════════════════════ */}
         <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-          <DialogContent className="sm:max-w-md dark:bg-slate-800">
-            <DialogHeader>
-              <DialogTitle className="dark:text-white">
-                {t("pettyCash.createFund", "Create New Fund")}
-              </DialogTitle>
+          <DialogContent className="sm:max-w-md dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+            <DialogHeader className="gap-1">
+              <div className="flex items-center gap-2">
+                <div className="rounded-lg bg-amber-50 p-2 text-amber-700 ring-1 ring-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/60">
+                  <Plus className="h-4 w-4" />
+                </div>
+                <DialogTitle className="text-lg dark:text-white">
+                  {t("pettyCash.createFund", "Create New Fund")}
+                </DialogTitle>
+              </div>
               <DialogDescription className="dark:text-slate-400">
                 Create a new petty cash fund for your organization
               </DialogDescription>
@@ -1215,108 +1220,77 @@ export default function PettyCashListPage() {
 
             <div className="grid gap-4 py-4">
               {/* Custodian notice — Fix A */}
-              <div className="flex items-start gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800 dark:border-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+              <div className="flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
                 <Info className="h-4 w-4 mt-0.5 shrink-0 text-blue-500 dark:text-blue-400" />
-                <span>
-                  Custodian will be set to <strong>you</strong>. Contact an
-                  admin to change.
-                </span>
+                <span>Custodian will be set to <strong>you</strong>. Contact an admin to change.</span>
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="create-name" className="dark:text-slate-200">Fund Name *</Label>
+                <Label htmlFor="create-name" className="text-sm dark:text-slate-200">Fund Name *</Label>
                 <Input
                   id="create-name"
                   value={newFundForm.name}
-                  onChange={(e) =>
-                    setNewFundForm({ ...newFundForm, name: e.target.value })
-                  }
+                  onChange={(e) => setNewFundForm({ ...newFundForm, name: e.target.value })}
                   placeholder="e.g., Main Office Petty Cash"
-                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                  className="h-9 dark:bg-slate-900 dark:text-white dark:border-slate-700 dark:placeholder:text-slate-500"
                 />
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="create-float" className="dark:text-slate-200">Float Amount *</Label>
+                <Label htmlFor="create-float" className="text-sm dark:text-slate-200">Float Amount *</Label>
                 <Input
                   id="create-float"
                   type="number"
                   min={0}
                   value={newFundForm.floatAmount}
-                  onChange={(e) =>
-                    setNewFundForm({
-                      ...newFundForm,
-                      floatAmount: parseFloat(e.target.value) || 0,
-                    })
-                  }
+                  onChange={(e) => setNewFundForm({ ...newFundForm, floatAmount: parseFloat(e.target.value) || 0 })}
                   placeholder="Target replenishment threshold"
-                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                  className="h-9 dark:bg-slate-900 dark:text-white dark:border-slate-700"
                 />
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="create-opening" className="dark:text-slate-200">Opening Balance</Label>
+                <Label htmlFor="create-opening" className="text-sm dark:text-slate-200">Opening Balance</Label>
                 <Input
                   id="create-opening"
                   type="number"
                   min={0}
                   value={newFundForm.openingBalance}
-                  onChange={(e) =>
-                    setNewFundForm({
-                      ...newFundForm,
-                      openingBalance: parseFloat(e.target.value) || 0,
-                    })
-                  }
+                  onChange={(e) => setNewFundForm({ ...newFundForm, openingBalance: parseFloat(e.target.value) || 0 })}
                   placeholder="Initial cash on hand"
-                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                  className="h-9 dark:bg-slate-900 dark:text-white dark:border-slate-700"
                 />
               </div>
 
-              {/* Imprest Mode Toggle */}
-              <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg dark:bg-slate-700/50">
+              <div className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900/50">
                 <div className="flex items-center gap-2">
                   <Scale className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                   <div>
-                    <Label className="dark:text-slate-200 font-medium">Imprest Mode</Label>
-                    <p className="text-xs text-muted-foreground dark:text-slate-400">
-                      Fixed float system with periodic replenishment
-                    </p>
+                    <Label className="text-sm dark:text-slate-200 font-medium">Imprest Mode</Label>
+                    <p className="text-xs text-slate-500 dark:text-slate-500">Fixed float system with periodic replenishment</p>
                   </div>
                 </div>
-                <Switch
-                  checked={newFundForm.imprestMode}
-                  onCheckedChange={(checked) =>
-                    setNewFundForm({ ...newFundForm, imprestMode: checked })
-                  }
-                />
+                <Switch checked={newFundForm.imprestMode} onCheckedChange={(checked) => setNewFundForm({ ...newFundForm, imprestMode: checked })} />
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="create-notes" className="dark:text-slate-200">Notes</Label>
+                <Label htmlFor="create-notes" className="text-sm dark:text-slate-200">Notes</Label>
                 <Input
                   id="create-notes"
                   value={newFundForm.notes}
-                  onChange={(e) =>
-                    setNewFundForm({ ...newFundForm, notes: e.target.value })
-                  }
+                  onChange={(e) => setNewFundForm({ ...newFundForm, notes: e.target.value })}
                   placeholder="Optional notes"
-                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                  className="h-9 dark:bg-slate-900 dark:text-white dark:border-slate-700 dark:placeholder:text-slate-500"
                 />
               </div>
             </div>
 
             <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setShowCreateDialog(false)}
-                className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
-              >
+              <Button variant="outline" onClick={() => setShowCreateDialog(false)} className="dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
                 Cancel
               </Button>
-              <Button onClick={handleCreateFund} disabled={submitting} className="dark:bg-primary dark:text-primary-foreground">
-                {submitting && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
+              <Button onClick={handleCreateFund} disabled={submitting} className="bg-indigo-600 hover:bg-indigo-700">
+                {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Create Fund
               </Button>
             </DialogFooter>
@@ -1327,9 +1301,14 @@ export default function PettyCashListPage() {
             Edit Fund Dialog — Fix C
         ══════════════════════════════════════════════════════════ */}
         <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-          <DialogContent className="sm:max-w-md dark:bg-slate-800">
-            <DialogHeader>
-              <DialogTitle className="dark:text-white">Edit Fund</DialogTitle>
+          <DialogContent className="sm:max-w-md dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+            <DialogHeader className="gap-1">
+              <div className="flex items-center gap-2">
+                <div className="rounded-lg bg-blue-50 p-2 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60">
+                  <Pencil className="h-4 w-4" />
+                </div>
+                <DialogTitle className="text-lg dark:text-white">Edit Fund</DialogTitle>
+              </div>
               <DialogDescription className="dark:text-slate-400">
                 Update details for <strong>{selectedFund?.name}</strong>
               </DialogDescription>
@@ -1337,62 +1316,47 @@ export default function PettyCashListPage() {
 
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <Label htmlFor="edit-name" className="dark:text-slate-200">Fund Name *</Label>
+                <Label htmlFor="edit-name" className="text-sm dark:text-slate-200">Fund Name *</Label>
                 <Input
                   id="edit-name"
                   value={editFundForm.name}
-                  onChange={(e) =>
-                    setEditFundForm({ ...editFundForm, name: e.target.value })
-                  }
+                  onChange={(e) => setEditFundForm({ ...editFundForm, name: e.target.value })}
                   placeholder="Fund name"
-                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                  className="h-9 dark:bg-slate-900 dark:text-white dark:border-slate-700"
                 />
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="edit-float" className="dark:text-slate-200">Float Amount *</Label>
+                <Label htmlFor="edit-float" className="text-sm dark:text-slate-200">Float Amount *</Label>
                 <Input
                   id="edit-float"
                   type="number"
                   min={0}
                   value={editFundForm.floatAmount}
-                  onChange={(e) =>
-                    setEditFundForm({
-                      ...editFundForm,
-                      floatAmount: parseFloat(e.target.value) || 0,
-                    })
-                  }
+                  onChange={(e) => setEditFundForm({ ...editFundForm, floatAmount: parseFloat(e.target.value) || 0 })}
                   placeholder="Target float amount"
-                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                  className="h-9 dark:bg-slate-900 dark:text-white dark:border-slate-700"
                 />
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="edit-notes" className="dark:text-slate-200">Notes</Label>
+                <Label htmlFor="edit-notes" className="text-sm dark:text-slate-200">Notes</Label>
                 <Input
                   id="edit-notes"
                   value={editFundForm.notes}
-                  onChange={(e) =>
-                    setEditFundForm({ ...editFundForm, notes: e.target.value })
-                  }
+                  onChange={(e) => setEditFundForm({ ...editFundForm, notes: e.target.value })}
                   placeholder="Optional notes"
-                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                  className="h-9 dark:bg-slate-900 dark:text-white dark:border-slate-700 dark:placeholder:text-slate-500"
                 />
               </div>
             </div>
 
             <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setShowEditDialog(false)}
-                className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
-              >
+              <Button variant="outline" onClick={() => setShowEditDialog(false)} className="dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
                 Cancel
               </Button>
-              <Button onClick={handleEditFund} disabled={submitting} className="dark:bg-primary dark:text-primary-foreground">
-                {submitting && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
+              <Button onClick={handleEditFund} disabled={submitting} className="bg-indigo-600 hover:bg-indigo-700">
+                {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Save Changes
               </Button>
             </DialogFooter>
@@ -1403,54 +1367,47 @@ export default function PettyCashListPage() {
             Top Up Dialog
         ══════════════════════════════════════════════════════════ */}
         <Dialog open={showTopUpDialog} onOpenChange={setShowTopUpDialog}>
-          <DialogContent className="sm:max-w-md dark:bg-slate-800">
-            <DialogHeader>
-              <DialogTitle className="dark:text-white">
-                {t("pettyCash.topUp", "Top Up Petty Cash")}
-              </DialogTitle>
+          <DialogContent className="sm:max-w-md dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+            <DialogHeader className="gap-1">
+              <div className="flex items-center gap-2">
+                <div className="rounded-lg bg-emerald-50 p-2 text-emerald-700 ring-1 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60">
+                  <TrendingUp className="h-4 w-4" />
+                </div>
+                <DialogTitle className="text-lg dark:text-white">
+                  {t("pettyCash.topUp", "Top Up Petty Cash")}
+                </DialogTitle>
+              </div>
               <DialogDescription className="dark:text-slate-400">
                 Add funds to {selectedFund?.name}
               </DialogDescription>
             </DialogHeader>
 
             <div className="grid gap-4 py-4">
-              <div className="p-3 bg-muted rounded-lg dark:bg-slate-700">
-                <p className="text-sm text-muted-foreground dark:text-slate-400">Current Balance</p>
-                <p className="text-lg font-semibold dark:text-white">
-                  {selectedFund && formatCurrency(selectedFund.currentBalance)}
-                </p>
+              <div className="rounded-lg border border-slate-100 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900/50">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Current Balance</p>
+                <p className="mt-1 text-xl font-bold text-slate-900 dark:text-white">{selectedFund && formatCurrency(selectedFund.currentBalance)}</p>
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="topup-amount" className="dark:text-slate-200">Amount *</Label>
+                <Label htmlFor="topup-amount" className="text-sm dark:text-slate-200">Amount *</Label>
                 <Input
                   id="topup-amount"
                   type="number"
                   min={0}
                   value={topUpForm.amount}
-                  onChange={(e) =>
-                    setTopUpForm({
-                      ...topUpForm,
-                      amount: parseFloat(e.target.value) || 0,
-                    })
-                  }
+                  onChange={(e) => setTopUpForm({ ...topUpForm, amount: parseFloat(e.target.value) || 0 })}
                   placeholder="Amount to add"
-                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                  className="h-9 dark:bg-slate-900 dark:text-white dark:border-slate-700"
                 />
               </div>
 
               <div className="grid gap-2">
                 <Label className="dark:text-slate-200">Source Bank Account *</Label>
-                <Select
-                  value={topUpForm.bank_account_id}
-                  onValueChange={(value) =>
-                    setTopUpForm({ ...topUpForm, bank_account_id: value })
-                  }
-                >
-                  <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
+                <Select value={topUpForm.bank_account_id} onValueChange={(value) => setTopUpForm({ ...topUpForm, bank_account_id: value })}>
+                  <SelectTrigger className="h-9 dark:bg-slate-900 dark:text-white dark:border-slate-700">
                     <SelectValue placeholder="Select bank account" />
                   </SelectTrigger>
-                  <SelectContent className="dark:bg-slate-800">
+                  <SelectContent className="dark:bg-slate-950 dark:border-slate-800">
                     {bankAccounts.map((account) => (
                       <SelectItem key={account._id} value={account._id}>
                         {account.name} (
@@ -1468,47 +1425,34 @@ export default function PettyCashListPage() {
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="topup-desc" className="dark:text-slate-200">Description</Label>
+                <Label htmlFor="topup-desc" className="text-sm dark:text-slate-200">Description</Label>
                 <Input
                   id="topup-desc"
                   value={topUpForm.description}
-                  onChange={(e) =>
-                    setTopUpForm({ ...topUpForm, description: e.target.value })
-                  }
+                  onChange={(e) => setTopUpForm({ ...topUpForm, description: e.target.value })}
                   placeholder="Optional description"
-                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                  className="h-9 dark:bg-slate-900 dark:text-white dark:border-slate-700 dark:placeholder:text-slate-500"
                 />
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="topup-date" className="dark:text-slate-200">Transaction Date</Label>
+                <Label htmlFor="topup-date" className="text-sm dark:text-slate-200">Transaction Date</Label>
                 <Input
                   id="topup-date"
                   type="date"
                   value={topUpForm.transactionDate}
-                  onChange={(e) =>
-                    setTopUpForm({
-                      ...topUpForm,
-                      transactionDate: e.target.value,
-                    })
-                  }
-                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                  onChange={(e) => setTopUpForm({ ...topUpForm, transactionDate: e.target.value })}
+                  className="h-9 dark:bg-slate-900 dark:text-white dark:border-slate-700"
                 />
               </div>
             </div>
 
             <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setShowTopUpDialog(false)}
-                className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
-              >
+              <Button variant="outline" onClick={() => setShowTopUpDialog(false)} className="dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
                 Cancel
               </Button>
-              <Button onClick={handleTopUp} disabled={submitting} className="dark:bg-primary dark:text-primary-foreground">
-                {submitting && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
+              <Button onClick={handleTopUp} disabled={submitting} className="bg-emerald-600 hover:bg-emerald-700">
+                {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Top Up
               </Button>
             </DialogFooter>
@@ -1519,46 +1463,35 @@ export default function PettyCashListPage() {
             Record Expense Dialog — Enhanced with 7 Categories
         ══════════════════════════════════════════════════════════ */}
         <Dialog open={showExpenseDialog} onOpenChange={setShowExpenseDialog}>
-          <DialogContent className="sm:max-w-lg dark:bg-slate-800 max-h-[85vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="dark:text-white">
-                {t("pettyCash.recordExpense", "Record Expense")}
-              </DialogTitle>
+          <DialogContent className="sm:max-w-lg dark:bg-slate-950 border-slate-200 dark:border-slate-800 max-h-[85vh] overflow-y-auto">
+            <DialogHeader className="gap-1">
+              <div className="flex items-center gap-2">
+                <div className="rounded-lg bg-red-50 p-2 text-red-700 ring-1 ring-red-100 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900/60">
+                  <Receipt className="h-4 w-4" />
+                </div>
+                <DialogTitle className="text-lg dark:text-white">
+                  {t("pettyCash.recordExpense", "Record Expense")}
+                </DialogTitle>
+              </div>
               <DialogDescription className="dark:text-slate-400">
                 Record an expense from {selectedFund?.name}
               </DialogDescription>
             </DialogHeader>
 
             <div className="grid gap-4 py-4">
-              <div className="p-3 bg-muted rounded-lg dark:bg-slate-700">
-                <p className="text-sm text-muted-foreground dark:text-slate-400">
-                  Available Balance
-                </p>
-                <p className="text-lg font-semibold dark:text-white">
-                  {selectedFund && formatCurrency(selectedFund.currentBalance)}
-                </p>
+              <div className="rounded-lg border border-slate-100 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900/50">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Available Balance</p>
+                <p className="mt-1 text-xl font-bold text-slate-900 dark:text-white">{selectedFund && formatCurrency(selectedFund.currentBalance)}</p>
               </div>
 
               {/* Category Selection */}
               <div className="grid gap-2">
-                <Label className="dark:text-slate-200">Category *</Label>
-                <Select
-                  value={expenseForm.category}
-                  onValueChange={(value: any) =>
-                    setExpenseForm({
-                      ...expenseForm,
-                      category: value,
-                      subcategory: "",
-                      recipientType: "",
-                      isTaxable: false,
-                      isStaffAdvance: false,
-                    })
-                  }
-                >
-                  <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
+                <Label className="text-sm dark:text-slate-200">Category *</Label>
+                <Select value={expenseForm.category} onValueChange={(value: any) => setExpenseForm({ ...expenseForm, category: value, subcategory: "", recipientType: "", isTaxable: false, isStaffAdvance: false })}>
+                  <SelectTrigger className="h-9 dark:bg-slate-900 dark:text-white dark:border-slate-700">
                     <SelectValue placeholder="Select expense category" />
                   </SelectTrigger>
-                  <SelectContent className="dark:bg-slate-800">
+                  <SelectContent className="dark:bg-slate-950 dark:border-slate-800">
                     <SelectItem value="office_stationery">Office & Stationery</SelectItem>
                     <SelectItem value="travel_transport">Travel & Transport</SelectItem>
                     <SelectItem value="meals_entertainment">Meals & Entertainment</SelectItem>
@@ -1572,22 +1505,14 @@ export default function PettyCashListPage() {
 
               {/* Subcategory - Cascading dropdown based on category */}
               <div className="grid gap-2">
-                <Label htmlFor="exp-subcategory" className="dark:text-slate-200">
+                <Label htmlFor="exp-subcategory" className="text-sm dark:text-slate-200">
                   Subcategory / Details {expenseForm.subcategory === "other" && "*"}
                 </Label>
-                <Select
-                  value={expenseForm.subcategory}
-                  onValueChange={(value) =>
-                    setExpenseForm({
-                      ...expenseForm,
-                      subcategory: value,
-                    })
-                  }
-                >
-                  <SelectTrigger id="exp-subcategory" className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
+                <Select value={expenseForm.subcategory} onValueChange={(value) => setExpenseForm({ ...expenseForm, subcategory: value })}>
+                  <SelectTrigger id="exp-subcategory" className="h-9 dark:bg-slate-900 dark:text-white dark:border-slate-700">
                     <SelectValue placeholder="Select subcategory" />
                   </SelectTrigger>
-                  <SelectContent className="dark:bg-slate-800 max-h-60">
+                  <SelectContent className="dark:bg-slate-950 dark:border-slate-800 max-h-60">
                     {SUBCATEGORY_OPTIONS[expenseForm.category]?.map((opt) => (
                       <SelectItem key={opt.value} value={opt.value}>
                         {opt.label}
@@ -1609,36 +1534,29 @@ export default function PettyCashListPage() {
 
               {/* Amount */}
               <div className="grid gap-2">
-                <Label htmlFor="exp-amount" className="dark:text-slate-200">Amount *</Label>
+                <Label htmlFor="exp-amount" className="text-sm dark:text-slate-200">Amount *</Label>
                 <Input
                   id="exp-amount"
                   type="number"
                   min={0}
                   step={0.01}
                   value={expenseForm.amount}
-                  onChange={(e) =>
-                    setExpenseForm({
-                      ...expenseForm,
-                      amount: parseFloat(e.target.value) || 0,
-                    })
-                  }
+                  onChange={(e) => setExpenseForm({ ...expenseForm, amount: parseFloat(e.target.value) || 0 })}
                   placeholder="Expense amount"
-                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                  className="h-9 dark:bg-slate-900 dark:text-white dark:border-slate-700"
                 />
               </div>
 
               {/* Conditional: Purpose for Travel */}
               {expenseForm.category === "travel_transport" && (
                 <div className="grid gap-2">
-                  <Label htmlFor="exp-purpose" className="dark:text-slate-200">Trip Purpose</Label>
+                  <Label htmlFor="exp-purpose" className="text-sm dark:text-slate-200">Trip Purpose</Label>
                   <Input
                     id="exp-purpose"
                     value={expenseForm.purpose}
-                    onChange={(e) =>
-                      setExpenseForm({ ...expenseForm, purpose: e.target.value })
-                    }
+                    onChange={(e) => setExpenseForm({ ...expenseForm, purpose: e.target.value })}
                     placeholder="e.g., Client meeting in Kigali"
-                    className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                    className="h-9 dark:bg-slate-900 dark:text-white dark:border-slate-700 dark:placeholder:text-slate-500"
                   />
                 </div>
               )}
@@ -1648,16 +1566,11 @@ export default function PettyCashListPage() {
                 <>
                   <div className="grid gap-2">
                     <Label className="dark:text-slate-200">Recipient Type</Label>
-                    <Select
-                      value={expenseForm.recipientType}
-                      onValueChange={(value: any) =>
-                        setExpenseForm({ ...expenseForm, recipientType: value })
-                      }
-                    >
-                      <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
+                    <Select value={expenseForm.recipientType} onValueChange={(value: any) => setExpenseForm({ ...expenseForm, recipientType: value })}>
+                      <SelectTrigger className="h-9 dark:bg-slate-900 dark:text-white dark:border-slate-700">
                         <SelectValue placeholder="Who was this for?" />
                       </SelectTrigger>
-                      <SelectContent className="dark:bg-slate-800">
+                      <SelectContent className="dark:bg-slate-950 dark:border-slate-800">
                         <SelectItem value="staff">Staff Only</SelectItem>
                         <SelectItem value="client">Client Only</SelectItem>
                         <SelectItem value="mixed">Staff & Client (Mixed)</SelectItem>
@@ -1681,25 +1594,12 @@ export default function PettyCashListPage() {
 
               {/* Conditional: Staff Advance for Staff & Welfare */}
               {expenseForm.category === "staff_welfare" && (
-                <div className="p-3 border rounded-lg dark:border-slate-600">
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900/50">
                   <div className="flex items-center gap-2">
-                    <Checkbox
-                      id="exp-advance"
-                      checked={expenseForm.isStaffAdvance}
-                      onCheckedChange={(checked) =>
-                        setExpenseForm({
-                          ...expenseForm,
-                          isStaffAdvance: checked === true,
-                        })
-                      }
-                    />
-                    <Label htmlFor="exp-advance" className="text-sm font-medium dark:text-slate-200">
-                      This is a staff advance (not an expense)
-                    </Label>
+                    <Checkbox id="exp-advance" checked={expenseForm.isStaffAdvance} onCheckedChange={(checked) => setExpenseForm({ ...expenseForm, isStaffAdvance: checked === true })} />
+                    <Label htmlFor="exp-advance" className="text-sm font-medium dark:text-slate-200">This is a staff advance (not an expense)</Label>
                   </div>
-                  <p className="text-xs text-muted-foreground dark:text-slate-400 mt-1 ml-6">
-                    Advances are posted to Staff Debtors (Employee Advances) and must be reconciled later
-                  </p>
+                  <p className="text-xs text-slate-500 dark:text-slate-500 mt-1 ml-6">Advances are posted to Staff Debtors (Employee Advances) and must be reconciled later</p>
                 </div>
               )}
 
@@ -1707,37 +1607,28 @@ export default function PettyCashListPage() {
               {expenseForm.category === "maintenance_repairs" &&
                 selectedFund?.floatAmount &&
                 expenseForm.amount >= selectedFund.floatAmount * 0.3 && (
-                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg dark:bg-amber-900/20 dark:border-amber-700">
-                    <p className="text-sm text-amber-800 dark:text-amber-300">
-                      <strong>⚠️ Warning:</strong> This maintenance expense is large relative to the petty cash float. Consider routing through a purchase order instead.
-                    </p>
+                  <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 dark:bg-amber-950/20 dark:border-amber-800">
+                    <p className="text-sm text-amber-800 dark:text-amber-300"><strong>⚠️ Warning:</strong> This maintenance expense is large relative to the petty cash float. Consider routing through a purchase order instead.</p>
                   </div>
                 )}
 
               {/* Display backend warnings */}
               {expenseWarnings.length > 0 && (
-                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg dark:bg-yellow-900/20 dark:border-yellow-700">
+                <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-3 dark:bg-yellow-950/20 dark:border-yellow-800">
                   {expenseWarnings.map((w, i) => (
-                    <p key={i} className="text-sm text-yellow-800 dark:text-yellow-300">
-                      ⚠️ {w}
-                    </p>
+                    <p key={i} className="text-sm text-yellow-800 dark:text-yellow-300">⚠️ {w}</p>
                   ))}
                 </div>
               )}
 
               {/* Expense Account (auto-populated but overridable) */}
               <div className="grid gap-2">
-                <Label className="dark:text-slate-200">GL Account</Label>
-                <Select
-                  value={expenseForm.expenseAccountId}
-                  onValueChange={(value) =>
-                    setExpenseForm({ ...expenseForm, expenseAccountId: value })
-                  }
-                >
-                  <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
+                <Label className="text-sm dark:text-slate-200">GL Account</Label>
+                <Select value={expenseForm.expenseAccountId} onValueChange={(value) => setExpenseForm({ ...expenseForm, expenseAccountId: value })}>
+                  <SelectTrigger className="h-9 dark:bg-slate-900 dark:text-white dark:border-slate-700">
                     <SelectValue placeholder="Auto-selected based on category" />
                   </SelectTrigger>
-                  <SelectContent className="dark:bg-slate-800 max-h-60">
+                  <SelectContent className="dark:bg-slate-950 dark:border-slate-800 max-h-60">
                     {activeExpenseAccounts.map((acct) => (
                       <SelectItem key={acct.code} value={acct.code}>
                         {acct.name} ({acct.code})
@@ -1745,78 +1636,52 @@ export default function PettyCashListPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground dark:text-slate-400">
-                  Auto-populated from category. Select manually to override.
-                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-500">Auto-populated from category. Select manually to override.</p>
               </div>
 
               {/* Description */}
               <div className="grid gap-2">
-                <Label htmlFor="exp-desc" className="dark:text-slate-200">Description *</Label>
+                <Label htmlFor="exp-desc" className="text-sm dark:text-slate-200">Description *</Label>
                 <Input
                   id="exp-desc"
                   value={expenseForm.description}
-                  onChange={(e) =>
-                    setExpenseForm({
-                      ...expenseForm,
-                      description: e.target.value,
-                    })
-                  }
+                  onChange={(e) => setExpenseForm({ ...expenseForm, description: e.target.value })}
                   placeholder="Brief description of the expense"
-                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                  className="h-9 dark:bg-slate-900 dark:text-white dark:border-slate-700 dark:placeholder:text-slate-500"
                 />
               </div>
 
               {/* Receipt Reference */}
               <div className="grid gap-2">
-                <Label htmlFor="exp-receipt" className="dark:text-slate-200">Receipt Reference</Label>
+                <Label htmlFor="exp-receipt" className="text-sm dark:text-slate-200">Receipt Reference</Label>
                 <Input
                   id="exp-receipt"
                   value={expenseForm.receiptRef}
-                  onChange={(e) =>
-                    setExpenseForm({
-                      ...expenseForm,
-                      receiptRef: e.target.value,
-                    })
-                  }
+                  onChange={(e) => setExpenseForm({ ...expenseForm, receiptRef: e.target.value })}
                   placeholder="Receipt number (optional)"
-                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                  className="h-9 dark:bg-slate-900 dark:text-white dark:border-slate-700 dark:placeholder:text-slate-500"
                 />
               </div>
 
               {/* Transaction Date */}
               <div className="grid gap-2">
-                <Label htmlFor="exp-date" className="dark:text-slate-200">Transaction Date</Label>
+                <Label htmlFor="exp-date" className="text-sm dark:text-slate-200">Transaction Date</Label>
                 <Input
                   id="exp-date"
                   type="date"
                   value={expenseForm.transactionDate}
-                  onChange={(e) =>
-                    setExpenseForm({
-                      ...expenseForm,
-                      transactionDate: e.target.value,
-                    })
-                  }
-                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                  onChange={(e) => setExpenseForm({ ...expenseForm, transactionDate: e.target.value })}
+                  className="h-9 dark:bg-slate-900 dark:text-white dark:border-slate-700"
                 />
               </div>
             </div>
 
             <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowExpenseDialog(false);
-                  setExpenseWarnings([]);
-                }}
-                className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
-              >
+              <Button variant="outline" onClick={() => { setShowExpenseDialog(false); setExpenseWarnings([]); }} className="dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
                 Cancel
               </Button>
-              <Button onClick={handleRecordExpense} disabled={submitting} className="dark:bg-primary dark:text-primary-foreground">
-                {submitting && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
+              <Button onClick={handleRecordExpense} disabled={submitting} className="bg-red-600 hover:bg-red-700">
+                {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Record Expense
               </Button>
             </DialogFooter>
@@ -1826,76 +1691,57 @@ export default function PettyCashListPage() {
         {/* ══════════════════════════════════════════════════════════
             Request Replenishment Dialog — Fix D
         ══════════════════════════════════════════════════════════ */}
-        <Dialog
-          open={showReplenishDialog}
-          onOpenChange={setShowReplenishDialog}
-        >
-          <DialogContent className="sm:max-w-md dark:bg-slate-800">
-            <DialogHeader>
-              <DialogTitle className="dark:text-white">Request Replenishment</DialogTitle>
+        <Dialog open={showReplenishDialog} onOpenChange={setShowReplenishDialog}>
+          <DialogContent className="sm:max-w-md dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+            <DialogHeader className="gap-1">
+              <div className="flex items-center gap-2">
+                <div className="rounded-lg bg-blue-50 p-2 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60">
+                  <RotateCcw className="h-4 w-4" />
+                </div>
+                <DialogTitle className="text-lg dark:text-white">Request Replenishment</DialogTitle>
+              </div>
               <DialogDescription className="dark:text-slate-400">
-                Submit a replenishment request for{" "}
-                <strong>{selectedFund?.name}</strong>
+                Submit a replenishment request for <strong>{selectedFund?.name}</strong>
               </DialogDescription>
             </DialogHeader>
 
             <div className="grid gap-4 py-4">
-              <div className="p-3 bg-muted rounded-lg dark:bg-slate-700">
-                <p className="text-sm text-muted-foreground dark:text-slate-400">Current Balance</p>
-                <p className="text-lg font-semibold dark:text-white">
-                  {selectedFund && formatCurrency(selectedFund.currentBalance)}
-                </p>
+              <div className="rounded-lg border border-slate-100 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900/50">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Current Balance</p>
+                <p className="mt-1 text-xl font-bold text-slate-900 dark:text-white">{selectedFund && formatCurrency(selectedFund.currentBalance)}</p>
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="replenish-amount" className="dark:text-slate-200">Amount *</Label>
+                <Label htmlFor="replenish-amount" className="text-sm dark:text-slate-200">Amount *</Label>
                 <Input
                   id="replenish-amount"
                   type="number"
                   min={0}
                   value={replenishForm.amount}
-                  onChange={(e) =>
-                    setReplenishForm({
-                      ...replenishForm,
-                      amount: parseFloat(e.target.value) || 0,
-                    })
-                  }
+                  onChange={(e) => setReplenishForm({ ...replenishForm, amount: parseFloat(e.target.value) || 0 })}
                   placeholder="Requested replenishment amount"
-                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                  className="h-9 dark:bg-slate-900 dark:text-white dark:border-slate-700"
                 />
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="replenish-reason" className="dark:text-slate-200">Reason</Label>
+                <Label htmlFor="replenish-reason" className="text-sm dark:text-slate-200">Reason</Label>
                 <Input
                   id="replenish-reason"
                   value={replenishForm.reason}
-                  onChange={(e) =>
-                    setReplenishForm({
-                      ...replenishForm,
-                      reason: e.target.value,
-                    })
-                  }
+                  onChange={(e) => setReplenishForm({ ...replenishForm, reason: e.target.value })}
                   placeholder="Reason for replenishment (optional)"
-                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                  className="h-9 dark:bg-slate-900 dark:text-white dark:border-slate-700 dark:placeholder:text-slate-500"
                 />
               </div>
 
               <div className="grid gap-2">
                 <Label className="dark:text-slate-200">Source Bank Account</Label>
-                <Select
-                  value={replenishForm.bank_account_id}
-                  onValueChange={(value) =>
-                    setReplenishForm({
-                      ...replenishForm,
-                      bank_account_id: value,
-                    })
-                  }
-                >
-                  <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
+                <Select value={replenishForm.bank_account_id} onValueChange={(value) => setReplenishForm({ ...replenishForm, bank_account_id: value })}>
+                  <SelectTrigger className="h-9 dark:bg-slate-900 dark:text-white dark:border-slate-700">
                     <SelectValue placeholder="Select bank account (optional)" />
                   </SelectTrigger>
-                  <SelectContent className="dark:bg-slate-800">
+                  <SelectContent className="dark:bg-slate-950 dark:border-slate-800">
                     {bankAccounts.map((account) => (
                       <SelectItem key={account._id} value={account._id}>
                         {account.name} (
@@ -1914,17 +1760,11 @@ export default function PettyCashListPage() {
             </div>
 
             <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setShowReplenishDialog(false)}
-                className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
-              >
+              <Button variant="outline" onClick={() => setShowReplenishDialog(false)} className="dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
                 Cancel
               </Button>
-              <Button onClick={handleReplenishment} disabled={submitting} className="dark:bg-primary dark:text-primary-foreground">
-                {submitting && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
+              <Button onClick={handleReplenishment} disabled={submitting} className="bg-blue-600 hover:bg-blue-700">
+                {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Submit Request
               </Button>
             </DialogFooter>
@@ -1935,12 +1775,14 @@ export default function PettyCashListPage() {
             Cash Count Dialog
         ══════════════════════════════════════════════════════════ */}
         <Dialog open={showCashCountDialog} onOpenChange={setShowCashCountDialog}>
-          <DialogContent className="sm:max-w-lg dark:bg-slate-800 max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="dark:text-white flex items-center gap-2">
-                <ClipboardCheck className="h-5 w-5" />
-                Cash Count
-              </DialogTitle>
+          <DialogContent className="sm:max-w-lg dark:bg-slate-950 border-slate-200 dark:border-slate-800 max-h-[90vh] overflow-y-auto">
+            <DialogHeader className="gap-1">
+              <div className="flex items-center gap-2">
+                <div className="rounded-lg bg-purple-50 p-2 text-purple-700 ring-1 ring-purple-100 dark:bg-purple-950/40 dark:text-purple-300 dark:ring-purple-900/60">
+                  <ClipboardCheck className="h-4 w-4" />
+                </div>
+                <DialogTitle className="text-lg dark:text-white">Cash Count</DialogTitle>
+              </div>
               <DialogDescription className="dark:text-slate-400">
                 Record physical cash count for <strong>{selectedFund?.name}</strong>
               </DialogDescription>
@@ -1948,59 +1790,49 @@ export default function PettyCashListPage() {
 
             <div className="grid gap-4 py-4">
               {/* System Balance Display */}
-              <div className="p-3 bg-slate-50 rounded-lg dark:bg-slate-700/50">
-                <p className="text-sm text-muted-foreground dark:text-slate-400">System Balance</p>
-                <p className="text-xl font-semibold dark:text-white">
-                  {selectedFund && formatCurrency(selectedFund.currentBalance)}
-                </p>
+              <div className="rounded-lg border border-slate-100 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900/50">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">System Balance</p>
+                <p className="mt-1 text-xl font-bold text-slate-900 dark:text-white">{selectedFund && formatCurrency(selectedFund.currentBalance)}</p>
               </div>
 
               {/* Count Date */}
               <div className="grid gap-2">
-                <Label htmlFor="count-date" className="dark:text-slate-200">Count Date</Label>
+                <Label htmlFor="count-date" className="text-sm dark:text-slate-200">Count Date</Label>
                 <Input
                   id="count-date"
                   type="date"
                   value={cashCountForm.countDate}
-                  onChange={(e) =>
-                    setCashCountForm({ ...cashCountForm, countDate: e.target.value })
-                  }
-                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                  onChange={(e) => setCashCountForm({ ...cashCountForm, countDate: e.target.value })}
+                  className="h-9 dark:bg-slate-900 dark:text-white dark:border-slate-700"
                 />
               </div>
 
               {/* Denominations */}
               <div className="grid gap-2">
-                <Label className="dark:text-slate-200">Cash Denominations</Label>
-                <div className="border rounded-lg overflow-hidden dark:border-slate-600">
+                <Label className="text-sm dark:text-slate-200">Cash Denominations</Label>
+                <div className="rounded-lg border border-slate-200 overflow-hidden dark:border-slate-700">
                   <table className="w-full text-sm">
-                    <thead className="bg-slate-50 dark:bg-slate-700">
+                    <thead className="bg-slate-50 dark:bg-slate-900/60">
                       <tr>
-                        <th className="px-3 py-2 text-left dark:text-slate-200">Denomination</th>
-                        <th className="px-3 py-2 text-left dark:text-slate-200">Count</th>
-                        <th className="px-3 py-2 text-right dark:text-slate-200">Total</th>
+                        <th className="px-3 py-2 text-left text-xs font-semibold uppercase text-slate-600 dark:text-slate-300">Denomination</th>
+                        <th className="px-3 py-2 text-left text-xs font-semibold uppercase text-slate-600 dark:text-slate-300">Count</th>
+                        <th className="px-3 py-2 text-right text-xs font-semibold uppercase text-slate-600 dark:text-slate-300">Total</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y dark:divide-slate-600">
+                    <tbody className="divide-y dark:divide-slate-800">
                       {cashCountForm.denominations.map((denom, index) => (
                         <tr key={denom.denomination}>
-                          <td className="px-3 py-2 dark:text-slate-300">
-                            {formatCurrency(denom.denomination)}
-                          </td>
+                          <td className="px-3 py-2 text-sm dark:text-slate-300">{formatCurrency(denom.denomination)}</td>
                           <td className="px-3 py-2">
                             <Input
                               type="number"
                               min={0}
                               value={denom.count || ""}
-                              onChange={(e) =>
-                                handleDenominationChange(index, parseInt(e.target.value) || 0)
-                              }
-                              className="w-20 dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                              onChange={(e) => handleDenominationChange(index, parseInt(e.target.value) || 0)}
+                              className="h-8 w-20 dark:bg-slate-900 dark:text-white dark:border-slate-700"
                             />
                           </td>
-                          <td className="px-3 py-2 text-right font-medium dark:text-slate-300">
-                            {formatCurrency(denom.total)}
-                          </td>
+                          <td className="px-3 py-2 text-right text-sm font-medium dark:text-slate-300">{formatCurrency(denom.total)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -2009,45 +1841,21 @@ export default function PettyCashListPage() {
               </div>
 
               {/* Physical Total */}
-              <div className="p-3 bg-blue-50 rounded-lg dark:bg-blue-900/20">
+              <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 dark:bg-blue-950/20 dark:border-blue-800">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-blue-800 dark:text-blue-300">Physical Cash Total</span>
-                  <span className="text-xl font-bold text-blue-800 dark:text-blue-300">
-                    {formatCurrency(calculatePhysicalTotal())}
-                  </span>
+                  <span className="text-sm font-medium text-blue-800 dark:text-blue-300">Physical Cash Total</span>
+                  <span className="text-xl font-bold text-blue-800 dark:text-blue-300">{formatCurrency(calculatePhysicalTotal())}</span>
                 </div>
               </div>
 
               {/* Difference Preview */}
               {selectedFund && (
-                <div className={`p-3 rounded-lg ${
-                  calculatePhysicalTotal() === selectedFund.currentBalance
-                    ? "bg-green-50 dark:bg-green-900/20"
-                    : calculatePhysicalTotal() < selectedFund.currentBalance
-                    ? "bg-red-50 dark:bg-red-900/20"
-                    : "bg-amber-50 dark:bg-amber-900/20"
-                }`}>
+                <div className={`rounded-lg border p-3 ${calculatePhysicalTotal() === selectedFund.currentBalance ? 'border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-800' : calculatePhysicalTotal() < selectedFund.currentBalance ? 'border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-800' : 'border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800'}`}>
                   <div className="flex justify-between items-center">
-                    <span className={`text-sm ${
-                      calculatePhysicalTotal() === selectedFund.currentBalance
-                        ? "text-green-800 dark:text-green-300"
-                        : calculatePhysicalTotal() < selectedFund.currentBalance
-                        ? "text-red-800 dark:text-red-300"
-                        : "text-amber-800 dark:text-amber-300"
-                    }`}>
-                      {calculatePhysicalTotal() === selectedFund.currentBalance
-                        ? "Balanced ✓"
-                        : calculatePhysicalTotal() < selectedFund.currentBalance
-                        ? "Shortage"
-                        : "Overage"}
+                    <span className={`text-sm font-medium ${calculatePhysicalTotal() === selectedFund.currentBalance ? 'text-green-800 dark:text-green-300' : calculatePhysicalTotal() < selectedFund.currentBalance ? 'text-red-800 dark:text-red-300' : 'text-amber-800 dark:text-amber-300'}`}>
+                      {calculatePhysicalTotal() === selectedFund.currentBalance ? "Balanced ✓" : calculatePhysicalTotal() < selectedFund.currentBalance ? "Shortage" : "Overage"}
                     </span>
-                    <span className={`text-lg font-bold ${
-                      calculatePhysicalTotal() === selectedFund.currentBalance
-                        ? "text-green-800 dark:text-green-300"
-                        : calculatePhysicalTotal() < selectedFund.currentBalance
-                        ? "text-red-800 dark:text-red-300"
-                        : "text-amber-800 dark:text-amber-300"
-                    }`}>
+                    <span className={`text-lg font-bold ${calculatePhysicalTotal() === selectedFund.currentBalance ? 'text-green-800 dark:text-green-300' : calculatePhysicalTotal() < selectedFund.currentBalance ? 'text-red-800 dark:text-red-300' : 'text-amber-800 dark:text-amber-300'}`}>
                       {formatCurrency(calculatePhysicalTotal() - selectedFund.currentBalance)}
                     </span>
                   </div>
@@ -2056,32 +1864,22 @@ export default function PettyCashListPage() {
 
               {/* Notes */}
               <div className="grid gap-2">
-                <Label htmlFor="count-notes" className="dark:text-slate-200">Notes</Label>
+                <Label htmlFor="count-notes" className="text-sm dark:text-slate-200">Notes</Label>
                 <Input
                   id="count-notes"
                   value={cashCountForm.notes}
-                  onChange={(e) =>
-                    setCashCountForm({ ...cashCountForm, notes: e.target.value })
-                  }
+                  onChange={(e) => setCashCountForm({ ...cashCountForm, notes: e.target.value })}
                   placeholder="Optional notes about the count"
-                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                  className="h-9 dark:bg-slate-900 dark:text-white dark:border-slate-700 dark:placeholder:text-slate-500"
                 />
               </div>
             </div>
 
             <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setShowCashCountDialog(false)}
-                className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
-              >
+              <Button variant="outline" onClick={() => setShowCashCountDialog(false)} className="dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
                 Cancel
               </Button>
-              <Button
-                onClick={handleSubmitCashCount}
-                disabled={submitting || calculatePhysicalTotal() === 0}
-                className="dark:bg-primary dark:text-primary-foreground"
-              >
+              <Button onClick={handleSubmitCashCount} disabled={submitting || calculatePhysicalTotal() === 0} className="bg-purple-600 hover:bg-purple-700">
                 {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Record Count
               </Button>
@@ -2093,12 +1891,14 @@ export default function PettyCashListPage() {
             Reconciliations Dialog
         ══════════════════════════════════════════════════════════ */}
         <Dialog open={showReconciliationsDialog} onOpenChange={setShowReconciliationsDialog}>
-          <DialogContent className="sm:max-w-2xl dark:bg-slate-800 max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="dark:text-white flex items-center gap-2">
-                <RefreshCw className="h-5 w-5" />
-                Cash Count Reconciliations
-              </DialogTitle>
+          <DialogContent className="sm:max-w-2xl dark:bg-slate-950 border-slate-200 dark:border-slate-800 max-h-[80vh] overflow-y-auto">
+            <DialogHeader className="gap-1">
+              <div className="flex items-center gap-2">
+                <div className="rounded-lg bg-amber-50 p-2 text-amber-700 ring-1 ring-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/60">
+                  <RefreshCw className="h-4 w-4" />
+                </div>
+                <DialogTitle className="text-lg dark:text-white">Cash Count Reconciliations</DialogTitle>
+              </div>
               <DialogDescription className="dark:text-slate-400">
                 History of cash counts for <strong>{selectedFund?.name}</strong>
               </DialogDescription>
@@ -2110,23 +1910,18 @@ export default function PettyCashListPage() {
                   <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
                 </div>
               ) : reconciliations.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground dark:text-slate-400">
-                  No reconciliations recorded yet
+                <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-slate-200 py-10 text-slate-500 dark:border-slate-800 dark:text-slate-400">
+                  <RefreshCw className="h-6 w-6 text-slate-400" />
+                  <p className="text-sm font-medium">No reconciliations recorded yet</p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {reconciliations.map((rec) => (
-                    <div
-                      key={rec._id}
-                      className="p-4 border rounded-lg dark:border-slate-600 dark:bg-slate-700/50"
-                    >
+                    <div key={rec._id} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition-colors dark:border-slate-800 dark:bg-slate-900/50">
                       <div className="flex justify-between items-start mb-2">
                         <div>
-                          <p className="font-medium dark:text-white">{rec.reconciliationNumber}</p>
-                          <p className="text-sm text-muted-foreground dark:text-slate-400">
-                            {new Date(rec.countDate).toLocaleDateString()} • Counted by{" "}
-                            {rec.countedBy?.name}
-                          </p>
+                          <p className="font-semibold text-slate-900 dark:text-white">{rec.reconciliationNumber}</p>
+                          <p className="text-sm text-slate-500 dark:text-slate-400">{new Date(rec.countDate).toLocaleDateString()} • Counted by {rec.countedBy?.name}</p>
                         </div>
                         <Badge
                           variant={
@@ -2147,57 +1942,30 @@ export default function PettyCashListPage() {
                           {rec.status}
                         </Badge>
                       </div>
-                      <div className="grid grid-cols-3 gap-4 text-sm">
+                      <div className="grid grid-cols-3 gap-4 text-sm mt-2">
                         <div>
-                          <p className="text-muted-foreground dark:text-slate-400">System</p>
-                          <p className="font-medium dark:text-slate-300">{formatCurrency(rec.systemBalance)}</p>
+                          <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">System</p>
+                          <p className="mt-0.5 font-medium text-slate-900 dark:text-slate-200">{formatCurrency(rec.systemBalance)}</p>
                         </div>
                         <div>
-                          <p className="text-muted-foreground dark:text-slate-400">Physical</p>
-                          <p className="font-medium dark:text-slate-300">{formatCurrency(rec.physicalCashTotal)}</p>
+                          <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Physical</p>
+                          <p className="mt-0.5 font-medium text-slate-900 dark:text-slate-200">{formatCurrency(rec.physicalCashTotal)}</p>
                         </div>
                         <div>
-                          <p className="text-muted-foreground dark:text-slate-400">Difference</p>
-                          <p
-                            className={`font-medium ${
-                              rec.differenceType === "balanced"
-                                ? "text-green-600 dark:text-green-400"
-                                : rec.differenceType === "shortage"
-                                ? "text-red-600 dark:text-red-400"
-                                : "text-amber-600 dark:text-amber-400"
-                            }`}
-                          >
-                            {rec.differenceType === "balanced"
-                              ? "✓"
-                              : rec.differenceType === "shortage"
-                              ? "-"
-                              : "+"}
-                            {formatCurrency(Math.abs(rec.difference))}
+                          <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Difference</p>
+                          <p className={`mt-0.5 font-bold ${rec.differenceType === "balanced" ? "text-green-600 dark:text-green-400" : rec.differenceType === "shortage" ? "text-red-600 dark:text-red-400" : "text-amber-600 dark:text-amber-400"}`}>
+                            {rec.differenceType === "balanced" ? "✓" : rec.differenceType === "shortage" ? "-" : "+"}{formatCurrency(Math.abs(rec.difference))}
                           </p>
                         </div>
                       </div>
 
                       {/* Action buttons for pending reconciliations with shortage/overage */}
                       {rec.status === "pending" && rec.differenceType !== "balanced" && (
-                        <div className="mt-4 pt-3 border-t dark:border-slate-600 flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="flex-1 dark:border-green-600 dark:text-green-400 dark:hover:bg-green-900/20"
-                            onClick={() => openApproveDialog(rec)}
-                          >
+                        <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex gap-2">
+                          <Button size="sm" variant="outline" className="flex-1 dark:border-slate-700 dark:text-green-400 dark:hover:bg-green-950/30" onClick={() => openApproveDialog(rec)}>
                             Approve {rec.differenceType === "shortage" ? "Shortage" : "Overage"}
                           </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="flex-1 dark:border-red-600 dark:text-red-400 dark:hover:bg-red-900/20"
-                            onClick={() => {
-                              setSelectedReconciliation(rec);
-                              setApprovalForm({ status: "rejected", discrepancyExplanation: "" });
-                              setShowApproveDialog(true);
-                            }}
-                          >
+                          <Button size="sm" variant="outline" className="flex-1 dark:border-slate-700 dark:text-red-400 dark:hover:bg-red-950/30" onClick={() => { setSelectedReconciliation(rec); setApprovalForm({ status: "rejected", discrepancyExplanation: "" }); setShowApproveDialog(true); }}>
                             Reject
                           </Button>
                         </div>
@@ -2205,12 +1973,9 @@ export default function PettyCashListPage() {
 
                       {/* Show journal entry info for approved reconciliations with difference */}
                       {rec.status === "approved" && rec.differenceType !== "balanced" && (
-                        <div className="mt-3 pt-3 border-t dark:border-slate-600">
-                          <p className="text-xs text-muted-foreground dark:text-slate-400">
-                            {rec.differenceType === "shortage"
-                              ? "Shortage recorded as expense"
-                              : "Overage recorded as income"}
-                            {rec.approvedBy?.name && ` • Approved by ${rec.approvedBy.name}`}
+                        <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            {rec.differenceType === "shortage" ? "Shortage recorded as expense" : "Overage recorded as income"}{rec.approvedBy?.name && ` • Approved by ${rec.approvedBy.name}`}
                           </p>
                         </div>
                       )}
@@ -2221,11 +1986,7 @@ export default function PettyCashListPage() {
             </div>
 
             <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setShowReconciliationsDialog(false)}
-                className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
-              >
+              <Button variant="outline" onClick={() => setShowReconciliationsDialog(false)} className="dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
                 Close
               </Button>
             </DialogFooter>
@@ -2236,12 +1997,14 @@ export default function PettyCashListPage() {
             Imprest Calculation Dialog
         ══════════════════════════════════════════════════════════ */}
         <Dialog open={showImprestDialog} onOpenChange={setShowImprestDialog}>
-          <DialogContent className="sm:max-w-md dark:bg-slate-800">
-            <DialogHeader>
-              <DialogTitle className="dark:text-white flex items-center gap-2">
-                <Calculator className="h-5 w-5" />
-                Imprest Calculation
-              </DialogTitle>
+          <DialogContent className="sm:max-w-md dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+            <DialogHeader className="gap-1">
+              <div className="flex items-center gap-2">
+                <div className="rounded-lg bg-cyan-50 p-2 text-cyan-700 ring-1 ring-cyan-100 dark:bg-cyan-950/40 dark:text-cyan-300 dark:ring-cyan-900/60">
+                  <Calculator className="h-4 w-4" />
+                </div>
+                <DialogTitle className="text-lg dark:text-white">Imprest Calculation</DialogTitle>
+              </div>
               <DialogDescription className="dark:text-slate-400">
                 Fixed float replenishment calculation for <strong>{selectedFund?.name}</strong>
               </DialogDescription>
@@ -2253,40 +2016,30 @@ export default function PettyCashListPage() {
                   <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
                 </div>
               ) : !imprestCalculation.isImprest ? (
-                <div className="p-4 bg-amber-50 rounded-lg dark:bg-amber-900/20">
-                  <p className="text-amber-800 dark:text-amber-300">
-                    This fund is not in imprest mode. Enable imprest mode to use fixed float replenishment.
-                  </p>
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:bg-amber-950/20 dark:border-amber-800">
+                  <p className="text-sm text-amber-800 dark:text-amber-300">This fund is not in imprest mode. Enable imprest mode to use fixed float replenishment.</p>
                 </div>
               ) : (
                 <>
-                  <div className="p-4 bg-blue-50 rounded-lg dark:bg-blue-900/20 space-y-3">
-                    <div className="flex justify-between">
+                  <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:bg-blue-950/20 dark:border-blue-800 space-y-3">
+                    <div className="flex justify-between text-sm">
                       <span className="text-blue-800 dark:text-blue-300">Fixed Float Amount</span>
-                      <span className="font-bold text-blue-800 dark:text-blue-300">
-                        {formatCurrency(imprestCalculation.floatAmount)}
-                      </span>
+                      <span className="font-bold text-blue-800 dark:text-blue-300">{formatCurrency(imprestCalculation.floatAmount)}</span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex justify-between text-sm">
                       <span className="text-blue-800 dark:text-blue-300">Current Balance</span>
-                      <span className="font-bold text-blue-800 dark:text-blue-300">
-                        {formatCurrency(imprestCalculation.currentBalance)}
-                      </span>
+                      <span className="font-bold text-blue-800 dark:text-blue-300">{formatCurrency(imprestCalculation.currentBalance)}</span>
                     </div>
                     <div className="border-t border-blue-200 dark:border-blue-800 pt-3">
                       <div className="flex justify-between">
-                        <span className="text-blue-800 dark:text-blue-300 font-medium">
-                          Replenishment Needed
-                        </span>
-                        <span className="font-bold text-lg text-blue-800 dark:text-blue-300">
-                          {formatCurrency(imprestCalculation.replenishmentAmount)}
-                        </span>
+                        <span className="text-sm font-semibold text-blue-800 dark:text-blue-300">Replenishment Needed</span>
+                        <span className="text-lg font-bold text-blue-800 dark:text-blue-300">{formatCurrency(imprestCalculation.replenishmentAmount)}</span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="text-sm text-muted-foreground dark:text-slate-400">
-                    <p className="font-medium mb-1">How Imprest Works:</p>
+                  <div className="text-sm text-slate-600 dark:text-slate-400">
+                    <p className="font-medium mb-1 text-slate-900 dark:text-white">How Imprest Works:</p>
                     <ul className="list-disc list-inside space-y-1">
                       <li>The fund maintains a fixed float amount</li>
                       <li>Expenses reduce the current balance</li>
@@ -2299,26 +2052,11 @@ export default function PettyCashListPage() {
             </div>
 
             <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setShowImprestDialog(false)}
-                className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
-              >
+              <Button variant="outline" onClick={() => setShowImprestDialog(false)} className="dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
                 Close
               </Button>
               {imprestCalculation?.isImprest && imprestCalculation?.replenishmentAmount > 0 && (
-                <Button
-                  onClick={() => {
-                    setShowImprestDialog(false);
-                    openReplenishDialog(selectedFund);
-                    setReplenishForm({
-                      amount: imprestCalculation.replenishmentAmount,
-                      reason: "Imprest replenishment",
-                      bank_account_id: "",
-                    });
-                  }}
-                  className="dark:bg-primary dark:text-primary-foreground"
-                >
+                <Button onClick={() => { setShowImprestDialog(false); openReplenishDialog(selectedFund); setReplenishForm({ amount: imprestCalculation.replenishmentAmount, reason: "Imprest replenishment", bank_account_id: "" }); }} className="bg-cyan-600 hover:bg-cyan-700">
                   Create Replenishment
                 </Button>
               )}
@@ -2330,15 +2068,16 @@ export default function PettyCashListPage() {
             Reconciliation Approval Dialog
         ══════════════════════════════════════════════════════════ */}
         <Dialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
-          <DialogContent className="sm:max-w-md dark:bg-slate-800">
-            <DialogHeader>
-              <DialogTitle className="dark:text-white">
-                {selectedReconciliation?.differenceType === "shortage"
-                  ? "Approve Shortage"
-                  : selectedReconciliation?.differenceType === "overage"
-                  ? "Approve Overage"
-                  : "Approve Reconciliation"}
-              </DialogTitle>
+          <DialogContent className="sm:max-w-md dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+            <DialogHeader className="gap-1">
+              <div className="flex items-center gap-2">
+                <div className={`rounded-lg p-2 ring-1 ${selectedReconciliation?.differenceType === "shortage" ? 'bg-red-50 text-red-700 ring-red-100 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900/60' : 'bg-amber-50 text-amber-700 ring-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/60'}`}>
+                  <BadgeCheck className="h-4 w-4" />
+                </div>
+                <DialogTitle className="text-lg dark:text-white">
+                  {selectedReconciliation?.differenceType === "shortage" ? "Approve Shortage" : selectedReconciliation?.differenceType === "overage" ? "Approve Overage" : "Approve Reconciliation"}
+                </DialogTitle>
+              </div>
               <DialogDescription className="dark:text-slate-400">
                 {selectedReconciliation?.reconciliationNumber}
               </DialogDescription>
@@ -2347,67 +2086,29 @@ export default function PettyCashListPage() {
             <div className="grid gap-4 py-4">
               {/* Summary of the difference */}
               {selectedReconciliation && (
-                <div
-                  className={`p-4 rounded-lg ${
-                    selectedReconciliation.differenceType === "shortage"
-                      ? "bg-red-50 dark:bg-red-900/20"
-                      : "bg-amber-50 dark:bg-amber-900/20"
-                  }`}
-                >
+                <div className={`rounded-lg border p-4 ${selectedReconciliation.differenceType === "shortage" ? 'border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-800' : 'border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800'}`}>
                   <div className="flex justify-between items-center">
-                    <span
-                      className={
-                        selectedReconciliation.differenceType === "shortage"
-                          ? "text-red-800 dark:text-red-300"
-                          : "text-amber-800 dark:text-amber-300"
-                      }
-                    >
-                      {selectedReconciliation.differenceType === "shortage"
-                        ? "Shortage Amount"
-                        : "Overage Amount"}
+                    <span className={selectedReconciliation.differenceType === "shortage" ? "text-red-800 dark:text-red-300" : "text-amber-800 dark:text-amber-300"}>
+                      {selectedReconciliation.differenceType === "shortage" ? "Shortage Amount" : "Overage Amount"}
                     </span>
-                    <span
-                      className={`font-bold text-lg ${
-                        selectedReconciliation.differenceType === "shortage"
-                          ? "text-red-800 dark:text-red-300"
-                          : "text-amber-800 dark:text-amber-300"
-                      }`}
-                    >
+                    <span className={`font-bold text-lg ${selectedReconciliation.differenceType === "shortage" ? "text-red-800 dark:text-red-300" : "text-amber-800 dark:text-amber-300"}`}>
                       {formatCurrency(Math.abs(selectedReconciliation.difference))}
                     </span>
                   </div>
-                  <p
-                    className={`text-sm mt-2 ${
-                      selectedReconciliation.differenceType === "shortage"
-                        ? "text-red-700 dark:text-red-400"
-                        : "text-amber-700 dark:text-amber-400"
-                    }`}
-                  >
-                    {selectedReconciliation.differenceType === "shortage"
-                      ? "This will record the shortage as a miscellaneous expense."
-                      : "This will record the overage as other income."}
+                  <p className={`text-sm mt-2 ${selectedReconciliation.differenceType === "shortage" ? "text-red-700 dark:text-red-400" : "text-amber-700 dark:text-amber-400"}`}>
+                    {selectedReconciliation.differenceType === "shortage" ? "This will record the shortage as a miscellaneous expense." : "This will record the overage as other income."}
                   </p>
                 </div>
               )}
 
               {/* Status selection */}
               <div className="grid gap-2">
-                <Label className="dark:text-slate-200">Decision</Label>
+                <Label className="text-sm dark:text-slate-200">Decision</Label>
                 <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant={approvalForm.status === "approved" ? "default" : "outline"}
-                    onClick={() => setApprovalForm({ ...approvalForm, status: "approved" })}
-                    className="flex-1 dark:text-slate-200"
-                  >
+                  <Button type="button" variant={approvalForm.status === "approved" ? "default" : "outline"} onClick={() => setApprovalForm({ ...approvalForm, status: "approved" })} className={`flex-1 ${approvalForm.status !== "approved" ? 'dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800' : ''}`}>
                     Approve
                   </Button>
-                  <Button
-                    type="button"
-                    variant={approvalForm.status === "rejected" ? "destructive" : "outline"}
-                    onClick={() => setApprovalForm({ ...approvalForm, status: "rejected" })}
-                    className="flex-1 dark:text-slate-200"
-                  >
+                  <Button type="button" variant={approvalForm.status === "rejected" ? "destructive" : "outline"} onClick={() => setApprovalForm({ ...approvalForm, status: "rejected" })} className={`flex-1 ${approvalForm.status !== "rejected" ? 'dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800' : ''}`}>
                     Reject
                   </Button>
                 </div>
@@ -2415,40 +2116,28 @@ export default function PettyCashListPage() {
 
               {/* Explanation for discrepancy */}
               <div className="grid gap-2">
-                <Label htmlFor="explanation" className="dark:text-slate-200">
-                  Explanation / Notes
-                  {approvalForm.status === "approved" && (
-                    <span className="text-red-500"> *</span>
-                  )}
+                <Label htmlFor="explanation" className="text-sm dark:text-slate-200">
+                  Explanation / Notes {approvalForm.status === "approved" && <span className="text-red-500"> *</span>}
                 </Label>
                 <Input
                   id="explanation"
                   value={approvalForm.discrepancyExplanation}
-                  onChange={(e) =>
-                    setApprovalForm({ ...approvalForm, discrepancyExplanation: e.target.value })
-                  }
+                  onChange={(e) => setApprovalForm({ ...approvalForm, discrepancyExplanation: e.target.value })}
                   placeholder="Explain the reason for shortage/overage..."
-                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                  className="h-9 dark:bg-slate-900 dark:text-white dark:border-slate-700 dark:placeholder:text-slate-500"
                 />
               </div>
             </div>
 
             <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setShowApproveDialog(false)}
-                className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
-              >
+              <Button variant="outline" onClick={() => setShowApproveDialog(false)} className="dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
                 Cancel
               </Button>
               <Button
                 onClick={handleApproveReconciliation}
-                disabled={
-                  submitting ||
-                  (approvalForm.status === "approved" && !approvalForm.discrepancyExplanation)
-                }
+                disabled={submitting || (approvalForm.status === "approved" && !approvalForm.discrepancyExplanation)}
                 variant={approvalForm.status === "rejected" ? "destructive" : "default"}
-                className="dark:bg-primary dark:text-primary-foreground"
+                className={approvalForm.status === "rejected" ? "" : "bg-amber-600 hover:bg-amber-700"}
               >
                 {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {approvalForm.status === "approved" ? "Approve" : "Reject"}
@@ -2461,11 +2150,14 @@ export default function PettyCashListPage() {
             Replenishments List Dialog
         ══════════════════════════════════════════════════════════ */}
         <Dialog open={showReplenishmentsDialog} onOpenChange={setShowReplenishmentsDialog}>
-          <DialogContent className="sm:max-w-lg dark:bg-slate-800 max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="dark:text-white">
-                Replenishment Requests - {selectedFund?.name}
-              </DialogTitle>
+          <DialogContent className="sm:max-w-lg dark:bg-slate-950 border-slate-200 dark:border-slate-800 max-h-[80vh] overflow-y-auto">
+            <DialogHeader className="gap-1">
+              <div className="flex items-center gap-2">
+                <div className="rounded-lg bg-blue-50 p-2 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60">
+                  <RotateCcw className="h-4 w-4" />
+                </div>
+                <DialogTitle className="text-lg dark:text-white">Replenishment Requests - {selectedFund?.name}</DialogTitle>
+              </div>
               <DialogDescription className="dark:text-slate-400">
                 View and manage replenishment requests
               </DialogDescription>
@@ -2477,24 +2169,18 @@ export default function PettyCashListPage() {
                   <Loader2 className="h-6 w-6 animate-spin" />
                 </div>
               ) : replenishments.length === 0 ? (
-                <p className="text-muted-foreground dark:text-slate-400 text-center py-8">
-                  No replenishment requests found
-                </p>
+                <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-slate-200 py-10 text-slate-500 dark:border-slate-800 dark:text-slate-400">
+                  <RotateCcw className="h-6 w-6 text-slate-400" />
+                  <p className="text-sm font-medium">No replenishment requests found</p>
+                </div>
               ) : (
                 <div className="space-y-3">
                   {replenishments.map((rep) => (
-                    <div
-                      key={rep._id}
-                      className="border rounded-lg p-3 dark:border-slate-600 dark:bg-slate-700/30"
-                    >
+                    <div key={rep._id} className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm transition-colors dark:border-slate-800 dark:bg-slate-900/50">
                       <div className="flex justify-between items-start mb-2">
                         <div>
-                          <p className="font-medium dark:text-slate-200">
-                            {rep.replenishmentNumber || rep._id.slice(-6)}
-                          </p>
-                          <p className="text-xs text-muted-foreground dark:text-slate-400">
-                            {new Date(rep.createdAt).toLocaleDateString()}
-                          </p>
+                          <p className="font-semibold text-slate-900 dark:text-white">{rep.replenishmentNumber || rep._id.slice(-6)}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">{new Date(rep.createdAt).toLocaleDateString()}</p>
                         </div>
                         <span
                           className={`px-2 py-1 rounded text-xs font-medium ${
@@ -2511,62 +2197,30 @@ export default function PettyCashListPage() {
                         </span>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-2 text-sm mb-3">
+                      <div className="grid grid-cols-2 gap-2 text-sm mb-3 mt-2">
                         <div>
-                          <p className="text-muted-foreground dark:text-slate-400">Requested</p>
-                          <p className="font-medium dark:text-slate-300">
-                            {formatCurrency(rep.amount)}
-                          </p>
+                          <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Requested</p>
+                          <p className="mt-0.5 font-medium text-slate-900 dark:text-slate-200">{formatCurrency(rep.amount)}</p>
                         </div>
                         <div>
-                          <p className="text-muted-foreground dark:text-slate-400">Actual</p>
-                          <p className="font-medium dark:text-slate-300">
-                            {rep.actualAmount ? formatCurrency(rep.actualAmount) : "-"}
-                          </p>
+                          <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Actual</p>
+                          <p className="mt-0.5 font-medium text-slate-900 dark:text-slate-200">{rep.actualAmount ? formatCurrency(rep.actualAmount) : "-"}</p>
                         </div>
                       </div>
 
-                      {rep.reason && (
-                        <p className="text-sm text-muted-foreground dark:text-slate-400 mb-2">
-                          Reason: {rep.reason}
-                        </p>
-                      )}
+                      {rep.reason && <p className="text-sm text-slate-500 dark:text-slate-400 mb-2">Reason: {rep.reason}</p>}
 
                       {/* Action buttons */}
                       {rep.status === "pending" && (
-                        <div className="flex gap-2 mt-3">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="flex-1 dark:border-green-600 dark:text-green-400 dark:hover:bg-green-900/20"
-                            onClick={() => handleApproveReplenishment(rep, "approved")}
-                            disabled={submitting}
-                          >
-                            Approve
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="flex-1 dark:border-red-600 dark:text-red-400 dark:hover:bg-red-900/20"
-                            onClick={() => handleApproveReplenishment(rep, "rejected")}
-                            disabled={submitting}
-                          >
-                            Reject
-                          </Button>
+                        <div className="flex gap-2 mt-3 border-t border-slate-100 dark:border-slate-800 pt-3">
+                          <Button size="sm" variant="outline" className="flex-1 dark:border-slate-700 dark:text-green-400 dark:hover:bg-green-950/30" onClick={() => handleApproveReplenishment(rep, "approved")} disabled={submitting}>Approve</Button>
+                          <Button size="sm" variant="outline" className="flex-1 dark:border-slate-700 dark:text-red-400 dark:hover:bg-red-950/30" onClick={() => handleApproveReplenishment(rep, "rejected")} disabled={submitting}>Reject</Button>
                         </div>
                       )}
 
                       {rep.status === "approved" && (
-                        <div className="flex gap-2 mt-3">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="flex-1 dark:border-blue-600 dark:text-blue-400 dark:hover:bg-blue-900/20"
-                            onClick={() => openCompleteReplenishmentDialog(rep)}
-                            disabled={submitting}
-                          >
-                            Complete
-                          </Button>
+                        <div className="flex gap-2 mt-3 border-t border-slate-100 dark:border-slate-800 pt-3">
+                          <Button size="sm" variant="outline" className="flex-1 dark:border-slate-700 dark:text-blue-400 dark:hover:bg-blue-950/30" onClick={() => openCompleteReplenishmentDialog(rep)} disabled={submitting}>Complete</Button>
                         </div>
                       )}
                     </div>
@@ -2576,11 +2230,7 @@ export default function PettyCashListPage() {
             </div>
 
             <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setShowReplenishmentsDialog(false)}
-                className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
-              >
+              <Button variant="outline" onClick={() => setShowReplenishmentsDialog(false)} className="dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
                 Close
               </Button>
             </DialogFooter>
@@ -2591,9 +2241,14 @@ export default function PettyCashListPage() {
             Complete Replenishment Dialog
         ══════════════════════════════════════════════════════════ */}
         <Dialog open={showReplenishmentCompleteDialog} onOpenChange={setShowReplenishmentCompleteDialog}>
-          <DialogContent className="sm:max-w-md dark:bg-slate-800">
-            <DialogHeader>
-              <DialogTitle className="dark:text-white">Complete Replenishment</DialogTitle>
+          <DialogContent className="sm:max-w-md dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+            <DialogHeader className="gap-1">
+              <div className="flex items-center gap-2">
+                <div className="rounded-lg bg-blue-50 p-2 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60">
+                  <BadgeCheck className="h-4 w-4" />
+                </div>
+                <DialogTitle className="text-lg dark:text-white">Complete Replenishment</DialogTitle>
+              </div>
               <DialogDescription className="dark:text-slate-400">
                 {selectedReplenishment?.replenishmentNumber}
               </DialogDescription>
@@ -2601,62 +2256,38 @@ export default function PettyCashListPage() {
 
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <Label className="dark:text-slate-200">Requested Amount</Label>
-                <p className="text-lg font-medium dark:text-slate-300">
-                  {formatCurrency(selectedReplenishment?.amount || 0)}
-                </p>
+                <Label className="text-sm dark:text-slate-200">Requested Amount</Label>
+                <p className="text-lg font-bold text-slate-900 dark:text-white">{formatCurrency(selectedReplenishment?.amount || 0)}</p>
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="actualAmount" className="dark:text-slate-200">
-                  Actual Amount Received *
-                </Label>
+                <Label htmlFor="actualAmount" className="text-sm dark:text-slate-200">Actual Amount Received *</Label>
                 <Input
                   id="actualAmount"
                   type="number"
                   value={replenishmentCompleteForm.actualAmount}
-                  onChange={(e) =>
-                    setReplenishmentCompleteForm({
-                      ...replenishmentCompleteForm,
-                      actualAmount: parseFloat(e.target.value) || 0,
-                    })
-                  }
-                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                  onChange={(e) => setReplenishmentCompleteForm({ ...replenishmentCompleteForm, actualAmount: parseFloat(e.target.value) || 0 })}
+                  className="h-9 dark:bg-slate-900 dark:text-white dark:border-slate-700"
                 />
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="completeNotes" className="dark:text-slate-200">
-                  Notes
-                </Label>
+                <Label htmlFor="completeNotes" className="text-sm dark:text-slate-200">Notes</Label>
                 <Input
                   id="completeNotes"
                   value={replenishmentCompleteForm.notes}
-                  onChange={(e) =>
-                    setReplenishmentCompleteForm({
-                      ...replenishmentCompleteForm,
-                      notes: e.target.value,
-                    })
-                  }
+                  onChange={(e) => setReplenishmentCompleteForm({ ...replenishmentCompleteForm, notes: e.target.value })}
                   placeholder="Enter completion notes..."
-                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                  className="h-9 dark:bg-slate-900 dark:text-white dark:border-slate-700 dark:placeholder:text-slate-500"
                 />
               </div>
             </div>
 
             <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setShowReplenishmentCompleteDialog(false)}
-                className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
-              >
+              <Button variant="outline" onClick={() => setShowReplenishmentCompleteDialog(false)} className="dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
                 Cancel
               </Button>
-              <Button
-                onClick={handleCompleteReplenishment}
-                disabled={submitting || replenishmentCompleteForm.actualAmount <= 0}
-                className="dark:bg-primary dark:text-primary-foreground"
-              >
+              <Button onClick={handleCompleteReplenishment} disabled={submitting || replenishmentCompleteForm.actualAmount <= 0} className="bg-blue-600 hover:bg-blue-700">
                 {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Complete Replenishment
               </Button>
@@ -2664,6 +2295,7 @@ export default function PettyCashListPage() {
           </DialogContent>
         </Dialog>
       </div>
+    </div>
     </Layout>
   );
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, type ReactNode } from "react";
 import { useParams, useNavigate } from "react-router";
 import { Layout } from "@/app/layout/Layout";
 import { bankAccountsApi } from "@/lib/api";
@@ -25,9 +25,19 @@ import {
   Unlink,
   EyeOff,
   FileEdit,
+  Building2,
+  CreditCard,
+  Smartphone,
+  Banknote,
+  PiggyBank,
+  BadgeCheck,
+  Calendar,
+  FileUp,
+  CircleDot,
 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
+import { Skeleton } from "@/app/components/ui/skeleton";
 import { Label } from "@/app/components/ui/label";
 import {
   Table,
@@ -65,6 +75,52 @@ import { Separator } from "@/app/components/ui/separator";
 import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
 import { cn } from "@/lib/utils";
+
+const getAccountTypeLabel = (type: string) => {
+  const labels: Record<string, string> = {
+    bk_bank: "BK Bank",
+    equity_bank: "Equity Bank",
+    im_bank: "I&M Bank",
+    cogebanque: "Cogebanque",
+    ecobank: "Ecobank",
+    mtn_momo: "MTN MoMo",
+    airtel_money: "Airtel Money",
+    cash_in_hand: "Cash in Hand",
+  };
+  return labels[type] || type;
+};
+
+const getAccountTypeIcon = (type: string): ReactNode => {
+  switch (type) {
+    case "mtn_momo":
+    case "airtel_money":
+      return <Smartphone className="h-5 w-5" />;
+    case "cash_in_hand":
+      return <Banknote className="h-5 w-5" />;
+    case "bk_bank":
+    case "equity_bank":
+    case "im_bank":
+    case "cogebanque":
+    case "ecobank":
+      return <CreditCard className="h-5 w-5" />;
+    default:
+      return <Building2 className="h-5 w-5" />;
+  }
+};
+
+const getAccountTypeColor = (type: string) => {
+  const colors: Record<string, string> = {
+    bk_bank: "bg-blue-50 text-blue-700 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60",
+    equity_bank: "bg-sky-50 text-sky-700 ring-sky-100 dark:bg-sky-950/40 dark:text-sky-300 dark:ring-sky-900/60",
+    im_bank: "bg-indigo-50 text-indigo-700 ring-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-300 dark:ring-indigo-900/60",
+    cogebanque: "bg-cyan-50 text-cyan-700 ring-cyan-100 dark:bg-cyan-950/40 dark:text-cyan-300 dark:ring-cyan-900/60",
+    ecobank: "bg-teal-50 text-teal-700 ring-teal-100 dark:bg-teal-950/40 dark:text-teal-300 dark:ring-teal-900/60",
+    mtn_momo: "bg-amber-50 text-amber-700 ring-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/60",
+    airtel_money: "bg-red-50 text-red-700 ring-red-100 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900/60",
+    cash_in_hand: "bg-emerald-50 text-emerald-700 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60",
+  };
+  return colors[type] || colors.bk_bank;
+};
 
 interface JournalLine {
   type: "journal";
@@ -523,8 +579,19 @@ export default function BankReconciliationPage() {
   if (loading) {
     return (
       <Layout>
-        <div className="flex items-center justify-center h-screen">
-          <Loader2 className="h-8 w-8 animate-spin" />
+        <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-[1600px] space-y-6">
+            <Skeleton className="h-32 w-full rounded-xl" />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {[...Array(4)].map((_, i) => (
+                <Skeleton key={i} className="h-28 w-full rounded-xl" />
+              ))}
+            </div>
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              <Skeleton className="h-96 w-full rounded-xl" />
+              <Skeleton className="h-96 w-full rounded-xl" />
+            </div>
+          </div>
         </div>
       </Layout>
     );
@@ -534,82 +601,113 @@ export default function BankReconciliationPage() {
   if (!reconciliation || reconciliation.status !== "in_progress") {
     return (
       <Layout>
-        <div className="container mx-auto py-6">
-          {/* Header */}
-          <div className="flex items-center gap-4 mb-6">
-            <Button variant="ghost" size="sm" onClick={() => navigate("/bank-accounts")}>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold">{t("bankReconciliation.title", "Bank Reconciliation")}</h1>
-              <p className="text-muted-foreground">{account?.name}</p>
+        <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-[900px] space-y-6">
+            {/* Hero Header */}
+            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+              <div className="p-5">
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => navigate("/bank-accounts")}
+                    className="h-10 w-10 dark:border-slate-700 dark:text-slate-200"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                  <div className="rounded-lg bg-blue-50 p-2.5 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60">
+                    <Calculator className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h1 className="text-2xl font-bold tracking-tight text-slate-950 dark:text-white">
+                      {t("bankReconciliation.title", "Bank Reconciliation")}
+                    </h1>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">{account?.name || "Select an account to reconcile"}</p>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
 
-          {/* Start Card */}
-          <Card className="max-w-2xl mx-auto">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calculator className="h-5 w-5" />
-                {t("bankReconciliation.startNew", "Start New Reconciliation")}
-              </CardTitle>
-              <CardDescription>
-                {t("bankReconciliation.startDesc", "Begin a new reconciliation session to match your bank statement with your books")}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            {/* Start Card */}
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-950 dark:text-white">
+                  <CircleDot className="h-5 w-5 text-blue-500" />
+                  {t("bankReconciliation.startNew", "Start New Reconciliation")}
+                </CardTitle>
+                <CardDescription className="text-slate-500 dark:text-slate-400">
+                  {t("bankReconciliation.startDesc", "Begin a new reconciliation session to match your bank statement with your books")}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                      <Calendar className="inline h-3.5 w-3.5 mr-1" />
+                      {t("bankReconciliation.statementStart", "Statement Start Date")}
+                    </Label>
+                    <Input
+                      type="date"
+                      value={startForm.statementDateStart}
+                      onChange={(e) => setStartForm({ ...startForm, statementDateStart: e.target.value })}
+                      className="dark:bg-slate-900 dark:text-white dark:border-slate-700"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                      <Calendar className="inline h-3.5 w-3.5 mr-1" />
+                      {t("bankReconciliation.statementEnd", "Statement End Date")}
+                    </Label>
+                    <Input
+                      type="date"
+                      value={startForm.statementDateEnd}
+                      onChange={(e) => setStartForm({ ...startForm, statementDateEnd: e.target.value })}
+                      className="dark:bg-slate-900 dark:text-white dark:border-slate-700"
+                    />
+                  </div>
+                </div>
                 <div className="space-y-2">
-                  <Label>{t("bankReconciliation.statementStart", "Statement Start Date")}</Label>
+                  <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    <PiggyBank className="inline h-3.5 w-3.5 mr-1" />
+                    {t("bankReconciliation.closingBalance", "Statement Closing Balance")}
+                  </Label>
                   <Input
-                    type="date"
-                    value={startForm.statementDateStart}
-                    onChange={(e) => setStartForm({ ...startForm, statementDateStart: e.target.value })}
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={startForm.statementClosingBalance}
+                    onChange={(e) => setStartForm({ ...startForm, statementClosingBalance: e.target.value })}
+                    className="dark:bg-slate-900 dark:text-white dark:border-slate-700 dark:placeholder:text-slate-500"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>{t("bankReconciliation.statementEnd", "Statement End Date")}</Label>
+                  <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    {t("bankReconciliation.notes", "Notes (Optional)")}
+                  </Label>
                   <Input
-                    type="date"
-                    value={startForm.statementDateEnd}
-                    onChange={(e) => setStartForm({ ...startForm, statementDateEnd: e.target.value })}
+                    value={startForm.notes}
+                    onChange={(e) => setStartForm({ ...startForm, notes: e.target.value })}
+                    className="dark:bg-slate-900 dark:text-white dark:border-slate-700"
                   />
                 </div>
-              </div>
-              <div className="space-y-2">
-                <Label>{t("bankReconciliation.closingBalance", "Statement Closing Balance")}</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={startForm.statementClosingBalance}
-                  onChange={(e) => setStartForm({ ...startForm, statementClosingBalance: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>{t("bankReconciliation.notes", "Notes (Optional)")}</Label>
-                <Input
-                  value={startForm.notes}
-                  onChange={(e) => setStartForm({ ...startForm, notes: e.target.value })}
-                />
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button
-                onClick={handleStartReconciliation}
-                disabled={
-                  processing ||
-                  !startForm.statementDateStart ||
-                  !startForm.statementDateEnd ||
-                  !startForm.statementClosingBalance
-                }
-                className="w-full"
-              >
-                {processing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4 mr-2" />}
-                {t("bankReconciliation.startButton", "Start Reconciliation")}
-              </Button>
-            </CardFooter>
-          </Card>
+              </CardContent>
+              <CardFooter className="border-t border-slate-100 bg-slate-50/70 px-6 py-4 dark:border-slate-800 dark:bg-slate-900/50">
+                <Button
+                  onClick={handleStartReconciliation}
+                  disabled={
+                    processing ||
+                    !startForm.statementDateStart ||
+                    !startForm.statementDateEnd ||
+                    !startForm.statementClosingBalance
+                  }
+                  className="h-10 w-full gap-2 bg-blue-600 hover:bg-blue-700"
+                >
+                  {processing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+                  {t("bankReconciliation.startButton", "Start Reconciliation")}
+                </Button>
+              </CardFooter>
+            </Card>
+          </div>
         </div>
       </Layout>
     );
@@ -617,373 +715,453 @@ export default function BankReconciliationPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-6">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" onClick={() => navigate("/bank-accounts")}>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold">{t("bankReconciliation.title", "Bank Reconciliation")}</h1>
-              <p className="text-muted-foreground">{account?.name} | {reconciliation.period.start} to {reconciliation.period.end}</p>
+      <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1600px] space-y-6">
+          {/* Hero Header */}
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+            <div className="grid gap-5 p-5 xl:grid-cols-[1fr_auto] xl:items-center">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => navigate("/bank-accounts")}
+                    className="h-10 w-10 dark:border-slate-700 dark:text-slate-200"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                  <div className="rounded-lg bg-blue-50 p-2.5 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60">
+                    <Calculator className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h1 className="text-2xl font-bold tracking-tight text-slate-950 dark:text-white">
+                      {t("bankReconciliation.title", "Bank Reconciliation")}
+                    </h1>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      {account?.name} · {reconciliation.period.start} to {reconciliation.period.end}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowImportDialog(true)}
+                  className="h-9 gap-2 dark:border-slate-700 dark:text-slate-200"
+                >
+                  <Upload className="h-4 w-4" />
+                  {t("bankReconciliation.import", "Import Statement")}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fetchReconciliationData()}
+                  disabled={loading}
+                  className="h-9 gap-2 dark:border-slate-700 dark:text-slate-200"
+                >
+                  <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
+                  {t("common.refresh", "Refresh")}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowCancelDialog(true)}
+                  className="h-9 gap-2 border-red-200 text-red-700 hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/30"
+                >
+                  <Ban className="h-4 w-4" />
+                  {t("bankReconciliation.cancel", "Cancel")}
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => setShowCompleteDialog(true)}
+                  disabled={Math.abs(reconciliation.summary.difference) > 0.01}
+                  className="h-9 gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 dark:disabled:bg-slate-700"
+                >
+                  <Check className="h-4 w-4" />
+                  {t("bankReconciliation.complete", "Complete")}
+                </Button>
+              </div>
             </div>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setShowImportDialog(true)}>
-              <Upload className="h-4 w-4 mr-2" />
-              {t("bankReconciliation.import", "Import Statement")}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => fetchReconciliationData()}
-              disabled={loading}
-            >
-              <RefreshCw className={cn("h-4 w-4 mr-2", loading && "animate-spin")} />
-              {t("common.refresh", "Refresh")}
-            </Button>
-            <Button variant="destructive" onClick={() => setShowCancelDialog(true)}>
-              <Ban className="h-4 w-4 mr-2" />
-              {t("bankReconciliation.cancel", "Cancel")}
-            </Button>
-            <Button
-              onClick={() => setShowCompleteDialog(true)}
-              disabled={Math.abs(reconciliation.summary.difference) > 0.01}
-            >
-              <Check className="h-4 w-4 mr-2" />
-              {t("bankReconciliation.complete", "Complete")}
-            </Button>
+
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      {t("bankReconciliation.statementBalance", "Statement Balance")}
+                    </p>
+                    <p className="mt-3 text-2xl font-bold text-slate-950 dark:text-white">
+                      {formatCurrency(reconciliation.statementClosingBalance)}
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-blue-50 p-2.5 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60">
+                    <FileUp className="h-5 w-5" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      {t("bankReconciliation.bookBalance", "Book Balance")}
+                    </p>
+                    <p className="mt-3 text-2xl font-bold text-slate-950 dark:text-white">
+                      {formatCurrency(reconciliation.bookClosingBalance)}
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-emerald-50 p-2.5 text-emerald-700 ring-1 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60">
+                    <PiggyBank className="h-5 w-5" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      {t("bankReconciliation.difference", "Difference")}
+                    </p>
+                    <p className={`mt-3 text-2xl font-bold ${Math.abs(reconciliation.summary.difference) > 0.01 ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}`}>
+                      {formatCurrency(reconciliation.summary.difference)}
+                    </p>
+                  </div>
+                  <div className={`rounded-lg p-2.5 ring-1 ${Math.abs(reconciliation.summary.difference) > 0.01 ? "bg-red-50 text-red-700 ring-red-100 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900/60" : "bg-emerald-50 text-emerald-700 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60"}`}>
+                    {Math.abs(reconciliation.summary.difference) > 0.01 ? <AlertCircle className="h-5 w-5" /> : <BadgeCheck className="h-5 w-5" />}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      {t("bankReconciliation.progress", "Progress")}
+                    </p>
+                    <p className="mt-3 text-2xl font-bold text-slate-950 dark:text-white">
+                      {reconciliation.bankSummary.reconciledCount} / {reconciliation.bankSummary.totalLines}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                      {Math.round((reconciliation.bankSummary.reconciledCount / reconciliation.bankSummary.totalLines) * 100) || 0}% {t("bankReconciliation.matched", "matched")}
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-amber-50 p-2.5 text-amber-700 ring-1 ring-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/60">
+                    <CircleDot className="h-5 w-5" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
-        </div>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">{t("bankReconciliation.statementBalance", "Statement Balance")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(reconciliation.statementClosingBalance)}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">{t("bankReconciliation.bookBalance", "Book Balance")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(reconciliation.bookClosingBalance)}</div>
-            </CardContent>
-          </Card>
-          <Card className={cn(Math.abs(reconciliation.summary.difference) > 0.01 ? "border-red-500" : "border-green-500")}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">{t("bankReconciliation.difference", "Difference")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className={cn("text-2xl font-bold", Math.abs(reconciliation.summary.difference) > 0.01 ? "text-red-600" : "text-green-600")}>
-                {formatCurrency(reconciliation.summary.difference)}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">{t("bankReconciliation.progress", "Progress")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {reconciliation.bankSummary.reconciledCount} / {reconciliation.bankSummary.totalLines}
-              </div>
-              <div className="text-xs text-muted-foreground">
-                {Math.round((reconciliation.bankSummary.reconciledCount / reconciliation.bankSummary.totalLines) * 100) || 0}% {t("bankReconciliation.matched", "matched")}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Reconciliation Components */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Journal Lines (Your Books) */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileSpreadsheet className="h-5 w-5" />
-                {t("bankReconciliation.yourBooks", "Your Books")}
-                <Badge variant="secondary">
-                  {reconciliation.journalSummary.unreconciledCount} {t("bankReconciliation.unmatched", "unmatched")}
-                </Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4">
-                <TabsList>
-                  <TabsTrigger value="unmatched">{t("bankReconciliation.unmatched", "Unmatched")}</TabsTrigger>
-                  <TabsTrigger value="matched">{t("bankReconciliation.matched", "Matched")}</TabsTrigger>
-                  <TabsTrigger value="all">{t("bankReconciliation.all", "All")}</TabsTrigger>
-                </TabsList>
-              </Tabs>
-              <div className="border rounded-md">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-12"></TableHead>
-                      <TableHead>{t("bankReconciliation.date", "Date")}</TableHead>
-                      <TableHead>{t("bankReconciliation.description", "Description")}</TableHead>
-                      <TableHead className="text-right">{t("bankReconciliation.amount", "Amount")}</TableHead>
-                      <TableHead className="w-12"></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredJournalLines.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                          {t("bankReconciliation.noItems", "No items to display")}
-                        </TableCell>
+          {/* Reconciliation Components */}
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            {/* Journal Lines (Your Books) */}
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-950 dark:text-white">
+                  <FileSpreadsheet className="h-4 w-4 text-blue-500" />
+                  {t("bankReconciliation.yourBooks", "Your Books")}
+                  <Badge variant="secondary" className="h-6">
+                    {reconciliation.journalSummary.unreconciledCount} {t("bankReconciliation.unmatched", "unmatched")}
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Tabs value={activeTab} onValueChange={setActiveTab}>
+                  <TabsList className="h-9 bg-slate-100 p-1 dark:bg-slate-900">
+                    <TabsTrigger value="unmatched" className="h-7 text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-800 dark:text-slate-300 dark:data-[state=active]:text-white">
+                      {t("bankReconciliation.unmatched", "Unmatched")}
+                    </TabsTrigger>
+                    <TabsTrigger value="matched" className="h-7 text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-800 dark:text-slate-300 dark:data-[state=active]:text-white">
+                      {t("bankReconciliation.matched", "Matched")}
+                    </TabsTrigger>
+                    <TabsTrigger value="all" className="h-7 text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-800 dark:text-slate-300 dark:data-[state=active]:text-white">
+                      {t("bankReconciliation.all", "All")}
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+                <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-800">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-slate-50 hover:bg-slate-50 dark:bg-slate-900/50 dark:hover:bg-slate-900/50">
+                        <TableHead className="w-10 text-xs font-semibold text-slate-600 dark:text-slate-400"></TableHead>
+                        <TableHead className="text-xs font-semibold text-slate-600 dark:text-slate-400">Date</TableHead>
+                        <TableHead className="text-xs font-semibold text-slate-600 dark:text-slate-400">Description</TableHead>
+                        <TableHead className="text-right text-xs font-semibold text-slate-600 dark:text-slate-400">Amount</TableHead>
+                        <TableHead className="w-10 text-xs font-semibold text-slate-600 dark:text-slate-400"></TableHead>
                       </TableRow>
-                    ) : (
-                      filteredJournalLines.map((line) => (
-                        <TableRow
-                          key={line.lineId}
-                          className={cn(
-                            selectedJournalLine === line.lineId && "bg-blue-50",
-                            line.reconciled && "bg-green-50"
-                          )}
-                          onClick={() => setSelectedJournalLine(line.lineId)}
-                        >
-                          <TableCell>
-                            {line.reconciled ? (
-                              <CheckCircle2 className="h-4 w-4 text-green-600" />
-                            ) : (
-                              <div className="h-4 w-4 rounded-full border-2 border-gray-300" />
-                            )}
-                          </TableCell>
-                          <TableCell>{new Date(line.date).toLocaleDateString()}</TableCell>
-                          <TableCell>
-                            <div className="font-medium">{line.description}</div>
-                            <div className="text-xs text-muted-foreground">{line.entryNumber}</div>
-                          </TableCell>
-                          <TableCell className={cn("text-right font-medium", line.isDebit ? "text-green-600" : "text-red-600")}>
-                            {line.isDebit ? "+" : "-"}{formatCurrency(line.amount)}
-                          </TableCell>
-                          <TableCell>
-                            {line.isLocked && <Lock className="h-4 w-4 text-muted-foreground" />}
+                    </TableHeader>
+                    <TableBody>
+                      {filteredJournalLines.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center py-10 text-sm text-slate-500 dark:text-slate-400">
+                            {t("bankReconciliation.noItems", "No items to display")}
                           </TableCell>
                         </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
+                      ) : (
+                        filteredJournalLines.map((line) => (
+                          <TableRow
+                            key={line.lineId}
+                            className={cn(
+                              "cursor-pointer dark:border-slate-800",
+                              selectedJournalLine === line.lineId && "bg-blue-50 dark:bg-blue-950/20",
+                              line.reconciled && "bg-emerald-50/40 dark:bg-emerald-950/10"
+                            )}
+                            onClick={() => setSelectedJournalLine(line.lineId)}
+                          >
+                            <TableCell>
+                              {line.reconciled ? (
+                                <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                              ) : (
+                                <CircleDot className="h-4 w-4 text-slate-300 dark:text-slate-600" />
+                              )}
+                            </TableCell>
+                            <TableCell className="text-sm text-slate-700 dark:text-slate-300">{new Date(line.date).toLocaleDateString()}</TableCell>
+                            <TableCell>
+                              <div className="text-sm font-medium text-slate-800 dark:text-slate-200">{line.description}</div>
+                              <div className="text-xs text-slate-500 dark:text-slate-400">{line.entryNumber}</div>
+                            </TableCell>
+                            <TableCell className={cn("text-right text-sm font-medium", line.isDebit ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400")}>
+                              {line.isDebit ? "+" : "-"}{formatCurrency(line.amount)}
+                            </TableCell>
+                            <TableCell>
+                              {line.isLocked && <Lock className="h-4 w-4 text-slate-400 dark:text-slate-500" />}
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
 
-          {/* Bank Statement Lines */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Upload className="h-5 w-5" />
-                {t("bankReconciliation.bankStatement", "Bank Statement")}
-                <Badge variant="secondary">
-                  {reconciliation.bankSummary.unreconciledCount} {t("bankReconciliation.unmatched", "unmatched")}
-                </Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="mb-4">
+            {/* Bank Statement Lines */}
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-950 dark:text-white">
+                  <Upload className="h-4 w-4 text-blue-500" />
+                  {t("bankReconciliation.bankStatement", "Bank Statement")}
+                  <Badge variant="secondary" className="h-6">
+                    {reconciliation.bankSummary.unreconciledCount} {t("bankReconciliation.unmatched", "unmatched")}
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
                 {suggestions.length > 0 && activeTab === "unmatched" && (
-                  <Alert className="mb-4">
-                    <Search className="h-4 w-4" />
-                    <AlertTitle>{t("bankReconciliation.suggestionsAvailable", "Match Suggestions Available")}</AlertTitle>
-                    <AlertDescription>
+                  <Alert className="border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/20">
+                    <Search className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                    <AlertTitle className="text-sm font-semibold text-amber-800 dark:text-amber-300">
+                      {t("bankReconciliation.suggestionsAvailable", "Match Suggestions Available")}
+                    </AlertTitle>
+                    <AlertDescription className="text-xs text-amber-700 dark:text-amber-400">
                       {t("bankReconciliation.suggestionsDesc", "{{count}} suggested matches found based on amount and date", { count: suggestions.length })}
                     </AlertDescription>
                   </Alert>
                 )}
-              </div>
-              <div className="border rounded-md">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-12"></TableHead>
-                      <TableHead>{t("bankReconciliation.date", "Date")}</TableHead>
-                      <TableHead>{t("bankReconciliation.description", "Description")}</TableHead>
-                      <TableHead className="text-right">{t("bankReconciliation.amount", "Amount")}</TableHead>
-                      <TableHead className="w-24"></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredBankLines.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                          {t("bankReconciliation.noItems", "No items to display")}
-                        </TableCell>
+                <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-800">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-slate-50 hover:bg-slate-50 dark:bg-slate-900/50 dark:hover:bg-slate-900/50">
+                        <TableHead className="w-10 text-xs font-semibold text-slate-600 dark:text-slate-400"></TableHead>
+                        <TableHead className="text-xs font-semibold text-slate-600 dark:text-slate-400">Date</TableHead>
+                        <TableHead className="text-xs font-semibold text-slate-600 dark:text-slate-400">Description</TableHead>
+                        <TableHead className="text-right text-xs font-semibold text-slate-600 dark:text-slate-400">Amount</TableHead>
+                        <TableHead className="w-24 text-xs font-semibold text-slate-600 dark:text-slate-400"></TableHead>
                       </TableRow>
-                    ) : (
-                      filteredBankLines.map((line) => (
-                        <TableRow
-                          key={line.id}
-                          className={cn(
-                            selectedBankLine === line.id && "bg-blue-50",
-                            line.reconciled && "bg-green-50",
-                            line.status === "ignored" && "bg-gray-50"
-                          )}
-                          onClick={() => setSelectedBankLine(line.id)}
-                        >
-                          <TableCell>
-                            {line.reconciled ? (
-                              <CheckCircle2 className="h-4 w-4 text-green-600" />
-                            ) : line.status === "ignored" ? (
-                              <EyeOff className="h-4 w-4 text-gray-400" />
-                            ) : (
-                              <div className="h-4 w-4 rounded-full border-2 border-gray-300" />
-                            )}
-                          </TableCell>
-                          <TableCell>{new Date(line.date).toLocaleDateString()}</TableCell>
-                          <TableCell>
-                            <div className="font-medium">{line.description}</div>
-                            {line.reference && (
-                              <div className="text-xs text-muted-foreground">{line.reference}</div>
-                            )}
-                          </TableCell>
-                          <TableCell className={cn("text-right font-medium", !line.isDebit ? "text-green-600" : "text-red-600")}>
-                            {!line.isDebit ? "+" : "-"}{formatCurrency(line.amount)}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex gap-1">
-                              {!line.reconciled && line.status !== "ignored" && (
-                                <>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      if (selectedJournalLine) {
-                                        handleMatch(selectedJournalLine, line.id);
-                                      }
-                                    }}
-                                    disabled={!selectedJournalLine || processing}
-                                  >
-                                    <LinkIcon className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setSelectedStatementLineForAdjust(line);
-                                      setShowAdjustDialog(true);
-                                    }}
-                                    disabled={processing}
-                                  >
-                                    <FileEdit className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleIgnore(line.id);
-                                    }}
-                                    disabled={processing}
-                                  >
-                                    <EyeOff className="h-4 w-4" />
-                                  </Button>
-                                </>
-                              )}
-                              {line.reconciled && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    // Find match ID and unmatch
-                                    const suggestion = suggestions.find(s => s.statementLineId === line.id);
-                                    if (suggestion) {
-                                      handleUnmatch(suggestion.journalLineId);
-                                    }
-                                  }}
-                                  disabled={processing}
-                                >
-                                  <Unlink className="h-4 w-4" />
-                                </Button>
-                              )}
-                            </div>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredBankLines.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center py-10 text-sm text-slate-500 dark:text-slate-400">
+                            {t("bankReconciliation.noItems", "No items to display")}
                           </TableCell>
                         </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
+                      ) : (
+                        filteredBankLines.map((line) => (
+                          <TableRow
+                            key={line.id}
+                            className={cn(
+                              "cursor-pointer dark:border-slate-800",
+                              selectedBankLine === line.id && "bg-blue-50 dark:bg-blue-950/20",
+                              line.reconciled && "bg-emerald-50/40 dark:bg-emerald-950/10",
+                              line.status === "ignored" && "bg-slate-50 dark:bg-slate-900/30"
+                            )}
+                            onClick={() => setSelectedBankLine(line.id)}
+                          >
+                            <TableCell>
+                              {line.reconciled ? (
+                                <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                              ) : line.status === "ignored" ? (
+                                <EyeOff className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+                              ) : (
+                                <CircleDot className="h-4 w-4 text-slate-300 dark:text-slate-600" />
+                              )}
+                            </TableCell>
+                            <TableCell className="text-sm text-slate-700 dark:text-slate-300">{new Date(line.date).toLocaleDateString()}</TableCell>
+                            <TableCell>
+                              <div className="text-sm font-medium text-slate-800 dark:text-slate-200">{line.description}</div>
+                              {line.reference && (
+                                <div className="text-xs text-slate-500 dark:text-slate-400">{line.reference}</div>
+                              )}
+                            </TableCell>
+                            <TableCell className={cn("text-right text-sm font-medium", !line.isDebit ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400")}>
+                              {!line.isDebit ? "+" : "-"}{formatCurrency(line.amount)}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex gap-1">
+                                {!line.reconciled && line.status !== "ignored" && (
+                                  <>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8 dark:text-slate-300 dark:hover:bg-slate-800"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (selectedJournalLine) {
+                                          handleMatch(selectedJournalLine, line.id);
+                                        }
+                                      }}
+                                      disabled={!selectedJournalLine || processing}
+                                    >
+                                      <LinkIcon className="h-3.5 w-3.5" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8 dark:text-slate-300 dark:hover:bg-slate-800"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedStatementLineForAdjust(line);
+                                        setShowAdjustDialog(true);
+                                      }}
+                                      disabled={processing}
+                                    >
+                                      <FileEdit className="h-3.5 w-3.5" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:bg-slate-800"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleIgnore(line.id);
+                                      }}
+                                      disabled={processing}
+                                    >
+                                      <EyeOff className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </>
+                                )}
+                                {line.reconciled && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 dark:text-slate-300 dark:hover:bg-slate-800"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const suggestion = suggestions.find(s => s.statementLineId === line.id);
+                                      if (suggestion) {
+                                        handleUnmatch(suggestion.journalLineId);
+                                      }
+                                    }}
+                                    disabled={processing}
+                                  >
+                                    <Unlink className="h-3.5 w-3.5" />
+                                  </Button>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Reconciliation Summary */}
+          <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-950 dark:text-white">
+                <Calculator className="h-4 w-4 text-blue-500" />
+                {t("bankReconciliation.reconciliationSummary", "Reconciliation Summary")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div className="rounded-lg border border-slate-200 p-3 dark:border-slate-800">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{t("bankReconciliation.depositsInTransit", "Deposits in Transit")}</p>
+                  <p className="mt-1 text-lg font-bold text-emerald-600 dark:text-emerald-400">+{formatCurrency(reconciliation.summary.depositsInTransit)}</p>
+                </div>
+                <div className="rounded-lg border border-slate-200 p-3 dark:border-slate-800">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{t("bankReconciliation.outstandingChecks", "Outstanding Checks")}</p>
+                  <p className="mt-1 text-lg font-bold text-red-600 dark:text-red-400">-{formatCurrency(reconciliation.summary.outstandingChecks)}</p>
+                </div>
+                <div className="rounded-lg border border-slate-200 p-3 dark:border-slate-800">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{t("bankReconciliation.bankCreditsNotInBooks", "Bank Credits Not in Books")}</p>
+                  <p className="mt-1 text-lg font-bold text-slate-800 dark:text-white">{formatCurrency(reconciliation.summary.bankCreditsNotInBooks)}</p>
+                </div>
+                <div className="rounded-lg border border-slate-200 p-3 dark:border-slate-800">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{t("bankReconciliation.bankChargesNotInBooks", "Bank Charges Not in Books")}</p>
+                  <p className="mt-1 text-lg font-bold text-slate-800 dark:text-white">{formatCurrency(reconciliation.summary.bankChargesNotInBooks)}</p>
+                </div>
+              </div>
+              <Separator className="dark:bg-slate-800" />
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-900/50">
+                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{t("bankReconciliation.adjustedBankBalance", "Adjusted Bank Balance")}</p>
+                  <p className="mt-1 text-xl font-bold text-slate-950 dark:text-white">{formatCurrency(reconciliation.summary.adjustedBankBalance)}</p>
+                </div>
+                <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-900/50">
+                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{t("bankReconciliation.adjustedBookBalance", "Adjusted Book Balance")}</p>
+                  <p className="mt-1 text-xl font-bold text-slate-950 dark:text-white">{formatCurrency(reconciliation.summary.adjustedBookBalance)}</p>
+                </div>
               </div>
             </CardContent>
           </Card>
         </div>
-
-        {/* Reconciliation Summary */}
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>{t("bankReconciliation.reconciliationSummary", "Reconciliation Summary")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div>
-                <div className="text-sm text-muted-foreground">{t("bankReconciliation.depositsInTransit", "Deposits in Transit")}</div>
-                <div className="text-lg font-medium text-green-600">+{formatCurrency(reconciliation.summary.depositsInTransit)}</div>
-              </div>
-              <div>
-                <div className="text-sm text-muted-foreground">{t("bankReconciliation.outstandingChecks", "Outstanding Checks")}</div>
-                <div className="text-lg font-medium text-red-600">-{formatCurrency(reconciliation.summary.outstandingChecks)}</div>
-              </div>
-              <div>
-                <div className="text-sm text-muted-foreground">{t("bankReconciliation.bankCreditsNotInBooks", "Bank Credits Not in Books")}</div>
-                <div className="text-lg font-medium">{formatCurrency(reconciliation.summary.bankCreditsNotInBooks)}</div>
-              </div>
-              <div>
-                <div className="text-sm text-muted-foreground">{t("bankReconciliation.bankChargesNotInBooks", "Bank Charges Not in Books")}</div>
-                <div className="text-lg font-medium">{formatCurrency(reconciliation.summary.bankChargesNotInBooks)}</div>
-              </div>
-            </div>
-            <Separator className="my-4" />
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <div className="text-sm text-muted-foreground">{t("bankReconciliation.adjustedBankBalance", "Adjusted Bank Balance")}</div>
-                <div className="text-xl font-bold">{formatCurrency(reconciliation.summary.adjustedBankBalance)}</div>
-              </div>
-              <div>
-                <div className="text-sm text-muted-foreground">{t("bankReconciliation.adjustedBookBalance", "Adjusted Book Balance")}</div>
-                <div className="text-xl font-bold">{formatCurrency(reconciliation.summary.adjustedBookBalance)}</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      </div>
 
         {/* Import Dialog */}
         <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
-          <DialogContent className="max-w-lg">
+          <DialogContent className="max-w-lg dark:bg-slate-900 dark:border-slate-700">
             <DialogHeader>
-              <DialogTitle>{t("bankReconciliation.importStatement", "Import Bank Statement")}</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="dark:text-white">{t("bankReconciliation.importStatement", "Import Bank Statement")}</DialogTitle>
+              <DialogDescription className="dark:text-slate-400">
                 {t("bankReconciliation.importDesc", "Upload a CSV file with your bank statement data")}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label>{t("bankReconciliation.csvFile", "CSV File")}</Label>
+                <Label className="dark:text-slate-300">{t("bankReconciliation.csvFile", "CSV File")}</Label>
                 <Input
                   type="file"
                   accept=".csv"
                   onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                  className="dark:bg-slate-900 dark:text-white dark:border-slate-700"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>{t("bankReconciliation.dateFormat", "Date Format")}</Label>
+                  <Label className="dark:text-slate-300">{t("bankReconciliation.dateFormat", "Date Format")}</Label>
                   <Select
                     value={importConfig.dateFormat}
                     onValueChange={(v) => setImportConfig({ ...importConfig, dateFormat: v })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="dark:bg-slate-900 dark:text-white dark:border-slate-700">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="dark:bg-slate-900 dark:border-slate-700">
                       <SelectItem value="auto">Auto-detect</SelectItem>
                       <SelectItem value="DD/MM/YYYY">DD/MM/YYYY</SelectItem>
                       <SelectItem value="MM/DD/YYYY">MM/DD/YYYY</SelectItem>
@@ -992,16 +1170,17 @@ export default function BankReconciliationPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>{t("bankReconciliation.dateColumn", "Date Column")}</Label>
+                  <Label className="dark:text-slate-300">{t("bankReconciliation.dateColumn", "Date Column")}</Label>
                   <Input
                     value={importConfig.dateColumn}
                     onChange={(e) => setImportConfig({ ...importConfig, dateColumn: e.target.value })}
+                    className="dark:bg-slate-900 dark:text-white dark:border-slate-700"
                   />
                 </div>
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowImportDialog(false)}>
+              <Button variant="outline" onClick={() => setShowImportDialog(false)} className="dark:border-slate-700 dark:text-slate-200">
                 {t("common.cancel", "Cancel")}
               </Button>
               <Button onClick={handleImport} disabled={!importFile || processing}>
@@ -1014,10 +1193,10 @@ export default function BankReconciliationPage() {
 
         {/* Adjust Dialog */}
         <Dialog open={showAdjustDialog} onOpenChange={setShowAdjustDialog}>
-          <DialogContent>
+          <DialogContent className="dark:bg-slate-900 dark:border-slate-700">
             <DialogHeader>
-              <DialogTitle>{t("bankReconciliation.createAdjustingEntry", "Create Adjusting Entry")}</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="dark:text-white">{t("bankReconciliation.createAdjustingEntry", "Create Adjusting Entry")}</DialogTitle>
+              <DialogDescription className="dark:text-slate-400">
                 {selectedStatementLineForAdjust && (
                   <>
                     {selectedStatementLineForAdjust.description} - {formatCurrency(selectedStatementLineForAdjust.amount)}
@@ -1027,26 +1206,28 @@ export default function BankReconciliationPage() {
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label>{t("bankReconciliation.expenseAccount", "Expense/Income Account Code")}</Label>
+                <Label className="dark:text-slate-300">{t("bankReconciliation.expenseAccount", "Expense/Income Account Code")}</Label>
                 <Input
                   value={adjustForm.expenseAccountCode}
                   onChange={(e) => setAdjustForm({ ...adjustForm, expenseAccountCode: e.target.value })}
                   placeholder="6200 for bank charges"
+                  className="dark:bg-slate-900 dark:text-white dark:border-slate-700 dark:placeholder:text-slate-500"
                 />
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   {t("bankReconciliation.accountCodeHelp", "Use 6200 for bank charges, 4200 for other income, etc.")}
                 </p>
               </div>
               <div className="space-y-2">
-                <Label>{t("bankReconciliation.description", "Description")}</Label>
+                <Label className="dark:text-slate-300">{t("bankReconciliation.description", "Description")}</Label>
                 <Input
                   value={adjustForm.description}
                   onChange={(e) => setAdjustForm({ ...adjustForm, description: e.target.value })}
+                  className="dark:bg-slate-900 dark:text-white dark:border-slate-700"
                 />
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowAdjustDialog(false)}>
+              <Button variant="outline" onClick={() => setShowAdjustDialog(false)} className="dark:border-slate-700 dark:text-slate-200">
                 {t("common.cancel", "Cancel")}
               </Button>
               <Button onClick={handleCreateAdjustingEntry} disabled={processing}>
@@ -1059,10 +1240,10 @@ export default function BankReconciliationPage() {
 
         {/* Complete Dialog */}
         <Dialog open={showCompleteDialog} onOpenChange={setShowCompleteDialog}>
-          <DialogContent>
+          <DialogContent className="dark:bg-slate-900 dark:border-slate-700">
             <DialogHeader>
-              <DialogTitle>{t("bankReconciliation.completeReconciliation", "Complete Reconciliation")}</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="dark:text-white">{t("bankReconciliation.completeReconciliation", "Complete Reconciliation")}</DialogTitle>
+              <DialogDescription className="dark:text-slate-400">
                 {Math.abs(reconciliation.summary.difference) > 0.01 ? (
                   <Alert variant="destructive">
                     <AlertCircle className="h-4 w-4" />
@@ -1079,7 +1260,7 @@ export default function BankReconciliationPage() {
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowCompleteDialog(false)}>
+              <Button variant="outline" onClick={() => setShowCompleteDialog(false)} className="dark:border-slate-700 dark:text-slate-200">
                 {t("common.cancel", "Cancel")}
               </Button>
               <Button
@@ -1098,15 +1279,15 @@ export default function BankReconciliationPage() {
 
         {/* Cancel Dialog */}
         <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
-          <DialogContent>
+          <DialogContent className="dark:bg-slate-900 dark:border-slate-700">
             <DialogHeader>
-              <DialogTitle>{t("bankReconciliation.cancelReconciliation", "Cancel Reconciliation")}</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="dark:text-white">{t("bankReconciliation.cancelReconciliation", "Cancel Reconciliation")}</DialogTitle>
+              <DialogDescription className="dark:text-slate-400">
                 {t("bankReconciliation.cancelDesc", "This will cancel the current reconciliation session. All matches will be removed.")}
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowCancelDialog(false)}>
+              <Button variant="outline" onClick={() => setShowCancelDialog(false)} className="dark:border-slate-700 dark:text-slate-200">
                 {t("common.keep", "Keep Session")}
               </Button>
               <Button variant="destructive" onClick={handleCancel} disabled={processing}>
@@ -1116,7 +1297,6 @@ export default function BankReconciliationPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </div>
     </Layout>
   );
 }

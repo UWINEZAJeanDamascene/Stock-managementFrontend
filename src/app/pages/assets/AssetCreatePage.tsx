@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useParams } from "react-router";
 import {
   fixedAssetsApi,
@@ -25,9 +25,13 @@ import {
   Building,
   Shield,
   X,
+  BadgeCheck,
+  TrendingDown,
+  Wallet,
 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
+import { Badge } from "@/app/components/ui/badge";
 import { Textarea } from "@/app/components/ui/textarea";
 import {
   Card,
@@ -133,38 +137,18 @@ export default function AssetCreatePage() {
   const fetchCategories = useCallback(async () => {
     try {
       const response: any = await assetCategoriesApi.getAll();
-      console.log("[DEBUG] Categories API response:", response);
-
-      // Handle both { success: true, data: [...] } and { success: true, data: { data: [...] } }
+      console.debug("[AssetCreatePage] fetchCategories response:", response);
       let categoryData = response.data;
       if (categoryData && categoryData.data && Array.isArray(categoryData.data)) {
         categoryData = categoryData.data;
       }
-
       if (response.success && Array.isArray(categoryData)) {
-        const fetchedCategories = categoryData.filter((c: any) => c._id);
-        console.log("[DEBUG] Filtered categories:", fetchedCategories);
-        setCategories(fetchedCategories);
-
-        // Auto-select first category if none selected and in create mode (id is undefined)
-        if (fetchedCategories.length > 0 && !id) {
-          const defaultCat = fetchedCategories[0];
-          console.log("[DEBUG] Auto-selecting category:", defaultCat._id, defaultCat.name);
-          setFormData((prev: any) => ({
-            ...prev,
-            categoryId: String(defaultCat._id),
-            usefulLifeMonths: defaultCat.defaultUsefulLifeMonths || 60,
-            depreciationMethod: defaultCat.defaultDepreciationMethod || "straight_line",
-            assetAccountCode: defaultCat.defaultAssetAccountCode || "1700",
-            accumDepreciationAccountCode: defaultCat.defaultAccumDepreciationAccountCode || "1810",
-            depreciationExpenseAccountCode: defaultCat.defaultDepreciationExpenseAccountCode || "5800",
-          }));
-        }
+        setCategories(categoryData.filter((c: any) => c._id));
       }
     } catch (error) {
       console.error("[AssetCreatePage] Failed to fetch categories:", error);
     }
-  }, [id]);
+  }, []);
 
   const fetchSuppliers = useCallback(async () => {
     try {
@@ -177,7 +161,7 @@ export default function AssetCreatePage() {
     }
   }, []);
 
-  const fetchAsset = async (assetId: string) => {
+  const fetchAsset = useCallback(async (assetId: string) => {
     setInitialLoading(true);
     try {
       const response: any = await fixedAssetsApi.getById(assetId);
@@ -208,6 +192,7 @@ export default function AssetCreatePage() {
           supplierId: asset.supplierId?._id || asset.supplierId || "",
           bankAccountId: "",
           paymentAccountCode: "2000",
+          donationFairValue: getNumericValue(asset.donationFairValue),
           // New fields
           referenceNo: asset.referenceNo || "",
           serialNumber: asset.serialNumber || "",
@@ -230,19 +215,47 @@ export default function AssetCreatePage() {
     } finally {
       setInitialLoading(false);
     }
-  };
+  }, [navigate, t]);
 
-  // Data fetching useEffect - placed after all fetch function definitions
+  // Fetch reference data once on mount
   useEffect(() => {
     fetchCategories();
     fetchSuppliers();
     fetchBankAccounts();
     fetchChartAccounts();
     fetchDepartments();
+  }, []);
+
+  // Fetch asset when editing
+  useEffect(() => {
     if (isEdit && id) {
       fetchAsset(id);
     }
-  }, [id, isEdit, fetchCategories, fetchSuppliers, fetchBankAccounts, fetchChartAccounts, fetchDepartments]);
+  }, [id, isEdit]);
+
+  // Auto-select first category in create mode when categories load.
+  // Use a ref guard to ensure we only apply the default once and avoid
+  // re-running when `formData` changes (prevents update-depth loops).
+  const defaultCategoryAppliedRef = useRef(false);
+
+  useEffect(() => {
+    console.debug("[AssetCreatePage] auto-select effect run", { isEdit, categoriesLength: categories.length, applied: defaultCategoryAppliedRef.current });
+    if (!isEdit && categories.length > 0 && !defaultCategoryAppliedRef.current) {
+      const defaultCat = categories[0];
+      console.debug("[AssetCreatePage] applying default category", defaultCat?._id);
+      setFormData((prev: any) => ({
+        ...prev,
+        categoryId: String(defaultCat._id),
+        usefulLifeMonths: defaultCat.defaultUsefulLifeMonths || 60,
+        depreciationMethod: defaultCat.defaultDepreciationMethod || "straight_line",
+        assetAccountCode: defaultCat.defaultAssetAccountCode || "1700",
+        accumDepreciationAccountCode: defaultCat.defaultAccumDepreciationAccountCode || "1810",
+        depreciationExpenseAccountCode: defaultCat.defaultDepreciationExpenseAccountCode || "5800",
+      }));
+      defaultCategoryAppliedRef.current = true;
+      console.debug("[AssetCreatePage] defaultCategoryAppliedRef set to true");
+    }
+  }, [categories, isEdit]);
 
   const handleCategoryChange = useCallback((categoryId: string) => {
     if (!categoryId) {
@@ -400,48 +413,57 @@ export default function AssetCreatePage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-6 space-y-6 bg-gray-50 dark:bg-slate-900 min-h-0 p-6">
-        {/* Header */}
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate("/assets")}
-            className="dark:text-slate-200"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold dark:text-white">
-              {isEdit ? t("assets.editTitle") : t("assets.createTitle")}
-            </h1>
-            <p className="text-muted-foreground dark:text-slate-400">
-              {isEdit
-                ? t("assets.editDescription")
-                : t("assets.createDescription")}
-            </p>
+      <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1400px] space-y-6">
+          {/* ── Hero Header ── */}
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+            <div className="grid gap-5 p-5 xl:grid-cols-[1fr_auto] xl:items-center">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button variant="ghost" size="icon" onClick={() => navigate("/assets")} className="h-9 w-9 dark:text-slate-300 dark:hover:bg-slate-800">
+                    <ArrowLeft className="h-5 w-5" />
+                  </Button>
+                  <div className="rounded-lg bg-indigo-50 p-2.5 text-indigo-700 ring-1 ring-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-300 dark:ring-indigo-900/60">
+                    <Package className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h1 className="text-2xl font-bold tracking-tight text-slate-950 dark:text-white">
+                      {isEdit ? t("assets.editTitle") : t("assets.createTitle")}
+                    </h1>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      {isEdit ? t("assets.editDescription") : t("assets.createDescription")}
+                    </p>
+                  </div>
+                </div>
+                {isEdit && (
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <Badge variant="outline" className="h-6 border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900 dark:bg-blue-950/30 dark:text-blue-400">
+                      <BadgeCheck className="h-3.5 w-3.5 mr-1" />
+                      Editing Asset
+                    </Badge>
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" onClick={() => navigate("/assets")} className="h-9 gap-2 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
+                  <X className="h-4 w-4" />
+                  {t("common.cancel")}
+                </Button>
+                <Button size="sm" onClick={handleSubmit} disabled={submitting} className="h-9 gap-2 bg-indigo-600 hover:bg-indigo-700">
+                  {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                  <Save className="h-4 w-4" />
+                  {t("common.save")}
+                </Button>
+              </div>
+            </div>
           </div>
-          <Button
-            variant="outline"
-            onClick={() => navigate("/assets")}
-            className="mr-2 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
-          >
-            <X className="mr-2 h-4 w-4" />
-            {t("common.cancel")}
-          </Button>
-          <Button onClick={handleSubmit} disabled={submitting} className="dark:bg-primary dark:text-primary-foreground">
-            {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            <Save className="mr-2 h-4 w-4" />
-            {t("common.save")}
-          </Button>
-        </div>
 
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Main Form */}
             <div className="lg:col-span-2 space-y-6">
               {/* Basic Info */}
-              <Card className="dark:bg-slate-800">
+              <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 dark:text-white">
                     <Package className="h-5 w-5" />
@@ -628,7 +650,7 @@ export default function AssetCreatePage() {
               </Card>
 
               {/* Purchase Details */}
-              <Card className="dark:bg-slate-800">
+              <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 dark:text-white">
                     <DollarSign className="h-5 w-5" />
@@ -771,7 +793,7 @@ export default function AssetCreatePage() {
               </Card>
 
               {/* Warranty & Insurance */}
-              <Card className="dark:bg-slate-800">
+              <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 dark:text-white">
                     <Shield className="h-5 w-5" />
@@ -843,7 +865,7 @@ export default function AssetCreatePage() {
               </Card>
 
               {/* Depreciation Settings */}
-              <Card className="dark:bg-slate-800">
+              <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 dark:text-white">
                     <Calculator className="h-5 w-5" />
@@ -937,7 +959,7 @@ export default function AssetCreatePage() {
               </Card>
 
               {/* Account Codes */}
-              <Card className="dark:bg-slate-800">
+              <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 dark:text-white">
                     <Building2 className="h-5 w-5" />
@@ -1027,7 +1049,7 @@ export default function AssetCreatePage() {
 
               {/* Payment Source */}
               {!isEdit && (
-                <Card className="dark:bg-slate-800">
+                <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 dark:text-white">
                       <DollarSign className="h-5 w-5" />
@@ -1087,61 +1109,45 @@ export default function AssetCreatePage() {
 
             {/* Sidebar - Summary */}
             <div className="space-y-6">
-              <Card className="dark:bg-slate-800">
+              <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
                 <CardHeader>
                   <CardTitle className="dark:text-white">{t("assets.sections.summary")}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label className="text-muted-foreground dark:text-slate-400">
-                      {t("assets.fields.purchaseCost")}
-                    </Label>
-                    <div className="text-2xl font-bold dark:text-white">
-                      {formatCurrency(formData.purchaseCost)}
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("assets.fields.purchaseCost")}</p>
+                      <p className="mt-1 text-2xl font-bold text-slate-950 dark:text-white">{formatCurrency(formData.purchaseCost)}</p>
+                    </div>
+                    <div className="rounded-lg bg-emerald-50 p-2 text-emerald-700 ring-1 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60">
+                      <Wallet className="h-4 w-4" />
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-muted-foreground dark:text-slate-400">
-                      {t("assets.fields.salvageValue")}
-                    </Label>
-                    <div className="text-xl dark:text-slate-300">
-                      {formatCurrency(formData.salvageValue)}
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("assets.fields.salvageValue")}</p>
+                      <p className="mt-1 text-xl font-semibold text-slate-700 dark:text-slate-300">{formatCurrency(formData.salvageValue)}</p>
                     </div>
                   </div>
-                  <div className="border-t pt-4 space-y-2">
-                    <Label className="text-muted-foreground dark:text-slate-400">
-                      {t("assets.fields.depreciableAmount")}
-                    </Label>
-                    <div className="text-xl font-semibold dark:text-white">
-                      {formatCurrency(depreciableAmount)}
-                    </div>
+                  <div className="rounded-lg border border-slate-100 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900/50">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("assets.fields.depreciableAmount")}</p>
+                    <p className="mt-1 text-xl font-bold text-slate-900 dark:text-white">{formatCurrency(depreciableAmount)}</p>
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-muted-foreground dark:text-slate-400">
-                      {t("assets.fields.usefulLifeMonths")}
-                    </Label>
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-muted-foreground dark:text-slate-400" />
-                      <span className="dark:text-slate-300">
-                        {formData.usefulLifeMonths} months (
-                        {Math.floor(formData.usefulLifeMonths / 12)} years)
-                      </span>
-                    </div>
+                  <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                    <Clock className="h-4 w-4" />
+                    <span>{formData.usefulLifeMonths} months ({Math.floor(formData.usefulLifeMonths / 12)} years)</span>
                   </div>
-                  <div className="border-t pt-4 space-y-2">
-                    <Label className="text-muted-foreground dark:text-slate-400">
-                      {t("assets.fields.monthlyDepreciation")}
-                    </Label>
-                    <div className="text-2xl font-bold text-primary dark:text-primary">
-                      {formatCurrency(monthlyDepreciation)}
-                    </div>
+                  <div className="rounded-lg border border-slate-100 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900/50">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("assets.fields.monthlyDepreciation")}</p>
+                    <p className="mt-1 text-2xl font-bold text-indigo-600 dark:text-indigo-400">{formatCurrency(monthlyDepreciation)}</p>
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-muted-foreground dark:text-slate-400">
-                      {t("assets.fields.annualDepreciation")}
-                    </Label>
-                    <div className="text-xl dark:text-slate-300">
-                      {formatCurrency(annualDepreciation)}
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("assets.fields.annualDepreciation")}</p>
+                      <p className="mt-1 text-xl font-semibold text-slate-700 dark:text-slate-300">{formatCurrency(annualDepreciation)}</p>
+                    </div>
+                    <div className="rounded-lg bg-red-50 p-2 text-red-700 ring-1 ring-red-100 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900/60">
+                      <TrendingDown className="h-4 w-4" />
                     </div>
                   </div>
                 </CardContent>
@@ -1152,69 +1158,47 @@ export default function AssetCreatePage() {
 
         {/* Journal Entry Dialog */}
         {showJournalEntry && journalEntry && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <Card className="w-[600px] max-h-[80vh] overflow-y-auto dark:bg-slate-800">
-              <CardHeader>
-                <CardTitle className="dark:text-white">{t("assets.journalEntry.title")}</CardTitle>
-                <CardDescription className="dark:text-slate-400">
-                  {t("assets.journalEntry.description")}
-                </CardDescription>
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+            <Card className="w-full max-w-xl max-h-[80vh] overflow-y-auto border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-950">
+              <CardHeader className="gap-1">
+                <div className="flex items-center gap-2">
+                  <div className="rounded-lg bg-emerald-50 p-2 text-emerald-700 ring-1 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60">
+                    <BadgeCheck className="h-4 w-4" />
+                  </div>
+                  <CardTitle className="text-lg dark:text-white">{t("assets.journalEntry.title")}</CardTitle>
+                </div>
+                <CardDescription className="dark:text-slate-400">{t("assets.journalEntry.description")}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="bg-muted p-4 rounded-lg dark:bg-slate-700">
-                  <p className="font-medium dark:text-white">
-                    {t("assets.journalEntry.posted")}
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-1 dark:text-slate-400">
-                    {t("assets.journalEntry.entryNumber")}:{" "}
-                    {journalEntry.entryNumber}
-                  </p>
+                <div className="rounded-lg border border-slate-100 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900/50">
+                  <p className="text-sm font-medium text-slate-900 dark:text-white">{t("assets.journalEntry.posted")}</p>
+                  <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{t("assets.journalEntry.entryNumber")}: {journalEntry.entryNumber}</p>
                 </div>
                 <div className="space-y-2">
-                  <Label className="dark:text-slate-200">{t("assets.journalEntry.lines")}</Label>
-                  <div className="border rounded-lg overflow-hidden dark:border-slate-600">
+                  <Label className="text-sm dark:text-slate-200">{t("assets.journalEntry.lines")}</Label>
+                  <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700">
                     <table className="w-full text-sm">
-                      <thead className="bg-muted dark:bg-slate-700">
+                      <thead className="bg-slate-50 dark:bg-slate-900/60">
                         <tr>
-                          <th className="text-left p-2 dark:text-slate-200">
-                            {t("assets.journalEntry.account")}
-                          </th>
-                          <th className="text-right p-2 dark:text-slate-200">
-                            {t("assets.journalEntry.debit")}
-                          </th>
-                          <th className="text-right p-2 dark:text-slate-200">
-                            {t("assets.journalEntry.credit")}
-                          </th>
+                          <th className="p-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">{t("assets.journalEntry.account")}</th>
+                          <th className="p-2 text-right text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">{t("assets.journalEntry.debit")}</th>
+                          <th className="p-2 text-right text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">{t("assets.journalEntry.credit")}</th>
                         </tr>
                       </thead>
-                      <tbody>
+                      <tbody className="divide-y dark:divide-slate-800">
                         {journalEntry.lines?.map((line: any, idx: number) => (
-                          <tr key={idx} className="border-t dark:border-slate-600">
-                            <td className="p-2 dark:text-slate-300">{line.accountName}</td>
-                            <td className="text-right p-2 dark:text-slate-300">
-                              {line.debit > 0
-                                ? formatCurrency(line.debit)
-                                : "-"}
-                            </td>
-                            <td className="text-right p-2 dark:text-slate-300">
-                              {line.credit > 0
-                                ? formatCurrency(line.credit)
-                                : "-"}
-                            </td>
+                          <tr key={idx}>
+                            <td className="p-2 text-sm text-slate-700 dark:text-slate-300">{line.accountName}</td>
+                            <td className="p-2 text-right text-sm text-slate-700 dark:text-slate-300">{line.debit > 0 ? formatCurrency(line.debit) : "-"}</td>
+                            <td className="p-2 text-right text-sm text-slate-700 dark:text-slate-300">{line.credit > 0 ? formatCurrency(line.credit) : "-"}</td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
                 </div>
-                <div className="flex gap-2 justify-end">
-                  <Button
-                    onClick={() => {
-                      setShowJournalEntry(false);
-                      navigate("/assets");
-                    }}
-                    className="dark:bg-primary dark:text-primary-foreground"
-                  >
+                <div className="flex justify-end">
+                  <Button onClick={() => { setShowJournalEntry(false); navigate("/assets"); }} className="bg-indigo-600 hover:bg-indigo-700">
                     {t("common.done")}
                   </Button>
                 </div>
@@ -1222,6 +1206,7 @@ export default function AssetCreatePage() {
             </Card>
           </div>
         )}
+      </div>
       </div>
     </Layout>
   );

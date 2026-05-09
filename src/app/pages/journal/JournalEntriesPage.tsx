@@ -13,11 +13,17 @@ import {
   Download,
   ChevronLeft,
   ChevronRight,
-  BookOpen
+  BookOpen,
+  ScrollText,
+  BadgeCheck,
+  AlertTriangle,
+  Pencil,
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
+import { Skeleton } from '@/app/components/ui/skeleton';
+import { Label } from '@/app/components/ui/label';
+import { Card, CardContent } from '@/app/components/ui/card';
 import { Badge } from '@/app/components/ui/badge';
 import {
   Table,
@@ -156,15 +162,33 @@ export default function JournalEntriesPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'posted':
-        return <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">Posted</Badge>;
+        return (
+          <Badge variant="outline" className="gap-1 border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-400">
+            <BadgeCheck className="h-3 w-3" />
+            Posted
+          </Badge>
+        );
       case 'draft':
-        return <Badge className="bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">Draft</Badge>;
+        return (
+          <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-400">
+            Draft
+          </Badge>
+        );
       case 'voided':
-        return <Badge className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">Voided</Badge>;
+        return (
+          <Badge variant="outline" className="gap-1 border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-400">
+            <AlertTriangle className="h-3 w-3" />
+            Voided
+          </Badge>
+        );
       case 'reversed':
-        return <Badge className="bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">Reversed</Badge>;
+        return (
+          <Badge variant="outline" className="border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-950/30 dark:text-slate-400">
+            Reversed
+          </Badge>
+        );
       default:
-        return <Badge>{status}</Badge>;
+        return <Badge variant="outline">{status}</Badge>;
     }
   };
 
@@ -172,177 +196,262 @@ export default function JournalEntriesPage() {
     return amount.toLocaleString();
   };
 
+  const postedCount = entries.filter(e => e.status === 'posted').length;
+  const draftCount = entries.filter(e => e.status === 'draft').length;
+  const voidedCount = entries.filter(e => e.status === 'voided').length;
+
   return (
     <Layout>
-      <div className="space-y-6 bg-gray-50 dark:bg-slate-900 min-h-screen p-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2 dark:text-white">
-              <BookOpen className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
-              Journal Entries
-            </h1>
-            <p className="text-muted-foreground mt-1 dark:text-slate-400">
-              View and manage all journal entries
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => navigate('/journal/trial-balance')} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
-              Trial Balance
-            </Button>
-            <Button variant="outline" onClick={() => navigate('/journal/general-ledger')} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
-              General Ledger
-            </Button>
-            <Button variant="outline" onClick={handleExport} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
-              <Download className="h-4 w-4 mr-2" />
-              Export CSV
-            </Button>
-            <Button onClick={() => navigate('/journal/new')} className="dark:bg-primary dark:text-primary-foreground">
-              <Plus className="h-4 w-4 mr-2" />
-              New Entry
-            </Button>
-          </div>
-        </div>
-
-        {/* Filters */}
-        <Card className="dark:bg-slate-800">
-          <CardContent className="pt-6">
-            <form onSubmit={handleSearch} className="grid grid-cols-6 gap-4">
-              <div className="col-span-2">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <Input
-                    placeholder="Search by entry #, description..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 dark:bg-slate-700 dark:text-white dark:border-slate-600"
-                  />
+      <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1600px] space-y-6">
+          {/* Hero Header */}
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+            <div className="grid gap-5 p-5 xl:grid-cols-[1fr_auto] xl:items-center">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="rounded-lg bg-indigo-50 p-2.5 text-indigo-700 ring-1 ring-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-300 dark:ring-indigo-900/60">
+                    <ScrollText className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h1 className="text-2xl font-bold tracking-tight text-slate-950 dark:text-white">Journal Entries</h1>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      View and manage all journal entries · {total} total
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <Badge variant="outline" className="h-6 border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-400">
+                    <BadgeCheck className="h-3.5 w-3.5 mr-1" />
+                    {postedCount} Posted
+                  </Badge>
+                  <Badge variant="outline" className="h-6 border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-400">
+                    {draftCount} Draft
+                  </Badge>
+                  <Badge variant="outline" className="h-6 border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-950/30 dark:text-slate-400">
+                    {voidedCount} Voided
+                  </Badge>
                 </div>
               </div>
-              <Select value={sourceTypeFilter} onValueChange={setSourceTypeFilter}>
-                <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600"><SelectValue placeholder="Source" /></SelectTrigger>
-                <SelectContent className="dark:bg-slate-800">
-                  {SOURCE_TYPES.map(st => (
-                    <SelectItem key={st.value} value={st.value} className="dark:text-slate-200">{st.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600"><SelectValue placeholder="Status" /></SelectTrigger>
-                <SelectContent className="dark:bg-slate-800">
-                  {STATUS_OPTIONS.map(s => (
-                    <SelectItem key={s.value} value={s.value} className="dark:text-slate-200">{s.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} placeholder="Start date" className="dark:bg-slate-700 dark:text-white dark:border-slate-600" />
-              <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} placeholder="End date" className="dark:bg-slate-700 dark:text-white dark:border-slate-600" />
-            </form>
-          </CardContent>
-        </Card>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" onClick={() => navigate('/journal/trial-balance')} className="h-9 dark:border-slate-700 dark:text-slate-200">
+                  Trial Balance
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => navigate('/journal/general-ledger')} className="h-9 dark:border-slate-700 dark:text-slate-200">
+                  General Ledger
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleExport} className="h-9 gap-2 dark:border-slate-700 dark:text-slate-200">
+                  <Download className="h-4 w-4" />
+                  Export
+                </Button>
+                <Button size="sm" onClick={() => navigate('/journal/new')} className="h-9 gap-2 bg-indigo-600 hover:bg-indigo-700">
+                  <Plus className="h-4 w-4" />
+                  New Entry
+                </Button>
+              </div>
+            </div>
+          </div>
 
-        {/* Entries Table */}
-        <Card className="dark:bg-slate-800">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between dark:text-white">
-              <span>Entries ({total})</span>
-              {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading && entries.length === 0 ? (
-              <div className="flex justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
-              </div>
-            ) : entries.length === 0 ? (
-              <div className="text-center py-12 text-slate-500 dark:text-slate-400">
-                <FileText className="h-12 w-12 mx-auto mb-4 text-slate-300 dark:text-slate-600" />
-                <p>No journal entries found</p>
-              </div>
-            ) : (
-              <>
-                <Table>
-                  <TableHeader>
-                    <TableRow className="dark:bg-slate-700/50 dark:border-slate-600">
-                      <TableHead className="dark:text-slate-200">Entry #</TableHead>
-                      <TableHead className="dark:text-slate-200">Date</TableHead>
-                      <TableHead className="dark:text-slate-200">Description</TableHead>
-                      <TableHead className="dark:text-slate-200">Source</TableHead>
-                      <TableHead className="text-right dark:text-slate-200">Debit</TableHead>
-                      <TableHead className="text-right dark:text-slate-200">Credit</TableHead>
-                      <TableHead className="dark:text-slate-200">Status</TableHead>
-                      <TableHead className="text-right dark:text-slate-200">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {entries.map((entry) => (
-                      <TableRow key={entry._id} className="dark:border-slate-600">
-                        <TableCell className="font-mono font-medium dark:text-white">
-                          {entry.entryNumber}
-                        </TableCell>
-                        <TableCell className="dark:text-slate-300">
-                          {format(new Date(entry.date), 'dd MMM yyyy')}
-                        </TableCell>
-                        <TableCell className="max-w-xs truncate dark:text-slate-300">
-                          {entry.description}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="dark:text-slate-200">{(entry as any).sourceType || 'manual'}</Badge>
-                        </TableCell>
-                        <TableCell className="text-right font-mono dark:text-slate-300">
-                          {formatAmount(entry.totalDebit)}
-                        </TableCell>
-                        <TableCell className="text-right font-mono dark:text-slate-300">
-                          {formatAmount(entry.totalCredit)}
-                        </TableCell>
-                        <TableCell>
-                          {getStatusBadge(entry.status)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => navigate(`/journal/${entry._id}`)}
-                              className="dark:text-slate-300 dark:hover:bg-slate-700"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            {entry.status === 'draft' && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => navigate(`/journal/${entry._id}`)}
-                                title="Post entry"
-                                className="dark:text-green-400 dark:hover:bg-slate-700"
-                              >
-                                <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
-                              </Button>
-                            )}
-                            {entry.status === 'posted' && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  setVoidingEntry(entry);
-                                  setVoidDialogOpen(true);
-                                }}
-                                title="Void entry"
-                                className="dark:text-red-400 dark:hover:bg-slate-700"
-                              >
-                                <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Total Entries</p>
+                    <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">{total}</p>
+                  </div>
+                  <div className="rounded-lg bg-indigo-50 p-2.5 text-indigo-700 ring-1 ring-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-300 dark:ring-indigo-900/60">
+                    <BookOpen className="h-4 w-4" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Posted</p>
+                    <p className="mt-2 text-2xl font-bold text-emerald-600 dark:text-emerald-400">{postedCount}</p>
+                  </div>
+                  <div className="rounded-lg bg-emerald-50 p-2.5 text-emerald-700 ring-1 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60">
+                    <BadgeCheck className="h-4 w-4" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Draft</p>
+                    <p className="mt-2 text-2xl font-bold text-amber-600 dark:text-amber-400">{draftCount}</p>
+                  </div>
+                  <div className="rounded-lg bg-amber-50 p-2.5 text-amber-700 ring-1 ring-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/60">
+                    <Pencil className="h-4 w-4" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Voided</p>
+                    <p className="mt-2 text-2xl font-bold text-red-600 dark:text-red-400">{voidedCount}</p>
+                  </div>
+                  <div className="rounded-lg bg-red-50 p-2.5 text-red-700 ring-1 ring-red-100 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900/60">
+                    <AlertTriangle className="h-4 w-4" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Filters */}
+          <form onSubmit={handleSearch} className="flex flex-wrap items-end gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500" />
+              <Input
+                placeholder="Search by entry #, description..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 h-9 dark:bg-slate-900 dark:text-white dark:border-slate-700 dark:placeholder:text-slate-500"
+              />
+            </div>
+            <Select value={sourceTypeFilter} onValueChange={setSourceTypeFilter}>
+              <SelectTrigger className="h-9 w-full sm:w-40 dark:bg-slate-900 dark:text-white dark:border-slate-700">
+                <SelectValue placeholder="Source" />
+              </SelectTrigger>
+              <SelectContent className="dark:bg-slate-900 dark:border-slate-700">
+                {SOURCE_TYPES.map(st => (
+                  <SelectItem key={st.value} value={st.value}>{st.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="h-9 w-full sm:w-36 dark:bg-slate-900 dark:text-white dark:border-slate-700">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent className="dark:bg-slate-900 dark:border-slate-700">
+                {STATUS_OPTIONS.map(s => (
+                  <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="space-y-1">
+              <Label className="text-xs text-slate-500 dark:text-slate-400">From</Label>
+              <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="h-9 dark:bg-slate-900 dark:text-white dark:border-slate-700" />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-slate-500 dark:text-slate-400">To</Label>
+              <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="h-9 dark:bg-slate-900 dark:text-white dark:border-slate-700" />
+            </div>
+            <Button type="submit" size="sm" variant="outline" className="h-9 gap-2 dark:border-slate-700 dark:text-slate-200">
+              <Search className="h-4 w-4" />
+              Search
+            </Button>
+          </form>
+
+          {/* Entries Table */}
+          {loading && entries.length === 0 ? (
+            <div className="space-y-4">
+              <Skeleton className="h-10 w-full rounded-lg" />
+              {[...Array(6)].map((_, i) => (
+                <Skeleton key={i} className="h-12 w-full rounded-lg" />
+              ))}
+            </div>
+          ) : entries.length === 0 ? (
+            <div className="flex min-h-[200px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <FileText className="mb-2 h-8 w-8 text-slate-300 dark:text-slate-600" />
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">No journal entries found</p>
+              <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">Try adjusting your filters or create a new entry</p>
+            </div>
+          ) : (
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-slate-50 hover:bg-slate-50 dark:bg-slate-900/50 dark:hover:bg-slate-900/50">
+                        <TableHead className="text-xs font-semibold text-slate-600 dark:text-slate-400">Entry #</TableHead>
+                        <TableHead className="text-xs font-semibold text-slate-600 dark:text-slate-400">Date</TableHead>
+                        <TableHead className="text-xs font-semibold text-slate-600 dark:text-slate-400">Description</TableHead>
+                        <TableHead className="text-xs font-semibold text-slate-600 dark:text-slate-400">Source</TableHead>
+                        <TableHead className="text-right text-xs font-semibold text-slate-600 dark:text-slate-400">Debit</TableHead>
+                        <TableHead className="text-right text-xs font-semibold text-slate-600 dark:text-slate-400">Credit</TableHead>
+                        <TableHead className="text-xs font-semibold text-slate-600 dark:text-slate-400">Status</TableHead>
+                        <TableHead className="text-right text-xs font-semibold text-slate-600 dark:text-slate-400">Actions</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {entries.map((entry) => (
+                        <TableRow key={entry._id} className="dark:border-slate-800 dark:hover:bg-slate-900/50">
+                          <TableCell className="font-mono text-sm font-semibold text-slate-700 dark:text-slate-300">
+                            {entry.entryNumber}
+                          </TableCell>
+                          <TableCell className="text-sm text-slate-700 dark:text-slate-300">
+                            {format(new Date(entry.date), 'dd MMM yyyy')}
+                          </TableCell>
+                          <TableCell className="max-w-xs text-sm text-slate-700 dark:text-slate-300">
+                            <span className="truncate block">{entry.description}</span>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs capitalize dark:border-slate-700 dark:text-slate-400">
+                              {(entry as any).sourceType || 'manual'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-sm text-slate-700 dark:text-slate-300">
+                            {formatAmount(entry.totalDebit)}
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-sm text-slate-700 dark:text-slate-300">
+                            {formatAmount(entry.totalCredit)}
+                          </TableCell>
+                          <TableCell>
+                            {getStatusBadge(entry.status)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => navigate(`/journal/${entry._id}`)}
+                                className="h-8 w-8 dark:text-slate-300 dark:hover:bg-slate-800"
+                              >
+                                <Eye className="h-3.5 w-3.5" />
+                              </Button>
+                              {entry.status === 'draft' && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => navigate(`/journal/${entry._id}`)}
+                                  title="Post entry"
+                                  className="h-8 w-8 text-emerald-500 hover:text-emerald-600 dark:text-emerald-400 dark:hover:bg-slate-800"
+                                >
+                                  <CheckCircle className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
+                              {entry.status === 'posted' && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => { setVoidingEntry(entry); setVoidDialogOpen(true); }}
+                                  title="Void entry"
+                                  className="h-8 w-8 text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:bg-slate-800"
+                                >
+                                  <XCircle className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
 
                 {/* Pagination */}
-                <div className="flex items-center justify-between pt-4">
-                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 px-5 py-4 dark:border-slate-800">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     Showing {((page - 1) * limit) + 1} to {Math.min(page * limit, total)} of {total} entries
                   </p>
                   <div className="flex items-center gap-2">
@@ -351,46 +460,49 @@ export default function JournalEntriesPage() {
                       size="sm"
                       disabled={page <= 1}
                       onClick={() => setPage(p => p - 1)}
-                      className="dark:border-slate-600 dark:text-slate-200"
+                      className="h-8 dark:border-slate-700 dark:text-slate-200"
                     >
                       <ChevronLeft className="h-4 w-4" />
                     </Button>
-                    <span className="text-sm dark:text-slate-300">Page {page} of {totalPages}</span>
+                    <span className="text-sm text-slate-700 dark:text-slate-300">Page {page} of {totalPages}</span>
                     <Button
                       variant="outline"
                       size="sm"
                       disabled={page >= totalPages}
                       onClick={() => setPage(p => p + 1)}
-                      className="dark:border-slate-600 dark:text-slate-200"
+                      className="h-8 dark:border-slate-700 dark:text-slate-200"
                     >
                       <ChevronRight className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          )}
 
-        {/* Void Dialog */}
-        <Dialog open={voidDialogOpen} onOpenChange={setVoidDialogOpen}>
-          <DialogContent className="dark:bg-slate-800">
-            <DialogHeader>
-              <DialogTitle className="dark:text-white">Void Journal Entry</DialogTitle>
-              <DialogDescription className="dark:text-slate-400">
-                Are you sure you want to void entry {voidingEntry?.entryNumber}?
-                This will reverse all account balance adjustments.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setVoidDialogOpen(false)} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">Cancel</Button>
-              <Button variant="destructive" onClick={handleVoid} disabled={voiding}>
-                {voiding ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <XCircle className="h-4 w-4 mr-2" />}
-                Void Entry
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+          {/* Void Dialog */}
+          <Dialog open={voidDialogOpen} onOpenChange={setVoidDialogOpen}>
+            <DialogContent className="dark:bg-slate-900 dark:border-slate-700">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 dark:text-white">
+                  <XCircle className="h-5 w-5 text-red-500" />
+                  Void Journal Entry
+                </DialogTitle>
+                <DialogDescription className="dark:text-slate-400">
+                  Are you sure you want to void entry <strong className="text-slate-900 dark:text-slate-200">{voidingEntry?.entryNumber}</strong>?
+                  This will reverse all account balance adjustments.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setVoidDialogOpen(false)} className="dark:border-slate-700 dark:text-slate-200">Cancel</Button>
+                <Button variant="destructive" onClick={handleVoid} disabled={voiding}>
+                  {voiding ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <XCircle className="h-4 w-4 mr-2" />}
+                  Void Entry
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
     </Layout>
   );

@@ -2,9 +2,20 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { journalEntriesApi, TrialBalanceEntry } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
-import { ArrowLeft, Loader2, Calculator } from 'lucide-react';
+import {
+  ArrowLeft,
+  Loader2,
+  Calculator,
+  BadgeCheck,
+  AlertTriangle,
+  TrendingUp,
+  TrendingDown,
+  CalendarDays,
+  Layers,
+} from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
+import { Skeleton } from '@/app/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/app/components/ui/card';
 import { Badge } from '@/app/components/ui/badge';
 import {
@@ -58,97 +69,166 @@ export default function TrialBalancePage() {
 
   return (
     <Layout>
-      <div className="space-y-6 bg-gray-50 dark:bg-slate-900 min-h-screen p-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="outline" size="sm" onClick={() => navigate('/journal')} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold flex items-center gap-2 dark:text-white">
-                <Calculator className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
-                Trial Balance
-              </h1>
-              <p className="text-muted-foreground dark:text-slate-400">Verify all debits equal all credits</p>
+      <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1200px] space-y-6">
+          {/* Hero Header */}
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+            <div className="grid gap-5 p-5 xl:grid-cols-[1fr_auto] xl:items-center">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button variant="outline" size="icon" onClick={() => navigate('/journal')} className="h-10 w-10 dark:border-slate-700 dark:text-slate-200">
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                  <div className="rounded-lg bg-indigo-50 p-2.5 text-indigo-700 ring-1 ring-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-300 dark:ring-indigo-900/60">
+                    <Calculator className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h1 className="text-2xl font-bold tracking-tight text-slate-950 dark:text-white">Trial Balance</h1>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Verify all debits equal all credits</p>
+                  </div>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="outline" className={`h-6 gap-1 ${isBalanced ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-400' : 'border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-400'}`}>
+                  {isBalanced ? <BadgeCheck className="h-3.5 w-3.5" /> : <AlertTriangle className="h-3.5 w-3.5" />}
+                  {isBalanced ? 'Balanced' : `Unbalanced by ${Math.abs(totalDebit - totalCredit).toLocaleString()}`}
+                </Badge>
+              </div>
             </div>
           </div>
-        </div>
 
-        <Card className="dark:bg-slate-800">
-          <CardContent className="pt-6">
-            <div className="flex items-end gap-4">
-              <div className="space-y-2">
-                <Label className="dark:text-slate-200">Start Date</Label>
-                <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="dark:bg-slate-700 dark:text-white dark:border-slate-600" />
-              </div>
-              <div className="space-y-2">
-                <Label className="dark:text-slate-200">End Date</Label>
-                <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="dark:bg-slate-700 dark:text-white dark:border-slate-600" />
-              </div>
-              <Button onClick={fetchTrialBalance} className="dark:bg-primary dark:text-primary-foreground">
-                {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Calculator className="h-4 w-4 mr-2" />}
-                Generate
-              </Button>
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Total Debit</p>
+                    <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">{totalDebit.toLocaleString()}</p>
+                  </div>
+                  <div className="rounded-lg bg-blue-50 p-2.5 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60">
+                    <TrendingUp className="h-4 w-4" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Total Credit</p>
+                    <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">{totalCredit.toLocaleString()}</p>
+                  </div>
+                  <div className="rounded-lg bg-emerald-50 p-2.5 text-emerald-700 ring-1 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60">
+                    <TrendingDown className="h-4 w-4" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Accounts</p>
+                    <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">{entries.length}</p>
+                  </div>
+                  <div className="rounded-lg bg-indigo-50 p-2.5 text-indigo-700 ring-1 ring-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-300 dark:ring-indigo-900/60">
+                    <Layers className="h-4 w-4" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Filters */}
+          <div className="flex flex-wrap items-end gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <div className="space-y-1">
+              <Label className="text-xs text-slate-500 dark:text-slate-400">From</Label>
+              <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="h-9 dark:bg-slate-900 dark:text-white dark:border-slate-700" />
             </div>
-          </CardContent>
-        </Card>
-
-        <Card className="dark:bg-slate-800">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between dark:text-white">
-              <span>Trial Balance</span>
-              {isBalanced ? (
-                <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">Balanced</Badge>
-              ) : (
-                <Badge className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
-                  Unbalanced by {Math.abs(totalDebit - totalCredit).toLocaleString()}
-                </Badge>
-              )}
-            </CardTitle>
+            <div className="space-y-1">
+              <Label className="text-xs text-slate-500 dark:text-slate-400">To</Label>
+              <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="h-9 dark:bg-slate-900 dark:text-white dark:border-slate-700" />
+            </div>
+            <Button onClick={fetchTrialBalance} className="h-9 gap-2 bg-indigo-600 hover:bg-indigo-700">
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Calculator className="h-4 w-4" />}
+              Generate
+            </Button>
             {startDate || endDate ? (
-              <CardDescription className="dark:text-slate-400">
-                Period: {startDate ? format(new Date(startDate), 'dd MMM yyyy') : 'Beginning'} — {endDate ? format(new Date(endDate), 'dd MMM yyyy') : 'Present'}
-              </CardDescription>
+              <span className="text-xs text-slate-500 dark:text-slate-400">
+                <CalendarDays className="inline h-3 w-3 mr-1" />
+                {startDate ? format(new Date(startDate), 'dd MMM yyyy') : 'Beginning'} — {endDate ? format(new Date(endDate), 'dd MMM yyyy') : 'Present'}
+              </span>
             ) : null}
-          </CardHeader>
-          <CardContent>
-            {entries.length === 0 && !loading ? (
-              <p className="text-center py-12 text-slate-500 dark:text-slate-400">No entries found for the selected period</p>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow className="dark:bg-slate-700/50 dark:border-slate-600">
-                    <TableHead className="dark:text-slate-200">Account Code</TableHead>
-                    <TableHead className="dark:text-slate-200">Account Name</TableHead>
-                    <TableHead className="text-right dark:text-slate-200">Debit</TableHead>
-                    <TableHead className="text-right dark:text-slate-200">Credit</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {entries.map((entry) => (
-                    <TableRow key={entry.accountCode} className="dark:border-slate-600">
-                      <TableCell className="font-mono dark:text-white">{entry.accountCode}</TableCell>
-                      <TableCell className="dark:text-slate-300">{entry.accountName}</TableCell>
-                      <TableCell className="text-right font-mono dark:text-slate-300">
-                        {entry.debit > 0 ? entry.debit.toLocaleString() : '-'}
-                      </TableCell>
-                      <TableCell className="text-right font-mono dark:text-slate-300">
-                        {entry.credit > 0 ? entry.credit.toLocaleString() : '-'}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-                <TableFooter>
-                  <TableRow className="font-bold bg-slate-50 text-lg dark:bg-slate-700/50 dark:border-slate-600">
-                    <TableCell colSpan={2} className="dark:text-white">Total</TableCell>
-                    <TableCell className="text-right font-mono dark:text-white">{totalDebit.toLocaleString()}</TableCell>
-                    <TableCell className="text-right font-mono dark:text-white">{totalCredit.toLocaleString()}</TableCell>
-                  </TableRow>
-                </TableFooter>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+          </div>
+
+          {/* Table */}
+          {loading ? (
+            <div className="space-y-4">
+              <Skeleton className="h-10 w-full rounded-lg" />
+              {[...Array(6)].map((_, i) => (
+                <Skeleton key={i} className="h-12 w-full rounded-lg" />
+              ))}
+            </div>
+          ) : entries.length === 0 ? (
+            <div className="flex min-h-[200px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <Layers className="mb-2 h-8 w-8 text-slate-300 dark:text-slate-600" />
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">No entries found for the selected period</p>
+            </div>
+          ) : (
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center justify-between text-base font-semibold dark:text-white">
+                  <span>Trial Balance</span>
+                  <Badge variant="outline" className={`h-6 gap-1 ${isBalanced ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-400' : 'border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-400'}`}>
+                    {isBalanced ? <BadgeCheck className="h-3.5 w-3.5" /> : <AlertTriangle className="h-3.5 w-3.5" />}
+                    {isBalanced ? 'Balanced' : `Unbalanced by ${Math.abs(totalDebit - totalCredit).toLocaleString()}`}
+                  </Badge>
+                </CardTitle>
+                {startDate || endDate ? (
+                  <CardDescription className="dark:text-slate-400">
+                    Period: {startDate ? format(new Date(startDate), 'dd MMM yyyy') : 'Beginning'} — {endDate ? format(new Date(endDate), 'dd MMM yyyy') : 'Present'}
+                  </CardDescription>
+                ) : null}
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-slate-50 hover:bg-slate-50 dark:bg-slate-900/50 dark:hover:bg-slate-900/50">
+                        <TableHead className="text-xs font-semibold text-slate-600 dark:text-slate-400">Account Code</TableHead>
+                        <TableHead className="text-xs font-semibold text-slate-600 dark:text-slate-400">Account Name</TableHead>
+                        <TableHead className="text-right text-xs font-semibold text-slate-600 dark:text-slate-400">Debit</TableHead>
+                        <TableHead className="text-right text-xs font-semibold text-slate-600 dark:text-slate-400">Credit</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {entries.map((entry) => (
+                        <TableRow key={entry.accountCode} className="dark:border-slate-800">
+                          <TableCell className="font-mono text-sm font-semibold text-slate-700 dark:text-slate-300">{entry.accountCode}</TableCell>
+                          <TableCell className="text-sm text-slate-700 dark:text-slate-300">{entry.accountName}</TableCell>
+                          <TableCell className="text-right font-mono text-sm text-slate-700 dark:text-slate-300">
+                            {entry.debit > 0 ? entry.debit.toLocaleString() : '-'}
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-sm text-slate-700 dark:text-slate-300">
+                            {entry.credit > 0 ? entry.credit.toLocaleString() : '-'}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                    <TableFooter>
+                      <TableRow className="bg-slate-50 font-bold dark:bg-slate-900/50 dark:border-slate-800">
+                        <TableCell colSpan={2} className="text-sm font-bold text-slate-950 dark:text-white">Total</TableCell>
+                        <TableCell className="text-right font-mono text-sm font-bold text-slate-950 dark:text-white">{totalDebit.toLocaleString()}</TableCell>
+                        <TableCell className="text-right font-mono text-sm font-bold text-slate-950 dark:text-white">{totalCredit.toLocaleString()}</TableCell>
+                      </TableRow>
+                    </TableFooter>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
     </Layout>
   );

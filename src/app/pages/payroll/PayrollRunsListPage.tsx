@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
@@ -172,215 +171,195 @@ export default function PayrollRunsListPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-6 space-y-6 bg-gray-50 dark:bg-slate-900 min-h-screen">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
-              <Play className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold dark:text-white">{t('payroll.run.title')}</h1>
-              <p className="text-sm text-muted-foreground dark:text-slate-400">{t('payroll.run.subtitle')}</p>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => navigate('/payroll')} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
-              {t('payroll.employeeRecords')}
-            </Button>
-            <Button onClick={() => navigate('/payroll-runs/new')} className="dark:bg-primary dark:text-primary-foreground">
-              <Play className="mr-2 h-4 w-4" />
-              {t('payroll.run.createFromRecords') || 'New Payroll Run'}
-            </Button>
-          </div>
-        </div>
-
-        {/* Filters */}
-        <Card className="dark:bg-slate-800">
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-4">
-              <Select value={filterStatus || 'all'} onValueChange={(v) => { setFilterStatus(v === 'all' ? '' : v); setCurrentPage(1); }}>
-                <SelectTrigger className="w-[180px] bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"><SelectValue placeholder={t('payroll.filterByStatus')} /></SelectTrigger>
-                <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
-                  <SelectItem value="all" className="dark:text-slate-200">{t('payroll.allStatuses')}</SelectItem>
-                  <SelectItem value="draft" className="dark:text-slate-200">{t('payroll.statuses.draft')}</SelectItem>
-                  <SelectItem value="posted" className="dark:text-slate-200">{t('payroll.statuses.posted')}</SelectItem>
-                  <SelectItem value="reversed" className="dark:text-slate-200">{t('payroll.statuses.reversed')}</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button variant="ghost" onClick={() => { setFilterStatus(''); setCurrentPage(1); }} className="dark:text-slate-300 dark:hover:bg-slate-700">
-                <RefreshCw className="mr-2 h-4 w-4" />
-                {t('common.clearFilters')}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Table */}
-        <Card className="dark:bg-slate-800">
-          <CardContent className="p-0">
-            {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground dark:text-slate-400" />
-              </div>
-            ) : runs.length === 0 ? (
-              <div className="flex flex-col items-center py-12">
-                <AlertCircle className="h-12 w-12 mb-4 text-muted-foreground dark:text-slate-400" />
-                <p className="text-muted-foreground dark:text-slate-400">No payroll runs found</p>
-              </div>
-            ) : (
-              <>
-                <Table>
-                  <TableHeader>
-                    <TableRow className="dark:bg-slate-700/50 dark:border-slate-600">
-                      <TableHead className="dark:text-slate-200">{t('payroll.reference')}</TableHead>
-                      <TableHead className="dark:text-slate-200">{t('payroll.payPeriod')}</TableHead>
-                      <TableHead className="dark:text-slate-200">{t('payroll.paymentDate')}</TableHead>
-                      <TableHead className="text-right dark:text-slate-200">{t('payroll.totalGross')}</TableHead>
-                      <TableHead className="text-right dark:text-slate-200">{t('payroll.run.rssbTotal')}</TableHead>
-                      <TableHead className="text-right dark:text-slate-200">{t('payroll.totalNet')}</TableHead>
-                      <TableHead className="text-center dark:text-slate-200">{t('payroll.employees')}</TableHead>
-                      <TableHead className="dark:text-slate-200">{t('payroll.status')}</TableHead>
-                      <TableHead className="text-right dark:text-slate-200">{t('common.actions')}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {runs.map((run) => (
-                      <TableRow key={run._id} className="dark:border-slate-600">
-                        <TableCell className="font-mono font-medium dark:text-white">{run.reference_no}</TableCell>
-                        <TableCell className="dark:text-slate-300">{formatPeriod(run.pay_period_start, run.pay_period_end)}</TableCell>
-                        <TableCell className="dark:text-slate-300">{formatDate(run.payment_date)}</TableCell>
-                        <TableCell className="text-right font-medium dark:text-slate-200">{formatCurrency(run.total_gross)}</TableCell>
-                        <TableCell className="text-right text-orange-600 dark:text-orange-400">
-                          {formatCurrency(run.total_other_deductions)}
-                        </TableCell>
-                        <TableCell className="text-right font-semibold text-green-600 dark:text-green-400">{formatCurrency(run.total_net)}</TableCell>
-                        <TableCell className="text-center dark:text-slate-300">{run.employee_count}</TableCell>
-                        <TableCell>{getStatusBadge(run.status)}</TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => navigate(`/payroll-runs/${run._id}`)}
-                              title={t('payroll.run.viewDetails')}
-                              className="dark:text-slate-300 dark:hover:bg-slate-700"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            {run.status === 'draft' && (
-                              <>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handlePost(run)}
-                                  disabled={submitting}
-                                  title={t('payroll.run.postRun')}
-                                  className="dark:text-green-400 dark:hover:bg-slate-700"
-                                >
-                                  <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => { setSelectedRun(run); setShowDeleteDialog(true); }}
-                                  title={t('payroll.run.deleteRun')}
-                                  className="dark:text-red-400 dark:hover:bg-slate-700"
-                                >
-                                  <Trash2 className="h-4 w-4 text-red-500 dark:text-red-400" />
-                                </Button>
-                              </>
-                            )}
-                            {run.status === 'posted' && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => { setSelectedRun(run); setShowReverseDialog(true); }}
-                                title={t('payroll.run.reverseRun')}
-                                className="dark:text-orange-400 dark:hover:bg-slate-700"
-                              >
-                                <RotateCcw className="h-4 w-4 text-orange-500 dark:text-orange-400" />
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-
-                {/* Pagination */}
-                <div className="flex items-center justify-between px-4 py-4 border-t dark:border-slate-600">
-                  <div className="text-sm text-muted-foreground dark:text-slate-400">
-                    Showing {((currentPage - 1) * limit) + 1} to {Math.min(currentPage * limit, totalCount)} of {totalCount}
+      <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1600px] space-y-6">
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+            <div className="grid gap-5 p-5 xl:grid-cols-[1fr_420px] xl:items-stretch">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="rounded-lg bg-indigo-50 p-2.5 text-indigo-700 ring-1 ring-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-300 dark:ring-indigo-900/60">
+                    <Play className="h-5 w-5" />
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1} className="dark:border-slate-600 dark:text-slate-200">
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <span className="text-sm dark:text-slate-300">Page {currentPage} of {totalPages}</span>
-                    <Button variant="outline" size="sm" onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="dark:border-slate-600 dark:text-slate-200">
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                    <Select value={limit.toString()} onValueChange={(v) => { setLimit(parseInt(v)); setCurrentPage(1); }}>
-                      <SelectTrigger className="w-[80px] bg-white dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600"><SelectValue /></SelectTrigger>
-                      <SelectContent className="bg-white dark:bg-slate-800">
-                        <SelectItem value="10" className="dark:text-slate-200">10</SelectItem>
-                        <SelectItem value="20" className="dark:text-slate-200">20</SelectItem>
-                        <SelectItem value="50" className="dark:text-slate-200">50</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <h1 className="text-2xl font-bold tracking-tight text-slate-950 dark:text-white sm:text-3xl">{t('payroll.run.title')}</h1>
+                  <Badge variant="secondary" className="h-6">{t('payroll.run.subtitle')}</Badge>
+                </div>
+                <p className="mt-2 max-w-3xl text-sm text-slate-500 dark:text-slate-400">{t('payroll.run.subtitle')}</p>
+
+                <div className="mt-5 flex flex-wrap gap-2">
+                  <Button onClick={() => navigate('/payroll-runs/new')} className="h-10 gap-2 bg-blue-600 hover:bg-blue-700">
+                    <Play className="h-4 w-4" />
+                    {t('payroll.run.createFromRecords') || 'New Payroll Run'}
+                  </Button>
+                  <Button variant="outline" onClick={() => navigate('/payroll')} className="h-10 gap-2">
+                    <Eye className="h-4 w-4" />
+                    {t('payroll.employeeRecords')}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3 rounded-lg border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-950/40">
+                <div className="rounded-lg bg-white p-3 shadow-sm dark:bg-slate-900 min-h-[64px] flex flex-col justify-center min-w-[320px] flex-1">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Employees</p>
+                  <p className="mt-1 text-2xl font-bold text-slate-950 dark:text-white leading-tight">{runs.reduce((acc, r) => acc + (r.employee_count || 0), 0)}</p>
+                </div>
+                <div className="rounded-lg bg-white p-3 shadow-sm dark:bg-slate-900 min-h-[64px] flex flex-col justify-center min-w-[320px] flex-1">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Total Gross</p>
+                  <p className="mt-1 text-2xl font-bold text-slate-950 dark:text-white leading-tight break-words">{formatCurrency(runs.reduce((acc, r) => acc + (r.total_gross || 0), 0))}</p>
+                </div>
+                <div className="rounded-lg bg-white p-3 shadow-sm dark:bg-slate-900 min-h-[64px] flex flex-col justify-center min-w-[320px] flex-1">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Total Net</p>
+                  <p className="mt-1 text-2xl font-bold text-emerald-600 dark:text-emerald-400 leading-tight break-words">{formatCurrency(runs.reduce((acc, r) => acc + (r.total_net || 0), 0))}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <Card className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-4">
+                <Select value={filterStatus || 'all'} onValueChange={(v) => { setFilterStatus(v === 'all' ? '' : v); setCurrentPage(1); }}>
+                  <SelectTrigger className="w-[180px] bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"><SelectValue placeholder={t('payroll.filterByStatus')} /></SelectTrigger>
+                  <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                    <SelectItem value="all" className="dark:text-slate-200">{t('payroll.allStatuses')}</SelectItem>
+                    <SelectItem value="draft" className="dark:text-slate-200">{t('payroll.statuses.draft')}</SelectItem>
+                    <SelectItem value="posted" className="dark:text-slate-200">{t('payroll.statuses.posted')}</SelectItem>
+                    <SelectItem value="reversed" className="dark:text-slate-200">{t('payroll.statuses.reversed')}</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button variant="ghost" onClick={() => { setFilterStatus(''); setCurrentPage(1); }} className="text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/40">
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  {t('common.clearFilters')}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+            <CardContent className="p-0">
+              {loading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground dark:text-slate-400" />
+                </div>
+              ) : runs.length === 0 ? (
+                <div className="flex flex-col items-center py-12">
+                  <AlertCircle className="h-12 w-12 mb-4 text-muted-foreground dark:text-slate-400" />
+                  <p className="text-muted-foreground dark:text-slate-400">No payroll runs found</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table className="min-w-full">
+                    <TableHeader>
+                      <TableRow className="bg-slate-50 dark:bg-slate-700/50 dark:border-slate-600">
+                        <TableHead className="dark:text-slate-200">{t('payroll.reference')}</TableHead>
+                        <TableHead className="dark:text-slate-200">{t('payroll.payPeriod')}</TableHead>
+                        <TableHead className="dark:text-slate-200">{t('payroll.paymentDate')}</TableHead>
+                        <TableHead className="text-right dark:text-slate-200">{t('payroll.totalGross')}</TableHead>
+                        <TableHead className="text-right dark:text-slate-200">{t('payroll.run.rssbTotal')}</TableHead>
+                        <TableHead className="text-right dark:text-slate-200">{t('payroll.totalNet')}</TableHead>
+                        <TableHead className="text-center dark:text-slate-200">{t('payroll.employees')}</TableHead>
+                        <TableHead className="dark:text-slate-200">{t('payroll.status')}</TableHead>
+                        <TableHead className="text-right dark:text-slate-200">{t('common.actions')}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {runs.map((run) => (
+                        <TableRow key={run._id} className="dark:border-slate-600">
+                          <TableCell className="font-mono font-medium dark:text-white whitespace-nowrap">{run.reference_no}</TableCell>
+                          <TableCell className="dark:text-slate-300 max-w-[220px] truncate">{formatPeriod(run.pay_period_start, run.pay_period_end)}</TableCell>
+                          <TableCell className="dark:text-slate-300 whitespace-nowrap">{formatDate(run.payment_date)}</TableCell>
+                          <TableCell className="text-right font-medium dark:text-slate-200 whitespace-nowrap">{formatCurrency(run.total_gross)}</TableCell>
+                          <TableCell className="text-right text-orange-600 dark:text-orange-400 whitespace-nowrap">{formatCurrency(run.total_other_deductions)}</TableCell>
+                          <TableCell className="text-right font-semibold text-green-600 dark:text-green-400 whitespace-nowrap">{formatCurrency(run.total_net)}</TableCell>
+                          <TableCell className="text-center dark:text-slate-300 whitespace-nowrap">{run.employee_count}</TableCell>
+                          <TableCell>{getStatusBadge(run.status)}</TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-1">
+                              <Button variant="ghost" size="icon" onClick={() => navigate(`/payroll-runs/${run._id}`)} title={t('payroll.run.viewDetails')} className="dark:text-slate-300 dark:hover:bg-slate-700">
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              {run.status === 'draft' && (
+                                <>
+                                  <Button variant="ghost" size="icon" onClick={() => handlePost(run)} disabled={submitting} title={t('payroll.run.postRun')} className="dark:text-green-400 dark:hover:bg-slate-700">
+                                    <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                  </Button>
+                                  <Button variant="ghost" size="icon" onClick={() => { setSelectedRun(run); setShowDeleteDialog(true); }} title={t('payroll.run.deleteRun')} className="dark:text-red-400 dark:hover:bg-slate-700">
+                                    <Trash2 className="h-4 w-4 text-red-500 dark:text-red-400" />
+                                  </Button>
+                                </>
+                              )}
+                              {run.status === 'posted' && (
+                                <Button variant="ghost" size="icon" onClick={() => { setSelectedRun(run); setShowReverseDialog(true); }} title={t('payroll.run.reverseRun')} className="dark:text-orange-400 dark:hover:bg-slate-700">
+                                  <RotateCcw className="h-4 w-4 text-orange-500 dark:text-orange-400" />
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+
+                  <div className="flex items-center justify-between px-4 py-4 border-t dark:border-slate-600">
+                    <div className="text-sm text-muted-foreground dark:text-slate-400">Showing {((currentPage - 1) * limit) + 1} to {Math.min(currentPage * limit, totalCount)} of {totalCount}</div>
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm" onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1} className="dark:border-slate-600 dark:text-slate-200"><ChevronLeft className="h-4 w-4" /></Button>
+                      <span className="text-sm dark:text-slate-300">Page {currentPage} of {totalPages}</span>
+                      <Button variant="outline" size="sm" onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="dark:border-slate-600 dark:text-slate-200"><ChevronRight className="h-4 w-4" /></Button>
+                      <Select value={limit.toString()} onValueChange={(v) => { setLimit(parseInt(v)); setCurrentPage(1); }}>
+                        <SelectTrigger className="w-[80px] bg-white dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600"><SelectValue /></SelectTrigger>
+                        <SelectContent className="bg-white dark:bg-slate-800">
+                          <SelectItem value="10" className="dark:text-slate-200">10</SelectItem>
+                          <SelectItem value="20" className="dark:text-slate-200">20</SelectItem>
+                          <SelectItem value="50" className="dark:text-slate-200">50</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
+              )}
+            </CardContent>
+          </Card>
 
-        {/* Delete Confirmation */}
-        <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-          <DialogContent className="bg-white dark:bg-slate-800">
-            <DialogHeader>
-              <DialogTitle className="dark:text-white">{t('payroll.run.deleteConfirmTitle')}</DialogTitle>
-              <DialogDescription className="dark:text-slate-400">{t('payroll.run.deleteConfirmMessage')}</DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowDeleteDialog(false)} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">{t('common.cancel')}</Button>
-              <Button variant="destructive" onClick={handleDelete} disabled={submitting}>
-                {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {t('common.delete')}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+          {/* Delete Confirmation */}
+          <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+            <DialogContent className="bg-white dark:bg-slate-800">
+              <DialogHeader>
+                <DialogTitle className="dark:text-white">{t('payroll.run.deleteConfirmTitle')}</DialogTitle>
+                <DialogDescription className="dark:text-slate-400">{t('payroll.run.deleteConfirmMessage')}</DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowDeleteDialog(false)} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">{t('common.cancel')}</Button>
+                <Button variant="destructive" onClick={handleDelete} disabled={submitting}>
+                  {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {t('common.delete')}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
-        {/* Reverse Confirmation */}
-        <Dialog open={showReverseDialog} onOpenChange={setShowReverseDialog}>
-          <DialogContent className="bg-white dark:bg-slate-800">
-            <DialogHeader>
-              <DialogTitle className="dark:text-white">{t('payroll.run.reverseConfirmTitle')}</DialogTitle>
-              <DialogDescription className="dark:text-slate-400">{t('payroll.run.reverseConfirmMessage')}</DialogDescription>
-            </DialogHeader>
-            <div className="py-4 space-y-4">
-              <div className="space-y-1">
-                <Label className="dark:text-slate-200">{t('payroll.run.reversalReason')}</Label>
-                <Input
-                  value={reversalReason}
-                  onChange={(e) => setReversalReason(e.target.value)}
-                  placeholder="Enter reason for reversal..."
-                  className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
-                />
+          {/* Reverse Confirmation */}
+          <Dialog open={showReverseDialog} onOpenChange={setShowReverseDialog}>
+            <DialogContent className="bg-white dark:bg-slate-800">
+              <DialogHeader>
+                <DialogTitle className="dark:text-white">{t('payroll.run.reverseConfirmTitle')}</DialogTitle>
+                <DialogDescription className="dark:text-slate-400">{t('payroll.run.reverseConfirmMessage')}</DialogDescription>
+              </DialogHeader>
+              <div className="py-4 space-y-4">
+                <div className="space-y-1">
+                  <Label className="dark:text-slate-200">{t('payroll.run.reversalReason')}</Label>
+                  <Input value={reversalReason} onChange={(e) => setReversalReason(e.target.value)} placeholder="Enter reason for reversal..." className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600" />
+                </div>
               </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowReverseDialog(false)} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">{t('common.cancel')}</Button>
-              <Button variant="destructive" onClick={handleReverse} disabled={submitting}>
-                {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {t('payroll.run.reverseRun')}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowReverseDialog(false)} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">{t('common.cancel')}</Button>
+                <Button variant="destructive" onClick={handleReverse} disabled={submitting}>
+                  {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {t('payroll.run.reverseRun')}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
     </Layout>
   );

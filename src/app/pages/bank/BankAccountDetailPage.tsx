@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, type ReactNode } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { bankAccountsApi } from "@/lib/api";
 import { Layout } from "../../layout/Layout";
@@ -6,14 +6,25 @@ import {
   ArrowLeft,
   Loader2,
   RefreshCw,
-  Check,
   TrendingUp,
   TrendingDown,
   Upload,
   Calculator,
+  Landmark,
+  Building2,
+  CreditCard,
+  Smartphone,
+  Banknote,
+  Wallet,
+  Calendar,
+  FileUp,
+  PiggyBank,
+  BadgeCheck,
+  AlertCircle,
 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
+import { Skeleton } from "@/app/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -74,6 +85,52 @@ interface ReconciliationItem {
 }
 
 const TODAY = new Date().toISOString().split("T")[0];
+
+const getAccountTypeLabel = (type: string) => {
+  const labels: Record<string, string> = {
+    bk_bank: "BK Bank",
+    equity_bank: "Equity Bank",
+    im_bank: "I&M Bank",
+    cogebanque: "Cogebanque",
+    ecobank: "Ecobank",
+    mtn_momo: "MTN MoMo",
+    airtel_money: "Airtel Money",
+    cash_in_hand: "Cash in Hand",
+  };
+  return labels[type] || type;
+};
+
+const getAccountTypeIcon = (type: string): ReactNode => {
+  switch (type) {
+    case "mtn_momo":
+    case "airtel_money":
+      return <Smartphone className="h-5 w-5" />;
+    case "cash_in_hand":
+      return <Banknote className="h-5 w-5" />;
+    case "bk_bank":
+    case "equity_bank":
+    case "im_bank":
+    case "cogebanque":
+    case "ecobank":
+      return <CreditCard className="h-5 w-5" />;
+    default:
+      return <Building2 className="h-5 w-5" />;
+  }
+};
+
+const getAccountTypeColor = (type: string) => {
+  const colors: Record<string, string> = {
+    bk_bank: "bg-blue-50 text-blue-700 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60",
+    equity_bank: "bg-sky-50 text-sky-700 ring-sky-100 dark:bg-sky-950/40 dark:text-sky-300 dark:ring-sky-900/60",
+    im_bank: "bg-indigo-50 text-indigo-700 ring-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-300 dark:ring-indigo-900/60",
+    cogebanque: "bg-cyan-50 text-cyan-700 ring-cyan-100 dark:bg-cyan-950/40 dark:text-cyan-300 dark:ring-cyan-900/60",
+    ecobank: "bg-teal-50 text-teal-700 ring-teal-100 dark:bg-teal-950/40 dark:text-teal-300 dark:ring-teal-900/60",
+    mtn_momo: "bg-amber-50 text-amber-700 ring-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/60",
+    airtel_money: "bg-red-50 text-red-700 ring-red-100 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900/60",
+    cash_in_hand: "bg-emerald-50 text-emerald-700 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60",
+  };
+  return colors[type] || colors.bk_bank;
+};
 
 export default function BankAccountDetailPage() {
   const { t } = useTranslation();
@@ -553,478 +610,577 @@ export default function BankAccountDetailPage() {
   if (loading) {
     return (
       <Layout>
-        <div className="flex items-center justify-center p-8">
-          <Loader2 className="h-8 w-8 animate-spin dark:text-slate-400" />
+        <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-[1600px] space-y-6">
+            <Skeleton className="h-32 w-full rounded-xl" />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              {[...Array(4)].map((_, i) => (
+                <Skeleton key={i} className="h-28 w-full rounded-xl" />
+              ))}
+            </div>
+            <Skeleton className="h-10 w-64 rounded-lg" />
+            <Skeleton className="h-96 w-full rounded-xl" />
+          </div>
         </div>
       </Layout>
     );
   }
 
+  const accountType = account?.accountType || "bk_bank";
+  const typeColor = getAccountTypeColor(accountType);
+  const currencyCode = account?.currencyCode || "USD";
+
   // ── Render ────────────────────────────────────────────────────────────────────
   return (
     <Layout>
-      <div className="container mx-auto py-6">
-        {/* Page header */}
-        <div className="flex items-center gap-4 mb-6">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate("/bank-accounts")}
-            className="dark:text-slate-200 dark:hover:bg-slate-700"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold dark:text-white">
-              {account?.name ||
-                t("bankAccount.details", "Bank Account Details")}
-            </h1>
-            <p className="text-muted-foreground dark:text-slate-400">
-              {account?.bankName} — {account?.accountNumber}
-            </p>
-          </div>
-        </div>
-
-        {/* Summary cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <Card className="dark:bg-slate-800 dark:border-slate-700">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium dark:text-slate-200">
-                {t("bankAccount.currentBalance", "Current Balance")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold dark:text-white">
-                {formatCurrency(
-                  account?.cachedBalance ?? account?.openingBalance ?? 0,
-                  account?.currencyCode,
-                )}
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="dark:bg-slate-800 dark:border-slate-700">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium dark:text-slate-200">
-                {t("bankAccount.currency", "Currency")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold dark:text-white">
-                {account?.currencyCode || "USD"}
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="dark:bg-slate-800 dark:border-slate-700">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium dark:text-slate-200">
-                {t("bankAccount.type", "Type")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold capitalize dark:text-white">
-                {account?.accountType?.replace(/_/g, " ") || "Bank"}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-4 dark:bg-slate-800">
-            <TabsTrigger value="transactions" className="dark:text-slate-200 dark:data-[state=active]:bg-slate-700">
-              {t("bankAccount.transactions", "Transactions")}
-            </TabsTrigger>
-            <TabsTrigger value="reconciliation" className="dark:text-slate-200 dark:data-[state=active]:bg-slate-700">
-              {t("bankAccount.professionalReconciliation", "Reconciliation")}
-            </TabsTrigger>
-          </TabsList>
-
-          {/* ── Transactions Tab ──────────────────────────────────────────────── */}
-          <TabsContent value="transactions">
-            <Card className="dark:bg-slate-800 dark:border-slate-700">
-              <CardHeader>
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                  <CardTitle className="dark:text-white">
-                    {t(
-                      "bankAccounts.journalTransactions",
-                      "Journal Transactions",
-                    )}
-                  </CardTitle>
-                  <div className="flex flex-wrap gap-2">
-                    {/* Fix A — Deposit button */}
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-green-600 border-green-600 hover:bg-green-50 dark:text-green-400 dark:border-green-400 dark:bg-green-900/20 dark:hover:bg-green-900/40"
-                      onClick={() => openTxDialog("deposit")}
-                    >
-                      <TrendingUp className="mr-2 h-4 w-4" />
-                      {t("bankAccount.deposit", "Deposit")}
-                    </Button>
-                    {/* Fix A — Withdraw button */}
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-red-600 border-red-600 hover:bg-red-50 dark:text-red-400 dark:border-red-400 dark:bg-red-900/20 dark:hover:bg-red-900/40"
-                      onClick={() => openTxDialog("withdrawal")}
-                    >
-                      <TrendingDown className="mr-2 h-4 w-4" />
-                      {t("bankAccount.withdraw", "Withdraw")}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        fetchTransactions({
-                          startDate: txStartDate,
-                          endDate: txEndDate,
-                          type: txTypeFilter,
-                        })
-                      }
-                      className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
-                    >
-                      <RefreshCw className="mr-2 h-4 w-4" />
-                      {t("common.refresh", "Refresh")}
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {/* Fix C — Filter row */}
-                <div className="flex flex-wrap gap-3 mb-4 p-3 bg-muted/40 rounded-lg border dark:bg-slate-700/50 dark:border-slate-600">
-                  <div className="flex flex-col gap-1 flex-1 min-w-[140px]">
-                    <Label className="text-xs text-muted-foreground dark:text-slate-400">
-                      {t("bankAccount.dateFrom", "Date From")}
-                    </Label>
-                    <Input
-                      type="date"
-                      className="h-8 text-sm w-full dark:bg-slate-700 dark:text-white dark:border-slate-600"
-                      value={txStartDate}
-                      onChange={(e) => setTxStartDate(e.target.value)}
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1 flex-1 min-w-[140px]">
-                    <Label className="text-xs text-muted-foreground dark:text-slate-400">
-                      {t("bankAccount.dateTo", "Date To")}
-                    </Label>
-                    <Input
-                      type="date"
-                      className="h-8 text-sm w-full dark:bg-slate-700 dark:text-white dark:border-slate-600"
-                      value={txEndDate}
-                      onChange={(e) => setTxEndDate(e.target.value)}
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1 flex-1 min-w-[140px]">
-                    <Label className="text-xs text-muted-foreground dark:text-slate-400">
-                      {t("bankAccount.type", "Type")}
-                    </Label>
-                    <Select
-                      value={txTypeFilter}
-                      onValueChange={setTxTypeFilter}
-                    >
-                      <SelectTrigger className="h-8 text-sm w-full dark:bg-slate-700 dark:text-white dark:border-slate-600">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="dark:bg-slate-800">
-                        <SelectItem value="all" className="dark:text-slate-200">
-                          {t("common.all", "All")}
-                        </SelectItem>
-                        <SelectItem value="deposit" className="dark:text-slate-200">
-                          {t("bankAccount.deposit", "Deposit")}
-                        </SelectItem>
-                        <SelectItem value="withdrawal" className="dark:text-slate-200">
-                          {t("bankAccount.withdrawal", "Withdrawal")}
-                        </SelectItem>
-                        <SelectItem value="transfer_in" className="dark:text-slate-200">
-                          {t("bankAccount.transferIn", "Transfer In")}
-                        </SelectItem>
-                        <SelectItem value="transfer_out" className="dark:text-slate-200">
-                          {t("bankAccount.transferOut", "Transfer Out")}
-                        </SelectItem>
-                        <SelectItem value="adjustment" className="dark:text-slate-200">
-                          {t("bankAccount.adjustment", "Adjustment")}
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="flex items-end">
-                    <Button size="sm" onClick={handleApplyFilters} className="dark:bg-slate-700 dark:text-white dark:hover:bg-slate-600">
-                      {t("common.apply", "Apply")}
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Transactions table */}
-                <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="dark:bg-slate-700/50">
-                      <TableHead className="dark:text-slate-200">{t("bankAccount.date", "Date")}</TableHead>
-                      <TableHead className="dark:text-slate-200">
-                        {t("bankAccount.description", "Description")}
-                      </TableHead>
-                      <TableHead className="dark:text-slate-200">
-                        {t("bankAccount.reference", "Reference")}
-                      </TableHead>
-                      <TableHead className="dark:text-slate-200">{t("bankAccount.type", "Type")}</TableHead>
-                      <TableHead className="dark:text-slate-200">{t("bankAccount.amount", "Amount")}</TableHead>
-                      <TableHead className="dark:text-slate-200">
-                        {t("bankAccount.runningBalance", "Running Balance")}
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody className="dark:bg-slate-800">
-                    {transactions.length === 0 ? (
-                      <TableRow>
-                        <TableCell
-                          colSpan={6}
-                          className="text-center py-8 text-muted-foreground dark:text-slate-400"
-                        >
-                          {t(
-                            "bankAccount.noTransactions",
-                            "No transactions found",
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      transactions.map((tx) => (
-                        <TableRow key={tx._id} className="dark:hover:bg-slate-700/30">
-                          <TableCell className="dark:text-slate-300">{formatDate(tx.date)}</TableCell>
-                          <TableCell className="dark:text-slate-300">{tx.description || "-"}</TableCell>
-                          <TableCell className="dark:text-slate-300">
-                            {tx.reference ||
-                              tx.referenceNumber ||
-                              tx.journalEntryNumber ||
-                              tx.sourceReference ||
-                              (tx.journalEntryId
-                                ? tx.journalEntryId.slice(-8)
-                                : tx._id
-                                  ? tx._id.slice(-8)
-                                  : "-")}
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={
-                                tx.type === "deposit" || tx.type === "transfer_in" || tx.type === "opening" ? "default" : "secondary"
-                              }
-                              className={
-                                tx.type === "deposit" || tx.type === "transfer_in" || tx.type === "opening"
-                                  ? "bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800"
-                                  : "bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800"
-                              }
-                            >
-                              {tx.type}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="font-medium dark:text-slate-200">
-                            <span
-                              className={
-                                tx.type === "deposit" || tx.type === "transfer_in" || tx.type === "opening"
-                                  ? "text-green-600 dark:text-green-400"
-                                  : "text-red-600 dark:text-red-400"
-                              }
-                            >
-                              {tx.type === "deposit" || tx.type === "transfer_in" || tx.type === "opening" ? "+" : "-"}
-                              {formatCurrency(tx.amount, account?.currencyCode)}
-                            </span>
-                          </TableCell>
-                          <TableCell className="dark:text-slate-300">
-                            {formatCurrency(
-                              tx.runningBalance,
-                              account?.currencyCode,
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* ── Reconciliation Tab ───────────────────────────────────────────── */}
-          <TabsContent value="reconciliation">
-            <Card className="dark:bg-slate-800 dark:border-slate-700">
-              <CardHeader>
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                  <CardTitle className="dark:text-white">
-                    {t("bankAccount.bankReconciliation", "Bank Reconciliation")}
-                  </CardTitle>
-                  <Button
-                    onClick={() => navigate(`/bank-accounts/${id}/reconcile`)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    <Calculator className="h-4 w-4 mr-2" />
-                    {t("bankAccount.professionalReconciliation", "Professional Reconciliation")}
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {/* Quick Stats - computed from imported statement lines */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                  <div className="p-4 bg-slate-700/50 rounded-lg border border-slate-600">
-                    <div className="text-sm text-slate-400 mb-1">Statement Balance</div>
-                    <div className="text-2xl font-bold text-white">
-                      {formatCurrency(computedStatementBalance, account?.currencyCode)}
-                    </div>
-                  </div>
-                  <div className="p-4 bg-slate-700/50 rounded-lg border border-slate-600">
-                    <div className="text-sm text-slate-400 mb-1">Book Balance</div>
-                    <div className="text-2xl font-bold text-white">
-                      {formatCurrency(computedBookBalance, account?.currencyCode)}
-                    </div>
-                  </div>
-                  <div className="p-4 bg-slate-700/50 rounded-lg border border-slate-600">
-                    <div className="text-sm text-slate-400 mb-1">Difference</div>
-                    <div className={`text-2xl font-bold ${computedDifference === 0 ? 'text-green-400' : 'text-red-400'}`}>
-                      {formatCurrency(computedDifference, account?.currencyCode)}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Statement Details Input */}
-                <div className="mb-6 p-4 border rounded-lg bg-muted/40 space-y-4 dark:bg-slate-700/50 dark:border-slate-600">
-                  <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wide dark:text-slate-400">
-                    {t("bankAccount.reconcileInputs", "Statement Details")}
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <Label htmlFor="reconcileBalance" className="dark:text-slate-200">
-                        {t("bankAccount.statementBalance", "Statement Closing Balance")}
-                      </Label>
-                      <Input
-                        id="reconcileBalance"
-                        type="number"
-                        step="0.01"
-                        placeholder="0.00"
-                        value={reconcileBalance}
-                        onChange={(e) => setReconcileBalance(e.target.value)}
-                        className="dark:bg-slate-700 dark:text-white dark:border-slate-600 dark:placeholder:text-slate-400"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="reconcileDate" className="dark:text-slate-200">
-                        {t("bankAccount.statementDate", "Statement Date")}
-                      </Label>
-                      <Input
-                        id="reconcileDate"
-                        type="date"
-                        value={reconcileDate}
-                        onChange={(e) => setReconcileDate(e.target.value)}
-                        className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Import Statement Button */}
-                <div className="mb-6">
+      <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1600px] space-y-6">
+          {/* Hero Header */}
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+            <div className="grid gap-5 p-5 xl:grid-cols-[1fr_380px] xl:items-stretch">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-3">
                   <Button
                     variant="outline"
-                    onClick={() => {
-                      setImportFile(null);
-                      setImportData([]);
-                      setImportMessage(null);
-                      setShowImportDialog(true);
-                    }}
-                    className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
+                    size="icon"
+                    onClick={() => navigate("/bank-accounts")}
+                    className="h-10 w-10 dark:border-slate-700 dark:text-slate-200"
                   >
-                    <Upload className="mr-2 h-4 w-4" />
-                    {t("bankAccount.importStatement", "Import Statement")}
+                    <ArrowLeft className="h-4 w-4" />
                   </Button>
-                </div>
-
-                {/* Statement Lines Table */}
-                <div className="border rounded-lg dark:border-slate-600 overflow-hidden">
-                  <h3 className="font-medium p-4 border-b dark:border-slate-600 dark:text-slate-200">
-                    {t("bankAccount.importedStatementLines", "Imported Statement Lines")}
-                    <span className="ml-2 text-sm text-muted-foreground dark:text-slate-400">
-                      ({statementLines.length})
-                    </span>
-                  </h3>
-                  {statementLines.length === 0 ? (
-                    <div className="p-8 text-center text-muted-foreground dark:text-slate-400">
-                      {t("bankAccount.noImportedLines", "No statement lines imported yet. Click 'Import Statement' to upload a CSV file.")}
-                    </div>
-                  ) : (
-                  <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="dark:bg-slate-700/50">
-                        <TableHead className="dark:text-slate-200">{t("bankAccount.date", "Date")}</TableHead>
-                        <TableHead className="dark:text-slate-200">
-                          {t("bankAccount.description", "Description")}
-                        </TableHead>
-                        <TableHead className="dark:text-slate-200">
-                          {t("bankAccount.reference", "Reference")}
-                        </TableHead>
-                        <TableHead className="dark:text-slate-200">{t("bankAccount.debit", "Debit")}</TableHead>
-                        <TableHead className="dark:text-slate-200">
-                          {t("bankAccount.credit", "Credit")}
-                        </TableHead>
-                        <TableHead className="dark:text-slate-200">
-                          {t("bankAccount.runningBalance", "Balance")}
-                        </TableHead>
-                        <TableHead className="dark:text-slate-200">
-                          {t("bankAccount.status", "Status")}
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody className="dark:bg-slate-800">
-                      {statementLines.map((line) => (
-                        <TableRow key={line._id} className="dark:hover:bg-slate-700/30">
-                          <TableCell className="dark:text-slate-300">
-                            {formatDate(line.transactionDate)}
-                          </TableCell>
-                          <TableCell className="dark:text-slate-300">{line.description}</TableCell>
-                          <TableCell className="dark:text-slate-300">{line.reference || "-"}</TableCell>
-                          <TableCell className="text-red-600 dark:text-red-400">
-                            {line.debit
-                              ? formatCurrency(
-                                  line.debit,
-                                  account?.currencyCode,
-                                )
-                              : "-"}
-                          </TableCell>
-                          <TableCell className="text-green-600 dark:text-green-400">
-                            {line.credit
-                              ? formatCurrency(
-                                  line.credit,
-                                  account?.currencyCode,
-                                )
-                              : "-"}
-                          </TableCell>
-                          <TableCell className="dark:text-slate-300">
-                            {formatCurrency(
-                              line.balance,
-                              account?.currencyCode,
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={
-                                line.isReconciled ? "default" : "secondary"
-                              }
-                            >
-                              {line.isReconciled
-                                ? t("bankAccount.reconciled", "Reconciled")
-                                : t("bankAccount.unreconciled", "Unreconciled")}
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                  <div className={`rounded-lg p-2.5 ring-1 ${typeColor}`}>
+                    {getAccountTypeIcon(accountType)}
                   </div>
-                )}
+                  <div>
+                    <h1 className="text-2xl font-bold tracking-tight text-slate-950 dark:text-white">
+                      {account?.name || t("bankAccount.details", "Bank Account Details")}
+                    </h1>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      {account?.bankName || getAccountTypeLabel(accountType)}
+                      {account?.accountNumber ? ` · ${account.accountNumber}` : ""}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-4 flex flex-wrap items-center gap-2">
+                  <Badge
+                    variant="outline"
+                    className={`gap-1.5 ${typeColor}`}
+                  >
+                    {getAccountTypeIcon(accountType)}
+                    {getAccountTypeLabel(accountType)}
+                  </Badge>
+                  {account?.isDefault && (
+                    <Badge
+                      variant="outline"
+                      className="gap-1 border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-400"
+                    >
+                      <BadgeCheck className="h-3.5 w-3.5" />
+                      Default Account
+                    </Badge>
+                  )}
+                  <Badge
+                    variant={account?.isActive ? "secondary" : "outline"}
+                    className={
+                      account?.isActive
+                        ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400"
+                        : "text-slate-500 dark:text-slate-400"
+                    }
+                  >
+                    {account?.isActive ? "Active" : "Inactive"}
+                  </Badge>
+                </div>
+              </div>
+              <div className="flex flex-col justify-center rounded-lg border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-950/40">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                  Current Balance
+                </p>
+                <p className="mt-1 text-3xl font-bold text-slate-950 dark:text-white">
+                  {formatCurrency(account?.cachedBalance ?? account?.openingBalance ?? 0, currencyCode)}
+                </p>
+                <div className="mt-2 flex items-center gap-2">
+                  <Badge variant="outline" className="text-xs dark:border-slate-700 dark:text-slate-400">
+                    {currencyCode}
+                  </Badge>
+                  <Badge variant="outline" className="text-xs dark:border-slate-700 dark:text-slate-400">
+                    Opening: {formatCurrency(account?.openingBalance ?? 0, currencyCode)}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Summary Metric Tiles */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      Current Balance
+                    </p>
+                    <p className="mt-3 text-2xl font-bold text-slate-950 dark:text-white">
+                      {formatCurrency(account?.cachedBalance ?? 0, currencyCode)}
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-emerald-50 p-2.5 text-emerald-700 ring-1 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60">
+                    <PiggyBank className="h-5 w-5" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
+            <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      Opening Balance
+                    </p>
+                    <p className="mt-3 text-2xl font-bold text-slate-950 dark:text-white">
+                      {formatCurrency(account?.openingBalance ?? 0, currencyCode)}
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-blue-50 p-2.5 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60">
+                    <Wallet className="h-5 w-5" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      Currency
+                    </p>
+                    <p className="mt-3 text-2xl font-bold text-slate-950 dark:text-white">
+                      {currencyCode}
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-amber-50 p-2.5 text-amber-700 ring-1 ring-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/60">
+                    <Landmark className="h-5 w-5" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      Account Type
+                    </p>
+                    <p className="mt-3 text-xl font-bold text-slate-950 dark:text-white">
+                      {getAccountTypeLabel(accountType)}
+                    </p>
+                  </div>
+                  <div className={`rounded-lg p-2.5 ring-1 ${typeColor}`}>
+                    {getAccountTypeIcon(accountType)}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-        </Tabs>
+          {/* Tabs */}
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="mb-4 h-11 bg-slate-100 p-1 dark:bg-slate-900">
+              <TabsTrigger
+                value="transactions"
+                className="gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-800 dark:text-slate-300 dark:data-[state=active]:text-white"
+              >
+                <TrendingUp className="h-4 w-4" />
+                {t("bankAccount.transactions", "Transactions")}
+              </TabsTrigger>
+              <TabsTrigger
+                value="reconciliation"
+                className="gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-800 dark:text-slate-300 dark:data-[state=active]:text-white"
+              >
+                <Calculator className="h-4 w-4" />
+                {t("bankAccount.professionalReconciliation", "Reconciliation")}
+              </TabsTrigger>
+            </TabsList>
+
+            {/* ── Transactions Tab ──────────────────────────────────────────────── */}
+            <TabsContent value="transactions">
+              <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="pb-3">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-950 dark:text-white">
+                      <TrendingUp className="h-4 w-4 text-blue-500" />
+                      {t("bankAccounts.journalTransactions", "Journal Transactions")}
+                      <Badge variant="secondary" className="h-6">
+                        {transactions.length}
+                      </Badge>
+                    </CardTitle>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => openTxDialog("deposit")}
+                        className="h-9 gap-1.5 border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-900 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
+                      >
+                        <TrendingUp className="h-4 w-4" />
+                        {t("bankAccount.deposit", "Deposit")}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => openTxDialog("withdrawal")}
+                        className="h-9 gap-1.5 border-red-200 text-red-700 hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/30"
+                      >
+                        <TrendingDown className="h-4 w-4" />
+                        {t("bankAccount.withdraw", "Withdraw")}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          fetchTransactions({
+                            startDate: txStartDate,
+                            endDate: txEndDate,
+                            type: txTypeFilter,
+                          })
+                        }
+                        className="h-9 gap-1.5 dark:border-slate-700 dark:text-slate-200"
+                      >
+                        <RefreshCw className="h-4 w-4" />
+                        {t("common.refresh", "Refresh")}
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Filter bar */}
+                  <div className="flex flex-wrap items-end gap-3 rounded-lg border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-900/50">
+                    <div className="flex flex-col gap-1 flex-1 min-w-[140px]">
+                      <Label className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                        <Calendar className="inline h-3 w-3 mr-1" />
+                        {t("bankAccount.dateFrom", "Date From")}
+                      </Label>
+                      <Input
+                        type="date"
+                        className="h-9 text-sm dark:bg-slate-900 dark:text-white dark:border-slate-700"
+                        value={txStartDate}
+                        onChange={(e) => setTxStartDate(e.target.value)}
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1 flex-1 min-w-[140px]">
+                      <Label className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                        <Calendar className="inline h-3 w-3 mr-1" />
+                        {t("bankAccount.dateTo", "Date To")}
+                      </Label>
+                      <Input
+                        type="date"
+                        className="h-9 text-sm dark:bg-slate-900 dark:text-white dark:border-slate-700"
+                        value={txEndDate}
+                        onChange={(e) => setTxEndDate(e.target.value)}
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1 flex-1 min-w-[140px]">
+                      <Label className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                        {t("bankAccount.type", "Type")}
+                      </Label>
+                      <Select value={txTypeFilter} onValueChange={setTxTypeFilter}>
+                        <SelectTrigger className="h-9 text-sm dark:bg-slate-900 dark:text-white dark:border-slate-700">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="dark:bg-slate-900 dark:border-slate-700">
+                          <SelectItem value="all">{t("common.all", "All")}</SelectItem>
+                          <SelectItem value="deposit">{t("bankAccount.deposit", "Deposit")}</SelectItem>
+                          <SelectItem value="withdrawal">{t("bankAccount.withdrawal", "Withdrawal")}</SelectItem>
+                          <SelectItem value="transfer_in">{t("bankAccount.transferIn", "Transfer In")}</SelectItem>
+                          <SelectItem value="transfer_out">{t("bankAccount.transferOut", "Transfer Out")}</SelectItem>
+                          <SelectItem value="adjustment">{t("bankAccount.adjustment", "Adjustment")}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-end">
+                      <Button size="sm" onClick={handleApplyFilters} className="h-9 bg-blue-600 hover:bg-blue-700">
+                        {t("common.apply", "Apply")}
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Transactions table */}
+                  <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-800">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-slate-50 hover:bg-slate-50 dark:bg-slate-900/50 dark:hover:bg-slate-900/50">
+                          <TableHead className="text-xs font-semibold text-slate-600 dark:text-slate-400">Date</TableHead>
+                          <TableHead className="text-xs font-semibold text-slate-600 dark:text-slate-400">Description</TableHead>
+                          <TableHead className="text-xs font-semibold text-slate-600 dark:text-slate-400">Reference</TableHead>
+                          <TableHead className="text-xs font-semibold text-slate-600 dark:text-slate-400">Type</TableHead>
+                          <TableHead className="text-xs font-semibold text-slate-600 dark:text-slate-400">Amount</TableHead>
+                          <TableHead className="text-xs font-semibold text-slate-600 dark:text-slate-400">Balance</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {transactions.length === 0 ? (
+                          <TableRow>
+                            <TableCell
+                              colSpan={6}
+                              className="text-center py-10 text-sm text-slate-500 dark:text-slate-400"
+                            >
+                              {t("bankAccount.noTransactions", "No transactions found")}
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          transactions.map((tx) => (
+                            <TableRow
+                              key={tx._id}
+                              className="dark:border-slate-800 dark:hover:bg-slate-900/50"
+                            >
+                              <TableCell className="text-sm text-slate-700 dark:text-slate-300">
+                                {formatDate(tx.date)}
+                              </TableCell>
+                              <TableCell className="text-sm text-slate-700 dark:text-slate-300">
+                                {tx.description || "-"}
+                              </TableCell>
+                              <TableCell className="font-mono text-xs text-slate-600 dark:text-slate-400">
+                                {tx.reference || tx.referenceNumber || tx.journalEntryNumber || tx.sourceReference || (tx.journalEntryId ? tx.journalEntryId.slice(-8) : tx._id ? tx._id.slice(-8) : "-")}
+                              </TableCell>
+                              <TableCell>
+                                <Badge
+                                  variant="outline"
+                                  className={
+                                    tx.type === "deposit" || tx.type === "transfer_in" || tx.type === "opening"
+                                      ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-400"
+                                      : "border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-400"
+                                  }
+                                >
+                                  {tx.type}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-sm font-medium">
+                                <span
+                                  className={
+                                    tx.type === "deposit" || tx.type === "transfer_in" || tx.type === "opening"
+                                      ? "text-emerald-600 dark:text-emerald-400"
+                                      : "text-red-600 dark:text-red-400"
+                                  }
+                                >
+                                  {tx.type === "deposit" || tx.type === "transfer_in" || tx.type === "opening" ? "+" : "-"}
+                                  {formatCurrency(tx.amount, currencyCode)}
+                                </span>
+                              </TableCell>
+                              <TableCell className="text-sm font-mono font-semibold text-slate-700 dark:text-slate-300">
+                                {formatCurrency(tx.runningBalance, currencyCode)}
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* ── Reconciliation Tab ───────────────────────────────────────────── */}
+            <TabsContent value="reconciliation">
+              <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="pb-3">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-950 dark:text-white">
+                      <Calculator className="h-4 w-4 text-blue-500" />
+                      {t("bankAccount.bankReconciliation", "Bank Reconciliation")}
+                    </CardTitle>
+                    <Button
+                      onClick={() => navigate(`/bank-accounts/${id}/reconcile`)}
+                      className="h-9 gap-2 bg-blue-600 hover:bg-blue-700"
+                    >
+                      <Calculator className="h-4 w-4" />
+                      {t("bankAccount.professionalReconciliation", "Professional Reconciliation")}
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Reconciliation Summary Cards */}
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                      <CardContent className="p-5">
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                              Statement Balance
+                            </p>
+                            <p className="mt-3 text-2xl font-bold text-slate-950 dark:text-white">
+                              {formatCurrency(computedStatementBalance, currencyCode)}
+                            </p>
+                          </div>
+                          <div className="rounded-lg bg-blue-50 p-2.5 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60">
+                            <FileUp className="h-5 w-5" />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                      <CardContent className="p-5">
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                              Book Balance
+                            </p>
+                            <p className="mt-3 text-2xl font-bold text-slate-950 dark:text-white">
+                              {formatCurrency(computedBookBalance, currencyCode)}
+                            </p>
+                          </div>
+                          <div className="rounded-lg bg-emerald-50 p-2.5 text-emerald-700 ring-1 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60">
+                            <PiggyBank className="h-5 w-5" />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                      <CardContent className="p-5">
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                              Difference
+                            </p>
+                            <p className={`mt-3 text-2xl font-bold ${computedDifference === 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                              {formatCurrency(computedDifference, currencyCode)}
+                            </p>
+                          </div>
+                          <div className={`rounded-lg p-2.5 ring-1 ${computedDifference === 0 ? "bg-emerald-50 text-emerald-700 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60" : "bg-red-50 text-red-700 ring-red-100 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900/60"}`}>
+                            {computedDifference === 0 ? <BadgeCheck className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Statement Details Input */}
+                  <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-4 space-y-4 dark:border-slate-800 dark:bg-slate-900/50">
+                    <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">
+                      <Calendar className="h-4 w-4" />
+                      {t("bankAccount.reconcileInputs", "Statement Details")}
+                    </h3>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="reconcileBalance" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                          {t("bankAccount.statementBalance", "Statement Closing Balance")}
+                        </Label>
+                        <Input
+                          id="reconcileBalance"
+                          type="number"
+                          step="0.01"
+                          placeholder="0.00"
+                          value={reconcileBalance}
+                          onChange={(e) => setReconcileBalance(e.target.value)}
+                          className="dark:bg-slate-900 dark:text-white dark:border-slate-700 dark:placeholder:text-slate-500"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="reconcileDate" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                          {t("bankAccount.statementDate", "Statement Date")}
+                        </Label>
+                        <Input
+                          id="reconcileDate"
+                          type="date"
+                          value={reconcileDate}
+                          onChange={(e) => setReconcileDate(e.target.value)}
+                          className="dark:bg-slate-900 dark:text-white dark:border-slate-700"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Import Statement Button */}
+                  <div>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setImportFile(null);
+                        setImportData([]);
+                        setImportMessage(null);
+                        setShowImportDialog(true);
+                      }}
+                      className="h-10 gap-2 dark:border-slate-700 dark:text-slate-200"
+                    >
+                      <Upload className="h-4 w-4" />
+                      {t("bankAccount.importStatement", "Import Statement")}
+                    </Button>
+                  </div>
+
+                  {/* Statement Lines Table */}
+                  <div className="rounded-lg border border-slate-200 overflow-hidden dark:border-slate-800">
+                    <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-900/50">
+                      <FileUp className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+                      <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                        {t("bankAccount.importedStatementLines", "Imported Statement Lines")}
+                      </h3>
+                      <Badge variant="secondary" className="h-6">
+                        {statementLines.length}
+                      </Badge>
+                    </div>
+                    {statementLines.length === 0 ? (
+                      <div className="flex min-h-[160px] flex-col items-center justify-center p-8 text-slate-500 dark:text-slate-400">
+                        <FileUp className="mb-2 h-8 w-8 text-slate-300 dark:text-slate-600" />
+                        <p className="text-sm font-medium">
+                          {t("bankAccount.noImportedLines", "No statement lines imported yet")}
+                        </p>
+                        <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
+                          Click "Import Statement" to upload a CSV or Excel file
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="bg-slate-50 hover:bg-slate-50 dark:bg-slate-900/50 dark:hover:bg-slate-900/50">
+                              <TableHead className="text-xs font-semibold text-slate-600 dark:text-slate-400">Date</TableHead>
+                              <TableHead className="text-xs font-semibold text-slate-600 dark:text-slate-400">Description</TableHead>
+                              <TableHead className="text-xs font-semibold text-slate-600 dark:text-slate-400">Reference</TableHead>
+                              <TableHead className="text-xs font-semibold text-slate-600 dark:text-slate-400">Debit</TableHead>
+                              <TableHead className="text-xs font-semibold text-slate-600 dark:text-slate-400">Credit</TableHead>
+                              <TableHead className="text-xs font-semibold text-slate-600 dark:text-slate-400">Balance</TableHead>
+                              <TableHead className="text-xs font-semibold text-slate-600 dark:text-slate-400">Status</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {statementLines.map((line) => (
+                              <TableRow key={line._id} className="dark:border-slate-800 dark:hover:bg-slate-900/50">
+                                <TableCell className="text-sm text-slate-700 dark:text-slate-300">
+                                  {formatDate(line.transactionDate)}
+                                </TableCell>
+                                <TableCell className="text-sm text-slate-700 dark:text-slate-300">{line.description}</TableCell>
+                                <TableCell className="font-mono text-xs text-slate-600 dark:text-slate-400">{line.reference || "-"}</TableCell>
+                                <TableCell className="text-sm font-medium text-red-600 dark:text-red-400">
+                                  {line.debit ? formatCurrency(line.debit, currencyCode) : "-"}
+                                </TableCell>
+                                <TableCell className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
+                                  {line.credit ? formatCurrency(line.credit, currencyCode) : "-"}
+                                </TableCell>
+                                <TableCell className="text-sm font-mono font-semibold text-slate-700 dark:text-slate-300">
+                                  {formatCurrency(line.balance, currencyCode)}
+                                </TableCell>
+                                <TableCell>
+                                  <Badge
+                                    variant="outline"
+                                    className={
+                                      line.isReconciled
+                                        ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-400"
+                                        : "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-950/30 dark:text-slate-400"
+                                    }
+                                  >
+                                    {line.isReconciled
+                                      ? t("bankAccount.reconciled", "Reconciled")
+                                      : t("bankAccount.unreconciled", "Unreconciled")}
+                                  </Badge>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
 
       {/* ── Fix A: Deposit / Withdraw Dialog ────────────────────────────────── */}

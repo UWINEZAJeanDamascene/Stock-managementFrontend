@@ -11,9 +11,21 @@ import {
   Download,
   Filter,
   ExternalLink,
+  ScrollText,
+  BadgeCheck,
+  AlertTriangle,
+  Layers,
+  CalendarDays,
+  Banknote,
+  ChevronLeft,
+  ChevronRight,
+  FileText,
+  PiggyBank,
+  Receipt,
 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
+import { Skeleton } from "@/app/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -26,8 +38,6 @@ import { Badge } from "@/app/components/ui/badge";
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
 } from "@/app/components/ui/card";
 import {
   Select,
@@ -188,326 +198,261 @@ export default function PettyCashTransactionsPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-6 space-y-6 bg-gray-50 dark:bg-slate-900 min-h-screen p-6">
-        {/* Header */}
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={() => navigate("/petty-cash")} className="dark:text-slate-200">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold flex items-center gap-2 dark:text-white">
-                <Wallet className="h-8 w-8" />
-                {fund?.name ||
-                  t("pettyCash.transactions.title", "Transactions")}
-              </h1>
-              <p className="text-muted-foreground mt-1 dark:text-slate-400">
-                {t(
-                  "pettyCash.transactions.description",
-                  "View transaction history",
-                )}
-              </p>
-            </div>
-          </div>
-          {/* Fix B — Export button with loading state */}
-          <Button
-            variant="outline"
-            onClick={exportTransactions}
-            disabled={exportLoading}
-            className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
-          >
-            {exportLoading ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <Download className="h-4 w-4 mr-2" />
-            )}
-            {exportLoading ? "Exporting…" : t("common.export", "Export")}
-          </Button>
-        </div>
-
-        {/* Fund Summary */}
-        {fund && (
-          <div className="grid gap-4 md:grid-cols-4">
-            <Card className="dark:bg-slate-800">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground dark:text-slate-400">
-                  {t("pettyCash.currentBalance", "Current Balance")}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                  {formatCurrency(fund.currentBalance)}
-                </p>
-              </CardContent>
-            </Card>
-            <Card className="dark:bg-slate-800">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground dark:text-slate-400">
-                  {t("pettyCash.floatAmount", "Float Amount")}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold dark:text-white">
-                  {formatCurrency(fund.floatAmount)}
-                </p>
-              </CardContent>
-            </Card>
-            <Card className="dark:bg-slate-800">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground dark:text-slate-400">
-                  {fund.currentBalance > fund.floatAmount
-                    ? t("pettyCash.excessBalance", "Excess Balance Alert")
-                    : t("pettyCash.replenishmentNeeded", "Replenishment Needed")}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {fund.currentBalance > fund.floatAmount ? (
+      <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1400px] space-y-6">
+          {/* Hero Header */}
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+            <div className="grid gap-5 p-5 xl:grid-cols-[1fr_auto] xl:items-center">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button variant="outline" size="icon" onClick={() => navigate("/petty-cash")} className="h-10 w-10 dark:border-slate-700 dark:text-slate-200">
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                  <div className="rounded-lg bg-amber-50 p-2.5 text-amber-700 ring-1 ring-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/60">
+                    <Wallet className="h-5 w-5" />
+                  </div>
                   <div>
-                    <p className="text-2xl font-bold text-red-600 dark:text-red-400">
-                      +{formatCurrency(fund.currentBalance - fund.floatAmount)}
-                    </p>
-                    <p className="text-xs text-red-500 dark:text-red-400 mt-1">
-                      Balance exceeds float by {formatCurrency(fund.currentBalance - fund.floatAmount)}
+                    <h1 className="text-2xl font-bold tracking-tight text-slate-950 dark:text-white">
+                      {fund?.name || t("pettyCash.transactions.title", "Transactions")}
+                    </h1>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      {t("pettyCash.transactions.description", "View transaction history")}
                     </p>
                   </div>
-                ) : (
-                  <p
-                    className={`text-2xl font-bold ${fund.replenishmentNeeded > 0 ? "text-amber-600 dark:text-amber-400" : "text-green-600 dark:text-green-400"}`}
-                  >
-                    {formatCurrency(fund.replenishmentNeeded)}
-                  </p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {fund && (
+                  <Badge variant="outline" className={`h-6 gap-1 ${fund.currentBalance >= fund.floatAmount ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-400' : 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-400'}`}>
+                    <BadgeCheck className="h-3.5 w-3.5" />
+                    {fund.currentBalance >= fund.floatAmount ? 'Fund Healthy' : 'Replenishment Needed'}
+                  </Badge>
                 )}
-              </CardContent>
-            </Card>
-            <Card className="dark:bg-slate-800">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground dark:text-slate-400">
-                  {t("pettyCash.totalTransactions", "Total Transactions")}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold dark:text-white">{total}</p>
-              </CardContent>
-            </Card>
+                <Button variant="outline" size="sm" onClick={exportTransactions} disabled={exportLoading} className="h-9 gap-2 dark:border-slate-700 dark:text-slate-200">
+                  {exportLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                  {exportLoading ? "Exporting…" : t("common.export", "Export")}
+                </Button>
+              </div>
+            </div>
           </div>
-        )}
 
-        {/* Filters */}
-        <Card className="dark:bg-slate-800">
-          <CardContent className="pt-4">
-            <div className="flex flex-wrap gap-4 items-end">
-              <div className="w-40">
-                <Label className="text-xs text-muted-foreground mb-1 block dark:text-slate-400">
-                  Type
-                </Label>
-                <Select value={typeFilter} onValueChange={setTypeFilter}>
-                  <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="dark:bg-slate-800">
-                    <SelectItem value="all">All Types</SelectItem>
-                    <SelectItem value="top_up">Top Up</SelectItem>
-                    <SelectItem value="expense">Expense</SelectItem>
-                    <SelectItem value="opening">Opening</SelectItem>
-                    <SelectItem value="replenishment">Replenishment</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="w-40">
-                <Label className="text-xs text-muted-foreground mb-1 block dark:text-slate-400">
-                  From Date
-                </Label>
-                <Input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
-                />
-              </div>
-              <div className="w-40">
-                <Label className="text-xs text-muted-foreground mb-1 block dark:text-slate-400">
-                  To Date
-                </Label>
-                <Input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
-                />
-              </div>
-              <Button onClick={handleFilterChange} variant="secondary" className="dark:bg-slate-700 dark:text-slate-200">
-                <Filter className="h-4 w-4 mr-2" />
-                Apply Filters
+          {/* Fund Summary Cards */}
+          {fund && (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Current Balance</p>
+                      <p className="mt-2 text-2xl font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(fund.currentBalance)}</p>
+                    </div>
+                    <div className="rounded-lg bg-emerald-50 p-2.5 text-emerald-700 ring-1 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60">
+                      <Banknote className="h-4 w-4" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Float Amount</p>
+                      <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">{formatCurrency(fund.floatAmount)}</p>
+                    </div>
+                    <div className="rounded-lg bg-blue-50 p-2.5 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60">
+                      <PiggyBank className="h-4 w-4" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                        {fund.currentBalance > fund.floatAmount ? 'Excess' : 'Replenishment Needed'}
+                      </p>
+                      <p className={`mt-2 text-2xl font-bold ${fund.currentBalance > fund.floatAmount ? 'text-red-600 dark:text-red-400' : fund.replenishmentNeeded > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                        {fund.currentBalance > fund.floatAmount
+                          ? `+${formatCurrency(fund.currentBalance - fund.floatAmount)}`
+                          : formatCurrency(fund.replenishmentNeeded)}
+                      </p>
+                    </div>
+                    <div className={`rounded-lg p-2.5 ring-1 ${fund.currentBalance > fund.floatAmount || fund.replenishmentNeeded > 0 ? 'bg-amber-50 text-amber-700 ring-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/60' : 'bg-emerald-50 text-emerald-700 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60'}`}>
+                      <AlertTriangle className="h-4 w-4" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Transactions</p>
+                      <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">{total}</p>
+                    </div>
+                    <div className="rounded-lg bg-indigo-50 p-2.5 text-indigo-700 ring-1 ring-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-300 dark:ring-indigo-900/60">
+                      <Layers className="h-4 w-4" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Filters */}
+          <form onSubmit={(e) => { e.preventDefault(); handleFilterChange(); }} className="flex flex-wrap items-end gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <div className="space-y-1">
+              <Label className="text-xs text-slate-500 dark:text-slate-400">Type</Label>
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <SelectTrigger className="h-9 w-full sm:w-40 dark:bg-slate-900 dark:text-white dark:border-slate-700">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="dark:bg-slate-900 dark:border-slate-700">
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="top_up">Top Up</SelectItem>
+                  <SelectItem value="expense">Expense</SelectItem>
+                  <SelectItem value="opening">Opening</SelectItem>
+                  <SelectItem value="replenishment">Replenishment</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-slate-500 dark:text-slate-400">From</Label>
+              <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="h-9 dark:bg-slate-900 dark:text-white dark:border-slate-700" />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-slate-500 dark:text-slate-400">To</Label>
+              <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="h-9 dark:bg-slate-900 dark:text-white dark:border-slate-700" />
+            </div>
+            <Button type="submit" variant="outline" size="sm" className="h-9 gap-2 dark:border-slate-700 dark:text-slate-200">
+              <Filter className="h-4 w-4" />
+              Apply Filters
+            </Button>
+            <Button type="button" onClick={handleResetFilters} variant="ghost" size="sm" className="h-9 dark:text-slate-400">
+              Reset
+            </Button>
+          </form>
+
+          {/* Transactions Table */}
+          {loading ? (
+            <div className="space-y-4">
+              <Skeleton className="h-10 w-full rounded-lg" />
+              {[...Array(5)].map((_, i) => (
+                <Skeleton key={i} className="h-12 w-full rounded-lg" />
+              ))}
+            </div>
+          ) : transactions.length === 0 ? (
+            <div className="flex min-h-[200px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <FileText className="mb-2 h-8 w-8 text-slate-300 dark:text-slate-600" />
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">No transactions found</p>
+              <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">Try adjusting your filters</p>
+            </div>
+          ) : (
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-slate-50 hover:bg-slate-50 dark:bg-slate-900/50 dark:hover:bg-slate-900/50">
+                        <TableHead className="text-xs font-semibold text-slate-600 dark:text-slate-400">Date</TableHead>
+                        <TableHead className="text-xs font-semibold text-slate-600 dark:text-slate-400">Reference</TableHead>
+                        <TableHead className="text-xs font-semibold text-slate-600 dark:text-slate-400">Voucher</TableHead>
+                        <TableHead className="text-xs font-semibold text-slate-600 dark:text-slate-400">Type</TableHead>
+                        <TableHead className="text-xs font-semibold text-slate-600 dark:text-slate-400">Description</TableHead>
+                        <TableHead className="text-xs font-semibold text-slate-600 dark:text-slate-400">Account</TableHead>
+                        <TableHead className="text-right text-xs font-semibold text-slate-600 dark:text-slate-400">Amount</TableHead>
+                        <TableHead className="text-right text-xs font-semibold text-slate-600 dark:text-slate-400">Balance</TableHead>
+                        <TableHead className="text-xs font-semibold text-slate-600 dark:text-slate-400">Receipt</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {transactions.map((tx) => (
+                        <TableRow key={tx._id} className="dark:border-slate-800 dark:hover:bg-slate-900/50">
+                          <TableCell className="whitespace-nowrap text-sm text-slate-700 dark:text-slate-300">
+                            {formatDate(tx.transactionDate)}
+                          </TableCell>
+                          <TableCell className="font-mono text-sm text-slate-700 dark:text-slate-300">
+                            {tx.referenceNo}
+                          </TableCell>
+                          <TableCell className="font-mono text-sm">
+                            {tx.voucherNumber ? (
+                              <span className="text-blue-600 dark:text-blue-400">{tx.voucherNumber}</span>
+                            ) : (
+                              <span className="text-slate-400 dark:text-slate-600">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant="outline"
+                              className={`text-xs gap-1 ${tx.type === "top_up" || tx.type === "opening" || tx.type === "replenishment"
+                                ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-400'
+                                : 'border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-400'}`}
+                            >
+                              {tx.type === "top_up" && <TrendingUp className="h-3 w-3" />}
+                              {tx.type === "expense" && <TrendingDown className="h-3 w-3" />}
+                              {tx.type === "opening" && <PiggyBank className="h-3 w-3" />}
+                              {tx.type === "replenishment" && <Receipt className="h-3 w-3" />}
+                              {tx.typeLabel}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-sm text-slate-700 dark:text-slate-300">{tx.description}</TableCell>
+                          <TableCell>
+                            {tx.expenseAccountName ? (
+                              <span className="text-sm text-slate-700 dark:text-slate-300">
+                                {tx.expenseAccountName}
+                                <span className="text-slate-400 ml-1 dark:text-slate-500">({tx.expenseAccountId})</span>
+                              </span>
+                            ) : tx.expenseAccountId ? (
+                              <span className="text-sm text-slate-500 dark:text-slate-400">{tx.expenseAccountId}</span>
+                            ) : (
+                              <span className="text-slate-400 dark:text-slate-600">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell className={`text-right font-mono text-sm font-semibold ${tx.type === "expense" ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}`}>
+                            {tx.type === "expense" ? "-" : "+"}{formatCurrency(tx.amount)}
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-sm font-semibold text-slate-700 dark:text-slate-300">
+                            {formatCurrency(tx.runningBalance)}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-col gap-1">
+                              <span className="text-xs text-slate-500 dark:text-slate-400">{tx.receiptRef || "-"}</span>
+                              {tx.journalEntryId && (
+                                <button
+                                  type="button"
+                                  title="View general ledger entry"
+                                  onClick={() => navigate(`/journal?sourceId=${tx.journalEntryId}`)}
+                                  className="inline-flex items-center gap-0.5 self-start rounded-md bg-indigo-50 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-700 ring-1 ring-indigo-100 hover:bg-indigo-100 transition-colors dark:bg-indigo-950/30 dark:text-indigo-300 dark:ring-indigo-900/40 dark:hover:bg-indigo-950/50"
+                                >
+                                  <ExternalLink className="h-2.5 w-2.5" />
+                                  GL
+                                </button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Pagination */}
+          {pages > 1 && (
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="h-8 dark:border-slate-700 dark:text-slate-200">
+                <ChevronLeft className="h-4 w-4" />
               </Button>
-              <Button onClick={handleResetFilters} variant="ghost" className="dark:text-slate-200">
-                Reset
+              <span className="text-sm text-slate-700 dark:text-slate-300">Page {page} of {pages}</span>
+              <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.min(pages, p + 1))} disabled={page === pages} className="h-8 dark:border-slate-700 dark:text-slate-200">
+                <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Transactions Table */}
-        <Card className="dark:bg-slate-800">
-          <CardContent className="p-0">
-            {loading ? (
-              <div className="flex justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin" />
-              </div>
-            ) : transactions.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12">
-                <Wallet className="h-12 w-12 text-muted-foreground mb-4 dark:text-slate-400" />
-                <p className="text-muted-foreground dark:text-slate-400">No transactions found</p>
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow className="dark:bg-slate-700/50 dark:border-slate-600">
-                    <TableHead className="dark:text-slate-200">{t("pettyCash.date", "Date")}</TableHead>
-                    <TableHead className="dark:text-slate-200">
-                      {t("pettyCash.reference", "Reference")}
-                    </TableHead>
-                    <TableHead className="dark:text-slate-200">Voucher</TableHead>
-                    <TableHead className="dark:text-slate-200">{t("pettyCash.type", "Type")}</TableHead>
-                    <TableHead className="dark:text-slate-200">
-                      {t("pettyCash.expenseDescription", "Description")}
-                    </TableHead>
-                    <TableHead className="dark:text-slate-200">
-                      {t("pettyCash.expenseAccount", "Account")}
-                    </TableHead>
-                    <TableHead className="text-right dark:text-slate-200">
-                      {t("pettyCash.amount", "Amount")}
-                    </TableHead>
-                    <TableHead className="text-right dark:text-slate-200">
-                      {t("pettyCash.balance", "Balance")}
-                    </TableHead>
-                    <TableHead className="dark:text-slate-200">
-                      {t("pettyCash.receiptRef", "Receipt")}
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {transactions.map((tx) => (
-                    <TableRow key={tx._id} className="dark:border-slate-600">
-                      <TableCell className="whitespace-nowrap dark:text-slate-300">
-                        {formatDate(tx.transactionDate)}
-                      </TableCell>
-                      <TableCell className="font-mono text-sm dark:text-slate-300">
-                        {tx.referenceNo}
-                      </TableCell>
-                      <TableCell className="font-mono text-sm dark:text-slate-300">
-                        {tx.voucherNumber ? (
-                          <span className="text-blue-600 dark:text-blue-400">{tx.voucherNumber}</span>
-                        ) : (
-                          <span className="text-muted-foreground dark:text-slate-500">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            tx.type === "top_up" ||
-                            tx.type === "opening" ||
-                            tx.type === "replenishment"
-                              ? "default"
-                              : "secondary"
-                          }
-                          className="gap-1 dark:bg-slate-700 dark:text-slate-200"
-                        >
-                          {tx.type === "top_up" && (
-                            <TrendingUp className="h-3 w-3" />
-                          )}
-                          {tx.type === "expense" && (
-                            <TrendingDown className="h-3 w-3" />
-                          )}
-                          {tx.typeLabel}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="dark:text-slate-300">{tx.description}</TableCell>
-                      <TableCell>
-                        {tx.expenseAccountName ? (
-                          <span className="text-sm dark:text-slate-300">
-                            {tx.expenseAccountName}
-                            <span className="text-muted-foreground ml-1 dark:text-slate-400">
-                              ({tx.expenseAccountId})
-                            </span>
-                          </span>
-                        ) : tx.expenseAccountId ? (
-                          <span className="text-muted-foreground text-sm dark:text-slate-400">
-                            {tx.expenseAccountId}
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground dark:text-slate-400">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell
-                        className={`text-right font-medium ${
-                          tx.type === "expense"
-                            ? "text-red-600 dark:text-red-400"
-                            : "text-green-600 dark:text-green-400"
-                        }`}
-                      >
-                        {tx.type === "expense" ? "-" : "+"}
-                        {formatCurrency(tx.amount)}
-                      </TableCell>
-                      <TableCell className="text-right font-semibold dark:text-slate-300">
-                        {formatCurrency(tx.runningBalance)}
-                      </TableCell>
-                      {/* Fix C — Receipt ref + optional GL journal entry badge */}
-                      <TableCell>
-                        <div className="flex flex-col gap-1">
-                          <span className="text-muted-foreground text-sm dark:text-slate-400">
-                            {tx.receiptRef || "-"}
-                          </span>
-                          {tx.journalEntryId && (
-                            <button
-                              type="button"
-                              title="View general ledger entry"
-                              onClick={() =>
-                                navigate(
-                                  `/journal?sourceId=${tx.journalEntryId}`,
-                                )
-                              }
-                              className="inline-flex items-center gap-0.5 self-start rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700 hover:bg-blue-200 transition-colors dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50"
-                            >
-                              <ExternalLink className="h-2.5 w-2.5" />
-                              GL
-                            </button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Pagination */}
-        {pages > 1 && (
-          <div className="flex justify-center items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
-            >
-              Previous
-            </Button>
-            <span className="text-sm text-muted-foreground dark:text-slate-400">
-              Page {page} of {pages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage((p) => Math.min(pages, p + 1))}
-              disabled={page === pages}
-              className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
-            >
-              Next
-            </Button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </Layout>
   );

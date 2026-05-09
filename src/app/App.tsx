@@ -104,6 +104,7 @@ import APAgingReportPage from './pages/ap/APAgingReportPage';
 import APReconciliationPage from './pages/ap/APReconciliationPage';
 import BankAccountsListPage from './pages/bank/BankAccountsListPage';
 import BankAccountDetailPage from './pages/bank/BankAccountDetailPage';
+import BankReconciliationPage from './pages/bank/BankReconciliationPage';
 import PettyCashListPage from './pages/petty-cash/PettyCashListPage';
 import PettyCashTransactionsPage from './pages/petty-cash/PettyCashTransactionsPage';
 import AssetsListPage from './pages/assets/AssetsListPage';
@@ -503,6 +504,11 @@ function AppRoutes() {
         <Route path="/bank-accounts/:id/edit" element={
           <ErrorBoundary>
             <BankAccountsListPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/bank-accounts/:id/reconcile" element={
+          <ErrorBoundary>
+            <BankReconciliationPage />
           </ErrorBoundary>
         } />
         {/* Petty Cash */}
