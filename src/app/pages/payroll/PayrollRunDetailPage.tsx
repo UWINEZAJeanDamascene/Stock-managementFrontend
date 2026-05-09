@@ -27,6 +27,15 @@ import {
   XCircle,
   AlertTriangle,
   Plus,
+  Play,
+  TrendingDown,
+  Shield,
+  Banknote,
+  Clock,
+  Hash,
+  CreditCard,
+  BadgeCheck,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
@@ -97,7 +106,7 @@ export default function PayrollRunDetailPage() {
   >([]);
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
 
-  // Available periods (months with finalisedunprocessed records)
+  // Available periods (months with finalised unprocessed records)
   const [availablePeriods, setAvailablePeriods] = useState<
     Array<{
       month: number;
@@ -291,7 +300,7 @@ export default function PayrollRunDetailPage() {
       const data = response.data;
       // Generate CSV content
       const headers = ["Employee Name", "Employee ID", "Bank Name", "Bank Account", "Net Pay", "Currency"];
-      const rows = data.records.map((r) => [
+      const rows = data.records.map((r: any) => [
         r.employee_name,
         r.employee_id,
         r.bank_name,
@@ -299,7 +308,7 @@ export default function PayrollRunDetailPage() {
         r.net_pay.toString(),
         r.currency,
       ]);
-      const csvContent = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+      const csvContent = [headers.join(","), ...rows.map((r: any) => r.join(","))].join("\n");
       const blob = new Blob([csvContent], { type: "text/csv" });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -339,11 +348,9 @@ export default function PayrollRunDetailPage() {
 
   const handleSelectPeriod = (month: number, year: number) => {
     setSelectedPeriod({ month, year });
-    // Auto-fill pay period dates to cover the full calendar month
     const firstDay = `${year}-${String(month).padStart(2, "0")}-01`;
-    const lastDay = new Date(year, month, 0); // day 0 of next month = last day of this month
+    const lastDay = new Date(year, month, 0);
     const lastDayStr = `${year}-${String(month).padStart(2, "0")}-${String(lastDay.getDate()).padStart(2, "0")}`;
-    // Default payment date: 5th of the following month (common payroll practice)
     const nextMonth = month === 12 ? 1 : month + 1;
     const nextYear = month === 12 ? year + 1 : year;
     const paymentDateStr = `${nextYear}-${String(nextMonth).padStart(2, "0")}-05`;
@@ -418,18 +425,8 @@ export default function PayrollRunDetailPage() {
   };
 
   const MONTH_NAMES = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December",
   ];
 
   const formatCurrency = (amount: number) =>
@@ -449,15 +446,25 @@ export default function PayrollRunDetailPage() {
   };
 
   const getStatusBadge = (status: string) => {
-    const config: Record<string, { className: string }> = {
-      draft: { className: "bg-gray-100 text-gray-700 border-gray-300 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-500" },
-      posted: { className: "bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-400 dark:border-green-700" },
-      reversed: { className: "bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-400 dark:border-red-700" },
+    const config: Record<string, { className: string; icon: any }> = {
+      draft: {
+        className: "bg-gray-100 text-gray-700 border-gray-300 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-500",
+        icon: Clock,
+      },
+      posted: {
+        className: "bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-400 dark:border-green-700",
+        icon: CheckCircle,
+      },
+      reversed: {
+        className: "bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-400 dark:border-red-700",
+        icon: RotateCcw,
+      },
     };
-    const { className } = config[status] || config.draft;
+    const { className, icon: Icon } = config[status] || config.draft;
     return (
-      <Badge variant="outline" className={className}>
-        {status}
+      <Badge variant="outline" className={`gap-1.5 ${className}`}>
+        <Icon className="h-3 w-3" />
+        {status.charAt(0).toUpperCase() + status.slice(1)}
       </Badge>
     );
   };
@@ -473,13 +480,16 @@ export default function PayrollRunDetailPage() {
     return (
       <Layout>
         <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <div className="text-center space-y-3">
+            <Loader2 className="h-8 w-8 animate-spin text-blue-500 mx-auto" />
+            <p className="text-sm text-slate-500 dark:text-slate-400">Loading payroll run...</p>
+          </div>
         </div>
       </Layout>
     );
   }
 
-  // ── Create-from-records page (no id means new payroll run) ─────────────────────────────
+  // ── Create-from-records page ─────────────────────────────
   if (!id) {
     const selectedPeriodData = selectedPeriod
       ? availablePeriods.find(
@@ -488,1030 +498,1392 @@ export default function PayrollRunDetailPage() {
         )
       : null;
 
+    const totalAvailableGross = availablePeriods.reduce((s, p) => s + p.totalGross, 0);
+    const totalAvailableNet = availablePeriods.reduce((s, p) => s + p.totalNet, 0);
+    const totalAvailableEmployees = availablePeriods.reduce((s, p) => s + p.count, 0);
+
     return (
       <Layout>
-        <div className="container mx-auto py-6 space-y-6 max-w-3xl bg-gray-50 dark:bg-slate-900 min-h-screen">
-          {/* Header */}
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate("/payroll-runs")}
-              className="dark:text-slate-300 dark:hover:bg-slate-700"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold dark:text-white">Create Payroll Run</h1>
-              <p className="text-sm text-muted-foreground dark:text-slate-400">
-                Process finalised employee records into a payroll run
-              </p>
-            </div>
-          </div>
+        <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-[1200px] space-y-6">
+            {/* Hero Header */}
+            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+              <div className="grid gap-5 p-5 xl:grid-cols-[1fr_380px] xl:items-stretch">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => navigate("/payroll-runs")}
+                      className="h-9 w-9 dark:text-slate-300 dark:hover:bg-slate-700"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                    </Button>
+                    <div className="rounded-lg bg-indigo-50 p-2.5 text-indigo-700 ring-1 ring-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-300 dark:ring-indigo-900/60">
+                      <Sparkles className="h-5 w-5" />
+                    </div>
+                    <h1 className="text-2xl font-bold tracking-tight text-slate-950 dark:text-white sm:text-3xl">
+                      Create Payroll Run
+                    </h1>
+                  </div>
+                  <p className="mt-2 max-w-3xl text-sm text-slate-500 dark:text-slate-400">
+                    Process finalised employee records into a payroll run. Select a period, configure accounts, and generate.
+                  </p>
 
-          {/* Step 1 — Select Payroll Period */}
-          <Card className="dark:bg-slate-800">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base dark:text-white">
-                <Calendar className="h-5 w-5 text-indigo-500 dark:text-indigo-400" />
-                Step 1 — Select Payroll Period
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {loadingPeriods ? (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Loading available periods…
-                </div>
-              ) : availablePeriods.length === 0 ? (
-                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-8 text-center max-w-md mx-auto">
-                  <AlertTriangle className="h-8 w-8 text-amber-500 mx-auto mb-3" />
-                  <h3 className="text-lg font-semibold text-amber-800 dark:text-amber-200 mb-2">
-                    No Payroll Records Available
-                  </h3>
-                  <p className="text-sm text-amber-700 dark:text-amber-300 mb-4">
-                    To generate a payroll run, you first need to create and finalise individual payroll records for your employees. A payroll run groups these existing records together.
-                  </p>
-                  <Button
-                    variant="outline"
-                    onClick={() => navigate("/payroll")}
-                    className="border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/40"
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Go to Payroll Page — Create Records
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <p className="text-sm text-muted-foreground">
-                    {availablePeriods.length} period
-                    {availablePeriods.length !== 1 ? "s" : ""} with unprocessed
-                    finalised records:
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {availablePeriods.map((p) => {
-                      const isSelected =
-                        selectedPeriod?.month === p.month &&
-                        selectedPeriod?.year === p.year;
-                      return (
-                        <button
-                          key={`${p.year}-${p.month}`}
-                          onClick={() => handleSelectPeriod(p.month, p.year)}
-                          className={`text-left p-4 rounded-lg border-2 transition-all ${
-                            isSelected
-                              ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20"
-                              : "border-border hover:border-indigo-300 hover:bg-muted/40"
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="font-semibold">
-                              {MONTH_NAMES[p.month - 1]} {p.year}
-                            </span>
-                            {isSelected && (
-                              <CheckCircle className="h-4 w-4 text-indigo-500" />
-                            )}
-                          </div>
-                          <div className="text-sm text-muted-foreground mt-1">
-                            {p.count} employee{p.count !== 1 ? "s" : ""}{" "}
-                            &nbsp;·&nbsp; Gross {formatCurrency(p.totalGross)}
-                          </div>
-                          <div className="text-sm font-medium text-green-600 dark:text-green-400 mt-0.5">
-                            Net {formatCurrency(p.totalNet)}
-                          </div>
-                        </button>
-                      );
-                    })}
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => navigate("/payroll-runs")}
+                      className="h-10 gap-2"
+                    >
+                      <Play className="h-4 w-4" />
+                      All Payroll Runs
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => navigate("/payroll")}
+                      className="h-10 gap-2"
+                    >
+                      <Users className="h-4 w-4" />
+                      Employee Records
+                    </Button>
                   </div>
                 </div>
-              )}
-            </CardContent>
-          </Card>
 
-          {/* Step 2 — Configure Run (shown only after period is selected) */}
-          {selectedPeriod && (
-            <Card className="dark:bg-slate-800">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base dark:text-white">
-                  <DollarSign className="h-5 w-5 text-indigo-500 dark:text-indigo-400" />
-                  Step 2 — Configure Run for{" "}
-                  {MONTH_NAMES[selectedPeriod.month - 1]} {selectedPeriod.year}
+                {/* Mini Stats */}
+                <div className="grid grid-cols-3 gap-3 rounded-lg border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-950/40">
+                  <div className="rounded-lg bg-white p-3 shadow-sm dark:bg-slate-900">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Periods</p>
+                    <p className="mt-1 text-xl font-bold text-indigo-600 dark:text-indigo-400">
+                      {availablePeriods.length}
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-white p-3 shadow-sm dark:bg-slate-900">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Employees</p>
+                    <p className="mt-1 text-xl font-bold text-blue-600 dark:text-blue-400">
+                      {totalAvailableEmployees}
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-white p-3 shadow-sm dark:bg-slate-900">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Total Gross</p>
+                    <p className="mt-1 text-lg font-bold text-emerald-600 dark:text-emerald-400 truncate">
+                      {formatCurrency(totalAvailableGross)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Step Progress Indicator */}
+              <div className="border-t border-slate-200 bg-slate-50/50 px-5 py-3 dark:border-slate-800 dark:bg-slate-950/30">
+                <div className="flex items-center gap-3">
+                  <div className={`flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium ${
+                    !selectedPeriod
+                      ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300"
+                      : "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300"
+                  }`}>
+                    {selectedPeriod ? <CheckCircle className="h-3 w-3" /> : <span className="h-4 w-4 rounded-full bg-indigo-500 text-white text-[10px] flex items-center justify-center font-bold">1</span>}
+                    Select Period
+                  </div>
+                  <div className="h-px flex-1 bg-slate-300 dark:bg-slate-700" />
+                  <div className={`flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium ${
+                    selectedPeriod
+                      ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300"
+                      : "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500"
+                  }`}>
+                    <span className="h-4 w-4 rounded-full bg-indigo-500 text-white text-[10px] flex items-center justify-center font-bold dark:bg-indigo-600">2</span>
+                    Configure &amp; Create
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Step 1 — Select Payroll Period */}
+            <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-950 dark:text-white">
+                  <div className="rounded-lg bg-indigo-50 p-2 text-indigo-700 ring-1 ring-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-300 dark:ring-indigo-900/60">
+                    <Calendar className="h-4 w-4" />
+                  </div>
+                  Step 1 — Select Payroll Period
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-5">
-                {/* Selected period summary */}
-                {selectedPeriodData && (
-                  <div className="flex items-start gap-3 p-3 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700 text-sm">
-                    <Info className="h-4 w-4 text-indigo-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-indigo-800 dark:text-indigo-300">
-                      Will process <strong>{selectedPeriodData.count}</strong>{" "}
-                      employee record{selectedPeriodData.count !== 1 ? "s" : ""}{" "}
-                      &nbsp;·&nbsp; Gross{" "}
-                      <strong>
-                        {formatCurrency(selectedPeriodData.totalGross)}
-                      </strong>{" "}
-                      &nbsp;·&nbsp; Net{" "}
-                      <strong>
-                        {formatCurrency(selectedPeriodData.totalNet)}
-                      </strong>
-                    </span>
+              <CardContent>
+                {loadingPeriods ? (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground py-8 justify-center">
+                    <Loader2 className="h-5 w-5 animate-spin text-indigo-500" />
+                    <span>Loading available periods…</span>
+                  </div>
+                ) : availablePeriods.length === 0 ? (
+                  <div className="rounded-xl border-2 border-dashed border-amber-200 bg-amber-50/50 p-8 text-center dark:border-amber-800/50 dark:bg-amber-950/20">
+                    <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30">
+                      <AlertTriangle className="h-7 w-7 text-amber-600 dark:text-amber-400" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-amber-800 dark:text-amber-200 mb-2">
+                      No Payroll Records Available
+                    </h3>
+                    <p className="text-sm text-amber-700 dark:text-amber-300 mb-5 max-w-md mx-auto">
+                      To generate a payroll run, you first need to create and finalise individual payroll records for your employees. A payroll run groups these existing records together.
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                      <Button
+                        onClick={() => navigate("/payroll")}
+                        className="gap-2 bg-amber-600 hover:bg-amber-700 text-white"
+                      >
+                        <Plus className="h-4 w-4" />
+                        Go to Payroll Page — Create Records
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => navigate("/payroll-runs")}
+                        className="gap-2"
+                      >
+                        <ArrowLeft className="h-4 w-4" />
+                        Back to Runs
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      {availablePeriods.length} period{availablePeriods.length !== 1 ? "s" : ""} with unprocessed finalised records:
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {availablePeriods.map((p) => {
+                        const isSelected =
+                          selectedPeriod?.month === p.month &&
+                          selectedPeriod?.year === p.year;
+                        return (
+                          <button
+                            key={`${p.year}-${p.month}`}
+                            onClick={() => handleSelectPeriod(p.month, p.year)}
+                            className={`group text-left p-4 rounded-xl border-2 transition-all duration-200 ${
+                              isSelected
+                                ? "border-indigo-500 bg-indigo-50 shadow-md shadow-indigo-100 dark:bg-indigo-900/20 dark:shadow-indigo-950/20 dark:border-indigo-400"
+                                : "border-slate-200 bg-white hover:border-indigo-300 hover:shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:hover:border-indigo-700"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="font-semibold text-slate-950 dark:text-white">
+                                {MONTH_NAMES[p.month - 1]} {p.year}
+                              </span>
+                              {isSelected ? (
+                                <CheckCircle className="h-5 w-5 text-indigo-500 dark:text-indigo-400" />
+                              ) : (
+                                <div className="h-5 w-5 rounded-full border-2 border-slate-300 group-hover:border-indigo-300 dark:border-slate-600 transition-colors" />
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+                              <Users className="h-3.5 w-3.5" />
+                              {p.count} employee{p.count !== 1 ? "s" : ""}
+                            </div>
+                            <div className="mt-1 flex items-center justify-between text-sm">
+                              <span className="text-slate-600 dark:text-slate-300">
+                                Gross {formatCurrency(p.totalGross)}
+                              </span>
+                            </div>
+                            <div className="mt-0.5 text-sm font-medium text-emerald-600 dark:text-emerald-400">
+                              Net {formatCurrency(p.totalNet)}
+                            </div>
+                            {/* Mini progress bar */}
+                            <div className="mt-2 h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all ${
+                                  isSelected
+                                    ? "bg-indigo-500 dark:bg-indigo-400"
+                                    : "bg-slate-300 dark:bg-slate-600"
+                                }`}
+                                style={{
+                                  width: `${p.totalGross > 0 ? Math.max(Math.round((p.totalNet / p.totalGross) * 100), 10) : 0}%`,
+                                }}
+                              />
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
+              </CardContent>
+            </Card>
 
-                {/* Dates */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-1">
-                    <Label className="dark:text-slate-200">Pay Period Start</Label>
+            {/* Step 2 — Configure Run */}
+            {selectedPeriod && (
+              <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-950 dark:text-white">
+                    <div className="rounded-lg bg-emerald-50 p-2 text-emerald-700 ring-1 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60">
+                      <DollarSign className="h-4 w-4" />
+                    </div>
+                    Step 2 — Configure Run for {MONTH_NAMES[selectedPeriod.month - 1]} {selectedPeriod.year}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-5">
+                  {/* Selected period summary */}
+                  {selectedPeriodData && (
+                    <div className="flex items-start gap-3 p-3 rounded-lg bg-indigo-50/80 dark:bg-indigo-900/20 border border-indigo-200/80 dark:border-indigo-700/50 text-sm">
+                      <Info className="h-4 w-4 text-indigo-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-indigo-800 dark:text-indigo-300">
+                        Will process <strong>{selectedPeriodData.count}</strong>{" "}
+                        employee record{selectedPeriodData.count !== 1 ? "s" : ""}{" "}
+                        &nbsp;·&nbsp; Gross{" "}
+                        <strong>{formatCurrency(selectedPeriodData.totalGross)}</strong>{" "}
+                        &nbsp;·&nbsp; Net{" "}
+                        <strong>{formatCurrency(selectedPeriodData.totalNet)}</strong>
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Dates */}
+                  <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-900/50">
+                    <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3 flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-slate-400" />
+                      Pay Period & Payment Date
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-1">
+                        <Label className="text-slate-600 dark:text-slate-300">Pay Period Start</Label>
+                        <Input
+                          type="date"
+                          value={createForm.pay_period_start}
+                          onChange={(e) =>
+                            setCreateForm({ ...createForm, pay_period_start: e.target.value })
+                          }
+                          className="bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-slate-600 dark:text-slate-300">Pay Period End</Label>
+                        <Input
+                          type="date"
+                          value={createForm.pay_period_end}
+                          onChange={(e) =>
+                            setCreateForm({ ...createForm, pay_period_end: e.target.value })
+                          }
+                          className="bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-slate-600 dark:text-slate-300">Payment Date *</Label>
+                        <Input
+                          type="date"
+                          value={createForm.payment_date}
+                          onChange={(e) =>
+                            setCreateForm({ ...createForm, payment_date: e.target.value })
+                          }
+                          className="bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700"
+                        />
+                        <p className="text-xs text-slate-400 dark:text-slate-500">
+                          Date salaries are disbursed
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Accounts */}
+                  <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-900/50">
+                    <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3 flex items-center gap-2">
+                      <Building2 className="h-4 w-4 text-slate-400" />
+                      Account Configuration
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <Label className="text-slate-600 dark:text-slate-300">Bank Account (Net Pay) *</Label>
+                        <Select
+                          value={createForm.bank_account_id}
+                          onValueChange={(v) =>
+                            setCreateForm({ ...createForm, bank_account_id: v })
+                          }
+                        >
+                          <SelectTrigger className="bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700">
+                            <SelectValue placeholder="Select bank account…" />
+                          </SelectTrigger>
+                          <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
+                            {bankAccounts.map((ba) => (
+                              <SelectItem key={ba._id} value={ba._id} className="dark:text-slate-200">
+                                {ba.name}
+                                {ba.bankName ? ` — ${ba.bankName}` : ""}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-slate-400 dark:text-slate-500">
+                          Account to debit for net salaries
+                        </p>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-slate-600 dark:text-slate-300">Salary Expense Account *</Label>
+                        <Select
+                          value={createForm.salary_account_id}
+                          onValueChange={(v) =>
+                            setCreateForm({ ...createForm, salary_account_id: v })
+                          }
+                        >
+                          <SelectTrigger className="bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700">
+                            <SelectValue placeholder="Select salary account…" />
+                          </SelectTrigger>
+                          <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
+                            {chartAccounts
+                              .filter((a) => a.type === "expense")
+                              .map((a) => (
+                                <SelectItem key={a._id} value={a._id} className="dark:text-slate-200">
+                                  {a.code} — {a.name}
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-slate-400 dark:text-slate-500">
+                          e.g. 5400 Salaries & Wages
+                        </p>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-slate-600 dark:text-slate-300">PAYE Tax Payable Account *</Label>
+                        <Select
+                          value={createForm.tax_payable_account_id}
+                          onValueChange={(v) =>
+                            setCreateForm({ ...createForm, tax_payable_account_id: v })
+                          }
+                        >
+                          <SelectTrigger className="bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700">
+                            <SelectValue placeholder="Select PAYE account…" />
+                          </SelectTrigger>
+                          <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
+                            {chartAccounts
+                              .filter((a) => a.type === "liability")
+                              .map((a) => (
+                                <SelectItem key={a._id} value={a._id} className="dark:text-slate-200">
+                                  {a.code} — {a.name}
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-slate-400 dark:text-slate-500">
+                          e.g. 2230 PAYE Tax Payable
+                        </p>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-slate-600 dark:text-slate-300">RSSB Deductions Account</Label>
+                        <Select
+                          value={createForm.other_deductions_account_id}
+                          onValueChange={(v) =>
+                            setCreateForm({
+                              ...createForm,
+                              other_deductions_account_id: v === "_none_" ? "" : v,
+                            })
+                          }
+                        >
+                          <SelectTrigger className="bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700">
+                            <SelectValue placeholder="Select RSSB account (optional)…" />
+                          </SelectTrigger>
+                          <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
+                            <SelectItem value="_none_" className="dark:text-slate-200">— None —</SelectItem>
+                            {chartAccounts
+                              .filter((a) => a.type === "liability")
+                              .map((a) => (
+                                <SelectItem key={a._id} value={a._id} className="dark:text-slate-200">
+                                  {a.code} — {a.name}
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-slate-400 dark:text-slate-500">
+                          e.g. 2240 RSSB Payable
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Notes */}
+                  <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-900/50">
+                    <Label className="text-slate-600 dark:text-slate-300">Notes (optional)</Label>
                     <Input
-                      type="date"
-                      value={createForm.pay_period_start}
+                      value={createForm.notes}
                       onChange={(e) =>
-                        setCreateForm({
-                          ...createForm,
-                          pay_period_start: e.target.value,
-                        })
+                        setCreateForm({ ...createForm, notes: e.target.value })
                       }
-                      className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                      placeholder="e.g. April 2026 salary run"
+                      className="mt-1.5 bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700"
                     />
                   </div>
-                  <div className="space-y-1">
-                    <Label className="dark:text-slate-200">Pay Period End</Label>
-                    <Input
-                      type="date"
-                      value={createForm.pay_period_end}
-                      onChange={(e) =>
-                        setCreateForm({
-                          ...createForm,
-                          pay_period_end: e.target.value,
-                        })
+
+                  {/* Actions */}
+                  <div className="flex justify-end gap-2 pt-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => navigate("/payroll-runs")}
+                      className="dark:border-slate-700 dark:text-slate-200"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={handleCreateFromRecords}
+                      disabled={
+                        submitting ||
+                        !createForm.bank_account_id ||
+                        !createForm.salary_account_id ||
+                        !createForm.tax_payable_account_id ||
+                        !createForm.payment_date
                       }
-                      className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
-                    />
+                      className="gap-2 bg-indigo-600 hover:bg-indigo-700"
+                    >
+                      {submitting ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Sparkles className="h-4 w-4" />
+                      )}
+                      Create Payroll Run for {MONTH_NAMES[selectedPeriod.month - 1]}{" "}
+                      {selectedPeriod.year}
+                    </Button>
                   </div>
-                  <div className="space-y-1">
-                    <Label className="dark:text-slate-200">Payment Date *</Label>
-                    <Input
-                      type="date"
-                      value={createForm.payment_date}
-                      onChange={(e) =>
-                        setCreateForm({
-                          ...createForm,
-                          payment_date: e.target.value,
-                        })
-                      }
-                      className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
-                    />
-                    <p className="text-xs text-muted-foreground dark:text-slate-400">
-                      Date salaries are disbursed
-                    </p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  // ── Not found ─────────────────────────────
+  if (!run) {
+    return (
+      <Layout>
+        <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-[1200px]">
+            <div className="flex flex-col items-center py-16">
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
+                <AlertCircle className="h-8 w-8 text-slate-400 dark:text-slate-500" />
+              </div>
+              <h2 className="text-xl font-semibold text-slate-950 dark:text-white mb-2">Payroll Run Not Found</h2>
+              <p className="text-slate-500 dark:text-slate-400 mb-6">The payroll run you're looking for doesn't exist or has been removed.</p>
+              <Button
+                variant="outline"
+                onClick={() => navigate("/payroll-runs")}
+                className="gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" /> Back to Payroll Runs
+              </Button>
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  // ── Detail view ─────────────────────────────
+  const totalDeductions = run.total_tax + run.total_other_deductions;
+  const rssbEmployerTotal = run.lines.reduce((s, l) => s + (l.rssb_employer_total || 0), 0);
+  const totalCost = run.total_gross + rssbEmployerTotal;
+  const netPayRate = run.total_gross > 0 ? Math.round((run.total_net / run.total_gross) * 100) : 0;
+  const deductionRate = run.total_gross > 0 ? Math.round((totalDeductions / run.total_gross) * 100) : 0;
+  const employerRate = run.total_gross > 0 ? Math.round((rssbEmployerTotal / run.total_gross) * 100) : 0;
+  const payeRate = run.total_gross > 0 ? Math.round((run.total_tax / run.total_gross) * 100) : 0;
+  const rssbEmpRate = run.total_gross > 0 ? Math.round((run.total_other_deductions / run.total_gross) * 100) : 0;
+
+  return (
+    <Layout>
+      <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1600px] space-y-6">
+          {/* Hero Header */}
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+            <div className="grid gap-5 p-5 xl:grid-cols-[1fr_420px] xl:items-stretch">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => navigate("/payroll-runs")}
+                    className="h-9 w-9 dark:text-slate-300 dark:hover:bg-slate-700"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                  <div className="rounded-lg bg-blue-50 p-2.5 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60">
+                    <Play className="h-5 w-5" />
                   </div>
+                  <h1 className="text-2xl font-bold tracking-tight font-mono text-slate-950 dark:text-white sm:text-3xl">
+                    {run.reference_no}
+                  </h1>
+                  {getStatusBadge(run.status)}
                 </div>
+                <p className="mt-2 max-w-3xl text-sm text-slate-500 dark:text-slate-400">
+                  Pay period: {formatDate(run.pay_period_start)} — {formatDate(run.pay_period_end)} · Payment date: {formatDate(run.payment_date)}
+                </p>
 
-                {/* Accounts */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <Label className="dark:text-slate-200">Bank Account (Net Pay) *</Label>
-                    <Select
-                      value={createForm.bank_account_id}
-                      onValueChange={(v) =>
-                        setCreateForm({ ...createForm, bank_account_id: v })
-                      }
-                    >
-                      <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
-                        <SelectValue placeholder="Select bank account…" />
-                      </SelectTrigger>
-                      <SelectContent className="dark:bg-slate-800">
-                        {bankAccounts.map((ba) => (
-                          <SelectItem key={ba._id} value={ba._id} className="dark:text-slate-200">
-                            {ba.name}
-                            {ba.bankName ? ` — ${ba.bankName}` : ""}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-muted-foreground dark:text-slate-400">
-                      Account to debit for net salaries
-                    </p>
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label className="dark:text-slate-200">Salary Expense Account *</Label>
-                    <Select
-                      value={createForm.salary_account_id}
-                      onValueChange={(v) =>
-                        setCreateForm({ ...createForm, salary_account_id: v })
-                      }
-                    >
-                      <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
-                        <SelectValue placeholder="Select salary account…" />
-                      </SelectTrigger>
-                      <SelectContent className="dark:bg-slate-800">
-                        {chartAccounts
-                          .filter((a) => a.type === "expense")
-                          .map((a) => (
-                            <SelectItem key={a._id} value={a._id} className="dark:text-slate-200">
-                              {a.code} — {a.name}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-muted-foreground dark:text-slate-400">
-                      e.g. 5400 Salaries & Wages
-                    </p>
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label className="dark:text-slate-200">PAYE Tax Payable Account *</Label>
-                    <Select
-                      value={createForm.tax_payable_account_id}
-                      onValueChange={(v) =>
-                        setCreateForm({
-                          ...createForm,
-                          tax_payable_account_id: v,
-                        })
-                      }
-                    >
-                      <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
-                        <SelectValue placeholder="Select PAYE account…" />
-                      </SelectTrigger>
-                      <SelectContent className="dark:bg-slate-800">
-                        {chartAccounts
-                          .filter((a) => a.type === "liability")
-                          .map((a) => (
-                            <SelectItem key={a._id} value={a._id} className="dark:text-slate-200">
-                              {a.code} — {a.name}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-muted-foreground dark:text-slate-400">
-                      e.g. 2230 PAYE Tax Payable
-                    </p>
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label className="dark:text-slate-200">RSSB Deductions Account</Label>
-                    <Select
-                      value={createForm.other_deductions_account_id}
-                      onValueChange={(v) =>
-                        setCreateForm({
-                          ...createForm,
-                          other_deductions_account_id: v === "_none_" ? "" : v,
-                        })
-                      }
-                    >
-                      <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
-                        <SelectValue placeholder="Select RSSB account (optional)…" />
-                      </SelectTrigger>
-                      <SelectContent className="dark:bg-slate-800">
-                        <SelectItem value="_none_" className="dark:text-slate-200">— None —</SelectItem>
-                        {chartAccounts
-                          .filter((a) => a.type === "liability")
-                          .map((a) => (
-                            <SelectItem key={a._id} value={a._id} className="dark:text-slate-200">
-                              {a.code} — {a.name}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-muted-foreground dark:text-slate-400">
-                      e.g. 2240 RSSB Payable
-                    </p>
-                  </div>
-                </div>
-
-                {/* Notes */}
-                <div className="space-y-1">
-                  <Label className="dark:text-slate-200">Notes (optional)</Label>
-                  <Input
-                    value={createForm.notes}
-                    onChange={(e) =>
-                      setCreateForm({ ...createForm, notes: e.target.value })
-                    }
-                    placeholder="e.g. April 2026 salary run"
-                    className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
-                  />
-                </div>
-
-                {/* Actions */}
-                <div className="flex justify-end gap-2 pt-2">
+                <div className="mt-5 flex flex-wrap gap-2">
+                  {run.status === "draft" && (
+                    <>
+                      <Button
+                        variant="outline"
+                        onClick={handlePreview}
+                        disabled={previewLoading}
+                        className="h-10 gap-2"
+                      >
+                        {previewLoading ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                        {t("payroll.run.previewJournal")}
+                      </Button>
+                      <Button
+                        onClick={() => setShowPostDialog(true)}
+                        className="h-10 gap-2 bg-green-600 hover:bg-green-700"
+                      >
+                        <CheckCircle className="h-4 w-4" />
+                        {t("payroll.run.postRun")}
+                      </Button>
+                    </>
+                  )}
+                  {run.status === "posted" && (
+                    <>
+                      {hasAnyPermission(["admin", "manager"]) && (
+                        <Button
+                          variant="outline"
+                          onClick={handleBankTransfer}
+                          disabled={submitting}
+                          className="h-10 gap-2"
+                        >
+                          <Download className="h-4 w-4" />
+                          Export Bank Transfer
+                        </Button>
+                      )}
+                      <Button
+                        variant="outline"
+                        onClick={() => setShowReverseDialog(true)}
+                        className="h-10 gap-2 border-red-200 text-red-600 hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/30"
+                      >
+                        <RotateCcw className="h-4 w-4" />
+                        {t("payroll.run.reverseRun")}
+                      </Button>
+                    </>
+                  )}
                   <Button
                     variant="outline"
                     onClick={() => navigate("/payroll-runs")}
+                    className="h-10 gap-2"
                   >
-                    Cancel
+                    <Play className="h-4 w-4" />
+                    All Runs
                   </Button>
-                  <Button
-                    onClick={handleCreateFromRecords}
-                    disabled={
-                      submitting ||
-                      !createForm.bank_account_id ||
-                      !createForm.salary_account_id ||
-                      !createForm.tax_payable_account_id ||
-                      !createForm.payment_date
-                    }
-                  >
-                    {submitting && (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                </div>
+              </div>
+
+              {/* Mini Stats */}
+              <div className="grid grid-cols-3 gap-3 rounded-lg border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-950/40">
+                <div className="rounded-lg bg-white p-3 shadow-sm dark:bg-slate-900">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Net pay rate</p>
+                  <p className="mt-1 text-xl font-bold text-emerald-600 dark:text-emerald-400">
+                    {netPayRate}%
+                  </p>
+                </div>
+                <div className="rounded-lg bg-white p-3 shadow-sm dark:bg-slate-900">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Deductions</p>
+                  <p className="mt-1 text-xl font-bold text-amber-600 dark:text-amber-400">
+                    {deductionRate}%
+                  </p>
+                </div>
+                <div className="rounded-lg bg-white p-3 shadow-sm dark:bg-slate-900">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Employer load</p>
+                  <p className="mt-1 text-xl font-bold text-blue-600 dark:text-blue-400">
+                    {employerRate}%
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Aggregated Summary Cards */}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+            <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      {t("payroll.employees")}
+                    </p>
+                    <p className="mt-3 text-2xl font-bold text-slate-950 dark:text-white">
+                      {run.employee_count}
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-blue-50 p-2.5 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60">
+                    <Users className="h-5 w-5" />
+                  </div>
+                </div>
+                <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+                  Active employees in this run
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      {t("payroll.totalGross")}
+                    </p>
+                    <p className="mt-3 truncate text-2xl font-bold text-slate-950 dark:text-white">
+                      {formatCurrency(run.total_gross)}
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-emerald-50 p-2.5 text-emerald-700 ring-1 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60">
+                    <DollarSign className="h-5 w-5" />
+                  </div>
+                </div>
+                <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+                  Before taxes & deductions
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      PAYE + RSSB
+                    </p>
+                    <p className="mt-3 truncate text-2xl font-bold text-red-600 dark:text-red-400">
+                      {formatCurrency(totalDeductions)}
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-red-50 p-2.5 text-red-700 ring-1 ring-red-100 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900/60">
+                    <TrendingDown className="h-5 w-5" />
+                  </div>
+                </div>
+                <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+                  Total statutory deductions
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      {t("payroll.totalNet")}
+                    </p>
+                    <p className="mt-3 truncate text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                      {formatCurrency(run.total_net)}
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-violet-50 p-2.5 text-violet-700 ring-1 ring-violet-100 dark:bg-violet-950/40 dark:text-violet-300 dark:ring-violet-900/60">
+                    <Banknote className="h-5 w-5" />
+                  </div>
+                </div>
+                <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+                  Employee take-home total
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      Total Cost
+                    </p>
+                    <p className="mt-3 truncate text-2xl font-bold text-slate-950 dark:text-white">
+                      {formatCurrency(totalCost)}
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-amber-50 p-2.5 text-amber-700 ring-1 ring-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/60">
+                    <CreditCard className="h-5 w-5" />
+                  </div>
+                </div>
+                <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+                  Gross + employer RSSB
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Payroll Burden Mix + Run Info */}
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+            <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950 xl:col-span-2">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-950 dark:text-white">
+                  <TrendingDown className="h-4 w-4 text-amber-500" />
+                  Payroll Burden Mix
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <div className="mb-2 flex items-center justify-between text-sm">
+                    <span className="text-slate-600 dark:text-slate-300">PAYE Tax</span>
+                    <span className="font-mono font-semibold text-red-600 dark:text-red-400">
+                      {formatCurrency(run.total_tax)}
+                    </span>
+                  </div>
+                  <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800">
+                    <div
+                      className="h-2 rounded-full bg-red-500 transition-all duration-500"
+                      style={{ width: `${Math.min(payeRate, 100)}%` }}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <div className="mb-2 flex items-center justify-between text-sm">
+                    <span className="text-slate-600 dark:text-slate-300">RSSB Employee</span>
+                    <span className="font-mono font-semibold text-orange-600 dark:text-orange-400">
+                      {formatCurrency(run.total_other_deductions)}
+                    </span>
+                  </div>
+                  <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800">
+                    <div
+                      className="h-2 rounded-full bg-orange-500 transition-all duration-500"
+                      style={{ width: `${Math.min(rssbEmpRate, 100)}%` }}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <div className="mb-2 flex items-center justify-between text-sm">
+                    <span className="text-slate-600 dark:text-slate-300">RSSB Employer</span>
+                    <span className="font-mono font-semibold text-blue-600 dark:text-blue-400">
+                      {formatCurrency(rssbEmployerTotal)}
+                    </span>
+                  </div>
+                  <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800">
+                    <div
+                      className="h-2 rounded-full bg-blue-500 transition-all duration-500"
+                      style={{ width: `${Math.min(employerRate, 100)}%` }}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <div className="mb-2 flex items-center justify-between text-sm">
+                    <span className="text-slate-600 dark:text-slate-300 font-medium">Net Pay (Take-home)</span>
+                    <span className="font-mono font-semibold text-emerald-600 dark:text-emerald-400">
+                      {formatCurrency(run.total_net)}
+                    </span>
+                  </div>
+                  <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800">
+                    <div
+                      className="h-2 rounded-full bg-emerald-500 transition-all duration-500"
+                      style={{ width: `${Math.min(netPayRate, 100)}%` }}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-950 dark:text-white">
+                  <FileText className="h-4 w-4 text-blue-500" />
+                  Run Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="grid grid-cols-2 gap-3">
+                <div className="rounded-lg border border-slate-200 p-3 dark:border-slate-800">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Payment Date</p>
+                  <p className="mt-1 font-semibold text-slate-950 dark:text-white">
+                    {formatDate(run.payment_date)}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-slate-200 p-3 dark:border-slate-800">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Status</p>
+                  <div className="mt-1">
+                    {getStatusBadge(run.status)}
+                  </div>
+                </div>
+                {run.journal_entry_id && (
+                  <div className="col-span-2 rounded-lg border border-slate-200 p-3 dark:border-slate-800">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">
+                      Linked Journal Entry
+                    </p>
+                    <div className="flex items-center gap-3">
+                      <Badge variant="outline" className="font-mono dark:border-slate-600 dark:text-slate-200">
+                        {typeof run.journal_entry_id === "object"
+                          ? (run.journal_entry_id as any).entryNumber
+                          : run.journal_entry_id}
+                      </Badge>
+                      {run.posted_by && (
+                        <span className="text-xs text-slate-500 dark:text-slate-400">
+                          by {typeof run.posted_by === "object"
+                            ? (run.posted_by as any).name
+                            : run.posted_by}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {run.notes && (
+                  <div className="col-span-2 rounded-lg border border-slate-200 p-3 dark:border-slate-800">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Notes</p>
+                    <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">{run.notes}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Account References */}
+          <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-950 dark:text-white">
+                <Building2 className="h-4 w-4 text-slate-500" />
+                Account References
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="rounded-lg border border-slate-200 p-3 dark:border-slate-800">
+                  <div className="flex items-center gap-2 mb-1">
+                    <CreditCard className="h-3.5 w-3.5 text-blue-500" />
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Bank Account</p>
+                  </div>
+                  <p className="font-medium text-sm text-slate-950 dark:text-white truncate">
+                    {getAccountLabel(run.bank_account_id)}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-slate-200 p-3 dark:border-slate-800">
+                  <div className="flex items-center gap-2 mb-1">
+                    <DollarSign className="h-3.5 w-3.5 text-emerald-500" />
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Salary Expense</p>
+                  </div>
+                  <p className="font-medium text-sm text-slate-950 dark:text-white truncate">
+                    {getAccountLabel(run.salary_account_id)}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-slate-200 p-3 dark:border-slate-800">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Shield className="h-3.5 w-3.5 text-red-500" />
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Tax Payable</p>
+                  </div>
+                  <p className="font-medium text-sm text-slate-950 dark:text-white truncate">
+                    {getAccountLabel(run.tax_payable_account_id)}
+                  </p>
+                </div>
+                {run.other_deductions_account_id && (
+                  <div className="rounded-lg border border-slate-200 p-3 dark:border-slate-800">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Hash className="h-3.5 w-3.5 text-orange-500" />
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Other Deductions</p>
+                    </div>
+                    <p className="font-medium text-sm text-slate-950 dark:text-white truncate">
+                      {getAccountLabel(run.other_deductions_account_id)}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Remittance & Compliance */}
+          {run.status === "posted" && (
+            <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-950 dark:text-white">
+                  <Shield className="h-4 w-4 text-indigo-500" />
+                  Remittance & Compliance
+                </CardTitle>
+                <CardDescription className="text-slate-500 dark:text-slate-400">
+                  Track PAYE and RSSB remittances to RRA / RSSB
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* PAYE Remittance */}
+                  <div className={`rounded-xl border-2 p-5 transition-all ${
+                    run.remittance?.paye?.remitted
+                      ? "border-green-200 bg-green-50/50 dark:border-green-800/50 dark:bg-green-950/20"
+                      : "border-slate-200 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/50"
+                  }`}>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className={`flex h-8 w-8 items-center justify-center rounded-full ${
+                          run.remittance?.paye?.remitted
+                            ? "bg-green-100 dark:bg-green-900/40"
+                            : "bg-slate-100 dark:bg-slate-800"
+                        }`}>
+                          {run.remittance?.paye?.remitted ? (
+                            <BadgeCheck className="h-4 w-4 text-green-600 dark:text-green-400" />
+                          ) : (
+                            <Clock className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+                          )}
+                        </div>
+                        <div>
+                          <span className="font-semibold text-slate-950 dark:text-white">PAYE</span>
+                          <Badge
+                            variant={run.remittance?.paye?.remitted ? "default" : "secondary"}
+                            className={`ml-2 text-xs ${
+                              run.remittance?.paye?.remitted
+                                ? "bg-green-600 text-white dark:bg-green-500"
+                                : ""
+                            }`}
+                          >
+                            {run.remittance?.paye?.remitted ? "Remitted" : "Pending"}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-sm space-y-1 text-slate-600 dark:text-slate-400">
+                      <p>Amount: <span className="font-semibold text-slate-950 dark:text-white">{formatCurrency(run.remittance?.paye?.amount || run.total_tax)}</span></p>
+                      {run.remittance?.paye?.remitted && (
+                        <>
+                          <p>Date: {formatDate(run.remittance.paye.remitted_date)}</p>
+                          <p>Ref: {run.remittance.paye.reference_no || "-"}</p>
+                        </>
+                      )}
+                    </div>
+                    {!run.remittance?.paye?.remitted && hasPermission("admin") && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full mt-3 gap-2"
+                        onClick={() => setShowRemitPayeDialog(true)}
+                      >
+                        <CheckCircle className="h-4 w-4" />
+                        Mark PAYE Remitted
+                      </Button>
                     )}
-                    Create Payroll Run for{" "}
-                    {MONTH_NAMES[selectedPeriod.month - 1]}{" "}
-                    {selectedPeriod.year}
-                  </Button>
+                  </div>
+
+                  {/* RSSB Remittance */}
+                  <div className={`rounded-xl border-2 p-5 transition-all ${
+                    run.remittance?.rssb?.remitted
+                      ? "border-green-200 bg-green-50/50 dark:border-green-800/50 dark:bg-green-950/20"
+                      : "border-slate-200 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/50"
+                  }`}>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className={`flex h-8 w-8 items-center justify-center rounded-full ${
+                          run.remittance?.rssb?.remitted
+                            ? "bg-green-100 dark:bg-green-900/40"
+                            : "bg-slate-100 dark:bg-slate-800"
+                        }`}>
+                          {run.remittance?.rssb?.remitted ? (
+                            <BadgeCheck className="h-4 w-4 text-green-600 dark:text-green-400" />
+                          ) : (
+                            <Clock className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+                          )}
+                        </div>
+                        <div>
+                          <span className="font-semibold text-slate-950 dark:text-white">RSSB</span>
+                          <Badge
+                            variant={run.remittance?.rssb?.remitted ? "default" : "secondary"}
+                            className={`ml-2 text-xs ${
+                              run.remittance?.rssb?.remitted
+                                ? "bg-green-600 text-white dark:bg-green-500"
+                                : ""
+                            }`}
+                          >
+                            {run.remittance?.rssb?.remitted ? "Remitted" : "Pending"}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-sm space-y-1 text-slate-600 dark:text-slate-400">
+                      <p>Amount: <span className="font-semibold text-slate-950 dark:text-white">{formatCurrency(
+                        run.remittance?.rssb?.amount ||
+                        run.lines.reduce((s, l) => s + (l.rssb_employee_total || 0) + (l.rssb_employer_total || 0), 0)
+                      )}</span></p>
+                      {run.remittance?.rssb?.remitted && (
+                        <>
+                          <p>Date: {formatDate(run.remittance.rssb.remitted_date)}</p>
+                          <p>Ref: {run.remittance.rssb.reference_no || "-"}</p>
+                        </>
+                      )}
+                    </div>
+                    {!run.remittance?.rssb?.remitted && hasPermission("admin") && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full mt-3 gap-2"
+                        onClick={() => setShowRemitRssbDialog(true)}
+                      >
+                        <CheckCircle className="h-4 w-4" />
+                        Mark RSSB Remitted
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
           )}
-        </div>
-      </Layout>
-    );
-  }
 
-  if (!run) {
-    return (
-      <Layout>
-        <div className="container mx-auto py-6">
-          <div className="flex flex-col items-center py-12">
-            <AlertCircle className="h-12 w-12 mb-4 text-muted-foreground" />
-            <p className="text-muted-foreground">Payroll run not found</p>
+          {/* Employee Lines Table */}
+          <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <CardHeader className="flex flex-row items-start justify-between gap-4 pb-3">
+              <div className="min-w-0">
+                <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-950 dark:text-white">
+                  <Users className="h-4 w-4 text-blue-500" />
+                  {t("payroll.run.employeeLines")}
+                </CardTitle>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  Individual employee pay breakdown for this payroll run
+                </p>
+              </div>
+              <Badge variant="outline" className="hidden sm:inline-flex dark:border-slate-700 dark:text-slate-300">
+                {run.employee_count} employees
+              </Badge>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-slate-50 hover:bg-slate-50 dark:bg-slate-900/70 dark:hover:bg-slate-900/70">
+                    <TableHead className="dark:text-slate-200">{t("payroll.employeeName")}</TableHead>
+                    <TableHead className="dark:text-slate-200">{t("payroll.employeeId")}</TableHead>
+                    <TableHead className="text-right dark:text-slate-200">
+                      {t("payroll.grossSalary")}
+                    </TableHead>
+                    <TableHead className="text-right dark:text-slate-200">
+                      {t("payroll.paye")}
+                    </TableHead>
+                    <TableHead className="text-right dark:text-slate-200">
+                      {t("payroll.rssbEmployee")}
+                    </TableHead>
+                    <TableHead className="text-right dark:text-slate-200">
+                      {t("payroll.rssbEmployer")}
+                    </TableHead>
+                    <TableHead className="text-right dark:text-slate-200">
+                      {t("payroll.netPay")}
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {run.lines.map((line, index) => (
+                    <TableRow key={index} className="dark:border-slate-800">
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-slate-100 text-sm font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                            {line.employee_name?.split(" ").map((n: string) => n.charAt(0)).join("").slice(0, 2)}
+                          </div>
+                          <span className="font-medium text-slate-950 dark:text-white">
+                            {line.employee_name}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-slate-500 dark:text-slate-400">
+                        {line.employee_id}
+                      </TableCell>
+                      <TableCell className="text-right dark:text-slate-200">
+                        {formatCurrency(line.gross_salary)}
+                      </TableCell>
+                      <TableCell className="text-right text-red-600 dark:text-red-400">
+                        {formatCurrency(line.tax_deduction)}
+                      </TableCell>
+                      <TableCell className="text-right text-orange-600 dark:text-orange-400">
+                        {formatCurrency(line.other_deductions)}
+                      </TableCell>
+                      <TableCell className="text-right text-blue-600 dark:text-blue-400">
+                        {formatCurrency(line.rssb_employer_total)}
+                      </TableCell>
+                      <TableCell className="text-right font-semibold text-emerald-600 dark:text-emerald-400">
+                        {formatCurrency(line.net_pay)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {/* Totals row */}
+                  <TableRow className="bg-slate-50 font-bold dark:bg-slate-900/70 border-t-2 border-slate-300 dark:border-slate-600">
+                    <TableCell colSpan={2} className="text-slate-950 dark:text-white">
+                      <span className="flex items-center gap-2">
+                        <div className="h-1.5 w-1.5 rounded-full bg-blue-500" />
+                        TOTAL
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right text-slate-950 dark:text-white">
+                      {formatCurrency(run.total_gross)}
+                    </TableCell>
+                    <TableCell className="text-right text-red-600 dark:text-red-400">
+                      {formatCurrency(run.total_tax)}
+                    </TableCell>
+                    <TableCell className="text-right text-orange-600 dark:text-orange-400">
+                      {formatCurrency(run.total_other_deductions)}
+                    </TableCell>
+                    <TableCell className="text-right text-blue-600 dark:text-blue-400">
+                      {formatCurrency(rssbEmployerTotal)}
+                    </TableCell>
+                    <TableCell className="text-right text-emerald-600 dark:text-emerald-400">
+                      {formatCurrency(run.total_net)}
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* ═══ Dialogs ═══ */}
+
+      {/* Journal Preview Dialog */}
+      <Dialog open={showPreview} onOpenChange={setShowPreview}>
+        <DialogContent className="max-w-2xl bg-white dark:bg-slate-900 dark:border-slate-800">
+          <DialogHeader>
+            <DialogTitle className="dark:text-white">{t("payroll.run.journalPreview")}</DialogTitle>
+            <DialogDescription className="dark:text-slate-400">
+              Preview of journal entry that will be created when posting.
+            </DialogDescription>
+          </DialogHeader>
+          {preview && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-3 gap-4 text-sm">
+                <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-800">
+                  <p className="text-slate-500 dark:text-slate-400">Employees</p>
+                  <p className="font-bold dark:text-white">{preview.employeeCount}</p>
+                </div>
+                <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-800">
+                  <p className="text-slate-500 dark:text-slate-400">Total Debit</p>
+                  <p className="font-bold dark:text-white">
+                    {formatCurrency(preview.lines.reduce((s, l) => s + l.debit, 0))}
+                  </p>
+                </div>
+                <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-800">
+                  <p className="text-slate-500 dark:text-slate-400">Total Credit</p>
+                  <p className="font-bold dark:text-white">
+                    {formatCurrency(preview.lines.reduce((s, l) => s + l.credit, 0))}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge
+                  variant={preview.isBalanced ? "default" : "destructive"}
+                  className={preview.isBalanced ? "bg-green-600 dark:bg-green-500" : ""}
+                >
+                  {preview.isBalanced
+                    ? t("payroll.run.balanced")
+                    : t("payroll.run.notBalanced")}
+                </Badge>
+              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow className="dark:border-slate-700">
+                    <TableHead className="dark:text-slate-200">{t("payroll.run.accountCode")}</TableHead>
+                    <TableHead className="dark:text-slate-200">{t("payroll.run.accountName")}</TableHead>
+                    <TableHead className="dark:text-slate-200">{t("payroll.run.description")}</TableHead>
+                    <TableHead className="text-right dark:text-slate-200">
+                      {t("payroll.run.debit")}
+                    </TableHead>
+                    <TableHead className="text-right dark:text-slate-200">
+                      {t("payroll.run.credit")}
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {preview.lines.map((line, i) => (
+                    <TableRow key={i} className="dark:border-slate-700">
+                      <TableCell className="font-mono dark:text-slate-200">
+                        {line.accountCode}
+                      </TableCell>
+                      <TableCell className="dark:text-slate-300">{line.accountName}</TableCell>
+                      <TableCell className="text-sm text-slate-500 dark:text-slate-400">
+                        {line.description}
+                      </TableCell>
+                      <TableCell className="text-right dark:text-slate-200">
+                        {line.debit > 0 ? formatCurrency(line.debit) : "-"}
+                      </TableCell>
+                      <TableCell className="text-right dark:text-slate-200">
+                        {line.credit > 0 ? formatCurrency(line.credit) : "-"}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  <TableRow className="font-bold bg-slate-50 dark:bg-slate-800">
+                    <TableCell colSpan={3} className="dark:text-white">TOTAL</TableCell>
+                    <TableCell className="text-right dark:text-white">
+                      {formatCurrency(preview.lines.reduce((s, l) => s + l.debit, 0))}
+                    </TableCell>
+                    <TableCell className="text-right dark:text-white">
+                      {formatCurrency(preview.lines.reduce((s, l) => s + l.credit, 0))}
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowPreview(false)} className="dark:border-slate-700 dark:text-slate-200">
+              {t("common.close")}
+            </Button>
+            {run.status === "draft" && (
+              <Button
+                onClick={() => {
+                  setShowPreview(false);
+                  setShowPostDialog(true);
+                }}
+                className="gap-2 bg-green-600 hover:bg-green-700"
+              >
+                <CheckCircle className="h-4 w-4" />
+                {t("payroll.run.postRun")}
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Post Confirmation Dialog */}
+      <Dialog open={showPostDialog} onOpenChange={setShowPostDialog}>
+        <DialogContent className="bg-white dark:bg-slate-900 dark:border-slate-800">
+          <DialogHeader>
+            <DialogTitle className="dark:text-white">{t("payroll.run.postConfirmTitle")}</DialogTitle>
+            <DialogDescription className="dark:text-slate-400">
+              {t("payroll.run.postConfirmMessage")}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
             <Button
               variant="outline"
-              className="mt-4"
-              onClick={() => navigate("/payroll-runs")}
+              onClick={() => setShowPostDialog(false)}
+              className="dark:border-slate-700 dark:text-slate-200"
             >
-              <ArrowLeft className="mr-2 h-4 w-4" /> Back to Payroll Runs
+              {t("common.cancel")}
             </Button>
-          </div>
-        </div>
-      </Layout>
-    );
-  }
+            <Button onClick={handlePost} disabled={submitting} className="bg-green-600 hover:bg-green-700">
+              {submitting && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              {t("payroll.run.postRun")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-  return (
-    <Layout>
-      <div className="container mx-auto py-6 space-y-6 bg-gray-50 dark:bg-slate-900 min-h-screen">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={() => navigate("/payroll-runs")} className="dark:text-slate-300 dark:hover:bg-slate-700">
-              <ArrowLeft className="h-4 w-4" />
+      {/* Reverse Confirmation Dialog */}
+      <Dialog open={showReverseDialog} onOpenChange={setShowReverseDialog}>
+        <DialogContent className="bg-white dark:bg-slate-900 dark:border-slate-800">
+          <DialogHeader>
+            <DialogTitle className="dark:text-white">{t("payroll.run.reverseConfirmTitle")}</DialogTitle>
+            <DialogDescription className="dark:text-slate-400">
+              {t("payroll.run.reverseConfirmMessage")}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div className="space-y-1">
+              <Label className="dark:text-slate-200">{t("payroll.run.reversalReason")}</Label>
+              <Input
+                value={reversalReason}
+                onChange={(e) => setReversalReason(e.target.value)}
+                placeholder="Enter reason for reversal..."
+                className="bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowReverseDialog(false)}
+              className="dark:border-slate-700 dark:text-slate-200"
+            >
+              {t("common.cancel")}
             </Button>
-            <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold font-mono dark:text-white">
-                  {run.reference_no}
-                </h1>
-                {getStatusBadge(run.status)}
-              </div>
-              <p className="text-sm text-muted-foreground dark:text-slate-400">
-                {formatDate(run.pay_period_start)} -{" "}
-                {formatDate(run.pay_period_end)}
+            <Button
+              variant="destructive"
+              onClick={handleReverse}
+              disabled={submitting}
+            >
+              {submitting && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              {t("payroll.run.reverseRun")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Remit PAYE Dialog */}
+      <Dialog open={showRemitPayeDialog} onOpenChange={setShowRemitPayeDialog}>
+        <DialogContent className="bg-white dark:bg-slate-900 dark:border-slate-800">
+          <DialogHeader>
+            <DialogTitle className="dark:text-white">Mark PAYE as Remitted</DialogTitle>
+            <DialogDescription className="dark:text-slate-400">
+              Record PAYE remittance to RRA for this payroll run.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-1">
+              <Label className="dark:text-slate-200">Remittance Date</Label>
+              <Input
+                type="date"
+                value={remitForm.remitted_date}
+                onChange={(e) => setRemitForm({ ...remitForm, remitted_date: e.target.value })}
+                className="bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="dark:text-slate-200">Reference / Receipt No</Label>
+              <Input
+                placeholder="e.g. RRA-123456"
+                value={remitForm.reference_no}
+                onChange={(e) => setRemitForm({ ...remitForm, reference_no: e.target.value })}
+                className="bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="dark:text-slate-200">Amount (RWF)</Label>
+              <Input
+                type="number"
+                placeholder={run?.total_tax?.toString()}
+                value={remitForm.amount}
+                onChange={(e) => setRemitForm({ ...remitForm, amount: e.target.value })}
+                className="bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700"
+              />
+              <p className="text-xs text-slate-400 dark:text-slate-500">Leave blank to use run total: {formatCurrency(run?.total_tax)}</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRemitPayeDialog(false)} className="dark:border-slate-700 dark:text-slate-200">
+              {t("common.cancel")}
+            </Button>
+            <Button onClick={handleRemitPaye} disabled={submitting} className="bg-green-600 hover:bg-green-700">
+              {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Confirm Remittance
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Remit RSSB Dialog */}
+      <Dialog open={showRemitRssbDialog} onOpenChange={setShowRemitRssbDialog}>
+        <DialogContent className="bg-white dark:bg-slate-900 dark:border-slate-800">
+          <DialogHeader>
+            <DialogTitle className="dark:text-white">Mark RSSB as Remitted</DialogTitle>
+            <DialogDescription className="dark:text-slate-400">
+              Record RSSB contribution remittance for this payroll run.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-1">
+              <Label className="dark:text-slate-200">Remittance Date</Label>
+              <Input
+                type="date"
+                value={remitForm.remitted_date}
+                onChange={(e) => setRemitForm({ ...remitForm, remitted_date: e.target.value })}
+                className="bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="dark:text-slate-200">Reference / Receipt No</Label>
+              <Input
+                placeholder="e.g. RSSB-789012"
+                value={remitForm.reference_no}
+                onChange={(e) => setRemitForm({ ...remitForm, reference_no: e.target.value })}
+                className="bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="dark:text-slate-200">Amount (RWF)</Label>
+              <Input
+                type="number"
+                value={remitForm.amount}
+                onChange={(e) => setRemitForm({ ...remitForm, amount: e.target.value })}
+                className="bg-white dark:bg-slate-800 dark:text-white dark:border-slate-700"
+              />
+              <p className="text-xs text-slate-400 dark:text-slate-500">
+                Total RSSB (Employee + Employer): {formatCurrency(
+                  run?.lines?.reduce((s, l) => s + (l.rssb_employee_total || 0) + (l.rssb_employer_total || 0), 0) || 0
+                )}
               </p>
             </div>
           </div>
-          <div className="flex gap-2">
-            {run.status === "draft" && (
-              <>
-                <Button
-                  variant="outline"
-                  onClick={handlePreview}
-                  disabled={previewLoading}
-                >
-                  {previewLoading ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Eye className="mr-2 h-4 w-4" />
-                  )}
-                  {t("payroll.run.previewJournal")}
-                </Button>
-                <Button onClick={() => setShowPostDialog(true)}>
-                  <CheckCircle className="mr-2 h-4 w-4" />
-                  {t("payroll.run.postRun")}
-                </Button>
-              </>
-            )}
-            {run.status === "posted" && (
-              <Button
-                variant="outline"
-                onClick={() => setShowReverseDialog(true)}
-              >
-                <RotateCcw className="mr-2 h-4 w-4" />
-                {t("payroll.run.reverseRun")}
-              </Button>
-            )}
-          </div>
-        </div>
-
-        {/* Aggregated Totals */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          <Card className="dark:bg-slate-800">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center gap-2 dark:text-slate-200">
-                <Users className="h-4 w-4 text-muted-foreground dark:text-slate-400" />{" "}
-                {t("payroll.employees")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold dark:text-white">{run.employee_count}</div>
-            </CardContent>
-          </Card>
-          <Card className="dark:bg-slate-800">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center gap-2 dark:text-slate-200">
-                <DollarSign className="h-4 w-4 text-muted-foreground dark:text-slate-400" />{" "}
-                {t("payroll.totalGross")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold dark:text-white">
-                {formatCurrency(run.total_gross)}
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="dark:bg-slate-800">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-red-600 dark:text-red-400">
-                {t("payroll.totalPAYE")} + RSSB
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-red-600 dark:text-red-400">
-                {formatCurrency(run.total_tax + run.total_other_deductions)}
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="dark:bg-slate-800">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-green-600 dark:text-green-400">
-                {t("payroll.totalNet")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                {formatCurrency(run.total_net)}
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="dark:bg-slate-800">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium dark:text-slate-200">
-                {t("payroll.paymentDate")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-lg font-bold dark:text-white">
-                {formatDate(run.payment_date)}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Account References */}
-        <Card className="dark:bg-slate-800">
-          <CardHeader>
-            <CardTitle className="text-sm font-medium flex items-center gap-2 dark:text-white">
-              <Building2 className="h-4 w-4" /> Account References
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
-                <p className="text-xs text-muted-foreground dark:text-slate-400">Bank Account</p>
-                <p className="font-medium dark:text-white">
-                  {getAccountLabel(run.bank_account_id)}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground dark:text-slate-400">Salary Expense</p>
-                <p className="font-medium dark:text-white">
-                  {getAccountLabel(run.salary_account_id)}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground dark:text-slate-400">Tax Payable</p>
-                <p className="font-medium dark:text-white">
-                  {getAccountLabel(run.tax_payable_account_id)}
-                </p>
-              </div>
-              {run.other_deductions_account_id && (
-                <div>
-                  <p className="text-xs text-muted-foreground dark:text-slate-400">
-                    Other Deductions
-                  </p>
-                  <p className="font-medium dark:text-white">
-                    {getAccountLabel(run.other_deductions_account_id)}
-                  </p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Linked Journal Entry */}
-        {run.journal_entry_id && (
-          <Card className="dark:bg-slate-800">
-            <CardHeader>
-              <CardTitle className="text-sm font-medium flex items-center gap-2 dark:text-white">
-                <FileText className="h-4 w-4" />{" "}
-                {t("payroll.run.linkedJournalEntry")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-4">
-                <div>
-                  <p className="text-xs text-muted-foreground dark:text-slate-400">
-                    {t("payroll.run.entryNumber")}
-                  </p>
-                  <p className="font-mono font-bold dark:text-white">
-                    {typeof run.journal_entry_id === "object"
-                      ? (run.journal_entry_id as any).entryNumber
-                      : run.journal_entry_id}
-                  </p>
-                </div>
-                {run.posted_by && (
-                  <div>
-                    <p className="text-xs text-muted-foreground dark:text-slate-400">Posted By</p>
-                    <p className="font-medium dark:text-white">
-                      {typeof run.posted_by === "object"
-                        ? (run.posted_by as any).name
-                        : run.posted_by}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Employee Lines */}
-        <Card className="dark:bg-slate-800">
-          <CardHeader>
-            <CardTitle className="text-sm font-medium flex items-center gap-2 dark:text-white">
-              <Users className="h-4 w-4" /> {t("payroll.run.employeeLines")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow className="dark:bg-slate-700/50 dark:border-slate-600">
-                  <TableHead className="dark:text-slate-200">{t("payroll.employeeName")}</TableHead>
-                  <TableHead className="dark:text-slate-200">{t("payroll.employeeId")}</TableHead>
-                  <TableHead className="text-right dark:text-slate-200">
-                    {t("payroll.grossSalary")}
-                  </TableHead>
-                  <TableHead className="text-right dark:text-slate-200">
-                    {t("payroll.paye")}
-                  </TableHead>
-                  <TableHead className="text-right dark:text-slate-200">
-                    {t("payroll.rssbEmployee")}
-                  </TableHead>
-                  <TableHead className="text-right dark:text-slate-200">
-                    {t("payroll.rssbEmployer")}
-                  </TableHead>
-                  <TableHead className="text-right dark:text-slate-200">
-                    {t("payroll.netPay")}
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {run.lines.map((line, index) => (
-                  <TableRow key={index} className="dark:border-slate-600">
-                    <TableCell className="font-medium dark:text-white">
-                      {line.employee_name}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground dark:text-slate-400">
-                      {line.employee_id}
-                    </TableCell>
-                    <TableCell className="text-right dark:text-slate-200">
-                      {formatCurrency(line.gross_salary)}
-                    </TableCell>
-                    <TableCell className="text-right text-red-600 dark:text-red-400">
-                      {formatCurrency(line.tax_deduction)}
-                    </TableCell>
-                    <TableCell className="text-right text-orange-600 dark:text-orange-400">
-                      {formatCurrency(line.other_deductions)}
-                    </TableCell>
-                    <TableCell className="text-right text-blue-600 dark:text-blue-400">
-                      {formatCurrency(line.rssb_employer_total)}
-                    </TableCell>
-                    <TableCell className="text-right font-semibold text-green-600 dark:text-green-400">
-                      {formatCurrency(line.net_pay)}
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {/* Totals row */}
-                <TableRow className="bg-muted/50 font-bold dark:bg-slate-700/50">
-                  <TableCell colSpan={2} className="dark:text-white">TOTAL</TableCell>
-                  <TableCell className="text-right dark:text-white">
-                    {formatCurrency(run.total_gross)}
-                  </TableCell>
-                  <TableCell className="text-right text-red-600 dark:text-red-400">
-                    {formatCurrency(run.total_tax)}
-                  </TableCell>
-                  <TableCell className="text-right text-orange-600 dark:text-orange-400">
-                    {formatCurrency(run.total_other_deductions)}
-                  </TableCell>
-                  <TableCell className="text-right text-blue-600 dark:text-blue-400">
-                    {formatCurrency(
-                      run.lines.reduce((s, l) => s + (l.rssb_employer_total || 0), 0),
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right text-green-600 dark:text-green-400">
-                    {formatCurrency(run.total_net)}
-                  </TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-
-        {/* Remittance Tracking */}
-        {run.status === "posted" && (
-          <Card className="dark:bg-slate-800">
-            <CardHeader>
-              <CardTitle className="text-base font-medium dark:text-white">Remittance & Compliance</CardTitle>
-              <CardDescription className="dark:text-slate-400">
-                Track PAYE and RSSB remittances to RRA / RSSB
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* PAYE Remittance */}
-                <div className="border rounded-lg p-4 space-y-3 dark:border-slate-700">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Badge variant={run.remittance?.paye?.remitted ? "default" : "secondary"}>
-                        {run.remittance?.paye?.remitted ? "Remitted" : "Pending"}
-                      </Badge>
-                      <span className="font-semibold dark:text-white">PAYE</span>
-                    </div>
-                    {run.remittance?.paye?.remitted ? (
-                      <CheckCircle className="h-5 w-5 text-green-500" />
-                    ) : (
-                      <XCircle className="h-5 w-5 text-muted-foreground" />
-                    )}
-                  </div>
-                  <div className="text-sm space-y-1">
-                    <p className="text-muted-foreground">Amount: {formatCurrency(run.remittance?.paye?.amount || run.total_tax)}</p>
-                    {run.remittance?.paye?.remitted && (
-                      <>
-                        <p className="text-muted-foreground">Date: {formatDate(run.remittance.paye.remitted_date)}</p>
-                        <p className="text-muted-foreground">Ref: {run.remittance.paye.reference_no || "-"}</p>
-                      </>
-                    )}
-                  </div>
-                  {!run.remittance?.paye?.remitted && hasPermission("admin") && (
-                    <Button variant="outline" size="sm" className="w-full" onClick={() => setShowRemitPayeDialog(true)}>
-                      <CheckCircle className="mr-2 h-4 w-4" />
-                      Mark PAYE Remitted
-                    </Button>
-                  )}
-                </div>
-
-                {/* RSSB Remittance */}
-                <div className="border rounded-lg p-4 space-y-3 dark:border-slate-700">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Badge variant={run.remittance?.rssb?.remitted ? "default" : "secondary"}>
-                        {run.remittance?.rssb?.remitted ? "Remitted" : "Pending"}
-                      </Badge>
-                      <span className="font-semibold dark:text-white">RSSB</span>
-                    </div>
-                    {run.remittance?.rssb?.remitted ? (
-                      <CheckCircle className="h-5 w-5 text-green-500" />
-                    ) : (
-                      <XCircle className="h-5 w-5 text-muted-foreground" />
-                    )}
-                  </div>
-                  <div className="text-sm space-y-1">
-                    <p className="text-muted-foreground">
-                      Amount: {formatCurrency(
-                        run.remittance?.rssb?.amount ||
-                        run.lines.reduce((s, l) => s + (l.rssb_employee_total || 0) + (l.rssb_employer_total || 0), 0)
-                      )}
-                    </p>
-                    {run.remittance?.rssb?.remitted && (
-                      <>
-                        <p className="text-muted-foreground">Date: {formatDate(run.remittance.rssb.remitted_date)}</p>
-                        <p className="text-muted-foreground">Ref: {run.remittance.rssb.reference_no || "-"}</p>
-                      </>
-                    )}
-                  </div>
-                  {!run.remittance?.rssb?.remitted && hasPermission("admin") && (
-                    <Button variant="outline" size="sm" className="w-full" onClick={() => setShowRemitRssbDialog(true)}>
-                      <CheckCircle className="mr-2 h-4 w-4" />
-                      Mark RSSB Remitted
-                    </Button>
-                  )}
-                </div>
-              </div>
-
-              {/* Bank Transfer Export */}
-              {hasAnyPermission(["admin", "manager"]) && (
-                <Button variant="secondary" className="w-full" onClick={handleBankTransfer} disabled={submitting}>
-                  <Download className="mr-2 h-4 w-4" />
-                  Export Bank Transfer File (CSV)
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Notes */}
-        {run.notes && (
-          <Card className="dark:bg-slate-800">
-            <CardHeader>
-              <CardTitle className="text-sm font-medium dark:text-white">Notes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground dark:text-slate-400">{run.notes}</p>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Journal Preview Dialog */}
-        <Dialog open={showPreview} onOpenChange={setShowPreview}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>{t("payroll.run.journalPreview")}</DialogTitle>
-              <DialogDescription>
-                Preview of journal entry that will be created when posting.
-              </DialogDescription>
-            </DialogHeader>
-            {preview && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-3 gap-4 text-sm">
-                  <div>
-                    <p className="text-muted-foreground">Employees</p>
-                    <p className="font-bold">{preview.employeeCount}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Total Debit</p>
-                    <p className="font-bold">
-                      {formatCurrency(
-                        preview.lines.reduce((s, l) => s + l.debit, 0),
-                      )}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Total Credit</p>
-                    <p className="font-bold">
-                      {formatCurrency(
-                        preview.lines.reduce((s, l) => s + l.credit, 0),
-                      )}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge
-                    variant={preview.isBalanced ? "default" : "destructive"}
-                    className={preview.isBalanced ? "bg-green-500" : ""}
-                  >
-                    {preview.isBalanced
-                      ? t("payroll.run.balanced")
-                      : t("payroll.run.notBalanced")}
-                  </Badge>
-                </div>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{t("payroll.run.accountCode")}</TableHead>
-                      <TableHead>{t("payroll.run.accountName")}</TableHead>
-                      <TableHead>{t("payroll.run.description")}</TableHead>
-                      <TableHead className="text-right">
-                        {t("payroll.run.debit")}
-                      </TableHead>
-                      <TableHead className="text-right">
-                        {t("payroll.run.credit")}
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {preview.lines.map((line, i) => (
-                      <TableRow key={i}>
-                        <TableCell className="font-mono">
-                          {line.accountCode}
-                        </TableCell>
-                        <TableCell>{line.accountName}</TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {line.description}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {line.debit > 0 ? formatCurrency(line.debit) : "-"}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {line.credit > 0 ? formatCurrency(line.credit) : "-"}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    <TableRow className="font-bold bg-muted/50">
-                      <TableCell colSpan={3}>TOTAL</TableCell>
-                      <TableCell className="text-right">
-                        {formatCurrency(
-                          preview.lines.reduce((s, l) => s + l.debit, 0),
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {formatCurrency(
-                          preview.lines.reduce((s, l) => s + l.credit, 0),
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowPreview(false)}>
-                {t("common.close")}
-              </Button>
-              {run.status === "draft" && (
-                <Button
-                  onClick={() => {
-                    setShowPreview(false);
-                    setShowPostDialog(true);
-                  }}
-                >
-                  <CheckCircle className="mr-2 h-4 w-4" />
-                  {t("payroll.run.postRun")}
-                </Button>
-              )}
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Post Confirmation Dialog */}
-        <Dialog open={showPostDialog} onOpenChange={setShowPostDialog}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{t("payroll.run.postConfirmTitle")}</DialogTitle>
-              <DialogDescription>
-                {t("payroll.run.postConfirmMessage")}
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setShowPostDialog(false)}
-              >
-                {t("common.cancel")}
-              </Button>
-              <Button onClick={handlePost} disabled={submitting}>
-                {submitting && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
-                {t("payroll.run.postRun")}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Reverse Confirmation Dialog */}
-        <Dialog open={showReverseDialog} onOpenChange={setShowReverseDialog}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{t("payroll.run.reverseConfirmTitle")}</DialogTitle>
-              <DialogDescription>
-                {t("payroll.run.reverseConfirmMessage")}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="py-4 space-y-4">
-              <div className="space-y-1">
-                <Label>{t("payroll.run.reversalReason")}</Label>
-                <Input
-                  value={reversalReason}
-                  onChange={(e) => setReversalReason(e.target.value)}
-                  placeholder="Enter reason for reversal..."
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setShowReverseDialog(false)}
-              >
-                {t("common.cancel")}
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleReverse}
-                disabled={submitting}
-              >
-                {submitting && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
-                {t("payroll.run.reverseRun")}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Remit PAYE Dialog */}
-        <Dialog open={showRemitPayeDialog} onOpenChange={setShowRemitPayeDialog}>
-          <DialogContent className="dark:bg-slate-800 dark:border-slate-700">
-            <DialogHeader>
-              <DialogTitle className="dark:text-white">Mark PAYE as Remitted</DialogTitle>
-              <DialogDescription className="dark:text-slate-400">
-                Record PAYE remittance to RRA for this payroll run.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-1">
-                <Label className="dark:text-slate-200">Remittance Date</Label>
-                <Input
-                  type="date"
-                  value={remitForm.remitted_date}
-                  onChange={(e) => setRemitForm({ ...remitForm, remitted_date: e.target.value })}
-                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="dark:text-slate-200">Reference / Receipt No</Label>
-                <Input
-                  placeholder="e.g. RRA-123456"
-                  value={remitForm.reference_no}
-                  onChange={(e) => setRemitForm({ ...remitForm, reference_no: e.target.value })}
-                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="dark:text-slate-200">Amount (RWF)</Label>
-                <Input
-                  type="number"
-                  placeholder={run?.total_tax?.toString()}
-                  value={remitForm.amount}
-                  onChange={(e) => setRemitForm({ ...remitForm, amount: e.target.value })}
-                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
-                />
-                <p className="text-xs text-muted-foreground">Leave blank to use run total: {formatCurrency(run?.total_tax)}</p>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowRemitPayeDialog(false)}>
-                {t("common.cancel")}
-              </Button>
-              <Button onClick={handleRemitPaye} disabled={submitting}>
-                {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Confirm Remittance
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Remit RSSB Dialog */}
-        <Dialog open={showRemitRssbDialog} onOpenChange={setShowRemitRssbDialog}>
-          <DialogContent className="dark:bg-slate-800 dark:border-slate-700">
-            <DialogHeader>
-              <DialogTitle className="dark:text-white">Mark RSSB as Remitted</DialogTitle>
-              <DialogDescription className="dark:text-slate-400">
-                Record RSSB contribution remittance for this payroll run.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-1">
-                <Label className="dark:text-slate-200">Remittance Date</Label>
-                <Input
-                  type="date"
-                  value={remitForm.remitted_date}
-                  onChange={(e) => setRemitForm({ ...remitForm, remitted_date: e.target.value })}
-                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="dark:text-slate-200">Reference / Receipt No</Label>
-                <Input
-                  placeholder="e.g. RSSB-789012"
-                  value={remitForm.reference_no}
-                  onChange={(e) => setRemitForm({ ...remitForm, reference_no: e.target.value })}
-                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="dark:text-slate-200">Amount (RWF)</Label>
-                <Input
-                  type="number"
-                  value={remitForm.amount}
-                  onChange={(e) => setRemitForm({ ...remitForm, amount: e.target.value })}
-                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Total RSSB (Employee + Employer): {formatCurrency(
-                    run?.lines?.reduce((s, l) => s + (l.rssb_employee_total || 0) + (l.rssb_employer_total || 0), 0) || 0
-                  )}
-                </p>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowRemitRssbDialog(false)}>
-                {t("common.cancel")}
-              </Button>
-              <Button onClick={handleRemitRssb} disabled={submitting}>
-                {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Confirm Remittance
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRemitRssbDialog(false)} className="dark:border-slate-700 dark:text-slate-200">
+              {t("common.cancel")}
+            </Button>
+            <Button onClick={handleRemitRssb} disabled={submitting} className="bg-green-600 hover:bg-green-700">
+              {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Confirm Remittance
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }
