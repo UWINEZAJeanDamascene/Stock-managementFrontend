@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 import { purchasesApi, suppliersApi } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
@@ -12,6 +12,12 @@ import {
   CheckCircle,
   XCircle,
   Truck,
+  ShoppingCart,
+  Filter,
+  TrendingUp,
+  PackageCheck,
+  Clock,
+  AlertCircle,
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
@@ -31,6 +37,7 @@ import {
   SelectValue,
 } from '@/app/components/ui/select';
 import { Badge } from '@/app/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { useTranslation } from 'react-i18next';
 
 interface PurchaseItem {
@@ -53,6 +60,7 @@ interface Purchase {
   amountPaid: string;
   balance: string;
   items: PurchaseItem[];
+  payments?: { _id?: string; amount?: string; date?: string; method?: string }[];
   createdBy?: { name: string; email: string };
 }
 
@@ -130,42 +138,37 @@ export default function PurchasesListPage() {
     fetchPurchases();
   }, [fetchPurchases]);
 
-  const getStatusBadge = (status: string) => {
-    const config: Record<
-      string,
-      {
-        variant: 'default' | 'secondary' | 'outline' | 'destructive';
-        label: string;
-      }
-    > = {
-      draft: {
-        variant: 'secondary',
-        label: t('purchases.status.draft', 'Draft'),
-      },
-      ordered: {
-        variant: 'outline',
-        label: t('purchases.status.ordered', 'Ordered'),
-      },
-      received: {
-        variant: 'default',
-        label: t('purchases.status.received', 'Received'),
-      },
-      partial: {
-        variant: 'secondary',
-        label: t('purchases.status.partial', 'Partial'),
-      },
-      paid: {
-        variant: 'default',
-        label: t('purchases.status.paid', 'Paid'),
-      },
-      cancelled: {
-        variant: 'destructive',
-        label: t('purchases.status.cancelled', 'Cancelled'),
-      },
+  const stats = useMemo(() => {
+    const total = purchaseList.length;
+    const draft = purchaseList.filter((p) => p.status === 'draft').length;
+    const received = purchaseList.filter((p) => p.status === 'received' || p.status === 'paid').length;
+    const totalValue = purchaseList.reduce((sum, p) => sum + (Number(p.grandTotal) || 0), 0);
+    return { total, draft, received, totalValue };
+  }, [purchaseList]);
+
+  function StatusBadge({ status }: { status: string }) {
+    const styles: Record<string, string> = {
+      draft: 'bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/60',
+      ordered: 'bg-sky-50 text-sky-700 ring-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:ring-sky-900/60',
+      received: 'bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60',
+      partial: 'bg-blue-50 text-blue-700 ring-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60',
+      paid: 'bg-violet-50 text-violet-700 ring-violet-200 dark:bg-violet-950/40 dark:text-violet-300 dark:ring-violet-900/60',
+      cancelled: 'bg-red-50 text-red-700 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900/60',
     };
-    const c = config[status] || { variant: 'outline' as const, label: status };
-    return <Badge variant={c.variant}>{c.label}</Badge>;
-  };
+    const labels: Record<string, string> = {
+      draft: t('purchases.status.draft', 'Draft'),
+      ordered: t('purchases.status.ordered', 'Ordered'),
+      received: t('purchases.status.received', 'Received'),
+      partial: t('purchases.status.partial', 'Partial'),
+      paid: t('purchases.status.paid', 'Paid'),
+      cancelled: t('purchases.status.cancelled', 'Cancelled'),
+    };
+    return (
+      <Badge className={`ring-1 ${styles[status] || 'bg-slate-100 text-slate-700 ring-slate-200'}`} variant="outline">
+        {labels[status] || status}
+      </Badge>
+    );
+  }
 
   const formatCurrency = (amount: string | number) => {
     const num = typeof amount === 'string' ? parseFloat(amount) : amount;
@@ -177,7 +180,7 @@ export default function PurchasesListPage() {
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '-';
-    return new Date(dateStr).toLocaleDateString();
+    return new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
   };
 
   const handleReceive = async (id: string) => {
@@ -201,265 +204,238 @@ export default function PurchasesListPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-6 min-h-screen bg-slate-50 dark:bg-slate-900">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-              {t('purchases.listTitle', 'Direct Purchases')}
-            </h1>
-            <p className="text-muted-foreground">
-              {t(
-                'purchases.listDescription',
-                'Manage direct purchase entries'
-              )}
-            </p>
+      <div className="min-h-screen bg-slate-50 px-3 py-4 dark:bg-slate-950 sm:px-4 sm:py-6 lg:px-8">
+        <div className="mx-auto max-w-[1400px] space-y-6">
+          {/* Hero Header */}
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="flex items-center gap-3">
+                <div className="rounded-xl bg-slate-100 p-2.5 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-800">
+                  <ShoppingCart className="h-6 w-6 text-slate-600 dark:text-slate-300" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold tracking-tight text-slate-950 dark:text-white">
+                    {t('purchases.listTitle', 'Direct Purchases')}
+                  </h1>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                    {t('purchases.listDescription', 'Manage direct purchase entries')}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <Button onClick={() => navigate('/purchases/new')} className="gap-1.5 bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200">
+              <Plus className="h-4 w-4" />
+              {t('purchases.newPurchase', 'New Purchase')}
+            </Button>
           </div>
-          <Button onClick={() => navigate('/purchases/new')}>
-            <Plus className="mr-2 h-4 w-4" />
-            {t('purchases.newPurchase', 'New Purchase')}
-          </Button>
-        </div>
 
-        {/* Filters */}
-        <div className="bg-card dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <label className="text-sm font-medium mb-1 block text-slate-900 dark:text-white">
-                {t('purchases.status', 'Status')}
-              </label>
-              <Select
-                value={statusFilter || 'all'}
-                onValueChange={(v) =>
-                  setStatusFilter(v === 'all' ? '' : v)
-                }
-              >
-                <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600">
-                  <SelectValue
-                    placeholder={t('purchases.allStatuses', 'All Statuses')}
-                  />
-                </SelectTrigger>
-                <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
-                  <SelectItem value="all" className="dark:text-slate-200">
-                    {t('purchases.allStatuses', 'All Statuses')}
-                  </SelectItem>
-                  <SelectItem value="draft" className="dark:text-slate-200">
-                    {t('purchases.status.draft', 'Draft')}
-                  </SelectItem>
-                  <SelectItem value="ordered" className="dark:text-slate-200">
-                    {t('purchases.status.ordered', 'Ordered')}
-                  </SelectItem>
-                  <SelectItem value="received" className="dark:text-slate-200">
-                    {t('purchases.status.received', 'Received')}
-                  </SelectItem>
-                  <SelectItem value="partial" className="dark:text-slate-200">
-                    {t('purchases.status.partial', 'Partial')}
-                  </SelectItem>
-                  <SelectItem value="paid" className="dark:text-slate-200">
-                    {t('purchases.status.paid', 'Paid')}
-                  </SelectItem>
-                  <SelectItem value="cancelled" className="dark:text-slate-200">
-                    {t('purchases.status.cancelled', 'Cancelled')}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-1 block text-slate-900 dark:text-white">
-                {t('purchases.supplier', 'Supplier')}
-              </label>
-              <Select
-                value={supplierFilter || 'all'}
-                onValueChange={(v) =>
-                  setSupplierFilter(v === 'all' ? '' : v)
-                }
-              >
-                <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600">
-                  <SelectValue
-                    placeholder={t('purchases.allSuppliers', 'All Suppliers')}
-                  />
-                </SelectTrigger>
-                <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
-                  <SelectItem value="all" className="dark:text-slate-200">
-                    {t('purchases.allSuppliers', 'All Suppliers')}
-                  </SelectItem>
-                  {suppliers.map((s) => (
-                    <SelectItem key={s._id} value={s._id} className="dark:text-slate-200">
-                      {s.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-1 block text-slate-900 dark:text-white">
-                {t('purchases.dateFrom', 'Date From')}
-              </label>
-              <Input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-                className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-1 block text-slate-900 dark:text-white">
-                {t('purchases.dateTo', 'Date To')}
-              </label>
-              <Input
-                type="date"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-                className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
-              />
-            </div>
+          {/* Stat Tiles */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="flex items-center gap-3 p-4">
+                <div className="rounded-lg bg-slate-50 p-2.5 text-slate-600 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-800">
+                  <FileText className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{t('purchases.total', 'Total')}</p>
+                  <p className="text-lg font-bold text-slate-900 dark:text-white">{stats.total}</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="flex items-center gap-3 p-4">
+                <div className="rounded-lg bg-amber-50 p-2.5 text-amber-600 ring-1 ring-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/60">
+                  <Clock className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{t('purchases.draft', 'Draft')}</p>
+                  <p className="text-lg font-bold text-slate-900 dark:text-white">{stats.draft}</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="flex items-center gap-3 p-4">
+                <div className="rounded-lg bg-emerald-50 p-2.5 text-emerald-600 ring-1 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60">
+                  <PackageCheck className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{t('purchases.received', 'Received / Paid')}</p>
+                  <p className="text-lg font-bold text-slate-900 dark:text-white">{stats.received}</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="flex items-center gap-3 p-4">
+                <div className="rounded-lg bg-violet-50 p-2.5 text-violet-600 ring-1 ring-violet-100 dark:bg-violet-950/40 dark:text-violet-300 dark:ring-violet-900/60">
+                  <TrendingUp className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{t('purchases.totalValue', 'Total Value')}</p>
+                  <p className="text-lg font-bold text-slate-900 dark:text-white">{formatCurrency(stats.totalValue)}</p>
+                </div>
+              </CardContent>
+            </Card>
           </div>
-        </div>
 
-        {/* Table */}
-        <div className="bg-card dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
-          {loading ? (
-            <div className="flex items-center justify-center p-8">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow className="dark:bg-slate-700">
-                  <TableHead className="dark:text-white">
-                    {t('purchases.purchaseNumber', 'Purchase #')}
-                  </TableHead>
-                  <TableHead className="dark:text-white">
-                    {t('purchases.supplier', 'Supplier')}
-                  </TableHead>
-                  <TableHead className="dark:text-white">
-                    {t('purchases.purchaseDate', 'Purchase Date')}
-                  </TableHead>
-                  <TableHead className="dark:text-white">{t('purchases.status', 'Status')}</TableHead>
-                  <TableHead className="text-right dark:text-white">
-                    {t('purchases.totalAmount', 'Total Amount')}
-                  </TableHead>
-                  <TableHead className="text-right dark:text-white">
-                    {t('purchases.balance', 'Balance')}
-                  </TableHead>
-                  <TableHead className="text-right dark:text-white">
-                    {t('purchases.items', 'Items')}
-                  </TableHead>
-                  <TableHead className="text-right dark:text-white">
-                    {t('common.actions', 'Actions')}
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {purchaseList.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={8}
-                      className="text-center py-8 text-muted-foreground dark:text-slate-400"
-                    >
-                      {t('purchases.noPurchases', 'No purchases found')}
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  purchaseList.map((p) => (
-                    <TableRow key={p._id} className="dark:hover:bg-slate-700/50">
-                      <TableCell className="font-medium dark:text-slate-200">
-                        <FileText className="inline-block mr-2 h-4 w-4" />
-                        {p.purchaseNumber || 'N/A'}
-                      </TableCell>
-                      <TableCell className="dark:text-slate-300">{p.supplier?.name || '-'}</TableCell>
-                      <TableCell className="dark:text-slate-300">{formatDate(p.purchaseDate)}</TableCell>
-                      <TableCell>{getStatusBadge(p.status)}</TableCell>
-                      <TableCell className="text-right font-medium dark:text-slate-200">
-                        {formatCurrency(p.grandTotal)}
-                      </TableCell>
-                      <TableCell className="text-right dark:text-slate-300">
-                        {formatCurrency(Number(p.grandTotal) - (p.payments?.reduce((sum, payment) => sum + (Number(payment.amount) || 0), 0) || 0))}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {p.items?.length || 0}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => navigate(`/purchases/${p._id}`)}
-                            title={t('common.view', 'View')}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          {(p.status === 'draft' || p.status === 'ordered') && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleReceive(p._id)}
-                              title={t('purchases.receive', 'Receive')}
-                            >
-                              <Truck className="h-4 w-4 text-green-600" />
-                            </Button>
-                          )}
-                          {p.status !== 'cancelled' && p.status !== 'received' && p.status !== 'paid' && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleCancel(p._id)}
-                              title={t('common.cancel', 'Cancel')}
-                            >
-                              <XCircle className="h-4 w-4 text-destructive" />
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
+          {/* Filters */}
+          <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+                <Filter className="h-4 w-4" />
+                {t('common.filters', 'Filters')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">{t('purchases.status', 'Status')}</label>
+                  <Select value={statusFilter || 'all'} onValueChange={(v) => setStatusFilter(v === 'all' ? '' : v)}>
+                    <SelectTrigger className="h-9 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white">
+                      <SelectValue placeholder={t('purchases.allStatuses', 'All Statuses')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{t('purchases.allStatuses', 'All Statuses')}</SelectItem>
+                      <SelectItem value="draft">{t('purchases.status.draft', 'Draft')}</SelectItem>
+                      <SelectItem value="ordered">{t('purchases.status.ordered', 'Ordered')}</SelectItem>
+                      <SelectItem value="received">{t('purchases.status.received', 'Received')}</SelectItem>
+                      <SelectItem value="partial">{t('purchases.status.partial', 'Partial')}</SelectItem>
+                      <SelectItem value="paid">{t('purchases.status.paid', 'Paid')}</SelectItem>
+                      <SelectItem value="cancelled">{t('purchases.status.cancelled', 'Cancelled')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">{t('purchases.supplier', 'Supplier')}</label>
+                  <Select value={supplierFilter || 'all'} onValueChange={(v) => setSupplierFilter(v === 'all' ? '' : v)}>
+                    <SelectTrigger className="h-9 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white">
+                      <SelectValue placeholder={t('purchases.allSuppliers', 'All Suppliers')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{t('purchases.allSuppliers', 'All Suppliers')}</SelectItem>
+                      {suppliers.map((s) => (
+                        <SelectItem key={s._id} value={s._id}>{s.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">{t('purchases.dateFrom', 'Date From')}</label>
+                  <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="h-9 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white" />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">{t('purchases.dateTo', 'Date To')}</label>
+                  <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="h-9 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Table */}
+          <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            {loading ? (
+              <div className="flex h-64 items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-slate-50 hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-900">
+                      <TableHead className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{t('purchases.purchaseNumber', 'Purchase #')}</TableHead>
+                      <TableHead className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{t('purchases.supplier', 'Supplier')}</TableHead>
+                      <TableHead className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{t('purchases.purchaseDate', 'Date')}</TableHead>
+                      <TableHead className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{t('purchases.status', 'Status')}</TableHead>
+                      <TableHead className="text-right text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{t('purchases.totalAmount', 'Total')}</TableHead>
+                      <TableHead className="text-right text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{t('purchases.balance', 'Balance')}</TableHead>
+                      <TableHead className="text-right text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{t('purchases.items', 'Items')}</TableHead>
+                      <TableHead className="text-right text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{t('common.actions', 'Actions')}</TableHead>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {purchaseList.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="py-10 text-center text-slate-500 dark:text-slate-400">
+                          <AlertCircle className="mx-auto mb-2 h-6 w-6 text-slate-400" />
+                          {t('purchases.noPurchases', 'No purchases found')}
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      purchaseList.map((p) => (
+                        <TableRow key={p._id} className="transition-colors hover:bg-slate-50/60 dark:hover:bg-slate-900/40">
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <FileText className="h-4 w-4 text-slate-400" />
+                              <span className="font-medium text-slate-900 dark:text-white">{p.purchaseNumber || 'N/A'}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-slate-600 dark:text-slate-300">{p.supplier?.name || '-'}</TableCell>
+                          <TableCell className="text-slate-600 dark:text-slate-300">{formatDate(p.purchaseDate)}</TableCell>
+                          <TableCell><StatusBadge status={p.status} /></TableCell>
+                          <TableCell className="text-right font-medium text-slate-900 dark:text-white">{formatCurrency(p.grandTotal)}</TableCell>
+                          <TableCell className="text-right text-slate-600 dark:text-slate-300">
+                            {formatCurrency(
+                              Number(p.grandTotal) -
+                                (p.payments?.reduce((sum: number, payment: { amount?: string } | undefined) => sum + (Number(payment?.amount) || 0), 0) || 0),
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right text-slate-600 dark:text-slate-300">{p.items?.length || 0}</TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-1">
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => navigate(`/purchases/${p._id}`)} title={t('common.view', 'View')}>
+                                <Eye className="h-4 w-4 text-slate-500" />
+                              </Button>
+                              {(p.status === 'draft' || p.status === 'ordered') && (
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleReceive(p._id)} title={t('purchases.receive', 'Receive')}>
+                                  <Truck className="h-4 w-4 text-emerald-600" />
+                                </Button>
+                              )}
+                              {p.status !== 'cancelled' && p.status !== 'received' && p.status !== 'paid' && (
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleCancel(p._id)} title={t('common.cancel', 'Cancel')}>
+                                  <XCircle className="h-4 w-4 text-red-500" />
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </Card>
+
+          {/* Pagination */}
+          {pagination && pagination.totalPages > 1 && (
+            <div className="flex justify-center">
+              <div className="flex items-center gap-2">
+                <button
+                  className={`flex h-9 w-9 items-center justify-center rounded-md text-sm transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 ${pagination.currentPage === 1 ? 'pointer-events-none opacity-50' : ''}`}
+                  onClick={() => setPage(Math.max(1, page - 1))}
+                  disabled={pagination.currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                {Array.from({ length: pagination.totalPages }, (_, i) => (
+                  <button
+                    key={i + 1}
+                    className={`flex h-9 w-9 items-center justify-center rounded-md text-sm transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 ${pagination.currentPage === i + 1 ? 'bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200' : ''}`}
+                    onClick={() => setPage(i + 1)}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+                <button
+                  className={`flex h-9 w-9 items-center justify-center rounded-md text-sm transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 ${pagination.currentPage === pagination.totalPages ? 'pointer-events-none opacity-50' : ''}`}
+                  onClick={() => setPage(page + 1)}
+                  disabled={pagination.currentPage === pagination.totalPages}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
           )}
         </div>
-
-        {/* Pagination */}
-        {pagination && pagination.totalPages > 1 && (
-          <div className="mt-4 flex justify-center">
-            <div className="flex items-center gap-2">
-              <button
-                className={`flex h-9 w-9 items-center justify-center rounded-md text-sm transition-colors hover:bg-accent hover:text-accent-foreground ${
-                  pagination.currentPage === 1
-                    ? 'pointer-events-none opacity-50'
-                    : ''
-                }`}
-                onClick={() => setPage(Math.max(1, page - 1))}
-                disabled={pagination.currentPage === 1}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              {Array.from({ length: pagination.totalPages }, (_, i) => (
-                <button
-                  key={i + 1}
-                  className={`flex h-9 w-9 items-center justify-center rounded-md text-sm transition-colors hover:bg-accent hover:text-accent-foreground ${
-                    pagination.currentPage === i + 1
-                      ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground'
-                      : ''
-                  }`}
-                  onClick={() => setPage(i + 1)}
-                >
-                  {i + 1}
-                </button>
-              ))}
-              <button
-                className={`flex h-9 w-9 items-center justify-center rounded-md text-sm transition-colors hover:bg-accent hover:text-accent-foreground ${
-                  pagination.currentPage === pagination.totalPages
-                    ? 'pointer-events-none opacity-50'
-                    : ''
-                }`}
-                onClick={() => setPage(page + 1)}
-                disabled={pagination.currentPage === pagination.totalPages}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        )}
       </div>
     </Layout>
   );

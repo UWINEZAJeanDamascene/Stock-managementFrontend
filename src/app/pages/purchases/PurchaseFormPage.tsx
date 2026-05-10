@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useParams } from 'react-router';
-import { purchasesApi, suppliersApi, productsApi, budgetsApi, warehousesApi } from '@/lib/api';
-import { Layout } from '../../layout/Layout';
+import { useState, useEffect, useCallback } from "react";
+import { useNavigate, useParams } from "react-router";
+import { purchasesApi, suppliersApi, productsApi, budgetsApi, warehousesApi } from "@/lib/api";
+import { Layout } from "../../layout/Layout";
 import {
   ArrowLeft,
   Save,
@@ -9,10 +9,14 @@ import {
   Trash2,
   Loader2,
   Calculator,
-} from 'lucide-react';
-import { Button } from '@/app/components/ui/button';
-import { Input } from '@/app/components/ui/input';
-import { Textarea } from '@/app/components/ui/textarea';
+  ShoppingCart,
+  DollarSign,
+  Package,
+  Mail,
+} from "lucide-react";
+import { Button } from "@/app/components/ui/button";
+import { Input } from "@/app/components/ui/input";
+import { Textarea } from "@/app/components/ui/textarea";
 import {
   Table,
   TableBody,
@@ -20,17 +24,17 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/app/components/ui/table';
+} from "@/app/components/ui/table";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/app/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
-import { Label } from '@/app/components/ui/label';
-import { useTranslation } from 'react-i18next';
+} from "@/app/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card";
+import { Label } from "@/app/components/ui/label";
+import { useTranslation } from "react-i18next";
 
 interface Supplier {
   _id: string;
@@ -472,8 +476,8 @@ export default function PurchaseFormPage() {
   if (loading) {
     return (
       <Layout>
-        <div className="flex items-center justify-center p-8">
-          <Loader2 className="h-8 w-8 animate-spin" />
+        <div className="flex h-96 items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
         </div>
       </Layout>
     );
@@ -481,377 +485,291 @@ export default function PurchaseFormPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-6 min-h-screen bg-slate-50 dark:bg-slate-900">
-        <div className="flex items-center gap-4 mb-6">
-          <Button variant="outline" onClick={() => navigate('/purchases')}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            {t('common.back', 'Back')}
-          </Button>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-            {isEdit
-              ? t('purchase.form.editTitle', 'Edit Purchase')
-              : t('purchase.form.createTitle', 'New Purchase')}
-          </h1>
-        </div>
-
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Form */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Header Info */}
-            <Card className="dark:bg-slate-800">
-              <CardHeader>
-                <CardTitle className="text-slate-900 dark:text-white">{t('purchase.form.header', 'Purchase Details')}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-slate-900 dark:text-white">{t('purchase.form.supplier', 'Supplier')} *</Label>
-                    <Select
-                      value={formData.supplier || undefined}
-                      onValueChange={(value) => setFormData({ ...formData, supplier: value })}
-                    >
-                      <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600">
-                        <SelectValue placeholder={t('purchase.form.selectSupplier', 'Select supplier')} />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
-                        {suppliers.map((supplier) => (
-                          <SelectItem key={supplier._id} value={supplier._id} className="dark:text-slate-200">
-                            {supplier.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+      <div className="min-h-screen bg-slate-50 px-3 py-4 dark:bg-slate-950 sm:px-4 sm:py-6 lg:px-8">
+        <div className="mx-auto max-w-[1400px] space-y-6">
+          {/* Hero Header */}
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 mt-1" onClick={() => navigate('/purchases')}>
+                <ArrowLeft className="h-4 w-4 text-slate-500" />
+              </Button>
+              <div>
+                <div className="flex items-center gap-2">
+                  <div className="rounded-lg bg-slate-100 p-2 text-slate-600 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-800">
+                    <ShoppingCart className="h-5 w-5" />
                   </div>
-                  <div>
-                    <Label className="text-slate-900 dark:text-white">{t('purchase.form.currency', 'Currency')}</Label>
-                    <Select
-                      value={formData.currency}
-                      onValueChange={(value) => setFormData({ ...formData, currency: value })}
-                    >
-                      <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
-                        {CURRENCIES.map((currency) => (
-                          <SelectItem key={currency} value={currency} className="dark:text-slate-200">
-                            {currency}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label className="text-slate-900 dark:text-white">{t('purchase.form.purchaseDate', 'Purchase Date')}</Label>
-                    <Input
-                      type="date"
-                      value={formData.purchaseDate}
-                      onChange={(e) => setFormData({ ...formData, purchaseDate: e.target.value })}
-                      className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-slate-900 dark:text-white">{t('purchase.form.expectedDelivery', 'Expected Delivery')}</Label>
-                    <Input
-                      type="date"
-                      value={formData.expectedDeliveryDate}
-                      onChange={(e) => setFormData({ ...formData, expectedDeliveryDate: e.target.value })}
-                      className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-slate-900 dark:text-white">{t('purchase.form.paymentTerms', 'Payment Terms')}</Label>
-                    <Select
-                      value={formData.paymentTerms}
-                      onValueChange={(value) => setFormData({ ...formData, paymentTerms: value })}
-                    >
-                      <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
-                        {PAYMENT_TERMS.map((term) => (
-                          <SelectItem key={term.value} value={term.value} className="dark:text-slate-200">
-                            {term.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label className="text-slate-900 dark:text-white">{t('purchase.form.warehouse', 'Warehouse')}</Label>
-                    <Select
-                      value={formData.warehouse || 'none'}
-                      onValueChange={(value) => setFormData({ ...formData, warehouse: value === 'none' ? '' : value })}
-                    >
-                      <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
-                        <SelectItem value="none">{t('common.select', 'Select...')}</SelectItem>
-                        {warehouses.map((warehouse) => (
-                          <SelectItem key={warehouse._id} value={warehouse._id} className="dark:text-slate-200">
-                            {warehouse.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label>{t('purchase.form.supplierInvoice', 'Supplier Invoice #')}</Label>
-                    <Input
-                      value={formData.supplierInvoiceNumber}
-                      onChange={(e) => setFormData({ ...formData, supplierInvoiceNumber: e.target.value })}
-                      placeholder="Supplier invoice number"
-                    />
-                  </div>
+                  <h1 className="text-2xl font-bold tracking-tight text-slate-950 dark:text-white">
+                    {isEdit ? t('purchase.form.editTitle', 'Edit Purchase') : t('purchase.form.createTitle', 'New Purchase')}
+                  </h1>
                 </div>
-                <div>
-                  <Label>{t('purchase.form.notes', 'Notes')}</Label>
-                  <Textarea
-                    value={formData.notes}
-                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    placeholder={t('purchase.form.notesPlaceholder', 'Add any notes...')}
-                    rows={3}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-slate-900 dark:text-white">Budget</Label>
-                    <Select
-                      value={formData.budgetId || undefined}
-                      onValueChange={(value) => {
-                        const newBudgetId = value === 'none' ? undefined : value;
-                        setFormData({ ...formData, budgetId: newBudgetId, budget_line_id: undefined, accountId: undefined });
-                        if (value && value !== 'none') {
-                          fetchBudgetLines(value);
-                        } else {
-                          setSelectedBudgetLines([]);
-                        }
-                      }}
-                    >
-                      <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600">
-                        <SelectValue placeholder="Select budget (optional)" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
-                        <SelectItem value="none" className="dark:text-slate-200">No Budget</SelectItem>
-                        {budgets.map((budget) => (
-                          <SelectItem key={budget._id} value={budget._id} className="dark:text-slate-200">
-                            {budget.name} (${(budget.remaining || 0).toLocaleString()} left)
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                  {isEdit ? t('purchase.form.editSubtitle', 'Update purchase details and line items') : t('purchase.form.createSubtitle', 'Create a new direct purchase with supplier and line items')}
+                </p>
+              </div>
+            </div>
+          </div>
 
-                  {selectedBudgetLines.length > 0 && (
-                    <div>
-                      <Label className="text-slate-900 dark:text-white">Budget Line (Account)</Label>
-                      <Select
-                        value={formData.budget_line_id || undefined}
-                        onValueChange={(value) => {
-                          const selectedLine = selectedBudgetLines.find(l => l._id === value);
-                          const accountId = selectedLine?.account_id 
-                            ? (typeof selectedLine.account_id === 'object' ? (selectedLine.account_id as any)._id : selectedLine.account_id)
-                            : undefined;
-                          setFormData({ 
-                            ...formData, 
-                            budget_line_id: value === 'none' ? undefined : value,
-                            accountId: value === 'none' ? undefined : accountId
-                          });
-                        }}
-                      >
-                        <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600">
-                          <SelectValue placeholder="Select budget line" />
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            {/* Main Form */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Purchase Details */}
+              <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-base text-slate-800 dark:text-slate-100">
+                    <Package className="h-4 w-4 text-slate-500" />
+                    {t('purchase.form.header', 'Purchase Details')}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-medium text-slate-600 dark:text-slate-400">{t('purchase.form.supplier', 'Supplier')} *</Label>
+                      <Select value={formData.supplier || undefined} onValueChange={(value) => setFormData({ ...formData, supplier: value })}>
+                        <SelectTrigger className="h-9 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white">
+                          <SelectValue placeholder={t('purchase.form.selectSupplier', 'Select supplier')} />
                         </SelectTrigger>
-                        <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
-                          <SelectItem value="none" className="dark:text-slate-200">No Line</SelectItem>
-                          {selectedBudgetLines.map((line) => {
-                            const accountId = line.account_id 
-                              ? (typeof line.account_id === 'object' ? (line.account_id as any)._id : line.account_id)
-                              : '';
-                            const accountName = line.account_id && typeof line.account_id === 'object' 
-                              ? (line.account_id as any).name 
-                              : (line.account_name || '');
-                            const accountCode = line.account_id && typeof line.account_id === 'object' 
-                              ? (line.account_id as any).code 
-                              : (line.account_code || '');
-                            return (
-                              <SelectItem key={line._id} value={line._id} className="dark:text-slate-200">
-                                {accountName || accountCode || 'Unnamed'} (${(line.remaining || 0).toLocaleString()} left)
-                              </SelectItem>
-                            );
-                          })}
+                        <SelectContent>
+                          {suppliers.map((supplier) => (
+                            <SelectItem key={supplier._id} value={supplier._id}>{supplier.name}</SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Line Items */}
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>{t('purchase.form.lines', 'Line Items')}</CardTitle>
-                <Button variant="outline" size="sm" onClick={addLine}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  {t('purchase.form.addLine', 'Add Line')}
-                </Button>
-              </CardHeader>
-              <CardContent>
-                {formData.items.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground dark:text-slate-400">
-                    <Calculator className="mx-auto h-8 w-8 mb-2" />
-                    <p>{t('purchase.form.noLines', 'No line items. Click "Add Line" to add products.')}</p>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-medium text-slate-600 dark:text-slate-400">{t('purchase.form.currency', 'Currency')}</Label>
+                      <Select value={formData.currency} onValueChange={(value) => setFormData({ ...formData, currency: value })}>
+                        <SelectTrigger className="h-9 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {CURRENCIES.map((currency) => (
+                            <SelectItem key={currency} value={currency}>{currency}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-medium text-slate-600 dark:text-slate-400">{t('purchase.form.purchaseDate', 'Purchase Date')}</Label>
+                      <Input type="date" value={formData.purchaseDate} onChange={(e) => setFormData({ ...formData, purchaseDate: e.target.value })} className="h-9 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-medium text-slate-600 dark:text-slate-400">{t('purchase.form.expectedDelivery', 'Expected Delivery')}</Label>
+                      <Input type="date" value={formData.expectedDeliveryDate} onChange={(e) => setFormData({ ...formData, expectedDeliveryDate: e.target.value })} className="h-9 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-medium text-slate-600 dark:text-slate-400">{t('purchase.form.paymentTerms', 'Payment Terms')}</Label>
+                      <Select value={formData.paymentTerms} onValueChange={(value) => setFormData({ ...formData, paymentTerms: value })}>
+                        <SelectTrigger className="h-9 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {PAYMENT_TERMS.map((term) => (
+                            <SelectItem key={term.value} value={term.value}>{term.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-medium text-slate-600 dark:text-slate-400">{t('purchase.form.warehouse', 'Warehouse')}</Label>
+                      <Select value={formData.warehouse || 'none'} onValueChange={(value) => setFormData({ ...formData, warehouse: value === 'none' ? '' : value })}>
+                        <SelectTrigger className="h-9 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">{t('common.select', 'Select...')}</SelectItem>
+                          {warehouses.map((warehouse) => (
+                            <SelectItem key={warehouse._id} value={warehouse._id}>{warehouse.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-medium text-slate-600 dark:text-slate-400">{t('purchase.form.supplierInvoice', 'Supplier Invoice #')}</Label>
+                      <Input value={formData.supplierInvoiceNumber} onChange={(e) => setFormData({ ...formData, supplierInvoiceNumber: e.target.value })} placeholder="Invoice number" className="h-9 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white" />
+                    </div>
                   </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="dark:bg-slate-700">
-                        <TableHead style={{ width: 250 }} className="dark:text-white">{t('purchase.form.product', 'Product')}</TableHead>
-                        <TableHead className="dark:text-white">{t('purchase.form.qty', 'Qty')}</TableHead>
-                        <TableHead className="dark:text-white">{t('purchase.form.unitCost', 'Unit Cost')}</TableHead>
-                        <TableHead className="dark:text-white">{t('purchase.form.discount', 'Discount')}</TableHead>
-                        <TableHead className="dark:text-white">{t('purchase.form.taxRate', 'Tax %')}</TableHead>
-                        <TableHead className="dark:text-white">{t('purchase.form.tax', 'Tax')}</TableHead>
-                        <TableHead className="dark:text-white">{t('purchase.form.total', 'Total')}</TableHead>
-                        <TableHead></TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {formData.items.map((line, index) => (
-                        <TableRow key={index} className="dark:hover:bg-slate-700/50">
-                          <TableCell>
-                            <Select value={line.product} onValueChange={(value) => handleProductSelect(index, value)}>
-                              <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600">
-                                <SelectValue placeholder={t('purchase.form.selectProduct', 'Select product...')} />
-                              </SelectTrigger>
-                              <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
-                                {products.map((product) => (
-                                  <SelectItem key={product._id} value={product._id} className="dark:text-slate-200">
-                                    {product.name} ({product.sku})
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </TableCell>
-                          <TableCell>
-                            <Input
-                              type="number"
-                              min="0.0001"
-                              step="any"
-                              className="w-20 bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
-                              value={line.quantity}
-                              onChange={(e) =>
-                                handleLineChange(index, 'quantity', parseFloat(e.target.value) || 0)
-                              }
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              className="w-24 bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
-                              value={line.unitCost}
-                              onChange={(e) =>
-                                handleLineChange(index, 'unitCost', parseFloat(e.target.value) || 0)
-                              }
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              className="w-20 bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
-                              value={line.discount}
-                              onChange={(e) =>
-                                handleLineChange(index, 'discount', parseFloat(e.target.value) || 0)
-                              }
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Input
-                              type="number"
-                              min="0"
-                              max="100"
-                              className="w-16 bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
-                              value={line.taxRate}
-                              onChange={(e) =>
-                                handleLineChange(index, 'taxRate', parseFloat(e.target.value) || 0)
-                              }
-                            />
-                          </TableCell>
-                          <TableCell className="text-right dark:text-slate-300">{formatCurrency(line.taxAmount)}</TableCell>
-                          <TableCell className="font-medium dark:text-slate-200">{formatCurrency(line.totalWithTax)}</TableCell>
-                          <TableCell>
-                            <Button variant="ghost" size="sm" onClick={() => removeLine(index)}>
-                              <Trash2 className="h-4 w-4 text-red-500" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Summary Sidebar */}
-          <div>
-            <Card className="sticky top-6 dark:bg-slate-800">
-              <CardHeader>
-                <CardTitle className="text-slate-900 dark:text-white">{t('purchase.form.summary', 'Summary')}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground dark:text-slate-400">{t('purchase.form.subtotal', 'Subtotal')}</span>
-                  <span className="font-medium dark:text-slate-200">{formatCurrency(summary.subtotal)}</span>
-                </div>
-                {summary.totalDiscount > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground dark:text-slate-400">{t('purchase.form.discount', 'Discount')}</span>
-                    <span className="font-medium dark:text-slate-200">-{formatCurrency(summary.totalDiscount)}</span>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-slate-600 dark:text-slate-400">{t('purchase.form.notes', 'Notes')}</Label>
+                    <Textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} placeholder={t('purchase.form.notesPlaceholder', 'Add any notes...')} rows={3} className="text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white" />
                   </div>
-                )}
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground dark:text-slate-400">{t('purchase.form.tax', 'Tax')}</span>
-                  <span className="font-medium dark:text-slate-200">{formatCurrency(summary.totalTax)}</span>
-                </div>
-                <div className="border-t pt-4 dark:border-slate-600 flex justify-between">
-                  <span className="font-bold text-slate-900 dark:text-white">{t('purchase.form.total', 'Total')}</span>
-                  <span className="font-bold text-lg text-slate-900 dark:text-white">{formatCurrency(summary.grandTotal)}</span>
-                </div>
-
-                <div className="flex items-center space-x-2 py-2">
-                  <input
-                    type="checkbox"
-                    id="sendEmailPurchase"
-                    checked={sendEmail}
-                    onChange={(e) => setSendEmail(e.target.checked)}
-                    className="h-4 w-4"
-                  />
-                  <Label htmlFor="sendEmailPurchase" className="cursor-pointer text-sm">
-                    Send email to supplier
-                  </Label>
-                </div>
-
-                <div className="space-y-2 pt-2">
-                  <Button className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-200" onClick={handleSave} disabled={saving}>
-                    {saving ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <Save className="mr-2 h-4 w-4" />
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-medium text-slate-600 dark:text-slate-400">Budget</Label>
+                      <Select
+                        value={formData.budgetId || undefined}
+                        onValueChange={(value) => {
+                          const newBudgetId = value === 'none' ? undefined : value;
+                          setFormData({ ...formData, budgetId: newBudgetId, budget_line_id: undefined, accountId: undefined });
+                          if (value && value !== 'none') fetchBudgetLines(value);
+                          else setSelectedBudgetLines([]);
+                        }}
+                      >
+                        <SelectTrigger className="h-9 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white">
+                          <SelectValue placeholder="Select budget (optional)" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">No Budget</SelectItem>
+                          {budgets.map((budget) => (
+                            <SelectItem key={budget._id} value={budget._id}>{budget.name} (${(budget.remaining || 0).toLocaleString()} left)</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {selectedBudgetLines.length > 0 && (
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-medium text-slate-600 dark:text-slate-400">Budget Line (Account)</Label>
+                        <Select
+                          value={formData.budget_line_id || undefined}
+                          onValueChange={(value) => {
+                            const selectedLine = selectedBudgetLines.find((l) => l._id === value);
+                            const accountId = selectedLine?.account_id ? (typeof selectedLine.account_id === 'object' ? (selectedLine.account_id as any)._id : selectedLine.account_id) : undefined;
+                            setFormData({ ...formData, budget_line_id: value === 'none' ? undefined : value, accountId: value === 'none' ? undefined : accountId });
+                          }}
+                        >
+                          <SelectTrigger className="h-9 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white">
+                            <SelectValue placeholder="Select budget line" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">No Line</SelectItem>
+                            {selectedBudgetLines.map((line) => {
+                              const accountName = line.account_id && typeof line.account_id === 'object' ? (line.account_id as any).name : (line.account_name || '');
+                              return (
+                                <SelectItem key={line._id} value={line._id}>{accountName || 'Unnamed'} (${(line.remaining || 0).toLocaleString()} left)</SelectItem>
+                              );
+                            })}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     )}
-                    {isEdit
-                      ? t('purchase.form.update', 'Update Purchase')
-                      : t('purchase.form.save', 'Save Purchase')}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Line Items */}
+              <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="flex items-center gap-2 text-base text-slate-800 dark:text-slate-100">
+                    <Package className="h-4 w-4 text-slate-500" />
+                    {t('purchase.form.lines', 'Line Items')}
+                  </CardTitle>
+                  <Button variant="outline" size="sm" onClick={addLine} className="gap-1.5 dark:border-slate-700 dark:text-white">
+                    <Plus className="h-4 w-4" />
+                    {t('purchase.form.addLine', 'Add Line')}
                   </Button>
-                </div>
-              </CardContent>
-            </Card>
+                </CardHeader>
+                <CardContent>
+                  {formData.items.length === 0 ? (
+                    <div className="rounded-lg border border-dashed border-slate-300 py-8 text-center dark:border-slate-700">
+                      <Calculator className="mx-auto mb-2 h-8 w-8 text-slate-400" />
+                      <p className="text-sm text-slate-500 dark:text-slate-400">{t('purchase.form.noLines', 'No line items. Click "Add Line" to add products.')}</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-slate-50 hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-900">
+                            <TableHead className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{t('purchase.form.product', 'Product')}</TableHead>
+                            <TableHead className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{t('purchase.form.qty', 'Qty')}</TableHead>
+                            <TableHead className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{t('purchase.form.unitCost', 'Unit')}</TableHead>
+                            <TableHead className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{t('purchase.form.discount', 'Disc')}</TableHead>
+                            <TableHead className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{t('purchase.form.taxRate', 'Tax %')}</TableHead>
+                            <TableHead className="text-right text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{t('purchase.form.tax', 'Tax')}</TableHead>
+                            <TableHead className="text-right text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{t('purchase.form.total', 'Total')}</TableHead>
+                            <TableHead className="w-10"></TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {formData.items.map((line, index) => (
+                            <TableRow key={index} className="transition-colors hover:bg-slate-50/60 dark:hover:bg-slate-900/40">
+                              <TableCell>
+                                <Select value={line.product} onValueChange={(value) => handleProductSelect(index, value)}>
+                                  <SelectTrigger className="h-9 w-52 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white">
+                                    <SelectValue placeholder={t('purchase.form.selectProduct', 'Select product...')} />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {products.map((product) => (
+                                      <SelectItem key={product._id} value={product._id}>{product.name} ({product.sku})</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </TableCell>
+                              <TableCell>
+                                <Input type="number" min="0.0001" step="any" className="h-9 w-20 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white" value={line.quantity} onChange={(e) => handleLineChange(index, 'quantity', parseFloat(e.target.value) || 0)} />
+                              </TableCell>
+                              <TableCell>
+                                <Input type="number" min="0" step="0.01" className="h-9 w-24 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white" value={line.unitCost} onChange={(e) => handleLineChange(index, 'unitCost', parseFloat(e.target.value) || 0)} />
+                              </TableCell>
+                              <TableCell>
+                                <Input type="number" min="0" step="0.01" className="h-9 w-20 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white" value={line.discount} onChange={(e) => handleLineChange(index, 'discount', parseFloat(e.target.value) || 0)} />
+                              </TableCell>
+                              <TableCell>
+                                <Input type="number" min="0" max="100" className="h-9 w-16 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white" value={line.taxRate} onChange={(e) => handleLineChange(index, 'taxRate', parseFloat(e.target.value) || 0)} />
+                              </TableCell>
+                              <TableCell className="text-right font-mono text-sm text-slate-600 dark:text-slate-300">{formatCurrency(line.taxAmount)}</TableCell>
+                              <TableCell className="text-right font-mono text-sm font-medium text-slate-900 dark:text-white">{formatCurrency(line.totalWithTax)}</TableCell>
+                              <TableCell>
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => removeLine(index)}>
+                                  <Trash2 className="h-4 w-4 text-red-500" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Summary Sidebar */}
+            <div className="space-y-6">
+              <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-base text-slate-800 dark:text-slate-100">
+                    <DollarSign className="h-4 w-4 text-slate-500" />
+                    {t('purchase.form.summary', 'Summary')}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 text-sm">
+                  <div className="flex justify-between text-slate-600 dark:text-slate-300">
+                    <span>{t('purchase.form.subtotal', 'Subtotal')}</span>
+                    <span className="font-medium text-slate-900 dark:text-white">{formatCurrency(summary.subtotal)}</span>
+                  </div>
+                  {summary.totalDiscount > 0 && (
+                    <div className="flex justify-between text-slate-600 dark:text-slate-300">
+                      <span>{t('purchase.form.discount', 'Discount')}</span>
+                      <span className="font-medium text-slate-900 dark:text-white">-{formatCurrency(summary.totalDiscount)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-slate-600 dark:text-slate-300">
+                    <span>{t('purchase.form.tax', 'Tax')}</span>
+                    <span className="font-medium text-slate-900 dark:text-white">{formatCurrency(summary.totalTax)}</span>
+                  </div>
+                  <div className="flex justify-between border-t border-slate-200 pt-3 text-base font-bold text-slate-900 dark:border-slate-700 dark:text-white">
+                    <span>{t('purchase.form.total', 'Total')}</span>
+                    <span>{formatCurrency(summary.grandTotal)}</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base text-slate-800 dark:text-slate-100">{t('purchase.form.actions', 'Actions')}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+                    <input type="checkbox" id="sendEmailPurchase" checked={sendEmail} onChange={(e) => setSendEmail(e.target.checked)} className="h-4 w-4 rounded border-slate-300" />
+                    <Mail className="h-4 w-4 text-slate-400" />
+                    Send email to supplier
+                  </label>
+                  <Button className="h-10 w-full gap-1.5 bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200" onClick={handleSave} disabled={saving}>
+                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    {isEdit ? t('purchase.form.update', 'Update Purchase') : t('purchase.form.save', 'Save Purchase')}
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
       </div>

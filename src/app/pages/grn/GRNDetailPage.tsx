@@ -1,31 +1,40 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useParams } from 'react-router';
-import { grnApi } from '@/lib/api';
-import { Layout } from '../../layout/Layout';
-import { 
-  ArrowLeft, 
-  CheckCircle, 
-  XCircle,
-  Package,
+import { useState, useEffect, useCallback } from "react";
+import { useNavigate, useParams } from "react-router";
+import { grnApi } from "@/lib/api";
+import { Layout } from "../../layout/Layout";
+import {
+  ArrowLeft,
+  CheckCircle,
+  PackageCheck,
   FileText,
-  Calendar,
-  Truck,
-  Loader2
-} from 'lucide-react';
-import { Button } from '@/app/components/ui/button';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/app/components/ui/table';
-import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
-import { Badge } from '@/app/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs';
-import { useTranslation } from 'react-i18next';
+  CalendarDays,
+  Building2,
+  MapPin,
+  DollarSign,
+  Loader2,
+  Printer,
+  Mail,
+  Clock,
+  Receipt,
+  Package,
+} from "lucide-react";
+import { Button } from "@/app/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/app/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card";
+import { Badge } from "@/app/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
+import { useTranslation } from "react-i18next";
 
+/* ═══════════════════════════════════════════════════════════════
+   TYPES
+   ═══════════════════════════════════════════════════════════════ */
 interface GRNDetail {
   _id: string;
   referenceNo: string;
@@ -52,7 +61,7 @@ interface GRNDetail {
     code?: string;
   };
   receivedDate: string;
-  status: 'draft' | 'confirmed';
+  status: "draft" | "confirmed";
   totalAmount: number;
   supplierInvoiceNo?: string;
   lines: Array<{
@@ -84,6 +93,9 @@ interface HistoryEntry {
   details?: string;
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   COMPONENT
+   ═══════════════════════════════════════════════════════════════ */
 export default function GRNDetailPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -95,25 +107,30 @@ export default function GRNDetailPage() {
   const [grn, setGRN] = useState<GRNDetail | null>(null);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
 
+  /* ── Data ── */
   const fetchGRN = useCallback(async () => {
     if (!id) return;
-    
     setLoading(true);
     try {
       const response = await grnApi.getById(id);
       if (response.success) {
-        setGRN(response.data as GRNDetail);
-        // Create mock history based on GRN data
+        const data = response.data as GRNDetail;
+        setGRN(data);
         const entries: HistoryEntry[] = [
-          { action: 'GRN Created', timestamp: grn?.createdAt || new Date().toISOString(), details: 'Goods Received Note created as draft' }
+          { action: "GRN Created", timestamp: data.createdAt, details: "Goods Received Note created as draft" },
         ];
-        if (grn?.confirmedAt) {
-          entries.push({ action: 'GRN Confirmed', timestamp: grn.confirmedAt, user: grn.confirmedBy?.name, details: 'GRN confirmed and inventory updated' });
+        if (data.confirmedAt) {
+          entries.push({
+            action: "GRN Confirmed",
+            timestamp: data.confirmedAt,
+            user: data.confirmedBy?.name,
+            details: "GRN confirmed and inventory updated",
+          });
         }
         setHistory(entries);
       }
     } catch (error) {
-      console.error('Failed to fetch GRN:', error);
+      console.error("Failed to fetch GRN:", error);
     } finally {
       setLoading(false);
     }
@@ -123,84 +140,93 @@ export default function GRNDetailPage() {
     fetchGRN();
   }, [fetchGRN]);
 
+  /* ── Actions ── */
   const handleConfirm = async () => {
     if (!id) return;
-    
     setConfirming(true);
     try {
       await grnApi.confirm(id, sendEmail);
       fetchGRN();
     } catch (error) {
-      console.error('Failed to confirm GRN:', error);
+      console.error("Failed to confirm GRN:", error);
     } finally {
       setConfirming(false);
     }
   };
 
+  const handlePrint = () => window.print();
+
+  /* ── Helpers ── */
   const formatCurrency = (amount: number | string | object | null | undefined) => {
     let num: number;
-    if (amount == null) {
-      num = 0;
-    } else if (typeof amount === 'object') {
-      const raw = (amount as any).$numberDecimal || (amount as any).toString();
-      num = parseFloat(raw) || 0;
-    } else if (typeof amount === 'string') {
-      num = parseFloat(amount) || 0;
-    } else {
-      num = amount;
-    }
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num);
+    if (amount == null) num = 0;
+    else if (typeof amount === "object") {
+      num = parseFloat((amount as any).$numberDecimal || (amount as any).toString()) || 0;
+    } else if (typeof amount === "string") num = parseFloat(amount) || 0;
+    else num = amount;
+    return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(num);
   };
 
   const formatDate = (dateStr: string) => {
-    if (!dateStr) return '-';
-    return new Date(dateStr).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    if (!dateStr) return "-";
+    return new Date(dateStr).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
+  };
+
+  const formatDateShort = (dateStr: string) => {
+    if (!dateStr) return "-";
+    return new Date(dateStr).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
   };
 
   const toNum = (v: any): number => {
     if (v == null) return 0;
-    if (typeof v === 'object' && v.$numberDecimal) return parseFloat(v.$numberDecimal) || 0;
+    if (typeof v === "object" && v.$numberDecimal) return parseFloat(v.$numberDecimal) || 0;
     return parseFloat(String(v)) || 0;
   };
 
   const calculateSubtotal = () => {
     if (!grn?.lines) return 0;
-    return grn.lines.reduce((sum, line) => sum + (toNum(line.qtyReceived) * toNum(line.unitCost)), 0);
+    return grn.lines.reduce((sum, line) => sum + toNum(line.qtyReceived) * toNum(line.unitCost), 0);
   };
-
   const calculateTax = () => {
     if (!grn?.lines) return 0;
     return grn.lines.reduce((sum, line) => {
       const lineTotal = toNum(line.qtyReceived) * toNum(line.unitCost);
-      return sum + (lineTotal * (toNum(line.taxRate) / 100));
+      return sum + lineTotal * (toNum(line.taxRate) / 100);
     }, 0);
   };
+  const calculateTotal = () => calculateSubtotal() + calculateTax();
 
-  const calculateTotal = () => {
-    return calculateSubtotal() + calculateTax();
-  };
-
-  const getStatusBadge = (status: string) => {
-    const statusConfig: Record<string, { variant: 'default' | 'secondary' | 'outline' | 'destructive'; label: string }> = {
-      draft: { variant: 'secondary', label: t('grn.status.draft', 'Draft') },
-      confirmed: { variant: 'default', label: t('grn.status.confirmed', 'Confirmed') },
+  /* ── Status badge ── */
+  function StatusBadge({ status }: { status: string }) {
+    const styles: Record<string, string> = {
+      draft: "bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/60",
+      confirmed: "bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60",
     };
-    
-    const config = statusConfig[status] || { variant: 'outline', label: status };
-    return <Badge variant={config.variant}>{config.label}</Badge>;
-  };
+    const labels: Record<string, string> = {
+      draft: t("grn.status.draft", "Draft"),
+      confirmed: t("grn.status.confirmed", "Confirmed"),
+    };
+    return (
+      <Badge className={`ring-1 ${styles[status] || "bg-slate-100 text-slate-700 ring-slate-200"}`} variant="outline">
+        {labels[status] || status}
+      </Badge>
+    );
+  }
 
+  /* ════════════════════════════════
+     Loading / Error states
+     ════════════════════════════════ */
   if (loading) {
     return (
       <Layout>
-        <div className="flex items-center justify-center p-8">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground dark:text-slate-400" />
+        <div className="flex h-96 items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
         </div>
       </Layout>
     );
@@ -209,275 +235,328 @@ export default function GRNDetailPage() {
   if (!grn) {
     return (
       <Layout>
-        <div className="container mx-auto py-6 min-h-screen bg-slate-50 dark:bg-slate-900">
-          <div className="text-center">
-            <p className="text-muted-foreground dark:text-slate-400">GRN not found</p>
-            <Button variant="link" onClick={() => navigate('/grn')}>
-              {t('common.back', 'Back to GRN List')}
-            </Button>
+        <div className="min-h-screen bg-slate-50 px-3 py-6 dark:bg-slate-950 sm:px-6">
+          <div className="mx-auto max-w-[1400px] text-center">
+            <p className="text-slate-500 dark:text-slate-400">GRN not found</p>
+            <Button variant="link" onClick={() => navigate("/grn")}>{t("common.back", "Back to GRN List")}</Button>
           </div>
         </div>
       </Layout>
     );
   }
 
+  /* ════════════════════════════════
+     Main Render
+     ════════════════════════════════ */
   return (
     <Layout>
-      <div className="container mx-auto py-6 min-h-screen bg-slate-50 dark:bg-slate-900">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
-          <Button variant="ghost" onClick={() => navigate('/grn')}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            {t('common.back', 'Back')}
-          </Button>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{grn.referenceNo}</h1>
-          {getStatusBadge(grn.status)}
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Document Header */}
-            <Card className="dark:bg-slate-800">
-              <CardContent className="pt-6">
-                <div className="grid grid-cols-2 gap-6">
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground dark:text-slate-400 mb-2">
-                      {t('grn.supplier', 'Supplier')}
-                    </h3>
-                    <div className="font-medium dark:text-slate-200">{grn.supplier?.name || 'N/A'}</div>
-                    {grn.supplier?.code && (
-                      <div className="text-sm text-muted-foreground dark:text-slate-400">{grn.supplier.code}</div>
-                    )}
-                    {grn.supplier?.contact?.address && (
-                      <div className="text-sm text-muted-foreground dark:text-slate-400 mt-1">{grn.supplier.contact.address}</div>
-                    )}
-                    {grn.supplier?.contact?.email && (
-                      <div className="text-sm text-muted-foreground dark:text-slate-400">{grn.supplier.contact.email}</div>
-                    )}
-                    {grn.supplier?.contact?.phone && (
-                      <div className="text-sm text-muted-foreground dark:text-slate-400">{grn.supplier.contact.phone}</div>
-                    )}
+      <div className="min-h-screen bg-slate-50 px-3 py-4 dark:bg-slate-950 sm:px-4 sm:py-6 lg:px-8">
+        <div className="mx-auto max-w-[1400px] space-y-6">
+          {/* Header */}
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 mt-1" onClick={() => navigate("/grn")}>
+                <ArrowLeft className="h-4 w-4 text-slate-500" />
+              </Button>
+              <div>
+                <div className="flex items-center gap-2">
+                  <div className="rounded-lg bg-slate-100 p-2 text-slate-600 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-800">
+                    <Receipt className="h-5 w-5" />
                   </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground dark:text-slate-400 mb-2">
-                      {t('grn.warehouse', 'Warehouse')}
-                    </h3>
-                    <div className="font-medium dark:text-slate-200">{grn.warehouse?.name || 'N/A'}</div>
-                    {grn.warehouse?.code && (
-                      <div className="text-sm text-muted-foreground dark:text-slate-400">{grn.warehouse.code}</div>
-                    )}
-                  </div>
+                  <h1 className="text-2xl font-bold tracking-tight text-slate-950 dark:text-white">{grn.referenceNo}</h1>
+                  <StatusBadge status={grn.status} />
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Line Items */}
-            <Card className="dark:bg-slate-800">
-              <CardHeader>
-                <CardTitle className="text-slate-900 dark:text-white">{t('grn.lineItems', 'Line Items')}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow className="dark:bg-slate-700">
-                      <TableHead className="dark:text-white">{t('grn.product', 'Product')}</TableHead>
-                      <TableHead className="text-right dark:text-white">{t('grn.qtyReceived', 'Qty Received')}</TableHead>
-                      <TableHead className="text-right dark:text-white">{t('grn.unitCost', 'Unit Cost')}</TableHead>
-                      <TableHead className="text-right dark:text-white">{t('grn.taxRate', 'Tax %')}</TableHead>
-                      <TableHead className="text-right dark:text-white">{t('grn.lineTotal', 'Total')}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {grn.lines?.map((line, index) => (
-                      <TableRow key={index} className="dark:hover:bg-slate-700/50">
-                        <TableCell>
-                          <div className="font-medium dark:text-slate-200">{line.product.name}</div>
-                          <div className="text-sm text-muted-foreground dark:text-slate-400">{line.product.sku}</div>
-                        </TableCell>
-                        <TableCell className="text-right dark:text-slate-300">{line.qtyReceived}</TableCell>
-                        <TableCell className="text-right dark:text-slate-300">{formatCurrency(line.unitCost)}</TableCell>
-                        <TableCell className="text-right dark:text-slate-300">{line.taxRate}%</TableCell>
-                        <TableCell className="text-right font-medium dark:text-slate-200">
-                          {formatCurrency((Number(line.qtyReceived) || 0) * (Number(line.unitCost) || 0))}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-
-            {/* Tabs */}
-            <Tabs defaultValue="details" className="w-full">
-              <TabsList className="dark:bg-slate-700">
-                <TabsTrigger value="details" className="dark:data-[state=active]:bg-slate-600 dark:data-[state=active]:text-white">{t('grn.tabs.details', 'Details')}</TabsTrigger>
-                <TabsTrigger value="history" className="dark:data-[state=active]:bg-slate-600 dark:data-[state=active]:text-white">{t('grn.tabs.history', 'History')}</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="details">
-                <Card className="dark:bg-slate-800">
-                  <CardContent className="pt-6">
-                    <div className="grid grid-cols-2 gap-6">
-                      <div>
-                        <h3 className="text-sm font-medium text-muted-foreground dark:text-slate-400 mb-2">
-                          {t('grn.purchaseOrder', 'Purchase Order')}
-                        </h3>
-                        <div className="font-medium dark:text-slate-200">
-                          {grn.purchaseOrder?.referenceNo || '-'}
-                        </div>
-                        {grn.purchaseOrder?.orderDate && (
-                          <div className="text-sm text-muted-foreground dark:text-slate-400">
-                            Order Date: {formatDate(grn.purchaseOrder.orderDate)}
-                          </div>
-                        )}
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-medium text-muted-foreground dark:text-slate-400 mb-2">
-                          {t('grn.supplierInvoice', 'Supplier Invoice')}
-                        </h3>
-                        <div className="font-medium dark:text-slate-200">
-                          {grn.supplierInvoiceNo || '-'}
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              <TabsContent value="history">
-                <Card className="dark:bg-slate-800">
-                  <CardContent className="pt-6">
-                    <div className="space-y-4">
-                      {history.map((entry, index) => (
-                        <div key={index} className="flex gap-4">
-                          <div className="flex flex-col items-center">
-                            <div className="w-2 h-2 bg-primary rounded-full" />
-                            {index < history.length - 1 && (
-                              <div className="w-0.5 h-full bg-border dark:bg-slate-600 mt-2" />
-                            )}
-                          </div>
-                          <div className="pb-4">
-                            <div className="font-medium dark:text-slate-200">{entry.action}</div>
-                            <div className="text-sm text-muted-foreground dark:text-slate-400">
-                              {formatDate(entry.timestamp)}
-                            </div>
-                            {entry.user && (
-                              <div className="text-sm text-muted-foreground dark:text-slate-400">
-                                By: {entry.user}
-                              </div>
-                            )}
-                            {entry.details && (
-                              <div className="text-sm mt-1 dark:text-slate-300">{entry.details}</div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                  {grn.purchaseOrder?.referenceNo
+                    ? `Linked to PO ${grn.purchaseOrder.referenceNo}`
+                    : t("grn.noPurchaseOrder", "No purchase order linked")}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={handlePrint} className="gap-1.5">
+                <Printer className="h-4 w-4" /> {t("common.print", "Print")}
+              </Button>
+            </div>
           </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Summary */}
-            <Card className="dark:bg-slate-800">
-              <CardHeader>
-                <CardTitle className="text-slate-900 dark:text-white">{t('grn.summary', 'Summary')}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground dark:text-slate-400">{t('grn.subtotal', 'Subtotal')}</span>
-                    <span className="font-medium dark:text-slate-200">{formatCurrency(calculateSubtotal())}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground dark:text-slate-400">{t('grn.tax', 'Tax')}</span>
-                    <span className="font-medium dark:text-slate-200">{formatCurrency(calculateTax())}</span>
-                  </div>
-                  <div className="flex justify-between text-lg font-bold pt-2 border-t dark:border-slate-600">
-                    <span className="text-slate-900 dark:text-white">{t('grn.total', 'Total')}</span>
-                    <span className="text-slate-900 dark:text-white">{formatCurrency(calculateTotal())}</span>
-                  </div>
+          {/* Info Tiles */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="flex items-center gap-3 p-4">
+                <div className="rounded-lg bg-emerald-50 p-2.5 text-emerald-600 ring-1 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60">
+                  <Building2 className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{t("grn.supplier", "Supplier")}</p>
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white">{grn.supplier?.name || "N/A"}</p>
+                  {grn.supplier?.code && <p className="text-xs text-slate-500 dark:text-slate-400">{grn.supplier.code}</p>}
                 </div>
               </CardContent>
             </Card>
 
-            {/* Dates */}
-            <Card className="dark:bg-slate-800">
-              <CardHeader>
-                <CardTitle className="text-slate-900 dark:text-white">{t('grn.dates', 'Dates')}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground dark:text-slate-400" />
-                    <div>
-                      <div className="text-sm text-muted-foreground dark:text-slate-400">
-                        {t('grn.receivedDate', 'Received Date')}
-                      </div>
-                      <div className="font-medium dark:text-slate-200">{formatDate(grn.receivedDate)}</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-muted-foreground dark:text-slate-400" />
-                    <div>
-                      <div className="text-sm text-muted-foreground dark:text-slate-400">
-                        {t('grn.createdAt', 'Created')}
-                      </div>
-                      <div className="font-medium dark:text-slate-200">{formatDate(grn.createdAt)}</div>
-                    </div>
-                  </div>
-                  {grn.confirmedAt && (
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-green-500" />
-                      <div>
-                        <div className="text-sm text-muted-foreground dark:text-slate-400">
-                          {t('grn.confirmedAt', 'Confirmed')}
-                        </div>
-                        <div className="font-medium dark:text-slate-200">{formatDate(grn.confirmedAt)}</div>
-                      </div>
-                    </div>
-                  )}
+            <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="flex items-center gap-3 p-4">
+                <div className="rounded-lg bg-indigo-50 p-2.5 text-indigo-600 ring-1 ring-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-300 dark:ring-indigo-900/60">
+                  <MapPin className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{t("grn.warehouse", "Warehouse")}</p>
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white">{grn.warehouse?.name || "N/A"}</p>
+                  {grn.warehouse?.code && <p className="text-xs text-slate-500 dark:text-slate-400">{grn.warehouse.code}</p>}
                 </div>
               </CardContent>
             </Card>
 
-            {/* Actions */}
-            {grn.status === 'draft' && (
-              <Card className="dark:bg-slate-800">
-                <CardContent className="pt-6">
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <input
-                        type="checkbox"
-                        id="sendEmailGRN"
-                        checked={sendEmail}
-                        onChange={(e) => setSendEmail(e.target.checked)}
-                        className="h-4 w-4 rounded border-gray-300"
-                      />
-                      <Label htmlFor="sendEmailGRN" className="text-sm text-muted-foreground cursor-pointer">
-                        {t('grn.sendEmail', 'Send email notification to supplier')}
-                      </Label>
+            <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="flex items-center gap-3 p-4">
+                <div className="rounded-lg bg-blue-50 p-2.5 text-blue-600 ring-1 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60">
+                  <CalendarDays className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{t("grn.receivedDate", "Received")}</p>
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white">{formatDateShort(grn.receivedDate)}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{new Date(grn.receivedDate).getFullYear()}</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="flex items-center gap-3 p-4">
+                <div className="rounded-lg bg-emerald-50 p-2.5 text-emerald-600 ring-1 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60">
+                  <DollarSign className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{t("grn.total", "Total")}</p>
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white">{formatCurrency(grn.totalAmount)}</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            {/* Main Content */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Document Info */}
+              <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-base text-slate-800 dark:text-slate-100">
+                    <PackageCheck className="h-4 w-4 text-slate-500" />
+                    {t("grn.documentInfo", "Document Info")}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{t("grn.supplier", "Supplier")}</p>
+                      <div className="text-sm text-slate-900 dark:text-white">{grn.supplier?.name || "N/A"}</div>
+                      {grn.supplier?.code && <div className="text-xs text-slate-500 dark:text-slate-400">{grn.supplier.code}</div>}
+                      {grn.supplier?.contact?.address && <div className="text-xs text-slate-500 dark:text-slate-400">{grn.supplier.contact.address}</div>}
+                      {grn.supplier?.contact?.email && <div className="text-xs text-slate-500 dark:text-slate-400">{grn.supplier.contact.email}</div>}
+                      {grn.supplier?.contact?.phone && <div className="text-xs text-slate-500 dark:text-slate-400">{grn.supplier.contact.phone}</div>}
                     </div>
-                    <Button 
-                      onClick={handleConfirm}
-                      disabled={confirming}
-                      className="w-full"
-                    >
-                      {confirming ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <CheckCircle className="mr-2 h-4 w-4" />
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{t("grn.warehouse", "Warehouse")}</p>
+                      <div className="text-sm text-slate-900 dark:text-white">{grn.warehouse?.name || "N/A"}</div>
+                      {grn.warehouse?.code && <div className="text-xs text-slate-500 dark:text-slate-400">{grn.warehouse.code}</div>}
+                      {grn.supplierInvoiceNo && (
+                        <>
+                          <p className="mt-3 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">{t("grn.supplierInvoice", "Supplier Invoice")}</p>
+                          <div className="text-sm text-slate-900 dark:text-white">{grn.supplierInvoiceNo}</div>
+                        </>
                       )}
-                      {t('grn.confirm', 'Confirm GRN')}
-                    </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
-            )}
+
+              {/* Line Items */}
+              <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-base text-slate-800 dark:text-slate-100">
+                    <Package className="h-4 w-4 text-slate-500" />
+                    {t("grn.lineItems", "Line Items")}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-slate-50 hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-900">
+                          <TableHead className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{t("grn.product", "Product")}</TableHead>
+                          <TableHead className="text-right text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{t("grn.qtyReceived", "Received")}</TableHead>
+                          <TableHead className="text-right text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{t("grn.unitCost", "Unit")}</TableHead>
+                          <TableHead className="text-right text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{t("grn.taxRate", "Tax %")}</TableHead>
+                          <TableHead className="text-right text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{t("grn.lineTotal", "Total")}</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {grn.lines?.map((line, index) => (
+                          <TableRow key={index} className="transition-colors hover:bg-slate-50/60 dark:hover:bg-slate-900/40">
+                            <TableCell>
+                              <div className="font-medium text-slate-900 dark:text-white">{line.product.name}</div>
+                              <div className="text-xs text-slate-500 dark:text-slate-400">{line.product.sku}</div>
+                            </TableCell>
+                            <TableCell className="text-right text-slate-600 dark:text-slate-300">{line.qtyReceived}</TableCell>
+                            <TableCell className="text-right font-mono text-slate-600 dark:text-slate-300">{formatCurrency(line.unitCost)}</TableCell>
+                            <TableCell className="text-right text-slate-600 dark:text-slate-300">{line.taxRate}%</TableCell>
+                            <TableCell className="text-right font-medium text-slate-900 dark:text-white">{formatCurrency(toNum(line.qtyReceived) * toNum(line.unitCost))}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Tabs */}
+              <Tabs defaultValue="details" className="w-full">
+                <TabsList className="bg-slate-100 dark:bg-slate-900">
+                  <TabsTrigger value="details">{t("grn.tabs.details", "Details")}</TabsTrigger>
+                  <TabsTrigger value="history">{t("grn.tabs.history", "History")}</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="details">
+                  <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                    <CardContent className="pt-6">
+                      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                        <div className="space-y-2">
+                          <p className="text-xs font-medium uppercase text-slate-500 dark:text-slate-400">{t("grn.purchaseOrder", "Purchase Order")}</p>
+                          <p className="text-sm font-medium text-slate-900 dark:text-white">{grn.purchaseOrder?.referenceNo || "-"}</p>
+                          {grn.purchaseOrder?.orderDate && (
+                            <p className="text-xs text-slate-500 dark:text-slate-400">{formatDateShort(grn.purchaseOrder.orderDate)}</p>
+                          )}
+                        </div>
+                        <div className="space-y-2">
+                          <p className="text-xs font-medium uppercase text-slate-500 dark:text-slate-400">{t("grn.supplierInvoice", "Supplier Invoice")}</p>
+                          <p className="text-sm font-medium text-slate-900 dark:text-white">{grn.supplierInvoiceNo || "-"}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="history">
+                  <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                    <CardContent className="pt-6">
+                      <div className="space-y-0">
+                        {history.map((entry, index) => (
+                          <div key={index} className="relative flex gap-4 pb-6">
+                            {index < history.length - 1 && (
+                              <div className="absolute left-[15px] top-8 h-full w-px bg-slate-200 dark:bg-slate-800" />
+                            )}
+                            <div className="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 ring-4 ring-white dark:bg-slate-800 dark:ring-slate-950">
+                              <Clock className="h-3.5 w-3.5 text-slate-500" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-slate-900 dark:text-white">{entry.action}</p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400">{formatDate(entry.timestamp)}</p>
+                              {entry.user && <p className="text-xs text-slate-500 dark:text-slate-400">By {entry.user}</p>}
+                              {entry.details && <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">{entry.details}</p>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
+            </div>
+
+            {/* Sidebar */}
+            <div className="space-y-6">
+              {/* Summary */}
+              <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-base text-slate-800 dark:text-slate-100">
+                    <DollarSign className="h-4 w-4 text-slate-500" />
+                    {t("grn.summary", "Summary")}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between text-slate-600 dark:text-slate-300">
+                      <span>{t("grn.subtotal", "Subtotal")}</span>
+                      <span className="font-medium text-slate-900 dark:text-white">{formatCurrency(calculateSubtotal())}</span>
+                    </div>
+                    <div className="flex justify-between text-slate-600 dark:text-slate-300">
+                      <span>{t("grn.tax", "Tax")}</span>
+                      <span className="font-medium text-slate-900 dark:text-white">{formatCurrency(calculateTax())}</span>
+                    </div>
+                    <div className="flex justify-between border-t border-slate-200 pt-2 text-base font-bold text-slate-900 dark:border-slate-700 dark:text-white">
+                      <span>{t("grn.total", "Total")}</span>
+                      <span>{formatCurrency(calculateTotal())}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Dates */}
+              <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-base text-slate-800 dark:text-slate-100">
+                    <CalendarDays className="h-4 w-4 text-slate-500" />
+                    {t("grn.dates", "Dates")}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex items-start gap-3">
+                      <CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+                      <div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{t("grn.receivedDate", "Received Date")}</p>
+                        <p className="font-medium text-slate-900 dark:text-white">{formatDate(grn.receivedDate)}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <FileText className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+                      <div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{t("grn.createdAt", "Created")}</p>
+                        <p className="font-medium text-slate-900 dark:text-white">{formatDate(grn.createdAt)}</p>
+                      </div>
+                    </div>
+                    {grn.confirmedAt && (
+                      <div className="flex items-start gap-3">
+                        <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+                        <div>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">{t("grn.confirmedAt", "Confirmed")}</p>
+                          <p className="font-medium text-slate-900 dark:text-white">{formatDate(grn.confirmedAt)}</p>
+                          {grn.confirmedBy && <p className="text-xs text-slate-500 dark:text-slate-400">by {grn.confirmedBy.name}</p>}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Actions */}
+              {grn.status === "draft" && (
+                <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base text-slate-800 dark:text-slate-100">{t("grn.actions", "Actions")}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-col gap-3">
+                      <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+                        <input
+                          type="checkbox"
+                          id="sendEmailGRN"
+                          checked={sendEmail}
+                          onChange={(e) => setSendEmail(e.target.checked)}
+                          className="h-4 w-4 rounded border-slate-300"
+                        />
+                        <Mail className="h-4 w-4 text-slate-400" />
+                        {t("grn.sendEmail", "Send email notification to supplier")}
+                      </label>
+                      <Button onClick={handleConfirm} disabled={confirming} className="h-10 gap-1.5 bg-emerald-600 text-white hover:bg-emerald-700">
+                        {confirming ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
+                        {t("grn.confirm", "Confirm GRN")}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           </div>
         </div>
       </div>

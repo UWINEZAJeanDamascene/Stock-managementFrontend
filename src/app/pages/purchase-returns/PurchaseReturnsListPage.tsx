@@ -1,36 +1,48 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router';
-import { purchaseReturnsApi, grnApi, suppliersApi } from '@/lib/api';
-import { Layout } from '../../layout/Layout';
-import { useCurrency } from '@/contexts/CurrencyContext';
-import { 
-  Plus, 
-  Eye, 
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { useNavigate } from "react-router";
+import { purchaseReturnsApi, suppliersApi } from "@/lib/api";
+import { Layout } from "../../layout/Layout";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import {
+  Plus,
+  Eye,
   Loader2,
   FileText,
   ChevronLeft,
-  ChevronRight
-} from 'lucide-react';
-import { Button } from '@/app/components/ui/button';
-import { Input } from '@/app/components/ui/input';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/app/components/ui/table';
+  ChevronRight,
+  PackageCheck,
+  Filter,
+  ArrowLeftRight,
+  TrendingDown,
+  Box,
+  Building2,
+  CheckCircle,
+  XCircle,
+} from "lucide-react";
+import { Button } from "@/app/components/ui/button";
+import { Input } from "@/app/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/app/components/ui/table";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/app/components/ui/select';
-import { Badge } from '@/app/components/ui/badge';
-import { useTranslation } from 'react-i18next';
+} from "@/app/components/ui/select";
+import { Badge } from "@/app/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card";
+import { useTranslation } from "react-i18next";
 
+/* ═══════════════════════════════════════════════════════════════
+   TYPES
+   ═══════════════════════════════════════════════════════════════ */
 interface PurchaseReturn {
   _id: string;
   referenceNo: string;
@@ -44,7 +56,7 @@ interface PurchaseReturn {
     code?: string;
   };
   returnDate: string;
-  status: 'draft' | 'confirmed' | 'cancelled';
+  status: "draft" | "confirmed" | "cancelled";
   totalAmount: number;
 }
 
@@ -61,67 +73,55 @@ interface PaginationInfo {
   limit: number;
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   COMPONENT
+   ═══════════════════════════════════════════════════════════════ */
 export default function PurchaseReturnsListPage() {
   const { t } = useTranslation();
   const { formatCurrency } = useCurrency();
   const navigate = useNavigate();
+
   const [loading, setLoading] = useState(true);
   const [returnList, setReturnList] = useState<PurchaseReturn[]>([]);
   const [pagination, setPagination] = useState<PaginationInfo | null>(null);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  
-  // Filters
-  const [page, setPage] = useState(1);
-  const [statusFilter, setStatusFilter] = useState<string>('');
-  const [supplierFilter, setSupplierFilter] = useState<string>('');
-  const [dateFrom, setDateFrom] = useState<string>('');
-  const [dateTo, setDateTo] = useState<string>('');
+  const [showFilters, setShowFilters] = useState(false);
 
+  /* ── Filters ── */
+  const [page, setPage] = useState(1);
+  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [supplierFilter, setSupplierFilter] = useState<string>("");
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
+
+  /* ── Data fetching ── */
   const fetchSuppliers = useCallback(async () => {
     try {
-      console.log('[PurchaseReturnsListPage] Fetching suppliers...');
       const response = await suppliersApi.getAll({ limit: 100 });
-      console.log('[PurchaseReturnsListPage] Suppliers response:', response);
-      
       if (response.success && response.data) {
-        const supplierData = Array.isArray(response.data) 
-          ? response.data 
-          : (response.data as unknown[]);
-        setSuppliers(supplierData as Supplier[]);
+        setSuppliers((Array.isArray(response.data) ? response.data : (response.data as unknown[])) as Supplier[]);
       }
     } catch (error) {
-      console.error('[PurchaseReturnsListPage] Failed to fetch suppliers:', error);
+      console.error("[PurchaseReturnsListPage] Failed to fetch suppliers:", error);
     }
   }, []);
 
   const fetchPurchaseReturns = useCallback(async () => {
     setLoading(true);
     try {
-      console.log('[PurchaseReturnsListPage] Fetching returns with params:', { statusFilter, supplierFilter, dateFrom, dateTo, page });
-      const params: any = {
-        page: page,
-        limit: 20,
-      };
-      
-      if (statusFilter && statusFilter !== 'all') params.status = statusFilter;
-      if (supplierFilter && supplierFilter !== 'all') params.supplier_id = supplierFilter;
+      const params: any = { page, limit: 20 };
+      if (statusFilter && statusFilter !== "all") params.status = statusFilter;
+      if (supplierFilter && supplierFilter !== "all") params.supplier_id = supplierFilter;
       if (dateFrom) params.date_from = dateFrom;
       if (dateTo) params.date_to = dateTo;
-      
+
       const response = await purchaseReturnsApi.getAll(params);
-      console.log('[PurchaseReturnsListPage] Returns response:', response);
-      
       if (response.success) {
-        const returnData = Array.isArray(response.data) 
-          ? response.data 
-          : (response.data as unknown[]);
-        setReturnList(returnData as PurchaseReturn[]);
-        if (response.pagination) {
-          setPagination(response.pagination as PaginationInfo);
-        }
+        setReturnList((Array.isArray(response.data) ? response.data : (response.data as unknown[])) as PurchaseReturn[]);
+        if (response.pagination) setPagination(response.pagination as PaginationInfo);
       }
     } catch (error) {
-      console.error('[PurchaseReturnsListPage] Failed to fetch purchase returns:', error);
+      console.error("[PurchaseReturnsListPage] Failed to fetch purchase returns:", error);
     } finally {
       setLoading(false);
     }
@@ -135,154 +135,232 @@ export default function PurchaseReturnsListPage() {
     fetchPurchaseReturns();
   }, [fetchPurchaseReturns]);
 
-  const getStatusBadge = (status: string) => {
-    const statusConfig: Record<string, { variant: 'default' | 'secondary' | 'outline' | 'destructive'; label: string }> = {
-      draft: { variant: 'secondary', label: t('purchaseReturn.status.draft', 'Draft') },
-      confirmed: { variant: 'default', label: t('purchaseReturn.status.confirmed', 'Confirmed') },
-      cancelled: { variant: 'destructive', label: t('purchaseReturn.status.cancelled', 'Cancelled') },
+  /* ── Stats ── */
+  const stats = useMemo(() => {
+    const total = returnList.length;
+    const draft = returnList.filter((r) => r.status === "draft").length;
+    const confirmed = returnList.filter((r) => r.status === "confirmed").length;
+    const cancelled = returnList.filter((r) => r.status === "cancelled").length;
+    const totalValue = returnList.reduce((s, r) => s + (r.totalAmount || 0), 0);
+    return { total, draft, confirmed, cancelled, totalValue };
+  }, [returnList]);
+
+  /* ── Helpers ── */
+  function StatusBadge({ status }: { status: string }) {
+    const styles: Record<string, string> = {
+      draft: "bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/60",
+      confirmed: "bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60",
+      cancelled: "bg-red-50 text-red-700 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900/60",
     };
-    
-    const config = statusConfig[status] || { variant: 'outline', label: status };
-    return <Badge variant={config.variant}>{config.label}</Badge>;
-  };
+    const labels: Record<string, string> = {
+      draft: t("purchaseReturn.status.draft", "Draft"),
+      confirmed: t("purchaseReturn.status.confirmed", "Confirmed"),
+      cancelled: t("purchaseReturn.status.cancelled", "Cancelled"),
+    };
+    return (
+      <Badge className={`ring-1 ${styles[status] || "bg-slate-100 text-slate-700 ring-slate-200"}`} variant="outline">
+        {labels[status] || status}
+      </Badge>
+    );
+  }
 
   const formatDate = (dateStr: string) => {
-    if (!dateStr) return '-';
-    return new Date(dateStr).toLocaleDateString();
+    if (!dateStr) return "-";
+    return new Date(dateStr).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
   };
 
+  /* ════════════════════════════════
+     Render
+     ════════════════════════════════ */
   return (
     <Layout>
-      <div className="container mx-auto py-6">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-2xl font-bold dark:text-gray-100">{t('purchaseReturn.title', 'Purchase Returns')}</h1>
-            <p className="text-muted-foreground dark:text-gray-400">{t('purchaseReturn.description', 'Manage your purchase returns')}</p>
+      <div className="min-h-screen bg-slate-50 px-3 py-4 dark:bg-slate-950 sm:px-4 sm:py-6 lg:px-8">
+        <div className="mx-auto max-w-[1400px] space-y-6">
+          {/* Header */}
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <div className="rounded-lg bg-amber-50 p-2.5 text-amber-700 ring-1 ring-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/60">
+                  <ArrowLeftRight className="h-5 w-5" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold tracking-tight text-slate-950 dark:text-white">{t("purchaseReturn.title", "Purchase Returns")}</h1>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">{t("purchaseReturn.description", "Manage your purchase returns")}</p>
+                </div>
+              </div>
+            </div>
+            <Button onClick={() => navigate("/purchase-returns/new")} className="gap-1.5 bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100">
+              <Plus className="h-4 w-4" /> {t("purchaseReturn.newReturn", "New Return")}
+            </Button>
           </div>
-          <Button onClick={() => navigate('/purchase-returns/new')}>
-            <Plus className="mr-2 h-4 w-4" />
-            {t('purchaseReturn.newReturn', 'New Return')}
-          </Button>
-        </div>
 
-        {/* Filters */}
-        <div className="bg-card rounded-lg border p-4 mb-6 dark:border-slate-700 dark:bg-slate-800">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <label className="text-sm font-medium mb-1 block dark:text-gray-200">{t('purchaseReturn.status', 'Status')}</label>
-              <Select value={statusFilter || 'all'} onValueChange={(value) => setStatusFilter(value === 'all' ? '' : value)}>
-                <SelectTrigger className="dark:bg-slate-700 dark:border-slate-600">
-                  <SelectValue placeholder={t('purchaseReturn.allStatuses', 'All Statuses')} />
-                </SelectTrigger>
-                <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
-                  <SelectItem value="all" className="dark:text-gray-200">{t('purchaseReturn.allStatuses', 'All Statuses')}</SelectItem>
-                  <SelectItem value="draft" className="dark:text-gray-200">{t('purchaseReturn.status.draft', 'Draft')}</SelectItem>
-                  <SelectItem value="confirmed" className="dark:text-gray-200">{t('purchaseReturn.status.confirmed', 'Confirmed')}</SelectItem>
-                  <SelectItem value="cancelled" className="dark:text-gray-200">{t('purchaseReturn.status.cancelled', 'Cancelled')}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-1 block dark:text-gray-200">{t('purchaseReturn.supplier', 'Supplier')}</label>
-              <Select value={supplierFilter || 'all'} onValueChange={(value) => setSupplierFilter(value === 'all' ? '' : value)}>
-                <SelectTrigger className="dark:bg-slate-700 dark:border-slate-600">
-                  <SelectValue placeholder={t('purchaseReturn.allSuppliers', 'All Suppliers')} />
-                </SelectTrigger>
-                <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
-                  <SelectItem value="all" className="dark:text-gray-200">{t('purchaseReturn.allSuppliers', 'All Suppliers')}</SelectItem>
-                  {suppliers.map((supplier) => (
-                    <SelectItem key={supplier._id} value={supplier._id} className="dark:text-gray-200">
-                      {supplier.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-1 block dark:text-gray-200">{t('purchaseReturn.dateFrom', 'Date From')}</label>
-              <Input 
-                type="date" 
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-                className="dark:bg-slate-700 dark:border-slate-600 dark:text-gray-200"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-1 block dark:text-gray-200">{t('purchaseReturn.dateTo', 'Date To')}</label>
-              <Input 
-                type="date" 
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-                className="dark:bg-slate-700 dark:border-slate-600 dark:text-gray-200"
-              />
-            </div>
+          {/* Stats */}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="flex items-center gap-3 p-4">
+                <div className="rounded-lg bg-slate-50 p-2.5 text-slate-600 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-800">
+                  <PackageCheck className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{t("purchaseReturn.totalReturns", "Total")}</p>
+                  <p className="text-xl font-bold text-slate-900 dark:text-white">{stats.total}</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="flex items-center gap-3 p-4">
+                <div className="rounded-lg bg-amber-50 p-2.5 text-amber-600 ring-1 ring-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/60">
+                  <Box className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{t("purchaseReturn.draft", "Draft")}</p>
+                  <p className="text-xl font-bold text-slate-900 dark:text-white">{stats.draft}</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="flex items-center gap-3 p-4">
+                <div className="rounded-lg bg-emerald-50 p-2.5 text-emerald-600 ring-1 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60">
+                  <CheckCircle className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{t("purchaseReturn.confirmed", "Confirmed")}</p>
+                  <p className="text-xl font-bold text-slate-900 dark:text-white">{stats.confirmed}</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="flex items-center gap-3 p-4">
+                <div className="rounded-lg bg-sky-50 p-2.5 text-sky-600 ring-1 ring-sky-100 dark:bg-sky-950/40 dark:text-sky-300 dark:ring-sky-900/60">
+                  <TrendingDown className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{t("purchaseReturn.totalValue", "Total Value")}</p>
+                  <p className="text-xl font-bold text-slate-900 dark:text-white">{formatCurrency(stats.totalValue)}</p>
+                </div>
+              </CardContent>
+            </Card>
           </div>
-        </div>
 
-        {/* Table */}
-        <div className="bg-card rounded-lg border dark:border-slate-700 dark:bg-slate-800">
-          {loading ? (
-            <div className="flex items-center justify-center p-8">
-              <Loader2 className="h-8 w-8 animate-spin" />
-            </div>
-          ) : (
-            <Table>
-              <TableHeader className="dark:bg-slate-800">
-                <TableRow className="dark:hover:bg-slate-700/50">
-                  <TableHead className="dark:text-gray-300">{t('purchaseReturn.reference', 'Reference')}</TableHead>
-                  <TableHead className="dark:text-gray-300">{t('purchaseReturn.grnReference', 'GRN Reference')}</TableHead>
-                  <TableHead className="dark:text-gray-300">{t('purchaseReturn.supplier', 'Supplier')}</TableHead>
-                  <TableHead className="dark:text-gray-300">{t('purchaseReturn.returnDate', 'Return Date')}</TableHead>
-                  <TableHead className="dark:text-gray-300">{t('purchaseReturn.status', 'Status')}</TableHead>
-                  <TableHead className="dark:text-gray-300">{t('purchaseReturn.totalAmount', 'Total Amount')}</TableHead>
-                  <TableHead className="text-right dark:text-gray-300">{t('common.actions', 'Actions')}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody className="dark:bg-slate-800">
-                {returnList.length === 0 ? (
-                  <TableRow className="dark:hover:bg-slate-700/50">
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground dark:text-gray-400">
-                      {t('purchaseReturn.noReturns', 'No purchase returns found')}
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  returnList.map((pr) => (
-                    <TableRow key={pr._id} className="dark:hover:bg-slate-700/50">
-                      <TableCell className="font-medium dark:text-gray-200">
-                        <FileText className="inline-block mr-2 h-4 w-4" />
-                        {pr.referenceNo || 'N/A'}
-                      </TableCell>
-                      <TableCell className="dark:text-gray-300">{pr.grn?.referenceNo || '-'}</TableCell>
-                      <TableCell className="dark:text-gray-300">{pr.supplier?.name || '-'}</TableCell>
-                      <TableCell className="dark:text-gray-300">{formatDate(pr.returnDate)}</TableCell>
-                      <TableCell>{getStatusBadge(pr.status)}</TableCell>
-                      <TableCell className="font-medium dark:text-gray-200">
-                        {formatCurrency(pr.totalAmount)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => navigate(`/purchase-returns/${pr._id}`)}
-                          className="dark:hover:bg-slate-700"
-                        >
-                          <Eye className="h-4 w-4 dark:text-gray-300" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          )}
-        </div>
+          {/* Filters */}
+          <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-base text-slate-800 dark:text-slate-100">
+                  <Filter className="h-4 w-4 text-slate-500" />
+                  {t("purchaseReturn.filters", "Filters")}
+                </CardTitle>
+                <Button variant="ghost" size="sm" onClick={() => setShowFilters(!showFilters)} className="text-xs text-slate-500">
+                  {showFilters ? "Hide" : "Show"}
+                </Button>
+              </div>
+            </CardHeader>
+            {showFilters && (
+              <CardContent>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-slate-600 dark:text-slate-300">{t("purchaseReturn.status", "Status")}</label>
+                    <Select value={statusFilter || "all"} onValueChange={(v) => setStatusFilter(v === "all" ? "" : v)}>
+                      <SelectTrigger className="h-9 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white">
+                        <SelectValue placeholder={t("purchaseReturn.allStatuses", "All Statuses")} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">{t("purchaseReturn.allStatuses", "All Statuses")}</SelectItem>
+                        <SelectItem value="draft">{t("purchaseReturn.status.draft", "Draft")}</SelectItem>
+                        <SelectItem value="confirmed">{t("purchaseReturn.status.confirmed", "Confirmed")}</SelectItem>
+                        <SelectItem value="cancelled">{t("purchaseReturn.status.cancelled", "Cancelled")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-slate-600 dark:text-slate-300">{t("purchaseReturn.supplier", "Supplier")}</label>
+                    <Select value={supplierFilter || "all"} onValueChange={(v) => setSupplierFilter(v === "all" ? "" : v)}>
+                      <SelectTrigger className="h-9 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white">
+                        <SelectValue placeholder={t("purchaseReturn.allSuppliers", "All Suppliers")} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">{t("purchaseReturn.allSuppliers", "All Suppliers")}</SelectItem>
+                        {suppliers.map((s) => (
+                          <SelectItem key={s._id} value={s._id}>{s.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-slate-600 dark:text-slate-300">{t("purchaseReturn.dateFrom", "Date From")}</label>
+                    <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="h-9 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-slate-600 dark:text-slate-300">{t("purchaseReturn.dateTo", "Date To")}</label>
+                    <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="h-9 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white" />
+                  </div>
+                </div>
+              </CardContent>
+            )}
+          </Card>
 
-        {/* Pagination */}
-        {pagination && pagination.totalPages > 1 && (
-          <div className="mt-4 flex justify-center">
-            <div className="flex items-center gap-2">
+          {/* Table */}
+          <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <CardContent className="p-0">
+              {loading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-slate-50 hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-900">
+                        <TableHead className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{t("purchaseReturn.reference", "Reference")}</TableHead>
+                        <TableHead className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{t("purchaseReturn.grnReference", "GRN")}</TableHead>
+                        <TableHead className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{t("purchaseReturn.supplier", "Supplier")}</TableHead>
+                        <TableHead className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{t("purchaseReturn.returnDate", "Return Date")}</TableHead>
+                        <TableHead className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{t("purchaseReturn.status", "Status")}</TableHead>
+                        <TableHead className="text-right text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{t("purchaseReturn.totalAmount", "Total")}</TableHead>
+                        <TableHead className="text-right text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">{t("common.actions", "Actions")}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {returnList.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={7} className="py-10 text-center text-sm text-slate-500 dark:text-slate-400">
+                            {t("purchaseReturn.noReturns", "No purchase returns found")}
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        returnList.map((pr) => (
+                          <TableRow key={pr._id} className="transition-colors hover:bg-slate-50/60 dark:hover:bg-slate-900/40">
+                            <TableCell>
+                              <div className="flex items-center gap-2 font-medium text-slate-900 dark:text-white">
+                                <FileText className="h-4 w-4 text-slate-400" />
+                                {pr.referenceNo || "N/A"}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-sm text-slate-600 dark:text-slate-300">{pr.grn?.referenceNo || "-"}</TableCell>
+                            <TableCell className="text-sm text-slate-600 dark:text-slate-300">{pr.supplier?.name || "-"}</TableCell>
+                            <TableCell className="text-sm text-slate-600 dark:text-slate-300">{formatDate(pr.returnDate)}</TableCell>
+                            <TableCell><StatusBadge status={pr.status} /></TableCell>
+                            <TableCell className="text-right font-medium text-slate-900 dark:text-white">{formatCurrency(pr.totalAmount)}</TableCell>
+                            <TableCell className="text-right">
+                              <Button variant="ghost" size="sm" onClick={() => navigate(`/purchase-returns/${pr._id}`)} className="h-8 w-8 p-0">
+                                <Eye className="h-4 w-4 text-slate-500" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Pagination */}
+          {pagination && pagination.totalPages > 1 && (
+            <div className="flex items-center justify-center gap-1">
               <button
-                className={`flex h-9 w-9 items-center justify-center rounded-md text-sm transition-colors hover:bg-accent hover:text-accent-foreground ${pagination.currentPage === 1 ? 'pointer-events-none opacity-50' : ''}`}
+                className={`flex h-9 w-9 items-center justify-center rounded-md text-sm transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 ${pagination.currentPage === 1 ? "pointer-events-none opacity-50" : ""}`}
                 onClick={() => setPage(Math.max(1, page - 1))}
                 disabled={pagination.currentPage === 1}
               >
@@ -291,22 +369,22 @@ export default function PurchaseReturnsListPage() {
               {Array.from({ length: pagination.totalPages }, (_, i) => (
                 <button
                   key={i + 1}
-                  className={`flex h-9 w-9 items-center justify-center rounded-md text-sm transition-colors hover:bg-accent hover:text-accent-foreground ${pagination.currentPage === i + 1 ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground' : ''}`}
+                  className={`flex h-9 w-9 items-center justify-center rounded-md text-sm transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 ${pagination.currentPage === i + 1 ? "bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100" : ""}`}
                   onClick={() => setPage(i + 1)}
                 >
                   {i + 1}
                 </button>
               ))}
               <button
-                className={`flex h-9 w-9 items-center justify-center rounded-md text-sm transition-colors hover:bg-accent hover:text-accent-foreground ${pagination.currentPage === pagination.totalPages ? 'pointer-events-none opacity-50' : ''}`}
+                className={`flex h-9 w-9 items-center justify-center rounded-md text-sm transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 ${pagination.currentPage === pagination.totalPages ? "pointer-events-none opacity-50" : ""}`}
                 onClick={() => setPage(page + 1)}
                 disabled={pagination.currentPage === pagination.totalPages}
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </Layout>
   );
