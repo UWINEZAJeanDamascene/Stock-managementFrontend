@@ -8,7 +8,18 @@ import {
   BudgetLine,
 } from "@/lib/api";
 import { Layout } from "../../layout/Layout";
-import { ArrowLeft, Plus, Trash2, Loader2, Save } from "lucide-react";
+import {
+  ArrowLeft,
+  Plus,
+  Trash2,
+  Loader2,
+  Save,
+  DollarSign,
+  FileText,
+  List,
+  CalendarDays,
+  Wallet,
+} from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Textarea } from "@/app/components/ui/textarea";
@@ -303,8 +314,9 @@ export default function BudgetFormPage() {
   if (loading) {
     return (
       <Layout>
-        <div className="flex items-center justify-center py-24">
-          <Loader2 className="h-8 w-8 animate-spin dark:text-slate-400" />
+        <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-slate-50 dark:bg-slate-950">
+          <Loader2 className="h-8 w-8 animate-spin text-indigo-600 dark:text-indigo-400" />
+          <p className="text-sm text-slate-500 dark:text-slate-400">{t("common.loading", "Loading...")}</p>
         </div>
       </Layout>
     );
@@ -312,250 +324,213 @@ export default function BudgetFormPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-6 max-w-4xl">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate("/budgets")}
-            className="dark:text-slate-200 dark:hover:bg-slate-700"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold dark:text-white">
-              {isEdit
-                ? t("budgets.editBudget", "Edit Budget")
-                : t("budgets.addBudget", "Add Budget")}
-            </h1>
-            <p className="text-muted-foreground dark:text-slate-400">
-              {isEdit
-                ? t(
-                    "budgets.editDescription",
-                    "Update budget details and line items",
-                  )
-                : t(
-                    "budgets.createDescription",
-                    "Create a new budget for tracking",
-                  )}
-            </p>
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+        {/* Hero Header */}
+        <div className="relative overflow-hidden border-b border-slate-200 bg-gradient-to-br from-indigo-900 via-indigo-800 to-slate-900 dark:border-slate-800">
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute right-10 top-10 h-40 w-40 rounded-full bg-white blur-3xl" />
+            <div className="absolute bottom-5 left-20 h-32 w-32 rounded-full bg-indigo-400 blur-3xl" />
+          </div>
+          <div className="relative mx-auto max-w-4xl px-4 py-8 sm:px-6">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate("/budgets")}
+                className="text-white hover:bg-white/10"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight text-white">
+                  {isEdit ? t("budgets.editBudget", "Edit Budget") : t("budgets.addBudget", "Add Budget")}
+                </h1>
+                <p className="mt-0.5 text-sm text-indigo-200">
+                  {isEdit ? t("budgets.editDescription", "Update budget details and line items") : t("budgets.createDescription", "Create a new budget for tracking")}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Basic Info */}
-        <Card className="mb-6 dark:bg-slate-800 dark:border-slate-700">
-          <CardHeader>
-            <CardTitle className="dark:text-white">{t("budgets.basicInfo", "Basic Information")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
+          {/* Basic Info */}
+          <Card className="mb-6 overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <CardHeader className="border-b border-slate-100 bg-slate-50/50 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/50">
+              <div className="flex items-center gap-2">
+                <div className="rounded-md bg-indigo-50 p-1.5 text-indigo-600 ring-1 ring-indigo-100 dark:bg-indigo-950/30 dark:text-indigo-400 dark:ring-indigo-900/40">
+                  <FileText className="h-4 w-4" />
+                </div>
+                <CardTitle className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t("budgets.basicInfo", "Basic Information")}</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="p-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="space-y-2 col-span-2">
-                <Label className="dark:text-slate-200">{t("budgets.nameLabel", "Budget Name")} *</Label>
+                <Label className="text-xs font-semibold text-slate-700 dark:text-slate-200">{t("budgets.nameLabel", "Budget Name")} *</Label>
                 <Input
-                  placeholder={t(
-                    "budgets.namePlaceholder",
-                    "e.g., Q1 Operating Budget",
-                  )}
+                  placeholder={t("budgets.namePlaceholder", "e.g., Q1 Operating Budget")}
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600 dark:placeholder:text-slate-400"
+                  className="border-slate-200 bg-slate-50 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-400"
                 />
               </div>
               <div className="space-y-2 col-span-2">
-                <Label className="dark:text-slate-200">{t("budgets.description", "Description")}</Label>
+                <Label className="text-xs font-semibold text-slate-700 dark:text-slate-200">{t("budgets.description", "Description")}</Label>
                 <Input
-                  placeholder={t(
-                    "budgets.descriptionPlaceholder",
-                    "Optional description",
-                  )}
+                  placeholder={t("budgets.descriptionPlaceholder", "Optional description")}
                   value={form.description}
-                  onChange={(e) =>
-                    setForm({ ...form, description: e.target.value })
-                  }
-                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600 dark:placeholder:text-slate-400"
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  className="border-slate-200 bg-slate-50 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-400"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="dark:text-slate-200">{t("budgets.type", "Type")} *</Label>
-                <Select
-                  value={form.type}
-                  onValueChange={(value) =>
-                    setForm({ ...form, type: value as any })
-                  }
-                >
-                  <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
+                <Label className="text-xs font-semibold text-slate-700 dark:text-slate-200">{t("budgets.type", "Type")} *</Label>
+                <Select value={form.type} onValueChange={(value) => setForm({ ...form, type: value as any })}>
+                  <SelectTrigger className="border-slate-200 bg-slate-50 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="dark:bg-slate-800">
-                    <SelectItem value="expense" className="dark:text-slate-200">
+                  <SelectContent className="border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+                    <SelectItem value="expense" className="text-sm text-slate-700 dark:text-slate-200">
                       {t("budgets.types.expense", "Expense")}
                     </SelectItem>
-                    <SelectItem value="revenue" className="dark:text-slate-200">
+                    <SelectItem value="revenue" className="text-sm text-slate-700 dark:text-slate-200">
                       {t("budgets.types.revenue", "Revenue")}
                     </SelectItem>
-                    <SelectItem value="profit" className="dark:text-slate-200">
+                    <SelectItem value="profit" className="text-sm text-slate-700 dark:text-slate-200">
                       {t("budgets.types.profit", "Profit")}
                     </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label className="dark:text-slate-200">{t("budgets.fiscalYear", "Fiscal Year")} *</Label>
+                <Label className="text-xs font-semibold text-slate-700 dark:text-slate-200">{t("budgets.fiscalYear", "Fiscal Year")} *</Label>
                 <Input
                   type="number"
                   value={form.fiscal_year}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      fiscal_year: parseInt(e.target.value) || currentYear,
-                    })
-                  }
-                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                  onChange={(e) => setForm({ ...form, fiscal_year: parseInt(e.target.value) || currentYear })}
+                  className="border-slate-200 bg-slate-50 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="dark:text-slate-200">{t("budgets.periodStart", "Period Start")}</Label>
+                <Label className="text-xs font-semibold text-slate-700 dark:text-slate-200">{t("budgets.periodStart", "Period Start")}</Label>
                 <Input
                   type="date"
                   value={form.periodStart}
-                  onChange={(e) =>
-                    setForm({ ...form, periodStart: e.target.value })
-                  }
-                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                  onChange={(e) => setForm({ ...form, periodStart: e.target.value })}
+                  className="border-slate-200 bg-slate-50 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="dark:text-slate-200">{t("budgets.periodEnd", "Period End")}</Label>
+                <Label className="text-xs font-semibold text-slate-700 dark:text-slate-200">{t("budgets.periodEnd", "Period End")}</Label>
                 <Input
                   type="date"
                   value={form.periodEnd}
-                  onChange={(e) =>
-                    setForm({ ...form, periodEnd: e.target.value })
-                  }
-                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                  onChange={(e) => setForm({ ...form, periodEnd: e.target.value })}
+                  className="border-slate-200 bg-slate-50 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="dark:text-slate-200">{t("budgets.periodType", "Period Type")}</Label>
-                <Select
-                  value={form.periodType}
-                  onValueChange={(value) =>
-                    setForm({ ...form, periodType: value as any })
-                  }
-                >
-                  <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
+                <Label className="text-xs font-semibold text-slate-700 dark:text-slate-200">{t("budgets.periodType", "Period Type")}</Label>
+                <Select value={form.periodType} onValueChange={(value) => setForm({ ...form, periodType: value as any })}>
+                  <SelectTrigger className="border-slate-200 bg-slate-50 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="dark:bg-slate-800">
-                    <SelectItem value="monthly" className="dark:text-slate-200">
+                  <SelectContent className="border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+                    <SelectItem value="monthly" className="text-sm text-slate-700 dark:text-slate-200">
                       {t("budgets.periodTypes.monthly", "Monthly")}
                     </SelectItem>
-                    <SelectItem value="quarterly" className="dark:text-slate-200">
+                    <SelectItem value="quarterly" className="text-sm text-slate-700 dark:text-slate-200">
                       {t("budgets.periodTypes.quarterly", "Quarterly")}
                     </SelectItem>
-                    <SelectItem value="yearly" className="dark:text-slate-200">
+                    <SelectItem value="yearly" className="text-sm text-slate-700 dark:text-slate-200">
                       {t("budgets.periodTypes.yearly", "Yearly")}
                     </SelectItem>
-                    <SelectItem value="custom" className="dark:text-slate-200">
+                    <SelectItem value="custom" className="text-sm text-slate-700 dark:text-slate-200">
                       {t("budgets.periodTypes.custom", "Custom")}
                     </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label className="dark:text-slate-200">{t("budgets.totalAmount", "Total Amount")}</Label>
+                <Label className="text-xs font-semibold text-slate-700 dark:text-slate-200">{t("budgets.totalAmount", "Total Amount")}</Label>
                 <Input
                   type="number"
                   step="0.01"
                   placeholder="0.00"
                   value={form.amount || ""}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      amount: parseFloat(e.target.value) || 0,
-                    })
-                  }
-                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600 dark:placeholder:text-slate-400"
+                  onChange={(e) => setForm({ ...form, amount: parseFloat(e.target.value) || 0 })}
+                  className="border-slate-200 bg-slate-50 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-400"
                 />
               </div>
               <div className="space-y-2 col-span-2">
-                <Label className="dark:text-slate-200">{t("budgets.notes", "Notes")}</Label>
+                <Label className="text-xs font-semibold text-slate-700 dark:text-slate-200">{t("budgets.notes", "Notes")}</Label>
                 <Textarea
-                  placeholder={t(
-                    "budgets.notesPlaceholder",
-                    "Additional notes",
-                  )}
+                  placeholder={t("budgets.notesPlaceholder", "Additional notes")}
                   value={form.notes}
                   onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                  className="dark:bg-slate-700 dark:text-white dark:border-slate-600 dark:placeholder:text-slate-400"
+                  className="border-slate-200 bg-slate-50 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-400"
                 />
               </div>
             </div>
           </CardContent>
-        </Card>
+          </Card>
 
-        {/* Line Items */}
-        <Card className="mb-6 dark:bg-slate-800 dark:border-slate-700">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="dark:text-white">
-              {t("budgets.lineItems", "Budget Line Items")}
-              {lines.length > 0 && (
-                <Badge variant="outline" className="ml-2 dark:border-slate-600 dark:text-slate-200">
-                  {lines.length}
-                </Badge>
-              )}
-            </CardTitle>
-            <Button variant="outline" size="sm" onClick={addLine} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
-              <Plus className="mr-2 h-4 w-4" />
-              {t("budgets.addLine", "Add Line")}
-            </Button>
-          </CardHeader>
-          <CardContent>
-            {lines.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground dark:text-slate-400">
-                <p>{t("budgets.noLines", "No line items yet")}</p>
-                <p className="text-sm dark:text-slate-500">
-                  {t(
-                    "budgets.addLinesHint",
-                    "Add line items to allocate budget to specific accounts",
+          {/* Line Items */}
+          <Card className="mb-6 overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <CardHeader className="flex flex-row items-center justify-between border-b border-slate-100 bg-slate-50/50 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/50">
+              <div className="flex items-center gap-2">
+                <div className="rounded-md bg-indigo-50 p-1.5 text-indigo-600 ring-1 ring-indigo-100 dark:bg-indigo-950/30 dark:text-indigo-400 dark:ring-indigo-900/40">
+                  <List className="h-4 w-4" />
+                </div>
+                <CardTitle className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                  {t("budgets.lineItems", "Budget Line Items")}
+                  {lines.length > 0 && (
+                    <Badge variant="outline" className="ml-2 border-slate-200 text-xs text-slate-600 dark:border-slate-700 dark:text-slate-300">
+                      {lines.length}
+                    </Badge>
                   )}
-                </p>
-                <Button variant="outline" className="mt-4 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700" onClick={addLine}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  {t("budgets.addFirstLine", "Add First Line")}
-                </Button>
+                </CardTitle>
               </div>
-            ) : (
-              <>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="dark:bg-slate-700/50">
-                        <TableHead className="dark:text-slate-200">{t("budgets.account", "Account")}</TableHead>
-                        <TableHead className="dark:text-slate-200">{t("budgets.month", "Month")}</TableHead>
-                        <TableHead className="dark:text-slate-200">{t("budgets.year", "Year")}</TableHead>
-                        <TableHead className="text-right dark:text-slate-200">
-                          {t("budgets.budgetedAmount", "Budgeted Amount")}
-                        </TableHead>
-                        <TableHead className="dark:text-slate-200">
-                          {t("budgets.category", "Category")}
-                        </TableHead>
-                        <TableHead className="dark:text-slate-200">{t("budgets.notes", "Notes")}</TableHead>
-                        <TableHead className="w-[50px]"></TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody className="dark:bg-slate-800">
-                      {lines.map((line, index) => (
-                        <TableRow key={index} className="dark:hover:bg-slate-700/30">
-                          <TableCell className="min-w-[200px]">
-                            <Select
-                              value={line.account_id}
-                              onValueChange={(value) =>
-                                updateLine(index, "account_id", value)
-                              }
-                            >
-                              <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
+              <Button variant="outline" size="sm" onClick={addLine} className="border-slate-200 text-xs text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
+                <Plus className="mr-1.5 h-3.5 w-3.5" />
+                {t("budgets.addLine", "Add Line")}
+              </Button>
+            </CardHeader>
+            <CardContent className="p-4">
+              {lines.length === 0 ? (
+                <div className="flex flex-col items-center py-10 text-center">
+                  <div className="mb-3 rounded-full bg-slate-100 p-3 dark:bg-slate-800">
+                    <List className="h-6 w-6 text-slate-400 dark:text-slate-500" />
+                  </div>
+                  <p className="text-sm font-medium text-slate-700 dark:text-slate-200">{t("budgets.noLines", "No line items yet")}</p>
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t("budgets.addLinesHint", "Add line items to allocate budget to specific accounts")}</p>
+                  <Button variant="outline" className="mt-4 border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800" size="sm" onClick={addLine}>
+                    <Plus className="mr-1.5 h-3.5 w-3.5" />
+                    {t("budgets.addFirstLine", "Add First Line")}
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="border-b border-slate-100 bg-slate-50/50 hover:bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/50 dark:hover:bg-slate-900/50">
+                          <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("budgets.account", "Account")}</TableHead>
+                          <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("budgets.month", "Month")}</TableHead>
+                          <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("budgets.year", "Year")}</TableHead>
+                          <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("budgets.budgetedAmount", "Budgeted Amount")}</TableHead>
+                          <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("budgets.category", "Category")}</TableHead>
+                          <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("budgets.notes", "Notes")}</TableHead>
+                          <TableHead className="w-[50px]"></TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {lines.map((line, index) => (
+                          <TableRow key={index} className="border-b border-slate-50 transition-colors hover:bg-slate-50/50 dark:border-slate-800 dark:hover:bg-slate-800/50">
+                            <TableCell className="min-w-[200px]">
+                              <Select value={line.account_id} onValueChange={(value) => updateLine(index, "account_id", value)}>
+                                <SelectTrigger className="border-slate-200 bg-slate-50 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white">
                                 <SelectValue
                                   placeholder={t(
                                     "budgets.selectAccount",
@@ -583,124 +558,89 @@ export default function BudgetFormPage() {
                                 )
                               }
                             >
-                              <SelectTrigger className="w-[130px] dark:bg-slate-700 dark:text-white dark:border-slate-600">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent className="dark:bg-slate-800">
-                                {MONTHS.map((m) => (
-                                  <SelectItem
-                                    key={m.value}
-                                    value={m.value.toString()}
-                                    className="dark:text-slate-200"
-                                  >
-                                    {m.label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </TableCell>
-                          <TableCell>
-                            <Input
-                              type="number"
-                              className="w-[100px] dark:bg-slate-700 dark:text-white dark:border-slate-600"
-                              value={line.period_year}
-                              onChange={(e) =>
-                                updateLine(
-                                  index,
-                                  "period_year",
-                                  parseInt(e.target.value) || currentYear,
-                                )
-                              }
-                            />
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Input
-                              type="number"
-                              step="0.01"
-                              className="w-[130px] text-right ml-auto dark:bg-slate-700 dark:text-white dark:border-slate-600 dark:placeholder:text-slate-400"
-                              placeholder="0.00"
-                              value={line.budgeted_amount || ""}
-                              onChange={(e) =>
-                                updateLine(
-                                  index,
-                                  "budgeted_amount",
-                                  parseFloat(e.target.value) || 0,
-                                )
-                              }
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Input
-                              className="w-[120px] dark:bg-slate-700 dark:text-white dark:border-slate-600 dark:placeholder:text-slate-400"
-                              placeholder={t(
-                                "budgets.categoryPlaceholder",
-                                "Category",
-                              )}
-                              value={line.category}
-                              onChange={(e) =>
-                                updateLine(index, "category", e.target.value)
-                              }
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Input
-                              className="w-[140px] dark:bg-slate-700 dark:text-white dark:border-slate-600 dark:placeholder:text-slate-400"
-                              placeholder={t(
-                                "budgets.notesPlaceholder",
-                                "Notes",
-                              )}
-                              value={line.notes}
-                              onChange={(e) =>
-                                updateLine(index, "notes", e.target.value)
-                              }
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => removeLine(index)}
-                              className="dark:text-slate-300 dark:hover:bg-slate-700"
-                            >
-                              <Trash2 className="h-4 w-4 text-red-500" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-                {/* Total */}
-                <div className="flex justify-end mt-4 pt-4 border-t dark:border-slate-700">
-                  <div className="text-right">
-                    <div className="text-sm text-muted-foreground dark:text-slate-400">
-                      {t("budgets.totalLineAmount", "Total Line Amount")}
-                    </div>
-                    <div className="text-xl font-bold dark:text-white">
-                      {formatCurrency(totalLineAmount)}
+                                <SelectTrigger className="w-[130px] border-slate-200 bg-slate-50 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+                                  {MONTHS.map((m) => (
+                                    <SelectItem key={m.value} value={m.value.toString()} className="text-sm text-slate-700 dark:text-slate-200">
+                                      {m.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </TableCell>
+                            <TableCell>
+                              <Input
+                                type="number"
+                                className="w-[100px] border-slate-200 bg-slate-50 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                                value={line.period_year}
+                                onChange={(e) => updateLine(index, "period_year", parseInt(e.target.value) || currentYear)}
+                              />
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Input
+                                type="number"
+                                step="0.01"
+                                className="ml-auto w-[130px] border-slate-200 bg-slate-50 text-right text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-400"
+                                placeholder="0.00"
+                                value={line.budgeted_amount || ""}
+                                onChange={(e) => updateLine(index, "budgeted_amount", parseFloat(e.target.value) || 0)}
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Input
+                                className="w-[120px] border-slate-200 bg-slate-50 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-400"
+                                placeholder={t("budgets.categoryPlaceholder", "Category")}
+                                value={line.category}
+                                onChange={(e) => updateLine(index, "category", e.target.value)}
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Input
+                                className="w-[140px] border-slate-200 bg-slate-50 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-400"
+                                placeholder={t("budgets.notesPlaceholder", "Notes")}
+                                value={line.notes}
+                                onChange={(e) => updateLine(index, "notes", e.target.value)}
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => removeLine(index)}
+                                className="text-slate-500 hover:text-red-600 hover:bg-red-50 dark:text-slate-400 dark:hover:bg-red-950/30 dark:hover:text-red-400"
+                              >
+                                <Trash2 className="h-4 w-4 text-red-500 dark:text-red-400" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  {/* Total */}
+                  <div className="mt-4 flex justify-end border-t border-slate-100 pt-4 dark:border-slate-800">
+                    <div className="text-right">
+                      <div className="text-sm text-slate-500 dark:text-slate-400">{t("budgets.totalLineAmount", "Total Line Amount")}</div>
+                      <div className="text-xl font-bold text-slate-900 dark:text-white">{formatCurrency(totalLineAmount)}</div>
                     </div>
                   </div>
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
+                </>
+              )}
+            </CardContent>
+          </Card>
 
-        {/* Actions */}
-        <div className="flex justify-end gap-4">
-          <Button variant="outline" onClick={() => navigate("/budgets")} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
-            {t("common.cancel", "Cancel")}
-          </Button>
-          <Button onClick={handleSubmit} disabled={submitting} className="dark:bg-slate-700 dark:text-white dark:hover:bg-slate-600">
-            {submitting ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Save className="mr-2 h-4 w-4" />
-            )}
-            {isEdit
-              ? t("common.update", "Update Budget")
-              : t("budgets.createBudget", "Create Budget")}
-          </Button>
+          {/* Actions */}
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => navigate("/budgets")} className="border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
+              {t("common.cancel", "Cancel")}
+            </Button>
+            <Button onClick={handleSubmit} disabled={submitting} className="bg-indigo-600 text-white shadow-sm hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-700">
+              {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+              {isEdit ? t("common.update", "Update Budget") : t("budgets.createBudget", "Create Budget")}
+            </Button>
+          </div>
         </div>
       </div>
     </Layout>

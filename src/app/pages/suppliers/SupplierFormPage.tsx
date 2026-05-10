@@ -3,23 +3,31 @@ import { useNavigate, useParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { suppliersApi } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
-import { 
-  ArrowLeft, 
-  Save, 
-  Loader2
+import {
+  ArrowLeft,
+  Save,
+  Loader2,
+  Building2,
+  Contact,
+  LandPlot,
+  Banknote,
+  Info,
+  FileText,
+  CheckCircle2,
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { Textarea } from '@/app/components/ui/textarea';
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@/app/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/app/components/ui/card';
 import { Label } from '@/app/components/ui/label';
+import { Badge } from '@/app/components/ui/badge';
 import { toast } from 'sonner';
 
 interface SupplierFormData {
@@ -182,283 +190,447 @@ export default function SupplierFormPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-6 min-h-screen bg-slate-50 dark:bg-slate-900">
-        <div className="flex items-center gap-4 mb-6">
-          <Button variant="ghost" onClick={() => navigate('/suppliers')}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            {t('common.back', 'Back')}
-          </Button>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-            {isEditMode ? t('suppliers.editSupplier', 'Edit Supplier') : t('suppliers.addSupplier', 'Add Supplier')}
-          </h1>
-        </div>
-
-        <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Main Fields */}
-            <div className="lg:col-span-2 space-y-6">
-              <Card className="dark:bg-slate-800">
-                <CardHeader>
-                  <CardTitle className="text-slate-900 dark:text-white">{t('suppliers.basicInfo', 'Basic Information')}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="name" className="text-slate-900 dark:text-white">{t('suppliers.name', 'Name')} *</Label>
-                      <Input 
-                        id="name"
-                        value={formData.name}
-                        onChange={(e) => handleChange('name', e.target.value)}
-                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="code" className="text-slate-900 dark:text-white">{t('suppliers.code', 'Code')}</Label>
-                      <Input 
-                        id="code"
-                        value={formData.code}
-                        onChange={(e) => handleChange('code', e.target.value)}
-                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
-                        placeholder={t('suppliers.autoGenerate', 'Auto-generate if empty')}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="paymentTerms" className="text-slate-900 dark:text-white">{t('suppliers.paymentTerms', 'Payment Terms')}</Label>
-                      <Select 
-                        value={formData.paymentTerms} 
-                        onValueChange={(value) => handleChange('paymentTerms', value)}
-                      >
-                        <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
-                          <SelectItem value="cash" className="dark:text-slate-200">Cash</SelectItem>
-                          <SelectItem value="credit_7" className="dark:text-slate-200">Credit 7 Days</SelectItem>
-                          <SelectItem value="credit_15" className="dark:text-slate-200">Credit 15 Days</SelectItem>
-                          <SelectItem value="credit_30" className="dark:text-slate-200">Credit 30 Days</SelectItem>
-                          <SelectItem value="credit_45" className="dark:text-slate-200">Credit 45 Days</SelectItem>
-                          <SelectItem value="credit_60" className="dark:text-slate-200">Credit 60 Days</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="taxId" className="text-slate-900 dark:text-white">{t('suppliers.taxId', 'Tax ID')}</Label>
-                      <Input 
-                        id="taxId"
-                        value={formData.taxId}
-                        onChange={(e) => handleChange('taxId', e.target.value)}
-                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <Label htmlFor="region" className="text-slate-900 dark:text-white">{t('suppliers.region', 'Region')}</Label>
-                      <Input 
-                        id="region"
-                        value={formData.region}
-                        onChange={(e) => handleChange('region', e.target.value)}
-                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="currency" className="text-slate-900 dark:text-white">{t('suppliers.currency', 'Currency')}</Label>
-                      <Input 
-                        id="currency"
-                        value={formData.currency}
-                        onChange={(e) => handleChange('currency', e.target.value)}
-                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
-                        placeholder="USD"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="leadTime" className="text-slate-900 dark:text-white">{t('suppliers.leadTime', 'Lead Time (days)')}</Label>
-                      <Input 
-                        id="leadTime"
-                        type="number"
-                        min="0"
-                        value={formData.leadTime}
-                        onChange={(e) => handleChange('leadTime', parseInt(e.target.value) || 0)}
-                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
-                      />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="dark:bg-slate-800">
-                <CardHeader>
-                  <CardTitle className="text-slate-900 dark:text-white">{t('suppliers.contactInfo', 'Contact Information')}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="contactPerson" className="text-slate-900 dark:text-white">{t('suppliers.contactPerson', 'Contact Person')}</Label>
-                      <Input 
-                        id="contactPerson"
-                        value={formData.contact.contactPerson || ''}
-                        onChange={(e) => handleChange('contact.contactPerson', e.target.value)}
-                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="email" className="text-slate-900 dark:text-white">{t('suppliers.email', 'Email')}</Label>
-                      <Input 
-                        id="email"
-                        type="email"
-                        value={formData.contact.email || ''}
-                        onChange={(e) => handleChange('contact.email', e.target.value)}
-                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="phone" className="text-slate-900 dark:text-white">{t('suppliers.phone', 'Phone')}</Label>
-                      <Input 
-                        id="phone"
-                        value={formData.contact.phone || ''}
-                        onChange={(e) => handleChange('contact.phone', e.target.value)}
-                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="website" className="text-slate-900 dark:text-white">{t('suppliers.website', 'Website')}</Label>
-                      <Input 
-                        id="website"
-                        value={formData.contact.website || ''}
-                        onChange={(e) => handleChange('contact.website', e.target.value)}
-                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="address" className="text-slate-900 dark:text-white">{t('suppliers.address', 'Address')}</Label>
-                    <Textarea 
-                      id="address"
-                      value={formData.contact.address || ''}
-                      onChange={(e) => handleChange('contact.address', e.target.value)}
-                      rows={2}
-                      className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div>
-                      <Label htmlFor="city" className="text-slate-900 dark:text-white">{t('suppliers.city', 'City')}</Label>
-                      <Input 
-                        id="city"
-                        value={formData.contact.city || ''}
-                        onChange={(e) => handleChange('contact.city', e.target.value)}
-                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="state" className="text-slate-900 dark:text-white">{t('suppliers.state', 'State/Region')}</Label>
-                      <Input 
-                        id="state"
-                        value={formData.contact.state || ''}
-                        onChange={(e) => handleChange('contact.state', e.target.value)}
-                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="zipCode" className="text-slate-900 dark:text-white">{t('suppliers.zipCode', 'Zip Code')}</Label>
-                      <Input 
-                        id="zipCode"
-                        value={formData.contact.zipCode || ''}
-                        onChange={(e) => handleChange('contact.zipCode', e.target.value)}
-                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="country" className="text-slate-900 dark:text-white">{t('suppliers.country', 'Country')}</Label>
-                      <Input 
-                        id="country"
-                        value={formData.contact.country || ''}
-                        onChange={(e) => handleChange('contact.country', e.target.value)}
-                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
-                      />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Sidebar */}
-            <div className="space-y-6">
-              <Card className="dark:bg-slate-800">
-                <CardHeader>
-                  <CardTitle className="text-slate-900 dark:text-white">{t('suppliers.bankInfo', 'Banking Details')}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label htmlFor="bankName" className="text-slate-900 dark:text-white">{t('suppliers.bankName', 'Bank Name')}</Label>
-                    <Input 
-                      id="bankName"
-                      value={formData.bankName}
-                      onChange={(e) => handleChange('bankName', e.target.value)}
-                      className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="bankAccount" className="text-slate-900 dark:text-white">{t('suppliers.bankAccount', 'Bank Account')}</Label>
-                    <Input 
-                      id="bankAccount"
-                      value={formData.bankAccount}
-                      onChange={(e) => handleChange('bankAccount', e.target.value)}
-                      className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="dark:bg-slate-800">
-                <CardHeader>
-                  <CardTitle className="text-slate-900 dark:text-white">{t('suppliers.additionalInfo', 'Additional Information')}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label htmlFor="minimumOrder" className="text-slate-900 dark:text-white">{t('suppliers.minimumOrder', 'Minimum Order Value')}</Label>
-                    <Input 
-                      id="minimumOrder"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={formData.minimumOrder}
-                      onChange={(e) => handleChange('minimumOrder', parseFloat(e.target.value) || 0)}
-                      className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="notes" className="text-slate-900 dark:text-white">{t('suppliers.notes', 'Notes')}</Label>
-                    <Textarea 
-                      id="notes"
-                      value={formData.notes}
-                      onChange={(e) => handleChange('notes', e.target.value)}
-                      rows={4}
-                      className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <div className="flex flex-col gap-2">
-                <Button type="submit" disabled={saving} className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-200">
-                  {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                  {t('common.save', 'Save')}
-                </Button>
+      <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1400px] space-y-6">
+          {/* Hero Header */}
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+            <div className="flex items-center gap-4 p-5">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => navigate('/suppliers')}
+                className="h-10 w-10 shrink-0 dark:border-slate-700 dark:text-slate-200"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+              <div className="min-w-0">
+                <h1 className="text-2xl font-bold tracking-tight text-slate-950 dark:text-white">
+                  {isEditMode
+                    ? t('suppliers.editSupplier', 'Edit Supplier')
+                    : t('suppliers.addSupplier', 'Add Supplier')}
+                </h1>
+                <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
+                  {isEditMode
+                    ? t('suppliers.editSubtitle', 'Update supplier details and settings')
+                    : t('suppliers.addSubtitle', 'Create a new supplier record in your system')}
+                </p>
+              </div>
+              <div className="ml-auto hidden md:block">
+                {formData.isActive !== false && (
+                  <Badge
+                    variant="outline"
+                    className="border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-400"
+                  >
+                    <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
+                    {t('common.active', 'Active')}
+                  </Badge>
+                )}
               </div>
             </div>
           </div>
-        </form>
+
+          <form onSubmit={handleSubmit}>
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+              {/* Main Fields */}
+              <div className="space-y-6 lg:col-span-2">
+                <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardHeader className="border-b border-slate-100 pb-4 dark:border-slate-800">
+                    <div className="flex items-center gap-2">
+                      <div className="rounded-lg bg-blue-50 p-2 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60">
+                        <Building2 className="h-4 w-4" />
+                      </div>
+                      <CardTitle className="text-base font-semibold text-slate-900 dark:text-white">
+                        {t('suppliers.basicInfo', 'Basic Information')}
+                      </CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4 pt-5">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="name" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                          {t('suppliers.name', 'Name')} *
+                        </Label>
+                        <Input
+                          id="name"
+                          value={formData.name}
+                          onChange={(e) => handleChange('name', e.target.value)}
+                          className="border-slate-200 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="code" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                          {t('suppliers.code', 'Code')}
+                        </Label>
+                        <Input
+                          id="code"
+                          value={formData.code}
+                          onChange={(e) => handleChange('code', e.target.value)}
+                          className="border-slate-200 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                          placeholder={t('suppliers.autoGenerate', 'Auto-generate if empty')}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="paymentTerms" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                          {t('suppliers.paymentTerms', 'Payment Terms')}
+                        </Label>
+                        <Select
+                          value={formData.paymentTerms}
+                          onValueChange={(value) => handleChange('paymentTerms', value)}
+                        >
+                          <SelectTrigger className="border-slate-200 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+                            <SelectItem value="cash" className="dark:text-slate-200">
+                              Cash
+                            </SelectItem>
+                            <SelectItem value="credit_7" className="dark:text-slate-200">
+                              Credit 7 Days
+                            </SelectItem>
+                            <SelectItem value="credit_15" className="dark:text-slate-200">
+                              Credit 15 Days
+                            </SelectItem>
+                            <SelectItem value="credit_30" className="dark:text-slate-200">
+                              Credit 30 Days
+                            </SelectItem>
+                            <SelectItem value="credit_45" className="dark:text-slate-200">
+                              Credit 45 Days
+                            </SelectItem>
+                            <SelectItem value="credit_60" className="dark:text-slate-200">
+                              Credit 60 Days
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="taxId" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                          {t('suppliers.taxId', 'Tax ID')}
+                        </Label>
+                        <Input
+                          id="taxId"
+                          value={formData.taxId}
+                          onChange={(e) => handleChange('taxId', e.target.value)}
+                          className="border-slate-200 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="region" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                          {t('suppliers.region', 'Region')}
+                        </Label>
+                        <Input
+                          id="region"
+                          value={formData.region}
+                          onChange={(e) => handleChange('region', e.target.value)}
+                          className="border-slate-200 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="currency" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                          {t('suppliers.currency', 'Currency')}
+                        </Label>
+                        <Input
+                          id="currency"
+                          value={formData.currency}
+                          onChange={(e) => handleChange('currency', e.target.value)}
+                          className="border-slate-200 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                          placeholder="USD"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="leadTime" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                          {t('suppliers.leadTime', 'Lead Time (days)')}
+                        </Label>
+                        <Input
+                          id="leadTime"
+                          type="number"
+                          min="0"
+                          value={formData.leadTime}
+                          onChange={(e) => handleChange('leadTime', parseInt(e.target.value) || 0)}
+                          className="border-slate-200 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardHeader className="border-b border-slate-100 pb-4 dark:border-slate-800">
+                    <div className="flex items-center gap-2">
+                      <div className="rounded-lg bg-violet-50 p-2 text-violet-700 ring-1 ring-violet-100 dark:bg-violet-950/40 dark:text-violet-300 dark:ring-violet-900/60">
+                        <Contact className="h-4 w-4" />
+                      </div>
+                      <CardTitle className="text-base font-semibold text-slate-900 dark:text-white">
+                        {t('suppliers.contactInfo', 'Contact Information')}
+                      </CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4 pt-5">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="contactPerson" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                          {t('suppliers.contactPerson', 'Contact Person')}
+                        </Label>
+                        <Input
+                          id="contactPerson"
+                          value={formData.contact.contactPerson || ''}
+                          onChange={(e) => handleChange('contact.contactPerson', e.target.value)}
+                          className="border-slate-200 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="email" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                          {t('suppliers.email', 'Email')}
+                        </Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          value={formData.contact.email || ''}
+                          onChange={(e) => handleChange('contact.email', e.target.value)}
+                          className="border-slate-200 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="phone" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                          {t('suppliers.phone', 'Phone')}
+                        </Label>
+                        <Input
+                          id="phone"
+                          value={formData.contact.phone || ''}
+                          onChange={(e) => handleChange('contact.phone', e.target.value)}
+                          className="border-slate-200 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="website" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                          {t('suppliers.website', 'Website')}
+                        </Label>
+                        <Input
+                          id="website"
+                          value={formData.contact.website || ''}
+                          onChange={(e) => handleChange('contact.website', e.target.value)}
+                          className="border-slate-200 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor="address" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                        {t('suppliers.address', 'Address')}
+                      </Label>
+                      <Textarea
+                        id="address"
+                        value={formData.contact.address || ''}
+                        onChange={(e) => handleChange('contact.address', e.target.value)}
+                        rows={2}
+                        className="border-slate-200 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="city" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                          {t('suppliers.city', 'City')}
+                        </Label>
+                        <Input
+                          id="city"
+                          value={formData.contact.city || ''}
+                          onChange={(e) => handleChange('contact.city', e.target.value)}
+                          className="border-slate-200 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="state" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                          {t('suppliers.state', 'State/Region')}
+                        </Label>
+                        <Input
+                          id="state"
+                          value={formData.contact.state || ''}
+                          onChange={(e) => handleChange('contact.state', e.target.value)}
+                          className="border-slate-200 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="zipCode" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                          {t('suppliers.zipCode', 'Zip Code')}
+                        </Label>
+                        <Input
+                          id="zipCode"
+                          value={formData.contact.zipCode || ''}
+                          onChange={(e) => handleChange('contact.zipCode', e.target.value)}
+                          className="border-slate-200 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="country" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                          {t('suppliers.country', 'Country')}
+                        </Label>
+                        <Input
+                          id="country"
+                          value={formData.contact.country || ''}
+                          onChange={(e) => handleChange('contact.country', e.target.value)}
+                          className="border-slate-200 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Sidebar */}
+              <div className="space-y-6">
+                <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardHeader className="border-b border-slate-100 pb-4 dark:border-slate-800">
+                    <div className="flex items-center gap-2">
+                      <div className="rounded-lg bg-emerald-50 p-2 text-emerald-700 ring-1 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60">
+                        <Banknote className="h-4 w-4" />
+                      </div>
+                      <CardTitle className="text-base font-semibold text-slate-900 dark:text-white">
+                        {t('suppliers.bankInfo', 'Banking Details')}
+                      </CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4 pt-5">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="bankName" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                        {t('suppliers.bankName', 'Bank Name')}
+                      </Label>
+                      <Input
+                        id="bankName"
+                        value={formData.bankName}
+                        onChange={(e) => handleChange('bankName', e.target.value)}
+                        className="border-slate-200 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="bankAccount" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                        {t('suppliers.bankAccount', 'Bank Account')}
+                      </Label>
+                      <Input
+                        id="bankAccount"
+                        value={formData.bankAccount}
+                        onChange={(e) => handleChange('bankAccount', e.target.value)}
+                        className="border-slate-200 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardHeader className="border-b border-slate-100 pb-4 dark:border-slate-800">
+                    <div className="flex items-center gap-2">
+                      <div className="rounded-lg bg-amber-50 p-2 text-amber-700 ring-1 ring-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/60">
+                        <LandPlot className="h-4 w-4" />
+                      </div>
+                      <CardTitle className="text-base font-semibold text-slate-900 dark:text-white">
+                        {t('suppliers.additionalInfo', 'Additional Information')}
+                      </CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4 pt-5">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="minimumOrder" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                        {t('suppliers.minimumOrder', 'Minimum Order Value')}
+                      </Label>
+                      <Input
+                        id="minimumOrder"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={formData.minimumOrder}
+                        onChange={(e) => handleChange('minimumOrder', parseFloat(e.target.value) || 0)}
+                        className="border-slate-200 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="notes" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                        {t('suppliers.notes', 'Notes')}
+                      </Label>
+                      <Textarea
+                        id="notes"
+                        value={formData.notes}
+                        onChange={(e) => handleChange('notes', e.target.value)}
+                        rows={4}
+                        className="border-slate-200 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardHeader className="border-b border-slate-100 pb-4 dark:border-slate-800">
+                    <div className="flex items-center gap-2">
+                      <div className="rounded-lg bg-slate-100 p-2 text-slate-700 ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700">
+                        <Info className="h-4 w-4" />
+                      </div>
+                      <CardTitle className="text-base font-semibold text-slate-900 dark:text-white">
+                        {t('common.status', 'Status')}
+                      </CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-5">
+                    <div className="flex items-center gap-3">
+                      <div
+                        onClick={() => handleChange('isActive', true)}
+                        className={`flex-1 cursor-pointer rounded-lg border p-3 text-center transition-colors ${
+                          formData.isActive
+                            ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-400'
+                            : 'border-slate-200 text-slate-500 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800'
+                        }`}
+                      >
+                        <CheckCircle2 className="mx-auto mb-1 h-5 w-5" />
+                        <span className="text-sm font-medium">{t('common.active', 'Active')}</span>
+                      </div>
+                      <div
+                        onClick={() => handleChange('isActive', false)}
+                        className={`flex-1 cursor-pointer rounded-lg border p-3 text-center transition-colors ${
+                          !formData.isActive
+                            ? 'border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300'
+                            : 'border-slate-200 text-slate-500 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800'
+                        }`}
+                      >
+                        <FileText className="mx-auto mb-1 h-5 w-5" />
+                        <span className="text-sm font-medium">{t('common.inactive', 'Inactive')}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <div className="flex flex-col gap-2">
+                  <Button
+                    type="submit"
+                    disabled={saving}
+                    className="h-10 gap-2 bg-blue-600 text-white hover:bg-blue-700"
+                  >
+                    {saving ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="h-4 w-4" />
+                    )}
+                    {t('common.save', 'Save Supplier')}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => navigate('/suppliers')}
+                    className="h-10 dark:border-slate-700 dark:text-slate-200"
+                  >
+                    {t('common.cancel', 'Cancel')}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
       </div>
     </Layout>
   );

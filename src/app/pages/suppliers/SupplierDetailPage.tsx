@@ -1,30 +1,39 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { suppliersApi } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
 import { useCurrency } from '@/contexts/CurrencyContext';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
+import { Card, CardContent } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import { Skeleton } from '../../components/ui/skeleton';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '../../components/ui/table';
-import { 
-  ArrowLeft, 
-  Pencil, 
-  Loader2, 
+import {
+  ArrowLeft,
+  Pencil,
+  Loader2,
   AlertCircle,
   Mail,
   Phone,
   Globe,
   MapPin,
-  Building2
+  Building2,
+  Package,
+  CreditCard,
+  CalendarDays,
+  Hash,
+  TrendingUp,
+  Boxes,
+  FileText,
+  ArrowUpRight,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -141,6 +150,108 @@ export default function SupplierDetailPage() {
     return labels[terms] || terms;
   };
 
+  const toneClass: Record<string, string> = {
+    emerald:
+      'bg-emerald-50 text-emerald-700 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60',
+    blue: 'bg-blue-50 text-blue-700 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60',
+    amber:
+      'bg-amber-50 text-amber-700 ring-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/60',
+    violet:
+      'bg-violet-50 text-violet-700 ring-violet-100 dark:bg-violet-950/40 dark:text-violet-300 dark:ring-violet-900/60',
+    slate:
+      'bg-slate-50 text-slate-700 ring-slate-100 dark:bg-slate-950/40 dark:text-slate-300 dark:ring-slate-800',
+    red: 'bg-red-50 text-red-700 ring-red-100 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900/60',
+  };
+
+  function MetricTile({
+    title,
+    value,
+    icon,
+    tone,
+    loading,
+    subtitle,
+  }: {
+    title: string;
+    value: string | number;
+    icon: ReactNode;
+    tone: 'emerald' | 'blue' | 'amber' | 'violet' | 'slate' | 'red';
+    loading?: boolean;
+    subtitle?: string;
+  }) {
+    if (loading) {
+      return (
+        <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between">
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="h-9 w-9 rounded-lg" />
+            </div>
+            <Skeleton className="mt-5 h-8 w-32" />
+            {subtitle && <Skeleton className="mt-2 h-3 w-20" />}
+          </CardContent>
+        </Card>
+      );
+    }
+    return (
+      <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm transition-all hover:shadow-md dark:border-slate-800 dark:bg-slate-950">
+        <CardContent className="p-5">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                {title}
+              </p>
+              <p className="mt-3 text-2xl font-bold tracking-tight text-slate-950 dark:text-white">
+                {value}
+              </p>
+            </div>
+            <div className={`rounded-lg p-2.5 ring-1 ${toneClass[tone]}`}>{icon}</div>
+          </div>
+          {subtitle && (
+            <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">{subtitle}</p>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  function PanelTitle({
+    icon,
+    title,
+    subtitle,
+    action,
+  }: {
+    icon: ReactNode;
+    title: string;
+    subtitle?: string;
+    action?: ReactNode;
+  }) {
+    return (
+      <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+            {icon}
+          </div>
+          <div>
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-white">{title}</h2>
+            {subtitle && (
+              <p className="text-xs text-slate-500 dark:text-slate-400">{subtitle}</p>
+            )}
+          </div>
+        </div>
+        {action && <div className="mt-2 sm:mt-0">{action}</div>}
+      </div>
+    );
+  }
+
+  function EmptyState({ icon, message }: { icon: ReactNode; message: string }) {
+    return (
+      <div className="flex min-h-[160px] flex-col items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50/70 text-slate-500 dark:border-slate-800 dark:bg-slate-900/30 dark:text-slate-400">
+        <div className="mb-2 text-slate-400 dark:text-slate-500">{icon}</div>
+        <p className="text-sm">{message}</p>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <Layout>
@@ -153,268 +264,474 @@ export default function SupplierDetailPage() {
 
   if (!supplier) return null;
 
+  const avgOrder =
+    purchaseSummary.totalPurchases > 0
+      ? purchaseSummary.totalAmount / purchaseSummary.totalPurchases
+      : 0;
+
   return (
     <Layout>
-      <div className="container mx-auto py-6 min-h-screen bg-slate-50 dark:bg-slate-900">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/suppliers')}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">{supplier.name}</h1>
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <span className="font-mono">{supplier.code}</span>
-              <Badge 
-                variant={supplier.isActive ? 'default' : 'secondary'}
-                className={supplier.isActive ? 'bg-green-500 dark:bg-green-600' : ''}
-              >
-                {supplier.isActive ? t('common.active', 'Active') : t('common.inactive', 'Inactive')}
-              </Badge>
+      <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1600px] space-y-6">
+          {/* Hero Header */}
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+            <div className="grid gap-5 p-5 xl:grid-cols-[1fr_380px] xl:items-stretch">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => navigate('/suppliers')}
+                      className="h-10 w-10 shrink-0 dark:border-slate-700 dark:text-slate-200"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                    </Button>
+                    <div
+                      className={`rounded-lg p-2.5 ring-1 ${
+                        supplier.isActive ? toneClass.emerald : toneClass.slate
+                      }`}
+                    >
+                      <Building2 className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h1 className="text-2xl font-bold tracking-tight text-slate-950 dark:text-white sm:text-3xl">
+                        {supplier.name}
+                      </h1>
+                      <p className="mt-0.5 flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+                        <span className="font-mono">{supplier.code}</span>
+                        <span className="text-slate-300 dark:text-slate-600">·</span>
+                        <span>{getPaymentTermsLabel(supplier.paymentTerms)}</span>
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate(`/suppliers/${id}/edit`)}
+                    className="dark:border-slate-700 dark:text-slate-200"
+                  >
+                    <Pencil className="mr-2 h-4 w-4" />
+                    {t('suppliers.editSupplier', 'Edit Supplier')}
+                  </Button>
+                </div>
+                <div className="mt-4 flex flex-wrap items-center gap-2">
+                  <Badge
+                    variant="outline"
+                    className={
+                      supplier.isActive
+                        ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-400'
+                        : 'border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400'
+                    }
+                  >
+                    {supplier.isActive ? t('common.active', 'Active') : t('common.inactive', 'Inactive')}
+                  </Badge>
+                  {supplier.currency && (
+                    <Badge variant="outline" className="dark:border-slate-700 dark:text-slate-400">
+                      {supplier.currency}
+                    </Badge>
+                  )}
+                  {supplier.region && (
+                    <Badge variant="outline" className="dark:border-slate-700 dark:text-slate-400">
+                      {supplier.region}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+              <div className="flex flex-col justify-center rounded-lg border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-950/40">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                  {t('suppliers.totalPurchases', 'Total Purchases')}
+                </p>
+                <p className="mt-1 text-3xl font-bold text-slate-950 dark:text-white">
+                  {formatCurrency(supplier.totalPurchases)}
+                </p>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  {supplier.currency && (
+                    <Badge variant="outline" className="text-xs dark:border-slate-700 dark:text-slate-400">
+                      {supplier.currency}
+                    </Badge>
+                  )}
+                  <Badge variant="outline" className="text-xs dark:border-slate-700 dark:text-slate-400">
+                    {purchaseSummary.totalPurchases} {t('suppliers.records', 'records')}
+                  </Badge>
+                </div>
+              </div>
             </div>
           </div>
-          <Button variant="outline" onClick={() => navigate(`/suppliers/${id}/edit`)}>
-            <Pencil className="mr-2 h-4 w-4" />
-            {t('suppliers.editSupplier', 'Edit Supplier')}
-          </Button>
-        </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <Card className="dark:bg-slate-800">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-slate-900 dark:text-white">{t('suppliers.totalPurchases', 'Total Purchases')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold dark:text-white">{formatCurrency(supplier.totalPurchases)}</div>
-            </CardContent>
-          </Card>
-          <Card className="dark:bg-slate-800">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-slate-900 dark:text-white">{t('suppliers.paymentTerms', 'Payment Terms')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold dark:text-white">{getPaymentTermsLabel(supplier.paymentTerms)}</div>
-            </CardContent>
-          </Card>
-          <Card className="dark:bg-slate-800">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-slate-900 dark:text-white">{t('suppliers.products', 'Products Supplied')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold dark:text-white">{supplier.productsSupplied?.length || 0}</div>
-            </CardContent>
-          </Card>
-          <Card className="dark:bg-slate-800">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-slate-900 dark:text-white">{t('suppliers.lastPurchase', 'Last Purchase')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-lg font-bold dark:text-white">
-                {supplier.lastPurchaseDate ? formatDate(supplier.lastPurchaseDate) : '-'}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+          {/* Metric Tiles */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <MetricTile
+              title={t('suppliers.totalPurchases', 'Total Purchases')}
+              value={formatCurrency(supplier.totalPurchases)}
+              icon={<Package className="h-5 w-5" />}
+              tone="blue"
+              subtitle={`${purchaseSummary.totalPurchases} transactions`}
+            />
+            <MetricTile
+              title={t('suppliers.paymentTerms', 'Payment Terms')}
+              value={getPaymentTermsLabel(supplier.paymentTerms)}
+              icon={<CreditCard className="h-5 w-5" />}
+              tone="violet"
+              subtitle={supplier.currency || t('common.nA', 'N/A')}
+            />
+            <MetricTile
+              title={t('suppliers.products', 'Products Supplied')}
+              value={supplier.productsSupplied?.length || 0}
+              icon={<Boxes className="h-5 w-5" />}
+              tone="emerald"
+              subtitle={t('suppliers.activeCatalog', 'Active catalog items')}
+            />
+            <MetricTile
+              title={t('suppliers.lastPurchase', 'Last Purchase')}
+              value={supplier.lastPurchaseDate ? formatDate(supplier.lastPurchaseDate) : '-'}
+              icon={<CalendarDays className="h-5 w-5" />}
+              tone="amber"
+              subtitle={supplier.lastPurchaseDate ? t('suppliers.mostRecent', 'Most recent') : t('suppliers.noActivity', 'No activity')}
+            />
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <MetricTile
+              title={t('suppliers.totalRecords', 'Total Records')}
+              value={purchaseSummary.totalPurchases}
+              icon={<Hash className="h-5 w-5" />}
+              tone="slate"
+              subtitle={t('suppliers.transactions', 'Transactions')}
+            />
+            <MetricTile
+              title={t('suppliers.totalQuantity', 'Total Quantity')}
+              value={purchaseSummary.totalQuantity}
+              icon={<TrendingUp className="h-5 w-5" />}
+              tone="emerald"
+              subtitle={t('suppliers.unitsReceived', 'Units received')}
+            />
+            <MetricTile
+              title={t('suppliers.averageOrder', 'Average Order')}
+              value={formatCurrency(avgOrder)}
+              icon={<ArrowUpRight className="h-5 w-5" />}
+              tone="blue"
+              subtitle={t('suppliers.perTransaction', 'Per transaction')}
+            />
+            <MetricTile
+              title={t('suppliers.leadTime', 'Lead Time')}
+              value={supplier.leadTime && supplier.leadTime > 0 ? `${supplier.leadTime} days` : t('common.nA', 'N/A')}
+              icon={<CalendarDays className="h-5 w-5" />}
+              tone="amber"
+              subtitle={t('suppliers.deliveryEstimate', 'Delivery estimate')}
+            />
+          </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Contact Information */}
-          <Card className="dark:bg-slate-800">
-            <CardHeader>
-              <CardTitle className="text-slate-900 dark:text-white">{t('suppliers.contactInfo', 'Contact Information')}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {supplier.contact?.contactPerson && (
-                <div className="flex items-center gap-2">
-                  <Building2 className="h-4 w-4 text-muted-foreground" />
-                  <span className="dark:text-slate-200">{supplier.contact.contactPerson}</span>
-                </div>
-              )}
-              {supplier.contact?.email && (
-                <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  <a href={`mailto:${supplier.contact.email}`} className="text-primary hover:underline dark:text-blue-400">
-                    {supplier.contact.email}
-                  </a>
-                </div>
-              )}
-              {supplier.contact?.phone && (
-                <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-muted-foreground" />
-                  <a href={`tel:${supplier.contact.phone}`} className="hover:underline dark:text-slate-200">
-                    {supplier.contact.phone}
-                  </a>
-                </div>
-              )}
-              {supplier.contact?.website && (
-                <div className="flex items-center gap-2">
-                  <Globe className="h-4 w-4 text-muted-foreground" />
-                  <a href={supplier.contact.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline dark:text-blue-400">
-                    {supplier.contact.website}
-                  </a>
-                </div>
-              )}
-              {(supplier.contact?.address || supplier.contact?.city || supplier.contact?.country) && (
-                <div className="flex items-start gap-2">
-                  <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
-                  <div className="dark:text-slate-300">
-                    {supplier.contact.address && <div>{supplier.contact.address}</div>}
-                    <div>
-                      {[supplier.contact.city, supplier.contact.state, supplier.contact.zipCode].filter(Boolean).join(', ')}
+          {/* Contact & Details */}
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            {/* Contact Information */}
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-5">
+                <PanelTitle
+                  icon={<Mail className="h-4 w-4" />}
+                  title={t('suppliers.contactInfo', 'Contact Information')}
+                />
+                {supplier.contact?.contactPerson && (
+                  <div className="flex items-center gap-2.5 rounded-lg border border-slate-100 p-2.5 dark:border-slate-800">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/30 dark:text-blue-400">
+                      <Building2 className="h-4 w-4" />
                     </div>
-                    {supplier.contact.country && <div>{supplier.contact.country}</div>}
+                    <div>
+                      <p className="text-sm font-medium text-slate-900 dark:text-white">
+                        {supplier.contact.contactPerson}
+                      </p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        {t('suppliers.contactPerson', 'Contact Person')}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                {supplier.contact?.email && (
+                  <div className="mt-2 flex items-center gap-2.5 rounded-lg border border-slate-100 p-2.5 dark:border-slate-800">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-violet-50 text-violet-600 dark:bg-violet-950/30 dark:text-violet-400">
+                      <Mail className="h-4 w-4" />
+                    </div>
+                    <a
+                      href={`mailto:${supplier.contact.email}`}
+                      className="text-sm font-medium text-blue-600 hover:underline dark:text-blue-400"
+                    >
+                      {supplier.contact.email}
+                    </a>
+                  </div>
+                )}
+                {supplier.contact?.phone && (
+                  <div className="mt-2 flex items-center gap-2.5 rounded-lg border border-slate-100 p-2.5 dark:border-slate-800">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400">
+                      <Phone className="h-4 w-4" />
+                    </div>
+                    <a
+                      href={`tel:${supplier.contact.phone}`}
+                      className="text-sm font-medium text-slate-900 hover:underline dark:text-white"
+                    >
+                      {supplier.contact.phone}
+                    </a>
+                  </div>
+                )}
+                {supplier.contact?.website && (
+                  <div className="mt-2 flex items-center gap-2.5 rounded-lg border border-slate-100 p-2.5 dark:border-slate-800">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cyan-50 text-cyan-600 dark:bg-cyan-950/30 dark:text-cyan-400">
+                      <Globe className="h-4 w-4" />
+                    </div>
+                    <a
+                      href={supplier.contact.website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm font-medium text-blue-600 hover:underline dark:text-blue-400"
+                    >
+                      {supplier.contact.website}
+                    </a>
+                  </div>
+                )}
+                {(supplier.contact?.address || supplier.contact?.city || supplier.contact?.country) && (
+                  <div className="mt-2 flex items-start gap-2.5 rounded-lg border border-slate-100 p-2.5 dark:border-slate-800">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400">
+                      <MapPin className="h-4 w-4" />
+                    </div>
+                    <div className="text-sm text-slate-700 dark:text-slate-300">
+                      {supplier.contact.address && <div>{supplier.contact.address}</div>}
+                      <div>
+                        {[supplier.contact.city, supplier.contact.state, supplier.contact.zipCode]
+                          .filter(Boolean)
+                          .join(', ')}
+                      </div>
+                      {supplier.contact.country && <div>{supplier.contact.country}</div>}
+                    </div>
+                  </div>
+                )}
+                {!supplier.contact?.email &&
+                  !supplier.contact?.phone &&
+                  !supplier.contact?.contactPerson && (
+                    <EmptyState
+                      icon={<Mail className="h-6 w-6" />}
+                      message={t('suppliers.noContactInfo', 'No contact information')}
+                    />
+                  )}
+              </CardContent>
+            </Card>
+
+            {/* Additional Details */}
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-5">
+                <PanelTitle
+                  icon={<FileText className="h-4 w-4" />}
+                  title={t('suppliers.details', 'Details')}
+                />
+                <div className="space-y-2.5">
+                  {supplier.taxId && (
+                    <div className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2 dark:border-slate-800">
+                      <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                        {t('suppliers.taxId', 'Tax ID')}
+                      </span>
+                      <span className="text-sm font-semibold text-slate-950 dark:text-white">
+                        {supplier.taxId}
+                      </span>
+                    </div>
+                  )}
+                  {supplier.region && (
+                    <div className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2 dark:border-slate-800">
+                      <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                        {t('suppliers.region', 'Region')}
+                      </span>
+                      <span className="text-sm font-semibold text-slate-950 dark:text-white">
+                        {supplier.region}
+                      </span>
+                    </div>
+                  )}
+                  {supplier.currency && (
+                    <div className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2 dark:border-slate-800">
+                      <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                        {t('suppliers.currency', 'Currency')}
+                      </span>
+                      <span className="text-sm font-semibold text-slate-950 dark:text-white">
+                        {supplier.currency}
+                      </span>
+                    </div>
+                  )}
+                  {supplier.leadTime != null && supplier.leadTime > 0 && (
+                    <div className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2 dark:border-slate-800">
+                      <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                        {t('suppliers.leadTime', 'Lead Time')}
+                      </span>
+                      <span className="text-sm font-semibold text-slate-950 dark:text-white">
+                        {supplier.leadTime} days
+                      </span>
+                    </div>
+                  )}
+                  {supplier.minimumOrder != null && supplier.minimumOrder > 0 && (
+                    <div className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2 dark:border-slate-800">
+                      <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                        {t('suppliers.minimumOrder', 'Min Order')}
+                      </span>
+                      <span className="text-sm font-semibold text-slate-950 dark:text-white">
+                        {formatCurrency(supplier.minimumOrder)}
+                      </span>
+                    </div>
+                  )}
+                  {supplier.bankName && (
+                    <div className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2 dark:border-slate-800">
+                      <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                        {t('suppliers.bankName', 'Bank')}
+                      </span>
+                      <span className="text-sm font-semibold text-slate-950 dark:text-white">
+                        {supplier.bankName}
+                      </span>
+                    </div>
+                  )}
+                  {supplier.bankAccount && (
+                    <div className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2 dark:border-slate-800">
+                      <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                        {t('suppliers.bankAccount', 'Account')}
+                      </span>
+                      <span className="text-sm font-mono font-semibold text-slate-950 dark:text-white">
+                        {supplier.bankAccount}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2 dark:border-slate-800">
+                    <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                      {t('common.createdAt', 'Created')}
+                    </span>
+                    <span className="text-sm font-semibold text-slate-950 dark:text-white">
+                      {formatDate(supplier.createdAt)}
+                    </span>
                   </div>
                 </div>
-              )}
-              {!supplier.contact?.email && !supplier.contact?.phone && !supplier.contact?.contactPerson && (
-                <div className="text-muted-foreground text-sm dark:text-slate-400">{t('suppliers.noContactInfo', 'No contact information')}</div>
-              )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          {/* Additional Details */}
-          <Card className="dark:bg-slate-800">
-            <CardHeader>
-              <CardTitle className="text-slate-900 dark:text-white">{t('suppliers.details', 'Details')}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {supplier.taxId && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground dark:text-slate-400">{t('suppliers.taxId', 'Tax ID')}</span>
-                  <span className="font-medium dark:text-slate-200">{supplier.taxId}</span>
-                </div>
-              )}
-              {supplier.region && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground dark:text-slate-400">{t('suppliers.region', 'Region')}</span>
-                  <span className="font-medium dark:text-slate-200">{supplier.region}</span>
-                </div>
-              )}
-              {supplier.currency && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground dark:text-slate-400">{t('suppliers.currency', 'Currency')}</span>
-                  <span className="font-medium dark:text-slate-200">{supplier.currency}</span>
-                </div>
-              )}
-              {supplier.leadTime != null && supplier.leadTime > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground dark:text-slate-400">{t('suppliers.leadTime', 'Lead Time')}</span>
-                  <span className="font-medium dark:text-slate-200">{supplier.leadTime} days</span>
-                </div>
-              )}
-              {supplier.minimumOrder != null && supplier.minimumOrder > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground dark:text-slate-400">{t('suppliers.minimumOrder', 'Min Order')}</span>
-                  <span className="font-medium dark:text-slate-200">{formatCurrency(supplier.minimumOrder)}</span>
-                </div>
-              )}
-              {supplier.bankName && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground dark:text-slate-400">{t('suppliers.bankName', 'Bank')}</span>
-                  <span className="font-medium dark:text-slate-200">{supplier.bankName}</span>
-                </div>
-              )}
-              {supplier.bankAccount && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground dark:text-slate-400">{t('suppliers.bankAccount', 'Account')}</span>
-                  <span className="font-medium font-mono dark:text-slate-200">{supplier.bankAccount}</span>
-                </div>
-              )}
-              <div className="flex justify-between">
-                <span className="text-muted-foreground dark:text-slate-400">{t('common.createdAt', 'Created')}</span>
-                <span className="font-medium dark:text-slate-200">{formatDate(supplier.createdAt)}</span>
-              </div>
-            </CardContent>
-          </Card>
+            {/* Products Supplied */}
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-5">
+                <PanelTitle
+                  icon={<Boxes className="h-4 w-4" />}
+                  title={t('suppliers.productsSupplied', 'Products Supplied')}
+                  subtitle={supplier.name}
+                />
+                {supplier.productsSupplied && supplier.productsSupplied.length > 0 ? (
+                  <div className="space-y-2">
+                    {supplier.productsSupplied.map((product) => (
+                      <div
+                        key={product._id}
+                        className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50/50 px-3 py-2.5 dark:border-slate-800 dark:bg-slate-900/30"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400">
+                            <Package className="h-3.5 w-3.5" />
+                          </div>
+                          <span className="text-sm font-medium text-slate-900 dark:text-white">
+                            {product.name}
+                          </span>
+                        </div>
+                        <span className="text-xs font-mono text-slate-500 dark:text-slate-400">
+                          {product.sku}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyState
+                    icon={<Boxes className="h-6 w-6" />}
+                    message={t('suppliers.noProductsLinked', 'No products linked to this supplier')}
+                  />
+                )}
+              </CardContent>
+            </Card>
+          </div>
 
-          {/* Products Supplied */}
-          <Card className="dark:bg-slate-800">
-            <CardHeader>
-              <CardTitle className="text-slate-900 dark:text-white">{t('suppliers.productsSupplied', 'Products Supplied by {{name}}', { name: supplier?.name || '' })}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {supplier.productsSupplied && supplier.productsSupplied.length > 0 ? (
-                <div className="space-y-2">
-                  {supplier.productsSupplied.map((product) => (
-                    <div key={product._id} className="flex justify-between items-center p-2 rounded bg-muted/50 dark:bg-slate-700/50">
-                      <span className="font-medium dark:text-slate-200">{product.name}</span>
-                      <span className="text-sm text-muted-foreground dark:text-slate-400 font-mono">{product.sku}</span>
-                    </div>
+          {/* Purchase History */}
+          <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <CardContent className="p-5">
+              <PanelTitle
+                icon={<TrendingUp className="h-4 w-4" />}
+                title={t('suppliers.purchaseHistory', 'Purchase History')}
+                subtitle={
+                  purchaseSummary.totalPurchases > 0
+                    ? `${purchaseSummary.totalPurchases} ${t('suppliers.records', 'records')} · ${t('suppliers.total', 'Total')}: ${formatCurrency(purchaseSummary.totalAmount)}`
+                    : undefined
+                }
+              />
+              {purchasesLoading ? (
+                <div className="space-y-3">
+                  {[...Array(4)].map((_, i) => (
+                    <Skeleton key={i} className="h-12 w-full" />
                   ))}
                 </div>
+              ) : purchases.length === 0 ? (
+                <EmptyState
+                  icon={<AlertCircle className="h-6 w-6" />}
+                  message={t('suppliers.noPurchaseHistory', 'No purchase history found')}
+                />
               ) : (
-                <div className="text-muted-foreground text-sm dark:text-slate-400">{t('suppliers.noProductsLinked', 'No products linked to this supplier')}</div>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-b-slate-200 hover:bg-transparent dark:border-b-slate-800 dark:bg-slate-900/50">
+                        <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                          {t('suppliers.date', 'Date')}
+                        </TableHead>
+                        <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                          {t('suppliers.product', 'Product')}
+                        </TableHead>
+                        <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                          {t('suppliers.quantity', 'Quantity')}
+                        </TableHead>
+                        <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                          {t('suppliers.totalCost', 'Total Cost')}
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {purchases.map((purchase) => (
+                        <TableRow
+                          key={purchase._id}
+                          className="border-b-slate-100 transition-colors hover:bg-slate-50/50 dark:border-b-slate-800/50 dark:hover:bg-slate-800/30"
+                        >
+                          <TableCell className="text-slate-600 dark:text-slate-300">
+                            {formatDate(purchase.movementDate)}
+                          </TableCell>
+                          <TableCell className="text-slate-900 dark:text-white">
+                            <div>{purchase.product?.name || '-'}</div>
+                            {purchase.product?.sku && (
+                              <div className="text-xs font-mono text-slate-500 dark:text-slate-400">
+                                {purchase.product.sku}
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right text-slate-600 dark:text-slate-300">
+                            {purchase.quantity} {purchase.product?.unit || ''}
+                          </TableCell>
+                          <TableCell className="text-right font-mono font-medium text-slate-950 dark:text-white">
+                            {formatCurrency(purchase.totalCost)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </CardContent>
           </Card>
+
+          {/* Notes */}
+          {supplier.notes && (
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-5">
+                <PanelTitle
+                  icon={<FileText className="h-4 w-4" />}
+                  title={t('suppliers.notes', 'Notes')}
+                />
+                <div className="rounded-lg border border-slate-100 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-900/30">
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+                    {supplier.notes}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
-
-        {/* Purchase History */}
-        <Card className="mt-6 dark:bg-slate-800">
-          <CardHeader>
-            <CardTitle className="text-slate-900 dark:text-white">{t('suppliers.purchaseHistory', 'Purchase History')}</CardTitle>
-            <CardDescription className="dark:text-slate-400">
-              {t('suppliers.purchaseHistoryDesc', 'Recent stock received from this supplier')}
-              {purchaseSummary.totalPurchases > 0 && (
-                <span className="ml-2 font-medium">
-                  ({purchaseSummary.totalPurchases} {t('suppliers.records', 'records')}, {t('suppliers.total', 'Total')}: {formatCurrency(purchaseSummary.totalAmount)})
-                </span>
-              )}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
-            {purchasesLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-6 w-6 animate-spin" />
-              </div>
-            ) : purchases.length === 0 ? (
-              <div className="flex flex-col items-center py-12">
-                <AlertCircle className="h-12 w-12 mb-4 text-muted-foreground" />
-                <p className="text-muted-foreground dark:text-slate-400">{t('suppliers.noPurchaseHistory', 'No purchase history found')}</p>
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow className="dark:bg-slate-700">
-                    <TableHead className="dark:text-white">{t('suppliers.date', 'Date')}</TableHead>
-                    <TableHead className="dark:text-white">{t('suppliers.product', 'Product')}</TableHead>
-                    <TableHead className="text-right dark:text-white">{t('suppliers.quantity', 'Quantity')}</TableHead>
-                    <TableHead className="text-right dark:text-white">{t('suppliers.totalCost', 'Total Cost')}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {purchases.map((purchase) => (
-                    <TableRow key={purchase._id} className="dark:hover:bg-slate-700/50">
-                      <TableCell className="dark:text-slate-300">{formatDate(purchase.movementDate)}</TableCell>
-                      <TableCell className="dark:text-slate-300">
-                        <div>{purchase.product?.name || '-'}</div>
-                        {purchase.product?.sku && (
-                          <div className="text-xs text-muted-foreground dark:text-slate-400 font-mono">{purchase.product.sku}</div>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right dark:text-slate-300">
-                        {purchase.quantity} {purchase.product?.unit || ''}
-                      </TableCell>
-                      <TableCell className="text-right font-medium dark:text-slate-200">{formatCurrency(purchase.totalCost)}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Notes */}
-        {supplier.notes && (
-          <Card className="mt-6 dark:bg-slate-800">
-            <CardHeader>
-              <CardTitle className="text-slate-900 dark:text-white">{t('suppliers.notes', 'Notes')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="whitespace-pre-wrap dark:text-slate-300">{supplier.notes}</p>
-            </CardContent>
-          </Card>
-        )}
       </div>
     </Layout>
   );

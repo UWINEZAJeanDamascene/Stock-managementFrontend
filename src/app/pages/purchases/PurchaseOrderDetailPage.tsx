@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, type ReactNode } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { purchaseOrdersApi, grnApi, bankAccountsApi } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
-import { 
-  ArrowLeft, 
-  CheckCircle, 
+import {
+  ArrowLeft,
+  CheckCircle,
   XCircle,
   Package,
   FileText,
@@ -14,20 +14,31 @@ import {
   Truck,
   CreditCard,
   DollarSign,
-  Mail
+  Mail,
+  Hash,
+  Building2,
+  Warehouse,
+  CalendarDays,
+  Banknote,
+  ReceiptText,
+  ClipboardList,
+  Sparkles,
+  TrendingUp,
+  AlertCircle,
+  Pencil,
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Checkbox } from '@/app/components/ui/checkbox';
-import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/app/components/ui/card';
 import { Badge } from '@/app/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@/app/components/ui/table';
 import {
   Select,
@@ -267,18 +278,93 @@ export default function PurchaseOrderDetailPage() {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    const statusConfig: Record<string, { variant: 'default' | 'secondary' | 'outline' | 'destructive'; label: string }> = {
-      draft: { variant: 'secondary', label: t('purchase.status.draft', 'Draft') },
-      approved: { variant: 'default', label: t('purchase.status.approved', 'Approved') },
-      partially_received: { variant: 'outline', label: t('purchase.status.partially_received', 'Partial') },
-      fully_received: { variant: 'default', label: t('purchase.status.fully_received', 'Received') },
-      cancelled: { variant: 'destructive', label: t('purchase.status.cancelled', 'Cancelled') },
-    };
-    
-    const config = statusConfig[status] || { variant: 'secondary', label: status };
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+  const statusBadgeClass: Record<string, string> = {
+    draft:
+      'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800/50 dark:text-slate-300 dark:border-slate-700',
+    approved:
+      'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800',
+    partially_received:
+      'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800',
+    fully_received:
+      'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800',
+    cancelled:
+      'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800',
   };
+
+  const getStatusBadge = (status: string) => {
+    const labels: Record<string, string> = {
+      draft: t('purchase.status.draft', 'Draft'),
+      approved: t('purchase.status.approved', 'Approved'),
+      partially_received: t('purchase.status.partially_received', 'Partial'),
+      fully_received: t('purchase.status.fully_received', 'Received'),
+      cancelled: t('purchase.status.cancelled', 'Cancelled'),
+    };
+    const label = labels[status] || status;
+    const cls = statusBadgeClass[status] || statusBadgeClass.draft;
+    return (
+      <Badge variant="outline" className={`text-xs font-medium ${cls}`}>
+        {label}
+      </Badge>
+    );
+  };
+
+  const toneClass: Record<string, string> = {
+    emerald:
+      'bg-emerald-50 text-emerald-700 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60',
+    blue: 'bg-blue-50 text-blue-700 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60',
+    amber:
+      'bg-amber-50 text-amber-700 ring-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/60',
+    violet:
+      'bg-violet-50 text-violet-700 ring-violet-100 dark:bg-violet-950/40 dark:text-violet-300 dark:ring-violet-900/60',
+    slate:
+      'bg-slate-50 text-slate-700 ring-slate-100 dark:bg-slate-950/40 dark:text-slate-300 dark:ring-slate-800',
+  };
+
+  function PanelTitle({ icon, title }: { icon: ReactNode; title: string }) {
+    return (
+      <div className="flex items-center gap-2.5">
+        <div className="rounded-md p-1.5 ring-1 bg-slate-50 text-slate-600 ring-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700">
+          {icon}
+        </div>
+        <span className="text-sm font-semibold text-slate-900 dark:text-white">{title}</span>
+      </div>
+    );
+  }
+
+  function MetricTile({
+    title,
+    value,
+    icon,
+    tone,
+    subtitle,
+  }: {
+    title: string;
+    value: string | number;
+    icon: ReactNode;
+    tone: 'emerald' | 'blue' | 'amber' | 'violet' | 'slate';
+    subtitle?: string;
+  }) {
+    return (
+      <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <CardContent className="p-5">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                {title}
+              </p>
+              <p className="mt-3 text-2xl font-bold tracking-tight text-slate-950 dark:text-white">
+                {value}
+              </p>
+            </div>
+            <div className={`rounded-lg p-2.5 ring-1 ${toneClass[tone]}`}>{icon}</div>
+          </div>
+          {subtitle && (
+            <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">{subtitle}</p>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
 
   const getStatusStep = (status: string) => {
     const stepIndex = STATUS_FLOW.findIndex(s => s.status === status);
@@ -314,8 +400,8 @@ export default function PurchaseOrderDetailPage() {
   if (loading) {
     return (
       <Layout>
-        <div className="flex items-center justify-center p-8">
-          <Loader2 className="h-8 w-8 animate-spin" />
+        <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 dark:bg-slate-950 sm:px-6 lg:px-8">
+          <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
         </div>
       </Layout>
     );
@@ -324,16 +410,18 @@ export default function PurchaseOrderDetailPage() {
   if (error || !purchaseOrder) {
     return (
       <Layout>
-        <div className="container mx-auto py-6">
-          <div className="flex items-center gap-4 mb-6">
-            <Button variant="ghost" onClick={() => navigate('/purchase-orders')}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              {t('common.back', 'Back')}
-            </Button>
-          </div>
-          <div className="bg-card rounded-lg border p-8 text-center">
-            <p className="text-muted-foreground mb-2">{error || 'Purchase order not found'}</p>
-            <p className="text-sm text-muted-foreground">ID: {id || 'undefined'}</p>
+        <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-[1600px]">
+            <div className="flex items-center gap-4 mb-6">
+              <Button variant="outline" size="icon" onClick={() => navigate('/purchase-orders')} className="h-10 w-10 dark:border-slate-700 dark:text-slate-200">
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="flex min-h-[200px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white p-8 text-center dark:border-slate-800 dark:bg-slate-900/70">
+              <AlertCircle className="mb-3 h-10 w-10 text-slate-300 dark:text-slate-600" />
+              <p className="text-slate-500 dark:text-slate-400">{error || 'Purchase order not found'}</p>
+              <p className="mt-1 text-sm text-slate-400 dark:text-slate-500">ID: {id || 'undefined'}</p>
+            </div>
           </div>
         </div>
       </Layout>
@@ -341,515 +429,650 @@ export default function PurchaseOrderDetailPage() {
   }
 
   const currentStatusStep = getStatusStep(purchaseOrder.status);
+  const totalPaid = purchaseOrder.payments?.reduce((sum, p) => sum + (Number(p.amount) || 0), 0) || 0;
+  const balance = Number(purchaseOrder.totalAmount) - totalPaid;
 
   return (
     <Layout>
-      <div className="container mx-auto py-4 sm:py-6 px-3 sm:px-4 min-h-screen bg-slate-50 dark:bg-slate-900">
-        {/* Header */}
-        <div className="flex items-center gap-2 mb-4 sm:mb-6">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/purchase-orders')} className="px-2">
-            <ArrowLeft className="h-4 w-4" />
-            <span className="hidden sm:inline ml-2">{t('common.back', 'Back')}</span>
-          </Button>
-        </div>
-
-        {/* Document Header */}
-        <div className="bg-card dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4 sm:p-6 mb-6">
-          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4">
-            <div className="flex-1 min-w-0">
-              <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
-                <div className="flex items-center gap-2">
-                  <FileText className="h-6 w-6 sm:h-8 sm:w-8 text-primary flex-shrink-0" />
-                  <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-slate-900 dark:text-white break-all">
-                    {purchaseOrder.referenceNo || 'N/A'}
-                  </h1>
-                </div>
-                {getStatusBadge(purchaseOrder.status)}
-              </div>
-              <div className="flex flex-col sm:flex-row gap-6 sm:gap-8 mt-4 text-sm">
-                {/* Left Column - Supplier & Warehouse */}
-                <div className="flex-1">
-                  <div className="mb-4">
-                    <p className="text-muted-foreground dark:text-slate-400 text-xs sm:text-sm">{t('purchase.detail.supplier', 'Supplier')}</p>
-                    <p className="font-medium dark:text-slate-200">{(purchaseOrder.supplier as any)?.name || '-'}</p>
-                    {(purchaseOrder.supplier as any)?.contact?.contactPerson && <p className="text-muted-foreground dark:text-slate-400 text-xs">{(purchaseOrder.supplier as any).contact.contactPerson}</p>}
-                    {(purchaseOrder.supplier as any)?.contact?.email && <p className="text-muted-foreground dark:text-slate-400 text-xs">{(purchaseOrder.supplier as any).contact.email}</p>}
-                    {(purchaseOrder.supplier as any)?.contact?.phone && <p className="text-muted-foreground dark:text-slate-400 text-xs">{(purchaseOrder.supplier as any).contact.phone}</p>}
+      <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1600px] space-y-6">
+          {/* Hero Header */}
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+            <div className="grid gap-5 p-5 xl:grid-cols-[1fr_380px] xl:items-stretch">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => navigate('/purchase-orders')}
+                    className="h-10 w-10 dark:border-slate-700 dark:text-slate-200"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                  <div className={`rounded-lg p-2.5 ring-1 ${toneClass.blue}`}>
+                    <FileText className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="text-muted-foreground dark:text-slate-400 text-xs sm:text-sm">{t('purchase.detail.warehouse', 'Warehouse')}</p>
-                    <p className="font-medium dark:text-slate-200">{purchaseOrder.warehouse?.name || '-'}</p>
+                    <h1 className="text-2xl font-bold tracking-tight text-slate-950 dark:text-white">
+                      {purchaseOrder.referenceNo || 'N/A'}
+                    </h1>
+                    <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
+                      {(purchaseOrder.supplier as any)?.name || '-'} {purchaseOrder.warehouse?.name ? `· ${purchaseOrder.warehouse.name}` : ''}
+                    </p>
                   </div>
                 </div>
-                {/* Right Column - Order Details */}
-                <div className="flex-1">
-                  <div className="mb-4">
-                    <p className="text-muted-foreground dark:text-slate-400 text-xs sm:text-sm">{t('purchase.detail.orderDate', 'Order Date')}</p>
-                    <p className="font-medium dark:text-slate-200">{formatDate(purchaseOrder.orderDate)}</p>
-                  </div>
-                  <div className="mb-4">
-                    <p className="text-muted-foreground dark:text-slate-400 text-xs sm:text-sm">{t('purchase.detail.expectedDelivery', 'Expected Delivery')}</p>
-                    <p className="font-medium dark:text-slate-200">{purchaseOrder.expectedDeliveryDate ? formatDate(purchaseOrder.expectedDeliveryDate) : '-'}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground dark:text-slate-400 text-xs sm:text-sm">{t('purchase.detail.currency', 'Currency')}</p>
-                    <p className="font-medium dark:text-slate-200">{purchaseOrder.currencyCode}</p>
-                  </div>
+                <div className="mt-4 flex flex-wrap items-center gap-2">
+                  {getStatusBadge(purchaseOrder.status)}
+                  <Badge variant="outline" className="dark:border-slate-700 dark:text-slate-400">
+                    {purchaseOrder.currencyCode}
+                  </Badge>
+                  <Badge variant="outline" className="gap-1 dark:border-slate-700 dark:text-slate-400">
+                    <CalendarDays className="h-3 w-3" />
+                    {formatDate(purchaseOrder.orderDate)}
+                  </Badge>
                 </div>
               </div>
-            </div>
-            <div className="lg:text-right flex-shrink-0">
-              <p className="text-muted-foreground text-xs sm:text-sm dark:text-slate-400">{t('purchase.detail.total', 'Total Amount')}</p>
-              <p className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
-                {formatCurrency(purchaseOrder.totalAmount, purchaseOrder.currencyCode)}
-              </p>
-            </div>
-          </div>
-
-          {/* Status Timeline */}
-          <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t dark:border-slate-600">
-            <p className="text-sm font-medium mb-3 text-slate-900 dark:text-white">{t('purchase.detail.statusTimeline', 'Status Timeline')}</p>
-            <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto pb-2 -mx-2 px-2">
-              {STATUS_FLOW.map((step, index) => (
-                <div key={step.status} className="flex items-center flex-shrink-0">
-                  <div className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm ${
-                    index <= currentStatusStep
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-muted-foreground dark:bg-slate-700 dark:text-slate-400'
-                  }`}>
-                    {index < currentStatusStep ? (
-                      <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                    ) : index === currentStatusStep ? (
-                      <Clock className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                    ) : (
-                      <div className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                    )}
-                    <span className="whitespace-nowrap">{step.label}</span>
-                  </div>
-                  {index < STATUS_FLOW.length - 1 && (
-                    <div className={`w-4 sm:w-8 h-0.5 mx-1 sm:mx-2 flex-shrink-0 ${
-                      index < currentStatusStep ? 'bg-primary' : 'bg-muted dark:bg-slate-600'
-                    }`} />
+              <div className="flex flex-col justify-center rounded-lg border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-950/40">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                  {t('purchase.detail.total', 'Total Amount')}
+                </p>
+                <p className="mt-1 text-3xl font-bold text-slate-950 dark:text-white">
+                  {formatCurrency(purchaseOrder.totalAmount, purchaseOrder.currencyCode)}
+                </p>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <Badge variant="outline" className="text-xs dark:border-slate-700 dark:text-slate-400">
+                    {purchaseOrder.lines?.length || 0} {t('purchase.detail.lines', 'items')}
+                  </Badge>
+                  {purchaseOrder.expectedDeliveryDate && (
+                    <Badge variant="outline" className="text-xs dark:border-slate-700 dark:text-slate-400">
+                      <Clock className="mr-1 h-3 w-3" />
+                      {t('purchase.detail.expectedDelivery', 'Delivery')}: {formatDate(purchaseOrder.expectedDeliveryDate)}
+                    </Badge>
                   )}
                 </div>
-              ))}
-              {purchaseOrder.status === 'cancelled' && (
-                <Badge variant="destructive" className="ml-2 flex-shrink-0">
-                  {t('purchase.status.cancelled', 'Cancelled')}
-                </Badge>
-              )}
-            </div>
-          </div>
-
-          {/* Email Options & Action Buttons */}
-          <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t dark:border-slate-600 space-y-3">
-            {/* Email Notification Options */}
-            {purchaseOrder.status === 'draft' && (
-              <div className="flex flex-wrap items-center gap-4">
-                <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 cursor-pointer">
-                  <Checkbox
-                    checked={sendEmailApprove}
-                    onCheckedChange={(checked) => setSendEmailApprove(checked === true)}
-                  />
-                  <Mail className="h-4 w-4" />
-                  {t('purchase.detail.sendEmailApprove', 'Send email notification on approve')}
-                </label>
-                <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 cursor-pointer">
-                  <Checkbox
-                    checked={sendEmailCancel}
-                    onCheckedChange={(checked) => setSendEmailCancel(checked === true)}
-                  />
-                  <Mail className="h-4 w-4" />
-                  {t('purchase.detail.sendEmailCancel', 'Send email notification on cancel')}
-                </label>
               </div>
-            )}
+            </div>
 
-            <div className="flex flex-wrap gap-2">
-              {purchaseOrder.status === 'draft' && (
-                <>
-                  <Button size="sm" onClick={handleApprove} disabled={actionLoading}>
-                    {actionLoading ? (
-                      <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-                    ) : (
-                      <CheckCircle className="mr-1 h-4 w-4" />
+            {/* Status Timeline */}
+            <div className="border-t border-slate-100 px-5 py-4 dark:border-slate-800">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                {t('purchase.detail.statusTimeline', 'Status Timeline')}
+              </p>
+              <div className="flex items-center gap-1 overflow-x-auto pb-2 sm:gap-2">
+                {STATUS_FLOW.map((step, index) => (
+                  <div key={step.status} className="flex items-center flex-shrink-0">
+                    <div
+                      className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium sm:gap-2 sm:px-4 sm:py-2 sm:text-sm ${
+                        index <= currentStatusStep
+                          ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900'
+                          : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+                      }`}
+                    >
+                      {index < currentStatusStep ? (
+                        <CheckCircle className="h-3.5 w-3.5 flex-shrink-0 sm:h-4 sm:w-4" />
+                      ) : index === currentStatusStep ? (
+                        <Clock className="h-3.5 w-3.5 flex-shrink-0 sm:h-4 sm:w-4" />
+                      ) : (
+                        <div className="h-3.5 w-3.5 flex-shrink-0 sm:h-4 sm:w-4" />
+                      )}
+                      <span className="whitespace-nowrap">{step.label}</span>
+                    </div>
+                    {index < STATUS_FLOW.length - 1 && (
+                      <div
+                        className={`mx-1 h-0.5 w-4 flex-shrink-0 sm:mx-2 sm:w-8 ${
+                          index < currentStatusStep ? 'bg-slate-900 dark:bg-white' : 'bg-slate-200 dark:bg-slate-700'
+                        }`}
+                      />
                     )}
-                    {t('purchase.detail.approve', 'Approve')}
-                  </Button>
-                  <Button size="sm" variant="destructive" onClick={handleCancel} disabled={actionLoading}>
-                    <XCircle className="mr-1 h-4 w-4" />
-                    {t('purchase.detail.cancel', 'Cancel')}
-                  </Button>
-                </>
+                  </div>
+                ))}
+                {purchaseOrder.status === 'cancelled' && (
+                  <Badge variant="outline" className="ml-2 flex-shrink-0 border-red-200 bg-red-100 text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-400">
+                    {t('purchase.status.cancelled', 'Cancelled')}
+                  </Badge>
+                )}
+              </div>
+            </div>
+
+            {/* Email Options & Action Buttons */}
+            <div className="border-t border-slate-100 px-5 py-4 dark:border-slate-800">
+              {purchaseOrder.status === 'draft' && (
+                <div className="mb-3 flex flex-wrap items-center gap-4">
+                  <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                    <Checkbox
+                      checked={sendEmailApprove}
+                      onCheckedChange={(checked) => setSendEmailApprove(checked === true)}
+                    />
+                    <Mail className="h-4 w-4" />
+                    {t('purchase.detail.sendEmailApprove', 'Send email notification on approve')}
+                  </label>
+                  <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                    <Checkbox
+                      checked={sendEmailCancel}
+                      onCheckedChange={(checked) => setSendEmailCancel(checked === true)}
+                    />
+                    <Mail className="h-4 w-4" />
+                    {t('purchase.detail.sendEmailCancel', 'Send email notification on cancel')}
+                  </label>
+                </div>
               )}
-            {purchaseOrder.status === 'approved' && (
-              <Button size="sm" onClick={() => navigate('/grn/new', { state: { purchaseOrderId: id } })}>
-                <Package className="mr-1 h-4 w-4" />
-                <span className="hidden sm:inline">{t('purchase.detail.createGRN', 'Create GRN')}</span>
-                <span className="sm:hidden">{t('purchase.detail.createGRN', 'GRN')}</span>
-              </Button>
-            )}
-            {(purchaseOrder.status === 'approved' || purchaseOrder.status === 'partially_received' || purchaseOrder.status === 'fully_received') && (purchaseOrder as any).paymentStatus !== 'paid' && (
-              <Button size="sm" variant="outline" onClick={() => setPaymentOpen(true)}>
-                <DollarSign className="mr-1 h-4 w-4" />
-                <span className="hidden sm:inline">{t('purchase.detail.recordPayment', 'Record Payment')}</span>
-                <span className="sm:hidden">{t('purchase.detail.recordPayment', 'Payment')}</span>
-              </Button>
-            )}
+
+              <div className="flex flex-wrap gap-2">
+                {purchaseOrder.status === 'draft' && (
+                  <>
+                    <Button
+                      size="sm"
+                      className="bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
+                      onClick={handleApprove}
+                      disabled={actionLoading}
+                    >
+                      {actionLoading ? (
+                        <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                      ) : (
+                        <CheckCircle className="mr-1 h-4 w-4" />
+                      )}
+                      {t('purchase.detail.approve', 'Approve')}
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={handleCancel} disabled={actionLoading} className="border-red-200 text-red-700 hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/30">
+                      <XCircle className="mr-1 h-4 w-4" />
+                      {t('purchase.detail.cancel', 'Cancel')}
+                    </Button>
+                  </>
+                )}
+                {purchaseOrder.status === 'approved' && (
+                  <Button
+                    size="sm"
+                    className="bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
+                    onClick={() => navigate('/grn/new', { state: { purchaseOrderId: id } })}
+                  >
+                    <Package className="mr-1 h-4 w-4" />
+                    <span className="hidden sm:inline">{t('purchase.detail.createGRN', 'Create GRN')}</span>
+                    <span className="sm:hidden">{t('purchase.detail.createGRN', 'GRN')}</span>
+                  </Button>
+                )}
+                {(purchaseOrder.status === 'approved' || purchaseOrder.status === 'partially_received' || purchaseOrder.status === 'fully_received') && (purchaseOrder as any).paymentStatus !== 'paid' && (
+                  <Button size="sm" variant="outline" onClick={() => setPaymentOpen(true)} className="dark:border-slate-700 dark:text-white">
+                    <DollarSign className="mr-1 h-4 w-4" />
+                    <span className="hidden sm:inline">{t('purchase.detail.recordPayment', 'Record Payment')}</span>
+                    <span className="sm:hidden">{t('purchase.detail.recordPayment', 'Payment')}</span>
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => navigate(`/purchase-orders/${id}/edit`)}
+                  className="dark:border-slate-700 dark:text-white"
+                >
+                  <Pencil className="mr-1 h-4 w-4" />
+                  {t('common.edit', 'Edit')}
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Tabs */}
-        <Tabs defaultValue="details" className="w-full">
-          <TabsList className="dark:bg-slate-800 w-full flex overflow-x-auto">
-            <TabsTrigger value="details" className="dark:text-slate-200 dark:data-[state=active]:bg-slate-700 flex-shrink-0">{t('purchase.detail.tabs.details', 'Details')}</TabsTrigger>
-            <TabsTrigger value="grns" className="dark:text-slate-200 dark:data-[state=active]:bg-slate-700 flex-shrink-0">
-              {t('purchase.detail.tabs.grns', 'GRNs')}
-              {grns.length > 0 && <Badge variant="secondary" className="ml-2">{grns.length}</Badge>}
-            </TabsTrigger>
-            <TabsTrigger value="payments" className="dark:text-slate-200 dark:data-[state=active]:bg-slate-700 flex-shrink-0">
-              {t('purchase.detail.tabs.payments', 'Payments')}
-              {(purchaseOrder.payments?.length || 0) > 0 && <Badge variant="secondary" className="ml-2">{purchaseOrder.payments?.length}</Badge>}
-            </TabsTrigger>
-            <TabsTrigger value="history" className="dark:text-slate-200 dark:data-[state=active]:bg-slate-700 flex-shrink-0">{t('purchase.detail.tabs.history', 'History')}</TabsTrigger>
-          </TabsList>
+          {/* Metric Tiles */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <MetricTile
+              title={t('purchase.detail.total', 'Total Amount')}
+              value={formatCurrency(purchaseOrder.totalAmount, purchaseOrder.currencyCode)}
+              icon={<Banknote className="h-5 w-5" />}
+              tone="blue"
+            />
+            <MetricTile
+              title={t('purchase.detail.amountPaid', 'Amount Paid')}
+              value={formatCurrency(totalPaid, purchaseOrder.currencyCode)}
+              icon={<TrendingUp className="h-5 w-5" />}
+              tone={totalPaid > 0 ? 'emerald' : 'slate'}
+            />
+            <MetricTile
+              title={t('purchase.detail.balance', 'Balance')}
+              value={formatCurrency(balance, purchaseOrder.currencyCode)}
+              icon={<AlertCircle className="h-5 w-5" />}
+              tone={balance > 0 ? 'amber' : 'emerald'}
+            />
+            <MetricTile
+              title={t('purchase.detail.lineItems', 'Line Items')}
+              value={purchaseOrder.lines?.length || 0}
+              icon={<ClipboardList className="h-5 w-5" />}
+              tone="violet"
+            />
+          </div>
 
-          <TabsContent value="details" className="mt-4">
-            <Card className="dark:bg-slate-800">
-              <CardHeader className="px-4 sm:px-6">
-                <CardTitle className="text-slate-900 dark:text-white text-base sm:text-lg">{t('purchase.detail.lineItems', 'Line Items')}</CardTitle>
-              </CardHeader>
-              <CardContent className="px-2 sm:px-6">
-                <div className="overflow-x-auto -mx-2 sm:-mx-6">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="dark:bg-slate-700">
-                        <TableHead className="dark:text-white whitespace-nowrap">{t('purchase.detail.product', 'Product')}</TableHead>
-                        <TableHead className="text-right dark:text-white whitespace-nowrap">{t('purchase.detail.qtyOrdered', 'Qty')}</TableHead>
-                        <TableHead className="text-right dark:text-white whitespace-nowrap hidden sm:table-cell">{t('purchase.detail.qtyReceived', 'Received')}</TableHead>
-                        <TableHead className="text-right dark:text-white whitespace-nowrap hidden md:table-cell">{t('purchase.detail.unitCost', 'Unit Cost')}</TableHead>
-                        <TableHead className="text-right dark:text-white whitespace-nowrap hidden lg:table-cell">{t('purchase.detail.tax', 'Tax')}</TableHead>
-                        <TableHead className="text-right dark:text-white whitespace-nowrap">{t('purchase.detail.total', 'Total')}</TableHead>
-                        <TableHead className="dark:text-white whitespace-nowrap hidden xl:table-cell">{t('purchase.detail.budget', 'Budget')}</TableHead>
-                        <TableHead className="dark:text-white whitespace-nowrap hidden xl:table-cell">{t('purchase.detail.account', 'Account')}</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {purchaseOrder.lines?.map((line) => (
-                        <TableRow key={line._id} className="dark:hover:bg-slate-700/50">
-                          <TableCell className="min-w-[150px]">
-                            <div>
-                              <p className="font-medium dark:text-slate-200 text-sm sm:text-base">{line.product?.name || '-'}</p>
-                              <p className="text-xs sm:text-sm text-muted-foreground dark:text-slate-400">{line.product?.sku || ''}</p>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-right dark:text-slate-300 whitespace-nowrap">{line.qtyOrdered}</TableCell>
-                          <TableCell className="text-right dark:text-slate-300 whitespace-nowrap hidden sm:table-cell">{line.qtyReceived || 0}</TableCell>
-                          <TableCell className="text-right dark:text-slate-300 whitespace-nowrap hidden md:table-cell">{formatCurrency(line.unitCost, purchaseOrder.currencyCode)}</TableCell>
-                          <TableCell className="text-right dark:text-slate-300 whitespace-nowrap hidden lg:table-cell">{formatCurrency(line.taxAmount, purchaseOrder.currencyCode)}</TableCell>
-                          <TableCell className="text-right font-medium dark:text-slate-200 whitespace-nowrap">{formatCurrency(line.lineTotal, purchaseOrder.currencyCode)}</TableCell>
-                          <TableCell className="dark:text-slate-300 hidden xl:table-cell">
-                            {(() => {
-                              if (typeof line.budgetId === 'object' && line.budgetId?.name) {
-                                return (
-                                  <Badge variant="outline" className="text-xs dark:border-slate-600 dark:text-slate-300">
-                                    {line.budgetId.name}
-                                  </Badge>
-                                );
-                              } else if (typeof line.budgetId === 'string' && line.budgetId) {
-                                return (
-                                  <Badge variant="outline" className="text-xs dark:border-slate-600 dark:text-slate-300">
-                                    {line.budgetId.substring(0, 8)}...
-                                  </Badge>
-                                );
-                              }
-                              return <span className="text-muted-foreground text-sm">-</span>;
-                            })()}
-                          </TableCell>
-                          <TableCell className="dark:text-slate-300 hidden xl:table-cell">
-                            {(() => {
-                              if (typeof line.accountId === 'object' && line.accountId?.code) {
-                                return (
-                                  <span className="text-xs">{line.accountId.code} - {line.accountId.name}</span>
-                                );
-                              } else if (typeof line.accountId === 'string' && line.accountId) {
-                                return (
-                                  <span className="text-xs">{line.accountId.substring(0, 8)}...</span>
-                                );
-                              }
-                              return <span className="text-muted-foreground text-sm">-</span>;
-                            })()}
-                          </TableCell>
+          {/* Tabs */}
+          <Tabs defaultValue="details" className="w-full">
+            <TabsList className="w-full justify-start overflow-x-auto border border-slate-200 bg-white p-1 dark:border-slate-800 dark:bg-slate-900">
+              <TabsTrigger
+                value="details"
+                className="flex-shrink-0 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-white"
+              >
+                {t('purchase.detail.tabs.details', 'Details')}
+              </TabsTrigger>
+              <TabsTrigger
+                value="grns"
+                className="flex-shrink-0 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-white"
+              >
+                {t('purchase.detail.tabs.grns', 'GRNs')}
+                {grns.length > 0 && (
+                  <Badge variant="secondary" className="ml-2 bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                    {grns.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger
+                value="payments"
+                className="flex-shrink-0 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-white"
+              >
+                {t('purchase.detail.tabs.payments', 'Payments')}
+                {(purchaseOrder.payments?.length || 0) > 0 && (
+                  <Badge variant="secondary" className="ml-2 bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                    {purchaseOrder.payments?.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger
+                value="history"
+                className="flex-shrink-0 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-white"
+              >
+                {t('purchase.detail.tabs.history', 'History')}
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="details" className="mt-4">
+              <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="border-b border-slate-100 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/30">
+                  <PanelTitle icon={<ClipboardList className="h-4 w-4" />} title={t('purchase.detail.lineItems', 'Line Items')} />
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="border-b-slate-200 hover:bg-transparent dark:border-b-slate-800 dark:bg-slate-900/50">
+                          <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                            {t('purchase.detail.product', 'Product')}
+                          </TableHead>
+                          <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                            {t('purchase.detail.qtyOrdered', 'Qty')}
+                          </TableHead>
+                          <TableHead className="hidden text-right text-xs font-semibold uppercase tracking-wide text-slate-500 sm:table-cell dark:text-slate-400">
+                            {t('purchase.detail.qtyReceived', 'Received')}
+                          </TableHead>
+                          <TableHead className="hidden text-right text-xs font-semibold uppercase tracking-wide text-slate-500 md:table-cell dark:text-slate-400">
+                            {t('purchase.detail.unitCost', 'Unit Cost')}
+                          </TableHead>
+                          <TableHead className="hidden text-right text-xs font-semibold uppercase tracking-wide text-slate-500 lg:table-cell dark:text-slate-400">
+                            {t('purchase.detail.tax', 'Tax')}
+                          </TableHead>
+                          <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                            {t('purchase.detail.total', 'Total')}
+                          </TableHead>
+                          <TableHead className="hidden text-xs font-semibold uppercase tracking-wide text-slate-500 xl:table-cell dark:text-slate-400">
+                            {t('purchase.detail.budget', 'Budget')}
+                          </TableHead>
+                          <TableHead className="hidden text-xs font-semibold uppercase tracking-wide text-slate-500 xl:table-cell dark:text-slate-400">
+                            {t('purchase.detail.account', 'Account')}
+                          </TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
+                      </TableHeader>
+                      <TableBody>
+                        {purchaseOrder.lines?.map((line) => (
+                          <TableRow key={line._id} className="border-b-slate-100 dark:border-b-slate-800/50">
+                            <TableCell className="min-w-[150px]">
+                              <div>
+                                <p className="text-sm font-medium text-slate-900 dark:text-white sm:text-base">{line.product?.name || '-'}</p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 sm:text-sm">{line.product?.sku || ''}</p>
+                              </div>
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap text-right font-mono text-sm text-slate-600 dark:text-slate-300">
+                              {line.qtyOrdered}
+                            </TableCell>
+                            <TableCell className="hidden whitespace-nowrap text-right font-mono text-sm text-slate-600 sm:table-cell dark:text-slate-300">
+                              {line.qtyReceived || 0}
+                            </TableCell>
+                            <TableCell className="hidden whitespace-nowrap text-right font-mono text-sm text-slate-600 md:table-cell dark:text-slate-300">
+                              {formatCurrency(line.unitCost, purchaseOrder.currencyCode)}
+                            </TableCell>
+                            <TableCell className="hidden whitespace-nowrap text-right font-mono text-sm text-slate-600 lg:table-cell dark:text-slate-300">
+                              {formatCurrency(line.taxAmount, purchaseOrder.currencyCode)}
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap text-right font-mono font-medium text-sm text-slate-950 dark:text-white">
+                              {formatCurrency(line.lineTotal, purchaseOrder.currencyCode)}
+                            </TableCell>
+                            <TableCell className="hidden xl:table-cell">
+                              {(() => {
+                                if (typeof line.budgetId === 'object' && line.budgetId?.name) {
+                                  return (
+                                    <Badge variant="outline" className="text-xs dark:border-slate-700 dark:text-slate-300">
+                                      {line.budgetId.name}
+                                    </Badge>
+                                  );
+                                } else if (typeof line.budgetId === 'string' && line.budgetId) {
+                                  return (
+                                    <Badge variant="outline" className="text-xs dark:border-slate-700 dark:text-slate-300">
+                                      {line.budgetId.substring(0, 8)}...
+                                    </Badge>
+                                  );
+                                }
+                                return <span className="text-sm text-slate-400">-</span>;
+                              })()}
+                            </TableCell>
+                            <TableCell className="hidden xl:table-cell">
+                              {(() => {
+                                if (typeof line.accountId === 'object' && line.accountId?.code) {
+                                  return (
+                                    <span className="text-xs text-slate-600 dark:text-slate-300">{line.accountId.code} - {line.accountId.name}</span>
+                                  );
+                                } else if (typeof line.accountId === 'string' && line.accountId) {
+                                  return (
+                                    <span className="text-xs text-slate-600 dark:text-slate-300">{line.accountId.substring(0, 8)}...</span>
+                                  );
+                                }
+                                return <span className="text-sm text-slate-400">-</span>;
+                              })()}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
 
-                {/* Summary */}
-                <div className="mt-4 pt-4 border-t dark:border-slate-600">
-                  <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:justify-end gap-3 sm:gap-6 lg:gap-8">
-                    <div className="text-left sm:text-right">
-                      <p className="text-muted-foreground text-xs sm:text-sm dark:text-slate-400">{t('purchase.detail.subtotal', 'Subtotal')}</p>
-                      <p className="font-medium text-sm sm:text-base dark:text-slate-200">{formatCurrency(purchaseOrder.subtotal, purchaseOrder.currencyCode)}</p>
-                    </div>
-                    <div className="text-left sm:text-right">
-                      <p className="text-muted-foreground text-xs sm:text-sm dark:text-slate-400">{t('purchase.detail.tax', 'Tax')}</p>
-                      <p className="font-medium text-sm sm:text-base dark:text-slate-200">{formatCurrency(purchaseOrder.taxAmount, purchaseOrder.currencyCode)}</p>
-                    </div>
-                    <div className="col-span-2 sm:col-auto text-right">
-                      <p className="font-bold text-slate-900 dark:text-white text-sm sm:text-base">{t('purchase.detail.total', 'Total')}</p>
-                      <p className="font-bold text-base sm:text-lg text-slate-900 dark:text-white">{formatCurrency(purchaseOrder.totalAmount, purchaseOrder.currencyCode)}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Notes */}
-                {purchaseOrder.notes && (
-                  <div className="mt-4 pt-4 border-t dark:border-slate-600">
-                    <p className="text-muted-foreground text-sm dark:text-slate-400">{t('purchase.detail.notes', 'Notes')}</p>
-                    <p className="dark:text-slate-200">{purchaseOrder.notes}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="grns" className="mt-4">
-            <Card className="dark:bg-slate-800">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-slate-900 dark:text-white">{t('purchase.detail.grnList', 'Goods Received Notes')}</CardTitle>
-                {purchaseOrder.status === 'approved' && (
-                  <Button size="sm" onClick={() => navigate('/grn/new', { state: { purchaseOrderId: id } })}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    {t('purchase.detail.createGRN', 'Create GRN')}
-                  </Button>
-                )}
-              </CardHeader>
-              <CardContent>
-                {grns.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground dark:text-slate-400">
-                    <Truck className="mx-auto h-8 w-8 mb-2" />
-                    <p>{t('purchase.detail.noGRNs', 'No GRNs found for this purchase order')}</p>
-                  </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="dark:bg-slate-700">
-                        <TableHead className="dark:text-white">{t('purchase.detail.grnRef', 'GRN Reference')}</TableHead>
-                        <TableHead className="dark:text-white">{t('purchase.detail.receivedDate', 'Received Date')}</TableHead>
-                        <TableHead className="dark:text-white">{t('purchase.detail.status', 'Status')}</TableHead>
-                        <TableHead className="text-right dark:text-white">{t('purchase.detail.amount', 'Amount')}</TableHead>
-                        <TableHead className="dark:text-white">{t('purchase.detail.confirmedBy', 'Confirmed By')}</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {grns.map((grn) => (
-                        <TableRow key={grn._id} className="dark:hover:bg-slate-700/50">
-                          <TableCell className="font-medium dark:text-slate-200">{grn.referenceNo}</TableCell>
-                          <TableCell className="dark:text-slate-300">{formatDate(grn.receivedDate)}</TableCell>
-                          <TableCell>
-                            <Badge variant={grn.status === 'confirmed' ? 'default' : 'secondary'}>
-                              {grn.status === 'confirmed' ? t('purchase.grn.confirmed', 'Confirmed') : t('purchase.grn.draft', 'Draft')}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right dark:text-slate-300">{formatCurrency(grn.totalAmount, purchaseOrder.currencyCode)}</TableCell>
-                          <TableCell className="dark:text-slate-300">
-                            {grn.confirmedBy?.name || '-'}
-                            {grn.confirmedAt && <span className="text-muted-foreground text-sm ml-2 dark:text-slate-400">{formatDate(grn.confirmedAt)}</span>}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="payments" className="mt-4">
-            <Card className="dark:bg-slate-800">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-slate-900 dark:text-white">{t('purchase.detail.paymentsTitle', 'Payments')}</CardTitle>
-                {purchaseOrder.status !== 'cancelled' && (purchaseOrder.paymentStatus || 'unpaid') !== 'paid' && (
-                  <Button size="sm" onClick={() => setPaymentOpen(true)}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    {t('purchase.detail.recordPayment', 'Record Payment')}
-                  </Button>
-                )}
-              </CardHeader>
-              <CardContent>
-                {/* Payment Summary */}
-                <div className="grid grid-cols-3 gap-4 mb-4">
-                  <div className="bg-muted dark:bg-slate-700 rounded-lg p-3">
-                    <p className="text-sm text-muted-foreground dark:text-slate-400">{t('purchase.detail.totalAmount', 'Total Amount')}</p>
-                    <p className="text-lg font-bold dark:text-white">{formatCurrency(purchaseOrder.totalAmount, purchaseOrder.currencyCode)}</p>
-                  </div>
-                  <div className="bg-muted dark:bg-slate-700 rounded-lg p-3">
-                    <p className="text-sm text-muted-foreground dark:text-slate-400">{t('purchase.detail.amountPaid', 'Amount Paid')}</p>
-                    <p className="text-lg font-bold text-green-600 dark:text-green-400">{formatCurrency((purchaseOrder.payments?.reduce((sum, p) => sum + (Number(p.amount) || 0), 0) || 0), purchaseOrder.currencyCode)}</p>
-                  </div>
-                  <div className="bg-muted dark:bg-slate-700 rounded-lg p-3">
-                    <p className="text-sm text-muted-foreground dark:text-slate-400">{t('purchase.detail.balance', 'Balance')}</p>
-                    <p className="text-lg font-bold text-red-600 dark:text-green-400">{formatCurrency((Number(purchaseOrder.totalAmount) - (purchaseOrder.payments?.reduce((sum, p) => sum + (Number(p.amount) || 0), 0) || 0)), purchaseOrder.currencyCode)}</p>
-                  </div>
-                </div>
-
-                {/* Payments Table */}
-                {(!purchaseOrder.payments || purchaseOrder.payments.length === 0) ? (
-                  <div className="text-center py-8 text-muted-foreground dark:text-slate-400">
-                    <DollarSign className="mx-auto h-8 w-8 mb-2" />
-                    <p>{t('purchase.detail.noPayments', 'No payments recorded yet')}</p>
-                  </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="dark:bg-slate-700">
-                        <TableHead className="dark:text-white">{t('purchase.detail.date', 'Date')}</TableHead>
-                        <TableHead className="dark:text-white">{t('purchase.detail.method', 'Method')}</TableHead>
-                        <TableHead className="text-right dark:text-white">{t('purchase.detail.amount', 'Amount')}</TableHead>
-                        <TableHead className="dark:text-white">{t('purchase.detail.notes', 'Notes')}</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {(purchaseOrder.payments || []).map((payment: any, idx: number) => (
-                        <TableRow key={idx} className="dark:hover:bg-slate-700/50">
-                          <TableCell className="dark:text-slate-300">{new Date(payment.paidDate || payment.date).toLocaleDateString()}</TableCell>
-                          <TableCell><Badge variant="outline">{payment.paymentMethod}</Badge></TableCell>
-                          <TableCell className="text-right font-medium dark:text-slate-200">{formatCurrency(payment.amount, purchaseOrder.currencyCode)}</TableCell>
-                          <TableCell className="dark:text-slate-300">{payment.notes || '-'}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-
-                {/* Record Payment Dialog */}
-                {paymentOpen && (
-                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-                    <div className="bg-background dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6 max-w-md w-full mx-4">
-                      <h3 className="text-lg font-semibold mb-4 text-slate-900 dark:text-white">{t('purchase.detail.recordPayment', 'Record Payment')}</h3>
-                      <div className="space-y-4">
-                        <div>
-                          <Label className="text-slate-900 dark:text-white">{t('purchase.detail.paymentAmount', 'Amount')}</Label>
-                          <Input
-                            type="number"
-                            value={paymentAmount}
-                            onChange={(e) => setPaymentAmount(e.target.value)}
-                            placeholder={String((purchaseOrder as any).balance ?? purchaseOrder.totalAmount)}
-                            className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-slate-900 dark:text-white">{t('purchase.detail.paymentMethod', 'Payment Method')}</Label>
-                          <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                            <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
-                              <SelectItem value="cash" className="dark:text-slate-200">Cash</SelectItem>
-                              <SelectItem value="card" className="dark:text-slate-200">Card</SelectItem>
-                              <SelectItem value="bank_transfer" className="dark:text-slate-200">Bank Transfer</SelectItem>
-                              <SelectItem value="cheque" className="dark:text-slate-200">Cheque</SelectItem>
-                              <SelectItem value="mobile_money" className="dark:text-slate-200">Mobile Money</SelectItem>
-                              <SelectItem value="credit" className="dark:text-slate-200">Credit</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label className="text-slate-900 dark:text-white">{t('purchase.detail.paymentNotes', 'Notes')}</Label>
-                          <Textarea value={paymentNotes} onChange={(e) => setPaymentNotes(e.target.value)} rows={2} className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600" />
-                        </div>
-                        {(paymentMethod === 'bank_transfer' || paymentMethod === 'cheque' || paymentMethod === 'mobile_money') && (
-                          <div>
-                            <Label className="text-slate-900 dark:text-white">{t('purchase.detail.bankAccount', 'Bank Account')}</Label>
-                            <Select value={bankAccountId} onValueChange={setBankAccountId}>
-                              <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600">
-                                <SelectValue placeholder="Select bank account" />
-                              </SelectTrigger>
-                              <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
-                                {bankAccounts.map((acc) => (
-                                  <SelectItem key={acc._id} value={acc._id} className="dark:text-slate-200">
-                                    {acc.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        )}
+                  {/* Summary */}
+                  <div className="border-t border-slate-100 p-5 dark:border-slate-800">
+                    <div className="flex flex-wrap justify-end gap-4 sm:gap-6">
+                      <div className="text-right">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('purchase.detail.subtotal', 'Subtotal')}</p>
+                        <p className="mt-1 text-sm font-medium text-slate-900 dark:text-white">{formatCurrency(purchaseOrder.subtotal, purchaseOrder.currencyCode)}</p>
                       </div>
-                      <div className="flex justify-end gap-2 mt-4">
-                        <Button variant="outline" onClick={() => setPaymentOpen(false)} className="border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white">{t('common.cancel', 'Cancel')}</Button>
-                        <Button onClick={handleRecordPayment} disabled={paymentSaving || !paymentAmount} className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-200">
-                          {paymentSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2 h-4 w-4" />}
-                          {paymentSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2 h-4 w-4" />}
-                          {t('purchase.detail.submitPayment', 'Submit Payment')}
-                        </Button>
+                      <div className="text-right">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('purchase.detail.tax', 'Tax')}</p>
+                        <p className="mt-1 text-sm font-medium text-slate-900 dark:text-white">{formatCurrency(purchaseOrder.taxAmount, purchaseOrder.currencyCode)}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('purchase.detail.total', 'Total')}</p>
+                        <p className="mt-1 text-lg font-bold text-slate-950 dark:text-white">{formatCurrency(purchaseOrder.totalAmount, purchaseOrder.currencyCode)}</p>
                       </div>
                     </div>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
 
-          <TabsContent value="history" className="mt-4">
-            <Card className="dark:bg-slate-800">
-              <CardHeader>
-                <CardTitle className="text-slate-900 dark:text-white">{t('purchase.detail.historyTitle', 'Activity History')}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex gap-4">
-                    <div className="w-2 h-2 rounded-full bg-primary mt-2" />
-                    <div>
-                      <p className="font-medium dark:text-slate-200">{t('purchase.history.created', 'Purchase Order Created')}</p>
-                      <p className="text-sm text-muted-foreground dark:text-slate-400">
-                        {purchaseOrder.createdBy?.name || 'Unknown'} - {formatDate(purchaseOrder.createdAt)}
-                      </p>
+                  {/* Notes */}
+                  {purchaseOrder.notes && (
+                    <div className="border-t border-slate-100 p-5 dark:border-slate-800">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('purchase.detail.notes', 'Notes')}</p>
+                      <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">{purchaseOrder.notes}</p>
                     </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="grns" className="mt-4">
+              <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="flex flex-row items-center justify-between border-b border-slate-100 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/30">
+                  <PanelTitle icon={<Truck className="h-4 w-4" />} title={t('purchase.detail.grnList', 'Goods Received Notes')} />
+                  {purchaseOrder.status === 'approved' && (
+                    <Button
+                      size="sm"
+                      className="bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
+                      onClick={() => navigate('/grn/new', { state: { purchaseOrderId: id } })}
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      {t('purchase.detail.createGRN', 'Create GRN')}
+                    </Button>
+                  )}
+                </CardHeader>
+                <CardContent className="p-0">
+                  {grns.length === 0 ? (
+                    <div className="flex min-h-[160px] flex-col items-center justify-center text-slate-500 dark:text-slate-400">
+                      <Truck className="mb-2 h-8 w-8 text-slate-300 dark:text-slate-600" />
+                      <p className="text-sm">{t('purchase.detail.noGRNs', 'No GRNs found for this purchase order')}</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="border-b-slate-200 hover:bg-transparent dark:border-b-slate-800 dark:bg-slate-900/50">
+                            <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('purchase.detail.grnRef', 'GRN Reference')}</TableHead>
+                            <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('purchase.detail.receivedDate', 'Received Date')}</TableHead>
+                            <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('purchase.detail.status', 'Status')}</TableHead>
+                            <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('purchase.detail.amount', 'Amount')}</TableHead>
+                            <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('purchase.detail.confirmedBy', 'Confirmed By')}</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {grns.map((grn) => (
+                            <TableRow key={grn._id} className="border-b-slate-100 dark:border-b-slate-800/50">
+                              <TableCell className="font-medium text-slate-900 dark:text-white">{grn.referenceNo}</TableCell>
+                              <TableCell className="text-sm text-slate-600 dark:text-slate-300">{formatDate(grn.receivedDate)}</TableCell>
+                              <TableCell>
+                                <Badge
+                                  variant="outline"
+                                  className={
+                                    grn.status === 'confirmed'
+                                      ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
+                                      : 'border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                                  }
+                                >
+                                  {grn.status === 'confirmed' ? t('purchase.grn.confirmed', 'Confirmed') : t('purchase.grn.draft', 'Draft')}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right font-mono text-sm text-slate-600 dark:text-slate-300">{formatCurrency(grn.totalAmount, purchaseOrder.currencyCode)}</TableCell>
+                              <TableCell className="text-sm text-slate-600 dark:text-slate-300">
+                                {grn.confirmedBy?.name || '-'}
+                                {grn.confirmedAt && <span className="ml-2 text-xs text-slate-400 dark:text-slate-500">{formatDate(grn.confirmedAt)}</span>}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="payments" className="mt-4">
+              <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="flex flex-row items-center justify-between border-b border-slate-100 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/30">
+                  <PanelTitle icon={<Banknote className="h-4 w-4" />} title={t('purchase.detail.paymentsTitle', 'Payments')} />
+                  {purchaseOrder.status !== 'cancelled' && (purchaseOrder.paymentStatus || 'unpaid') !== 'paid' && (
+                    <Button
+                      size="sm"
+                      className="bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
+                      onClick={() => setPaymentOpen(true)}
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      {t('purchase.detail.recordPayment', 'Record Payment')}
+                    </Button>
+                  )}
+                </CardHeader>
+                <CardContent className="p-5">
+                  {/* Payment Summary Tiles */}
+                  <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    <MetricTile
+                      title={t('purchase.detail.totalAmount', 'Total Amount')}
+                      value={formatCurrency(purchaseOrder.totalAmount, purchaseOrder.currencyCode)}
+                      icon={<Banknote className="h-5 w-5" />}
+                      tone="blue"
+                    />
+                    <MetricTile
+                      title={t('purchase.detail.amountPaid', 'Amount Paid')}
+                      value={formatCurrency(totalPaid, purchaseOrder.currencyCode)}
+                      icon={<TrendingUp className="h-5 w-5" />}
+                      tone={totalPaid > 0 ? 'emerald' : 'slate'}
+                    />
+                    <MetricTile
+                      title={t('purchase.detail.balance', 'Balance')}
+                      value={formatCurrency(balance, purchaseOrder.currencyCode)}
+                      icon={<AlertCircle className="h-5 w-5" />}
+                      tone={balance > 0 ? 'amber' : 'emerald'}
+                    />
                   </div>
-                  {purchaseOrder.approvedAt && (
+
+                  {/* Payments Table */}
+                  {(!purchaseOrder.payments || purchaseOrder.payments.length === 0) ? (
+                    <div className="flex min-h-[160px] flex-col items-center justify-center text-slate-500 dark:text-slate-400">
+                      <DollarSign className="mb-2 h-8 w-8 text-slate-300 dark:text-slate-600" />
+                      <p className="text-sm">{t('purchase.detail.noPayments', 'No payments recorded yet')}</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="border-b-slate-200 hover:bg-transparent dark:border-b-slate-800 dark:bg-slate-900/50">
+                            <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('purchase.detail.date', 'Date')}</TableHead>
+                            <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('purchase.detail.method', 'Method')}</TableHead>
+                            <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('purchase.detail.amount', 'Amount')}</TableHead>
+                            <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('purchase.detail.notes', 'Notes')}</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {(purchaseOrder.payments || []).map((payment: any, idx: number) => (
+                            <TableRow key={idx} className="border-b-slate-100 dark:border-b-slate-800/50">
+                              <TableCell className="text-sm text-slate-600 dark:text-slate-300">{new Date(payment.paidDate || payment.date).toLocaleDateString()}</TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="text-xs dark:border-slate-700 dark:text-slate-300">
+                                  {payment.paymentMethod}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right font-mono font-medium text-sm text-slate-950 dark:text-white">{formatCurrency(payment.amount, purchaseOrder.currencyCode)}</TableCell>
+                              <TableCell className="text-sm text-slate-600 dark:text-slate-300">{payment.notes || '-'}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="history" className="mt-4">
+              <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="border-b border-slate-100 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/30">
+                  <PanelTitle icon={<Clock className="h-4 w-4" />} title={t('purchase.detail.historyTitle', 'Activity History')} />
+                </CardHeader>
+                <CardContent className="p-5">
+                  <div className="space-y-6">
                     <div className="flex gap-4">
-                      <div className="w-2 h-2 rounded-full bg-green-500 mt-2" />
+                      <div className="mt-2 h-2.5 w-2.5 flex-shrink-0 rounded-full bg-slate-900 dark:bg-white" />
                       <div>
-                        <p className="font-medium dark:text-slate-200">{t('purchase.history.approved', 'Purchase Order Approved')}</p>
-                        <p className="text-sm text-muted-foreground dark:text-slate-400">
-                          {purchaseOrder.approvedBy?.name || 'Unknown'} - {formatDate(purchaseOrder.approvedAt)}
+                        <p className="text-sm font-medium text-slate-900 dark:text-white">{t('purchase.history.created', 'Purchase Order Created')}</p>
+                        <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                          {purchaseOrder.createdBy?.name || 'Unknown'} · {formatDate(purchaseOrder.createdAt)}
                         </p>
                       </div>
                     </div>
-                  )}
-                  {purchaseOrder.status === 'partially_received' && (
-                    <div className="flex gap-4">
-                      <div className="w-2 h-2 rounded-full bg-yellow-500 mt-2" />
-                      <div>
-                        <p className="font-medium dark:text-slate-200">{t('purchase.history.partialReceived', 'Partially Received')}</p>
+                    {purchaseOrder.approvedAt && (
+                      <div className="flex gap-4">
+                        <div className="mt-2 h-2.5 w-2.5 flex-shrink-0 rounded-full bg-emerald-500" />
+                        <div>
+                          <p className="text-sm font-medium text-slate-900 dark:text-white">{t('purchase.history.approved', 'Purchase Order Approved')}</p>
+                          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                            {purchaseOrder.approvedBy?.name || 'Unknown'} · {formatDate(purchaseOrder.approvedAt)}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                  {purchaseOrder.status === 'fully_received' && (
-                    <div className="flex gap-4">
-                      <div className="w-2 h-2 rounded-full bg-green-500 mt-2" />
-                      <div>
-                        <p className="font-medium dark:text-slate-200">{t('purchase.history.fullyReceived', 'Fully Received')}</p>
+                    )}
+                    {purchaseOrder.status === 'partially_received' && (
+                      <div className="flex gap-4">
+                        <div className="mt-2 h-2.5 w-2.5 flex-shrink-0 rounded-full bg-amber-500" />
+                        <div>
+                          <p className="text-sm font-medium text-slate-900 dark:text-white">{t('purchase.history.partialReceived', 'Partially Received')}</p>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                  {purchaseOrder.status === 'cancelled' && (
-                    <div className="flex gap-4">
-                      <div className="w-2 h-2 rounded-full bg-red-500 mt-2" />
-                      <div>
-                        <p className="font-medium dark:text-slate-200">{t('purchase.history.cancelled', 'Purchase Order Cancelled')}</p>
+                    )}
+                    {purchaseOrder.status === 'fully_received' && (
+                      <div className="flex gap-4">
+                        <div className="mt-2 h-2.5 w-2.5 flex-shrink-0 rounded-full bg-emerald-500" />
+                        <div>
+                          <p className="text-sm font-medium text-slate-900 dark:text-white">{t('purchase.history.fullyReceived', 'Fully Received')}</p>
+                        </div>
                       </div>
+                    )}
+                    {purchaseOrder.status === 'cancelled' && (
+                      <div className="flex gap-4">
+                        <div className="mt-2 h-2.5 w-2.5 flex-shrink-0 rounded-full bg-red-500" />
+                        <div>
+                          <p className="text-sm font-medium text-slate-900 dark:text-white">{t('purchase.history.cancelled', 'Purchase Order Cancelled')}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+
+          {/* Record Payment Dialog */}
+          {paymentOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+              <div className="mx-4 w-full max-w-md rounded-lg border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-900">
+                <h3 className="mb-4 text-lg font-semibold text-slate-900 dark:text-white">{t('purchase.detail.recordPayment', 'Record Payment')}</h3>
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('purchase.detail.paymentAmount', 'Amount')}</Label>
+                    <Input
+                      type="number"
+                      value={paymentAmount}
+                      onChange={(e) => setPaymentAmount(e.target.value)}
+                      placeholder={String((purchaseOrder as any).balance ?? purchaseOrder.totalAmount)}
+                      className="mt-1 border-slate-200 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('purchase.detail.paymentMethod', 'Payment Method')}</Label>
+                    <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                      <SelectTrigger className="mt-1 border-slate-200 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+                        <SelectItem value="cash" className="dark:text-slate-200">Cash</SelectItem>
+                        <SelectItem value="card" className="dark:text-slate-200">Card</SelectItem>
+                        <SelectItem value="bank_transfer" className="dark:text-slate-200">Bank Transfer</SelectItem>
+                        <SelectItem value="cheque" className="dark:text-slate-200">Cheque</SelectItem>
+                        <SelectItem value="mobile_money" className="dark:text-slate-200">Mobile Money</SelectItem>
+                        <SelectItem value="credit" className="dark:text-slate-200">Credit</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('purchase.detail.paymentNotes', 'Notes')}</Label>
+                    <Textarea value={paymentNotes} onChange={(e) => setPaymentNotes(e.target.value)} rows={2} className="mt-1 border-slate-200 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white" />
+                  </div>
+                  {(paymentMethod === 'bank_transfer' || paymentMethod === 'cheque' || paymentMethod === 'mobile_money') && (
+                    <div>
+                      <Label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('purchase.detail.bankAccount', 'Bank Account')}</Label>
+                      <Select value={bankAccountId} onValueChange={setBankAccountId}>
+                        <SelectTrigger className="mt-1 border-slate-200 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white">
+                          <SelectValue placeholder="Select bank account" />
+                        </SelectTrigger>
+                        <SelectContent className="border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+                          {bankAccounts.map((acc) => (
+                            <SelectItem key={acc._id} value={acc._id} className="dark:text-slate-200">
+                              {acc.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   )}
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                <div className="mt-6 flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setPaymentOpen(false)} className="border-slate-200 text-slate-900 dark:border-slate-700 dark:text-white">
+                    {t('common.cancel', 'Cancel')}
+                  </Button>
+                  <Button
+                    onClick={handleRecordPayment}
+                    disabled={paymentSaving || !paymentAmount}
+                    className="bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
+                  >
+                    {paymentSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2 h-4 w-4" />}
+                    {t('purchase.detail.submitPayment', 'Submit Payment')}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </Layout>
   );
