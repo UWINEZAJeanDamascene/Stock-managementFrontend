@@ -3,11 +3,13 @@ import { useParams, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import {
   payrollRunApi,
+  payrollApi,
   chartOfAccountsApi,
   bankAccountsApi,
   PayrollRun,
   PayrollRunPreview,
   BankAccount,
+  PayrollRecord,
 } from "@/lib/api";
 import { Layout } from "../../layout/Layout";
 import {
@@ -63,6 +65,7 @@ import {
 } from "@/app/components/ui/select";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
+import { Checkbox } from "@/app/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -121,6 +124,9 @@ export default function PayrollRunDetailPage() {
     month: number;
     year: number;
   } | null>(null);
+  const [periodPayrollRecords, setPeriodPayrollRecords] = useState<PayrollRecord[]>([]);
+  const [loadingPeriodRecords, setLoadingPeriodRecords] = useState(false);
+  const [selectedPayrollIds, setSelectedPayrollIds] = useState<Set<string>>(new Set());
 
   const [createForm, setCreateForm] = useState({
     pay_period_start: "",
@@ -162,6 +168,28 @@ export default function PayrollRunDetailPage() {
       );
     } finally {
       setLoadingPeriods(false);
+    }
+  };
+
+  const fetchPeriodPayrollRecords = async (month: number, year: number) => {
+    setLoadingPeriodRecords(true);
+    try {
+      const response = await payrollApi.getAll({
+        month,
+        year,
+        status: "finalised",
+        limit: 500,
+      });
+      if (response.success) {
+        const records = (response.data || []).filter((record) => !record.payroll_run_id);
+        setPeriodPayrollRecords(records);
+        setSelectedPayrollIds(new Set(records.map((record) => record._id)));
+      }
+    } catch (error) {
+      console.error("[PayrollRunDetailPage] Failed to fetch period payroll records:", error);
+      toast.error("Failed to load employee payroll records for this period");
+    } finally {
+      setLoadingPeriodRecords(false);
     }
   };
 
@@ -348,6 +376,9 @@ export default function PayrollRunDetailPage() {
 
   const handleSelectPeriod = (month: number, year: number) => {
     setSelectedPeriod({ month, year });
+    setPeriodPayrollRecords([]);
+    setSelectedPayrollIds(new Set());
+    fetchPeriodPayrollRecords(month, year);
     const firstDay = `${year}-${String(month).padStart(2, "0")}-01`;
     const lastDay = new Date(year, month, 0);
     const lastDayStr = `${year}-${String(month).padStart(2, "0")}-${String(lastDay.getDate()).padStart(2, "0")}`;
@@ -369,6 +400,10 @@ export default function PayrollRunDetailPage() {
       toast.error("Please select a payroll period first");
       return;
     }
+    if (periodPayrollRecords.length > 0 && selectedPayrollIds.size === 0) {
+      toast.error("Please select at least one employee payroll record");
+      return;
+    }
     if (
       !createForm.payment_date ||
       !createForm.salary_account_id ||
@@ -388,6 +423,7 @@ export default function PayrollRunDetailPage() {
         payment_date: createForm.payment_date,
         period_month: selectedPeriod.month,
         period_year: selectedPeriod.year,
+        employee_ids: Array.from(selectedPayrollIds),
         salary_account_id: createForm.salary_account_id,
         tax_payable_account_id: createForm.tax_payable_account_id,
         bank_account_id: createForm.bank_account_id,
@@ -501,6 +537,17 @@ export default function PayrollRunDetailPage() {
     const totalAvailableGross = availablePeriods.reduce((s, p) => s + p.totalGross, 0);
     const totalAvailableNet = availablePeriods.reduce((s, p) => s + p.totalNet, 0);
     const totalAvailableEmployees = availablePeriods.reduce((s, p) => s + p.count, 0);
+    const selectedRecords = periodPayrollRecords.filter((record) =>
+      selectedPayrollIds.has(record._id),
+    );
+    const selectedGross = selectedRecords.reduce(
+      (sum, record) => sum + (record.salary?.grossSalary || 0),
+      0,
+    );
+    const selectedNet = selectedRecords.reduce(
+      (sum, record) => sum + (record.netPay || 0),
+      0,
+    );
 
     return (
       <Layout>
@@ -732,6 +779,97 @@ export default function PayrollRunDetailPage() {
                       </span>
                     </div>
                   )}
+
+                  <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-900/50">
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                          Employees to Include
+                        </h4>
+                        <p className="text-xs text-slate-400 dark:text-slate-500">
+                          Select all records or create this run for individual employees.
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            setSelectedPayrollIds(new Set(periodPayrollRecords.map((record) => record._id)))
+                          }
+                          disabled={loadingPeriodRecords || periodPayrollRecords.length === 0}
+                        >
+                          All
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setSelectedPayrollIds(new Set())}
+                          disabled={loadingPeriodRecords || periodPayrollRecords.length === 0}
+                        >
+                          None
+                        </Button>
+                      </div>
+                    </div>
+
+                    {loadingPeriodRecords ? (
+                      <div className="flex items-center justify-center gap-2 py-6 text-sm text-slate-500 dark:text-slate-400">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Loading employee records...
+                      </div>
+                    ) : periodPayrollRecords.length === 0 ? (
+                      <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
+                        No unprocessed finalised employee records were found for this period.
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                          {periodPayrollRecords.map((record) => {
+                            const checked = selectedPayrollIds.has(record._id);
+                            const employeeName = `${record.employee.firstName} ${record.employee.lastName}`;
+                            return (
+                              <label
+                                key={record._id}
+                                className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 text-sm transition-colors ${
+                                  checked
+                                    ? "border-indigo-300 bg-indigo-50 dark:border-indigo-700 dark:bg-indigo-950/30"
+                                    : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-950 dark:hover:border-slate-700"
+                                }`}
+                              >
+                                <Checkbox
+                                  checked={checked}
+                                  onCheckedChange={(value) => {
+                                    setSelectedPayrollIds((prev) => {
+                                      const next = new Set(prev);
+                                      if (value) next.add(record._id);
+                                      else next.delete(record._id);
+                                      return next;
+                                    });
+                                  }}
+                                />
+                                <div className="min-w-0 flex-1">
+                                  <div className="truncate font-medium text-slate-900 dark:text-white">
+                                    {employeeName}
+                                  </div>
+                                  <div className="text-xs text-slate-500 dark:text-slate-400">
+                                    {record.employee.employeeId} · Net {formatCurrency(record.netPay)}
+                                  </div>
+                                </div>
+                              </label>
+                            );
+                          })}
+                        </div>
+                        <div className="rounded-md bg-white p-3 text-sm text-slate-600 ring-1 ring-slate-200 dark:bg-slate-950 dark:text-slate-300 dark:ring-slate-800">
+                          Selected <strong>{selectedPayrollIds.size}</strong> of{" "}
+                          <strong>{periodPayrollRecords.length}</strong> records · Gross{" "}
+                          <strong>{formatCurrency(selectedGross)}</strong> · Net{" "}
+                          <strong>{formatCurrency(selectedNet)}</strong>
+                        </div>
+                      </div>
+                    )}
+                  </div>
 
                   {/* Dates */}
                   <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-900/50">
@@ -1562,7 +1700,7 @@ export default function PayrollRunDetailPage() {
                         {formatCurrency(line.tax_deduction)}
                       </TableCell>
                       <TableCell className="text-right text-orange-600 dark:text-orange-400">
-                        {formatCurrency(line.other_deductions)}
+                        {formatCurrency(line.rssb_employee_total)}
                       </TableCell>
                       <TableCell className="text-right text-blue-600 dark:text-blue-400">
                         {formatCurrency(line.rssb_employer_total)}

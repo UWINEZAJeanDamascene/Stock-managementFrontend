@@ -28,6 +28,14 @@ import {
   DollarSign,
   BarChart3,
   PieChart,
+  Coins,
+  Wallet,
+  Info,
+  Shield,
+  Clock,
+  FileText,
+  Landmark,
+  TriangleAlert,
 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";

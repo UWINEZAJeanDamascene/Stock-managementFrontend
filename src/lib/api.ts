@@ -6375,6 +6375,10 @@ export const payrollApi = {
       bonuses?: number;
       commissions?: number;
       benefitsInKind?: number;
+      healthInsurance?: number;
+      loanDeductions?: number;
+      otherDeductions?: number;
+      occupationalHazardRate?: number;
     };
     deductions?: {
       healthInsurance?: number;
@@ -6768,6 +6772,7 @@ export const payrollRunApi = {
     payment_date: string;
     period_month?: number;
     period_year?: number;
+    employee_ids?: string[];
     salary_account_id: string;
     tax_payable_account_id: string;
     bank_account_id: string;

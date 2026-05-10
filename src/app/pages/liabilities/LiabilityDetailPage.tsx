@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { loansApi, Liability, LiabilityTransaction, bankAccountsApi } from '@/lib/api';
@@ -62,7 +62,22 @@ import {
   CalendarDays,
   Zap,
   ChevronDown,
-  Shield
+  Shield,
+  Landmark,
+  CreditCard,
+  Wallet,
+  Activity,
+  Clock,
+  CheckCircle2,
+  XOctagon,
+  FileText,
+  Banknote,
+  Percent,
+  PackageOpen,
+  BarChart3,
+  Briefcase,
+  Timer,
+  Gauge
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -103,27 +118,7 @@ export default function LiabilityDetailPage() {
     notes: ''
   });
 
-  useEffect(() => {
-    if (!id) {
-      setLoading(false);
-      return;
-    }
-    fetchLiability();
-    fetchTransactions();
-    fetchBankAccounts();
-  }, [id]);
-
-  // Handle query params to open dialogs directly
-  useEffect(() => {
-    const action = searchParams.get('action');
-    if (action === 'repayment' && !loading && liability) {
-      setRepaymentOpen(true);
-    } else if (action === 'interest' && !loading && liability) {
-      setInterestOpen(true);
-    }
-  }, [searchParams, loading, liability]);
-
-  const fetchBankAccounts = async () => {
+  const fetchBankAccounts = useCallback(async () => {
     try {
       const response: any = await bankAccountsApi.getAll({});
       if (response.success) {
@@ -132,11 +127,12 @@ export default function LiabilityDetailPage() {
     } catch (error) {
       console.error('[LiabilityDetailPage] Failed to fetch bank accounts:', error);
     }
-  };
+  }, []);
 
-  const fetchLiability = async () => {
+  const fetchLiability = useCallback(async () => {
+    if (!id) return;
     try {
-      const response: any = await loansApi.getById(id!);
+      const response: any = await loansApi.getById(id);
       if (response.success && response.data) {
         setLiability(response.data);
       } else {
@@ -150,18 +146,39 @@ export default function LiabilityDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, navigate, t]);
 
-  const fetchTransactions = async () => {
+  const fetchTransactions = useCallback(async () => {
+    if (!id) return;
     try {
-      const response: any = await loansApi.getTransactions(id!);
+      const response: any = await loansApi.getTransactions(id);
       if (response.success) {
         setTransactions(response.data || []);
       }
     } catch (error) {
       console.error('[LiabilityDetailPage] Failed to fetch transactions:', error);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    if (!id) {
+      setLoading(false);
+      return;
+    }
+    fetchLiability();
+    fetchTransactions();
+    fetchBankAccounts();
+  }, [fetchLiability, fetchTransactions, fetchBankAccounts, id]);
+
+  // Handle query params to open dialogs directly
+  useEffect(() => {
+    const action = searchParams.get('action');
+    if (action === 'repayment' && !loading && liability) {
+      setRepaymentOpen(true);
+    } else if (action === 'interest' && !loading && liability) {
+      setInterestOpen(true);
+    }
+  }, [searchParams, loading, liability]);
 
   const handleRepayment = async () => {
     if (!repaymentForm.principalPortion || repaymentForm.principalPortion <= 0) {
@@ -546,120 +563,161 @@ export default function LiabilityDetailPage() {
   };
 
   const getStatusBadge = (status: string) => {
-    const config: Record<string, { variant: string; className: string }> = {
-      active: { variant: 'default', className: 'bg-green-500 dark:bg-green-600' },
-      fully_repaid: { variant: 'secondary', className: 'bg-blue-500 dark:bg-blue-600' },
-      'paid-off': { variant: 'secondary', className: 'bg-blue-500 dark:bg-blue-600' },
-      closed: { variant: 'outline', className: 'bg-gray-500 dark:bg-gray-600' },
-      cancelled: { variant: 'outline', className: 'bg-gray-400 dark:bg-gray-500' },
-      defaulted: { variant: 'destructive', className: '' },
-      default: { variant: 'destructive', className: '' },
+    const config: Record<string, { icon: any; className: string; label: string }> = {
+      active: { icon: Activity, className: 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60', label: t('liabilities.status.active') },
+      fully_repaid: { icon: CheckCircle2, className: 'bg-blue-100 text-blue-700 ring-1 ring-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60', label: t('liabilities.status.fullyRepaid') },
+      'paid-off': { icon: CheckCircle2, className: 'bg-blue-100 text-blue-700 ring-1 ring-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60', label: t('liabilities.status.fullyRepaid') },
+      closed: { icon: Shield, className: 'bg-slate-100 text-slate-700 ring-1 ring-slate-200 dark:bg-slate-900/60 dark:text-slate-300 dark:ring-slate-700/50', label: t('liabilities.status.closed') },
+      cancelled: { icon: XCircle, className: 'bg-gray-100 text-gray-600 ring-1 ring-gray-200 dark:bg-gray-900/40 dark:text-gray-400 dark:ring-gray-700/50', label: t('liabilities.status.cancelled') },
+      defaulted: { icon: AlertCircle, className: 'bg-red-100 text-red-700 ring-1 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900/60', label: t('liabilities.status.defaulted') },
+      default: { icon: AlertCircle, className: 'bg-red-100 text-red-700 ring-1 ring-red-200 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900/60', label: t('liabilities.status.defaulted') },
     };
-    const { variant, className } = config[status] || config.default;
-    return <Badge variant={variant as any} className={className}>{t(`liabilities.status.${status}`)}</Badge>;
+    const cfg = config[status] || config.default;
+    const Icon = cfg.icon;
+    return (
+      <Badge variant="outline" className={`flex items-center gap-1.5 font-medium border-0 ${cfg.className}`}>
+        <Icon className="h-3.5 w-3.5" />
+        {cfg.label}
+      </Badge>
+    );
   };
 
   const getTransactionTypeBadge = (type: string) => {
-    const config: Record<string, { variant: string; className: string }> = {
-      drawdown: { variant: 'default', className: 'bg-green-500 dark:bg-green-600' },
-      repayment: { variant: 'secondary', className: 'bg-blue-500 dark:bg-blue-600' },
-      interest_charge: { variant: 'outline', className: 'bg-orange-500 dark:bg-orange-600' },
-      interest: { variant: 'outline', className: 'bg-orange-500 dark:bg-orange-600' }, // Backwards compatibility
-      default: { variant: 'outline', className: '' },
+    const config: Record<string, { icon: any; className: string; label: string }> = {
+      drawdown: { icon: TrendingUp, className: 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60', label: t('liabilities.transactionTypes.drawdown') },
+      repayment: { icon: RefreshCcw, className: 'bg-blue-100 text-blue-700 ring-1 ring-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60', label: t('liabilities.transactionTypes.repayment') },
+      interest_charge: { icon: TrendingDown, className: 'bg-amber-100 text-amber-700 ring-1 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/60', label: t('liabilities.transactionTypes.interest_charge') },
+      interest: { icon: TrendingDown, className: 'bg-amber-100 text-amber-700 ring-1 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/60', label: t('liabilities.transactionTypes.interest_charge') },
+      default: { icon: AlertCircle, className: 'bg-slate-100 text-slate-600 ring-1 ring-slate-200 dark:bg-slate-900/40 dark:text-slate-400 dark:ring-slate-700/50', label: type },
     };
-    const { variant, className } = config[type] || config.default;
-    return <Badge variant={variant as any} className={className}>{t(`liabilities.transactionTypes.${type}`)}</Badge>;
+    const cfg = config[type] || config.default;
+    const Icon = cfg.icon;
+    return (
+      <Badge variant="outline" className={`flex items-center gap-1.5 font-medium border-0 ${cfg.className}`}>
+        <Icon className="h-3.5 w-3.5" />
+        {cfg.label}
+      </Badge>
+    );
+  };
+
+  const repaymentProgress = liability && liability.originalAmount > 0
+    ? Math.max(0, Math.min(100, ((liability.originalAmount - liability.outstandingBalance) / liability.originalAmount) * 100))
+    : 0;
+
+  const getProgressColor = (pct: number) => {
+    if (pct >= 75) return 'bg-emerald-500';
+    if (pct >= 50) return 'bg-blue-500';
+    if (pct >= 25) return 'bg-amber-500';
+    return 'bg-rose-500';
   };
 
   if (loading) {
     return (
       <Layout>
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin" />
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-indigo-600 dark:text-indigo-400" />
+            <p className="text-sm text-slate-500 dark:text-slate-400">Loading liability details...</p>
+          </div>
         </div>
       </Layout>
     );
   }
 
   if (!liability) {
-    return null;
+    return (
+      <Layout>
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <AlertCircle className="h-12 w-12 text-slate-400 dark:text-slate-500" />
+            <p className="text-slate-500 dark:text-slate-400">Liability not found</p>
+            <Button variant="outline" onClick={() => navigate('/liabilities')}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to List
+            </Button>
+          </div>
+        </div>
+      </Layout>
+    );
   }
 
   return (
     <Layout>
-      <div className="container mx-auto py-6 bg-gray-50 dark:bg-slate-900 min-h-screen p-6">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-          <div className="flex items-start gap-3 min-w-0">
-            <Button variant="ghost" size="sm" onClick={() => navigate('/liabilities')} className="mt-0.5 h-8 w-8 p-0 dark:text-slate-200">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div className="min-w-0">
-              <h1 className="text-2xl sm:text-3xl font-bold dark:text-white leading-tight">{liability.name}</h1>
-              <p className="text-muted-foreground dark:text-slate-400 text-sm">{liability.loanNumber}</p>
-            </div>
-          </div>
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+        {/* Hero Header */}
+        <div className="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
+          <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+              <div className="flex items-start gap-4">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate('/liabilities')}
+                  className="mt-1 h-8 w-8 p-0 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+                <div>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                      {liability.name}
+                    </h1>
+                    {getStatusBadge(liability.status)}
+                  </div>
+                  <div className="mt-1 flex items-center gap-3 text-sm text-slate-500 dark:text-slate-400">
+                    <span className="font-mono">{liability.loanNumber}</span>
+                    <span className="hidden sm:inline">|</span>
+                    <span className="hidden sm:flex items-center gap-1">
+                      <Landmark className="h-3.5 w-3.5" />
+                      {liability.lenderName || 'No lender'}
+                    </span>
+                  </div>
+                </div>
+              </div>
 
-          {/* Action buttons arranged in 2x2 grid - each button fills its column */}
-          <div className="w-full md:w-auto">
-            <div className="grid grid-cols-2 gap-3 w-full max-w-full items-center">
-              {/* Top-left: Edit */}
-              <div>
+              <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
+                  size="sm"
                   onClick={() => navigate(`/liabilities/${id}/edit`)}
-                  className="w-full h-10 px-4 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
+                  className="dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
                 >
-                  <Pencil className="mr-2 h-4 w-4" />
-                  {t('liabilities.editLiability')}
+                  <Pencil className="mr-1.5 h-4 w-4" />
+                  Edit
                 </Button>
-              </div>
-
-              {/* Top-right: Delete */}
-              <div>
-                <Button
-                  variant="destructive"
-                  onClick={() => setDeleteDialogOpen(true)}
-                  className="w-full h-10 px-4"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  {t('liabilities.actions.delete')}
-                </Button>
-              </div>
-
-              {/* Bottom-left: Cancel (or placeholder) */}
-              <div>
-                {liability.status !== 'cancelled' && liability.status !== 'fully_repaid' && liability.status !== 'paid-off' ? (
+                {liability.status !== 'cancelled' && liability.status !== 'fully_repaid' && liability.status !== 'paid-off' && (
                   <Button
                     variant="outline"
+                    size="sm"
                     onClick={() => setCancelDialogOpen(true)}
-                    className="w-full h-10 px-4 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
+                    className="dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
                   >
-                    <XCircle className="mr-2 h-4 w-4" />
-                    {t('liabilities.actions.cancel')}
+                    <XCircle className="mr-1.5 h-4 w-4" />
+                    Cancel
                   </Button>
-                ) : (
-                  <div />
                 )}
-              </div>
-
-              {/* Bottom-right: Quick Actions */}
-              <div>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setDeleteDialogOpen(true)}
+                >
+                  <Trash2 className="mr-1.5 h-4 w-4" />
+                  Delete
+                </Button>
                 {(() => {
                   const liabAccount = (liability as any).liabilityAccountId;
                   const liabIsValid = (liabAccount && typeof liabAccount === 'object' && liabAccount.name) || (typeof liabAccount === 'string' && liabAccount.length > 0);
                   const intAccount = (liability as any).interestExpenseAccountId;
                   const intIsValid = (intAccount && typeof intAccount === 'object' && intAccount.name) || (typeof intAccount === 'string' && intAccount.length > 0);
-
                   return (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="secondary" className="w-full h-10 px-4 dark:border-slate-600 dark:text-slate-200">
+                        <Button size="sm" className="bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-500">
                           Quick Actions
-                          <ChevronDown className="ml-2 h-4 w-4" />
+                          <ChevronDown className="ml-1.5 h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="dark:bg-slate-800">
+                      <DropdownMenuContent align="end" className="dark:bg-slate-800 dark:border-slate-700">
                         <DropdownMenuItem onClick={handleQuickRepayment} disabled={!liabIsValid || submitting}>
                           <Zap className="mr-2 h-4 w-4" />
                           Quick Repay
@@ -669,7 +727,7 @@ export default function LiabilityDetailPage() {
                           Manual Repayment
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={handleQuickInterest} disabled={!intIsValid || submitting}>
-                          <Zap className="mr-2 h-4 w-4 text-yellow-400" />
+                          <Zap className="mr-2 h-4 w-4 text-amber-500" />
                           Quick Interest
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setInterestOpen(true)} disabled={submitting}>
@@ -685,291 +743,398 @@ export default function LiabilityDetailPage() {
           </div>
         </div>
 
-        {/* Details Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <Card className="dark:bg-slate-800">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium dark:text-slate-400">{t('liabilities.statusLabel')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {getStatusBadge(liability.status)}
-            </CardContent>
-          </Card>
-          <Card className="dark:bg-slate-800">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium dark:text-slate-400">{t('liabilities.principal')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold dark:text-white">{formatCurrency(liability.originalAmount)}</div>
-            </CardContent>
-          </Card>
-          <Card className="dark:bg-slate-800">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium dark:text-slate-400">{t('liabilities.outstandingBalance')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-red-600 dark:text-red-400">{formatCurrency(liability.outstandingBalance)}</div>
-            </CardContent>
-          </Card>
-          <Card className="dark:bg-slate-800">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium dark:text-slate-400">{t('liabilities.interestRate')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold dark:text-white">{liability.interestRate || 0}%</div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Account Configuration */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <Card className="dark:bg-slate-800">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium dark:text-slate-400">Liability Account</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {(liability as any).liabilityAccountId ? (
-                <div>
-                  {(liability as any).liabilityAccountId.name ? (
-                    <>
-                      <div className="text-lg font-semibold dark:text-white">{(liability as any).liabilityAccountId.name}</div>
-                      <div className="text-sm text-gray-500 dark:text-slate-400">{(liability as any).liabilityAccountId.code}</div>
-                    </>
-                  ) : (
-                    <div className="text-lg font-semibold dark:text-white">{(liability as any).liabilityAccountId}</div>
-                  )}
+        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+          {/* Progress Card */}
+          <Card className="mb-6 overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <CardContent className="p-5">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                    <Activity className="h-3.5 w-3.5" />
+                    Repayment Progress
+                  </div>
+                  <div className="mt-2 flex items-baseline gap-2">
+                    <span className="text-3xl font-bold text-slate-900 dark:text-white">{repaymentProgress.toFixed(1)}%</span>
+                    <span className="text-sm text-slate-500 dark:text-slate-400">
+                      {formatCurrency((liability.originalAmount || 0) - (liability.outstandingBalance || 0))} of {formatCurrency(liability.originalAmount)} repaid
+                    </span>
+                  </div>
+                  <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                    <div
+                      className={`h-full rounded-full transition-all duration-700 ${getProgressColor(repaymentProgress)}`}
+                      style={{ width: `${repaymentProgress}%` }}
+                    />
+                  </div>
                 </div>
-              ) : (
-                <div className="text-lg text-red-500 dark:text-red-400">Not configured - Please edit to add account</div>
+                <div className="flex items-center gap-4 text-sm">
+                  <div className="flex flex-col items-end">
+                    <span className="text-xs text-slate-500 dark:text-slate-400">Start</span>
+                    <span className="font-medium text-slate-700 dark:text-slate-300">{formatDate(liability.startDate)}</span>
+                  </div>
+                  <div className="h-8 w-px bg-slate-200 dark:bg-slate-700" />
+                  <div className="flex flex-col items-end">
+                    <span className="text-xs text-slate-500 dark:text-slate-400">Maturity</span>
+                    <span className="font-medium text-slate-700 dark:text-slate-300">{formatDate(liability.endDate)}</span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Principal</p>
+                    <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">{formatCurrency(liability.originalAmount)}</p>
+                  </div>
+                  <div className="rounded-lg bg-emerald-50 p-2 text-emerald-600 ring-1 ring-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400 dark:ring-emerald-900/40">
+                    <Wallet className="h-5 w-5" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Outstanding</p>
+                    <p className="mt-2 text-2xl font-bold text-rose-600 dark:text-rose-400">{formatCurrency(liability.outstandingBalance)}</p>
+                  </div>
+                  <div className="rounded-lg bg-rose-50 p-2 text-rose-600 ring-1 ring-rose-100 dark:bg-rose-950/30 dark:text-rose-400 dark:ring-rose-900/40">
+                    <CreditCard className="h-5 w-5" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Interest Rate</p>
+                    <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">{liability.interestRate || 0}%</p>
+                  </div>
+                  <div className="rounded-lg bg-blue-50 p-2 text-blue-600 ring-1 ring-blue-100 dark:bg-blue-950/30 dark:text-blue-400 dark:ring-blue-900/40">
+                    <Percent className="h-5 w-5" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Monthly Payment</p>
+                    <p className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">{formatCurrency(liability.monthlyPayment || 0)}</p>
+                  </div>
+                  <div className="rounded-lg bg-indigo-50 p-2 text-indigo-600 ring-1 ring-indigo-100 dark:bg-indigo-950/30 dark:text-indigo-400 dark:ring-indigo-900/40">
+                    <Banknote className="h-5 w-5" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Account Configuration */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-5">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="rounded-lg bg-indigo-50 p-2 text-indigo-600 ring-1 ring-indigo-100 dark:bg-indigo-950/30 dark:text-indigo-400 dark:ring-indigo-900/40">
+                    <Briefcase className="h-4 w-4" />
+                  </div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Liability Account</p>
+                </div>
+                {(liability as any).liabilityAccountId ? (
+                  <div>
+                    {(liability as any).liabilityAccountId.name ? (
+                      <>
+                        <div className="text-lg font-semibold text-slate-900 dark:text-white">{(liability as any).liabilityAccountId.name}</div>
+                        <div className="text-sm text-slate-500 dark:text-slate-400">{(liability as any).liabilityAccountId.code}</div>
+                      </>
+                    ) : (
+                      <div className="text-lg font-semibold text-slate-900 dark:text-white">{(liability as any).liabilityAccountId}</div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-sm text-rose-600 dark:text-rose-400">
+                    <AlertCircle className="h-4 w-4" />
+                    Not configured — edit to add account
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-5">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="rounded-lg bg-amber-50 p-2 text-amber-600 ring-1 ring-amber-100 dark:bg-amber-950/30 dark:text-amber-400 dark:ring-amber-900/40">
+                    <TrendingUp className="h-4 w-4" />
+                  </div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Interest Expense Account</p>
+                </div>
+                {(liability as any).interestExpenseAccountId ? (
+                  <div>
+                    {(liability as any).interestExpenseAccountId.name ? (
+                      <>
+                        <div className="text-lg font-semibold text-slate-900 dark:text-white">{(liability as any).interestExpenseAccountId.name}</div>
+                        <div className="text-sm text-slate-500 dark:text-slate-400">{(liability as any).interestExpenseAccountId.code}</div>
+                      </>
+                    ) : (
+                      <div className="text-lg font-semibold text-slate-900 dark:text-white">{(liability as any).interestExpenseAccountId}</div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400">
+                    <AlertCircle className="h-4 w-4" />
+                    Not configured — required for interest recording
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* IFRS 9 - Financial Instruments */}
+          <Card className="mb-6 overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <CardContent className="p-5">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="rounded-lg bg-sky-50 p-2 text-sky-600 ring-1 ring-sky-100 dark:bg-sky-950/30 dark:text-sky-400 dark:ring-sky-900/40">
+                  <Shield className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">IFRS 9</p>
+                  <p className="text-sm font-medium text-slate-900 dark:text-white">Financial Instruments</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-900/50">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Classification</p>
+                  <Badge variant="outline" className="mt-1 border-slate-200 dark:border-slate-700">
+                    {liability.ifrs9Classification === 'amortized_cost' ? 'Amortized Cost' :
+                     liability.ifrs9Classification === 'fvoci' ? 'FVOCI' :
+                     liability.ifrs9Classification === 'fvtpl' ? 'FVTPL' : 'Amortized Cost'}
+                  </Badge>
+                </div>
+                <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-900/50">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Impairment Stage</p>
+                  <div className="mt-2 flex items-center gap-2">
+                    <div className={`h-2.5 w-2.5 rounded-full ${
+                      liability.impairmentStage === 'stage_1' ? 'bg-emerald-500' :
+                      liability.impairmentStage === 'stage_2' ? 'bg-amber-500' : 'bg-rose-500'
+                    }`} />
+                    <span className={`text-sm font-semibold ${
+                      liability.impairmentStage === 'stage_1' ? 'text-emerald-600 dark:text-emerald-400' :
+                      liability.impairmentStage === 'stage_2' ? 'text-amber-600 dark:text-amber-400' :
+                      'text-rose-600 dark:text-rose-400'
+                    }`}>
+                      {liability.impairmentStage === 'stage_1' ? 'Stage 1 (12m ECL)' :
+                       liability.impairmentStage === 'stage_2' ? 'Stage 2 (Lifetime ECL)' :
+                       liability.impairmentStage === 'stage_3' ? 'Stage 3 (Credit-impaired)' : 'Stage 1'}
+                    </span>
+                  </div>
+                </div>
+                <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-900/50">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">ECL Provision</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-200">
+                    {formatCurrency(liability.eclProvision || 0)}
+                  </p>
+                </div>
+                <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-900/50">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Days Past Due</p>
+                  <p className={`mt-1 text-sm font-semibold ${
+                    (liability.daysPastDue || 0) > 30 ? 'text-rose-600 dark:text-rose-400' :
+                    (liability.daysPastDue || 0) > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'
+                  }`}>
+                    {liability.daysPastDue || 0} DPD
+                  </p>
+                </div>
+              </div>
+              {(liability.probabilityOfDefault || liability.lossGivenDefault || liability.effectiveInterestRate) && (
+                <div className="mt-4 grid grid-cols-1 gap-4 border-t border-slate-100 pt-4 dark:border-slate-800 sm:grid-cols-3">
+                  <div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Probability of Default (PD)</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-200">
+                      {(liability.probabilityOfDefault || 0).toFixed(2)}%
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Loss Given Default (LGD)</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-200">
+                      {(liability.lossGivenDefault || 45).toFixed(0)}%
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Effective Interest Rate</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-200">
+                      {(liability.effectiveInterestRate || 0).toFixed(2)}%
+                    </p>
+                  </div>
+                </div>
+              )}
+              {liability.forbearanceStatus && liability.forbearanceStatus !== 'none' && (
+                <div className="mt-4 flex items-center gap-2 rounded-lg bg-amber-50 p-3 dark:bg-amber-950/20">
+                  <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                  <span className="text-sm font-medium text-amber-700 dark:text-amber-400">
+                    Forbearance: {liability.forbearanceStatus === 'temporary' ? 'Temporary' : 'Permanent'}
+                  </span>
+                </div>
               )}
             </CardContent>
           </Card>
-          <Card className="dark:bg-slate-800">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium dark:text-slate-400">Interest Expense Account</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {(liability as any).interestExpenseAccountId ? (
-                <div>
-                  {(liability as any).interestExpenseAccountId.name ? (
-                    <>
-                      <div className="text-lg font-semibold dark:text-white">{(liability as any).interestExpenseAccountId.name}</div>
-                      <div className="text-sm text-gray-500 dark:text-slate-400">{(liability as any).interestExpenseAccountId.code}</div>
-                    </>
-                  ) : (
-                    <div className="text-lg font-semibold dark:text-white">{(liability as any).interestExpenseAccountId}</div>
-                  )}
-                </div>
-              ) : (
-                <div className="text-lg text-orange-500 dark:text-orange-400">Not configured - Required for interest recording</div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
 
-        {/* IFRS 9 - Financial Instruments */}
-        <Card className="dark:bg-slate-800 mb-6">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium dark:text-slate-400 flex items-center gap-2">
-              <Shield className="h-4 w-4 text-blue-400" />
-              IFRS 9 - Financial Instruments
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-              <div>
-                <p className="text-xs text-slate-500">Classification</p>
-                <Badge variant="outline" className="mt-1">
-                  {liability.ifrs9Classification === 'amortized_cost' ? 'Amortized Cost' :
-                   liability.ifrs9Classification === 'fvoci' ? 'FVOCI' :
-                   liability.ifrs9Classification === 'fvtpl' ? 'FVTPL' : 'Amortized Cost'}
-                </Badge>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500">Impairment Stage</p>
-                <Badge
-                  variant="outline"
-                  className={`mt-1 ${
-                    liability.impairmentStage === 'stage_1' ? 'border-emerald-500/50 text-emerald-400' :
-                    liability.impairmentStage === 'stage_2' ? 'border-amber-500/50 text-amber-400' :
-                    'border-rose-500/50 text-rose-400'
-                  }`}
-                >
-                  {liability.impairmentStage === 'stage_1' ? 'Stage 1 (12m ECL)' :
-                   liability.impairmentStage === 'stage_2' ? 'Stage 2 (Lifetime ECL)' :
-                   liability.impairmentStage === 'stage_3' ? 'Stage 3 (Credit-impaired)' : 'Stage 1'}
-                </Badge>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500">ECL Provision</p>
-                <p className="text-sm font-semibold text-slate-200">
-                  {formatCurrency(liability.eclProvision || 0)}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500">Days Past Due</p>
-                <p className={`text-sm font-semibold ${
-                  (liability.daysPastDue || 0) > 30 ? 'text-rose-400' :
-                  (liability.daysPastDue || 0) > 0 ? 'text-amber-400' : 'text-emerald-400'
-                }`}>
-                  {liability.daysPastDue || 0} DPD
-                </p>
-              </div>
-            </div>
-            {(liability.probabilityOfDefault || liability.lossGivenDefault || liability.effectiveInterestRate) && (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4 pt-4 border-t border-slate-700/50">
-                <div>
-                  <p className="text-xs text-slate-500">Probability of Default (PD)</p>
-                  <p className="text-sm font-semibold text-slate-200">
-                    {(liability.probabilityOfDefault || 0).toFixed(2)}%
-                  </p>
+          {/* Transaction History - Split into two tables */}
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            {/* Repayment History Table */}
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardHeader className="border-b border-slate-100 bg-slate-50/50 px-5 py-4 dark:border-slate-800 dark:bg-slate-900/50">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg bg-blue-50 p-1.5 text-blue-600 ring-1 ring-blue-100 dark:bg-blue-950/30 dark:text-blue-400 dark:ring-blue-900/40">
+                    <RefreshCcw className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base text-slate-900 dark:text-white">{t('liabilities.repaymentHistory')}</CardTitle>
+                    <CardDescription className="text-xs text-slate-500 dark:text-slate-400">{t('liabilities.repaymentHistoryDescription')}</CardDescription>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs text-slate-500">Loss Given Default (LGD)</p>
-                  <p className="text-sm font-semibold text-slate-200">
-                    {(liability.lossGivenDefault || 45).toFixed(0)}%
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-slate-500">Effective Interest Rate</p>
-                  <p className="text-sm font-semibold text-slate-200">
-                    {(liability.effectiveInterestRate || 0).toFixed(2)}%
-                  </p>
-                </div>
-              </div>
-            )}
-            {liability.forbearanceStatus && liability.forbearanceStatus !== 'none' && (
-              <div className="mt-4 pt-4 border-t border-slate-700/50">
-                <Badge variant="outline" className="border-amber-500/50 text-amber-400">
-                  Forbearance: {liability.forbearanceStatus === 'temporary' ? 'Temporary' : 'Permanent'}
-                </Badge>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Transaction History - Split into two tables */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Repayment History Table */}
-          <Card className="dark:bg-slate-800">
-            <CardHeader>
-              <CardTitle className="dark:text-white">{t('liabilities.repaymentHistory')}</CardTitle>
-              <CardDescription className="dark:text-slate-400">{t('liabilities.repaymentHistoryDescription')}</CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
-              {transactions.filter(tx => tx.type === 'repayment').length === 0 ? (
-                <div className="flex flex-col items-center py-12">
-                  <AlertCircle className="h-12 w-12 mb-4 text-muted-foreground dark:text-slate-500" />
-                  <p className="dark:text-slate-400">{t('liabilities.noRepayments')}</p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="dark:bg-slate-700/50 dark:border-slate-600">
-                      <TableHead className="dark:text-slate-200">{t('liabilities.transactionDate')}</TableHead>
-                      <TableHead className="dark:text-slate-200">{t('liabilities.reference')}</TableHead>
-                      <TableHead className="text-right dark:text-slate-200">{t('liabilities.principalPortion')}</TableHead>
-                      <TableHead className="text-right dark:text-slate-200">{t('liabilities.interestPortion')}</TableHead>
-                      <TableHead className="text-right dark:text-slate-200">{t('liabilities.total')}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {transactions
-                      .filter(tx => tx.type === 'repayment')
-                      .map((tx) => (
-                        <TableRow key={tx._id} className="dark:border-slate-600">
-                          <TableCell className="dark:text-slate-300">{formatDate(tx.transactionDate)}</TableCell>
-                          <TableCell className="dark:text-slate-300">{tx.reference || '-'}</TableCell>
-                          <TableCell className="text-right dark:text-slate-300">{formatCurrency(tx.principalPortion || 0)}</TableCell>
-                          <TableCell className="text-right dark:text-slate-300">{formatCurrency(tx.interestPortion || 0)}</TableCell>
-                          <TableCell className="text-right font-medium dark:text-white">{formatCurrency(tx.amount)}</TableCell>
+              </CardHeader>
+              <CardContent className="p-0">
+                {transactions.filter(tx => tx.type === 'repayment').length === 0 ? (
+                  <div className="flex flex-col items-center py-10">
+                    <div className="rounded-full bg-slate-100 p-3 dark:bg-slate-800">
+                      <RefreshCcw className="h-6 w-6 text-slate-400 dark:text-slate-500" />
+                    </div>
+                    <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">{t('liabilities.noRepayments')}</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-slate-50/50 hover:bg-slate-50/50 dark:bg-slate-900/50 dark:hover:bg-slate-900/50">
+                          <TableHead className="text-xs font-medium text-slate-500 dark:text-slate-400">{t('liabilities.transactionDate')}</TableHead>
+                          <TableHead className="text-xs font-medium text-slate-500 dark:text-slate-400">{t('liabilities.reference')}</TableHead>
+                          <TableHead className="text-right text-xs font-medium text-slate-500 dark:text-slate-400">{t('liabilities.principalPortion')}</TableHead>
+                          <TableHead className="text-right text-xs font-medium text-slate-500 dark:text-slate-400">{t('liabilities.interestPortion')}</TableHead>
+                          <TableHead className="text-right text-xs font-medium text-slate-500 dark:text-slate-400">{t('liabilities.total')}</TableHead>
                         </TableRow>
-                      ))}
-                  </TableBody>
-                </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                      </TableHeader>
+                      <TableBody>
+                        {transactions
+                          .filter(tx => tx.type === 'repayment')
+                          .map((tx) => (
+                            <TableRow key={tx._id} className="border-slate-100 dark:border-slate-800">
+                              <TableCell className="text-sm text-slate-700 dark:text-slate-300">{formatDate(tx.transactionDate)}</TableCell>
+                              <TableCell className="text-sm text-slate-700 dark:text-slate-300">{tx.reference || '-'}</TableCell>
+                              <TableCell className="text-right text-sm text-slate-700 dark:text-slate-300">{formatCurrency(tx.principalPortion || 0)}</TableCell>
+                              <TableCell className="text-right text-sm text-slate-700 dark:text-slate-300">{formatCurrency(tx.interestPortion || 0)}</TableCell>
+                              <TableCell className="text-right text-sm font-semibold text-slate-900 dark:text-white">{formatCurrency(tx.amount)}</TableCell>
+                            </TableRow>
+                          ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
-          {/* Interest Charges Table */}
-          <Card className="dark:bg-slate-800">
-            <CardHeader>
-              <CardTitle className="dark:text-white">{t('liabilities.interestCharges')}</CardTitle>
-              <CardDescription className="dark:text-slate-400">{t('liabilities.interestChargesDescription')}</CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
-              {transactions.filter(tx => tx.type === 'interest_charge' || tx.type === 'interest').length === 0 ? (
-                <div className="flex flex-col items-center py-12">
-                  <AlertCircle className="h-12 w-12 mb-4 text-muted-foreground dark:text-slate-500" />
-                  <p className="dark:text-slate-400">{t('liabilities.noInterestCharges')}</p>
+            {/* Interest Charges Table */}
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardHeader className="border-b border-slate-100 bg-slate-50/50 px-5 py-4 dark:border-slate-800 dark:bg-slate-900/50">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg bg-amber-50 p-1.5 text-amber-600 ring-1 ring-amber-100 dark:bg-amber-950/30 dark:text-amber-400 dark:ring-amber-900/40">
+                    <TrendingDown className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base text-slate-900 dark:text-white">{t('liabilities.interestCharges')}</CardTitle>
+                    <CardDescription className="text-xs text-slate-500 dark:text-slate-400">{t('liabilities.interestChargesDescription')}</CardDescription>
+                  </div>
                 </div>
-              ) : (
-                <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="dark:bg-slate-700/50 dark:border-slate-600">
-                      <TableHead className="dark:text-slate-200">{t('liabilities.transactionDate')}</TableHead>
-                      <TableHead className="dark:text-slate-200">{t('liabilities.reference')}</TableHead>
-                      <TableHead className="dark:text-slate-200">{t('liabilities.notes')}</TableHead>
-                      <TableHead className="text-right dark:text-slate-200">{t('liabilities.amount')}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {transactions
-                      .filter(tx => tx.type === 'interest_charge' || tx.type === 'interest')
-                      .map((tx) => (
-                        <TableRow key={tx._id} className="dark:border-slate-600">
-                          <TableCell className="dark:text-slate-300">{formatDate(tx.transactionDate)}</TableCell>
-                          <TableCell className="dark:text-slate-300">{tx.reference || '-'}</TableCell>
-                          <TableCell className="dark:text-slate-300">{tx.notes || '-'}</TableCell>
-                          <TableCell className="text-right font-medium dark:text-white">{formatCurrency(tx.amount)}</TableCell>
+              </CardHeader>
+              <CardContent className="p-0">
+                {transactions.filter(tx => tx.type === 'interest_charge' || tx.type === 'interest').length === 0 ? (
+                  <div className="flex flex-col items-center py-10">
+                    <div className="rounded-full bg-slate-100 p-3 dark:bg-slate-800">
+                      <TrendingDown className="h-6 w-6 text-slate-400 dark:text-slate-500" />
+                    </div>
+                    <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">{t('liabilities.noInterestCharges')}</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-slate-50/50 hover:bg-slate-50/50 dark:bg-slate-900/50 dark:hover:bg-slate-900/50">
+                          <TableHead className="text-xs font-medium text-slate-500 dark:text-slate-400">{t('liabilities.transactionDate')}</TableHead>
+                          <TableHead className="text-xs font-medium text-slate-500 dark:text-slate-400">{t('liabilities.reference')}</TableHead>
+                          <TableHead className="text-xs font-medium text-slate-500 dark:text-slate-400">{t('liabilities.notes')}</TableHead>
+                          <TableHead className="text-right text-xs font-medium text-slate-500 dark:text-slate-400">{t('liabilities.amount')}</TableHead>
                         </TableRow>
-                      ))}
-                  </TableBody>
-                </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                      </TableHeader>
+                      <TableBody>
+                        {transactions
+                          .filter(tx => tx.type === 'interest_charge' || tx.type === 'interest')
+                          .map((tx) => (
+                            <TableRow key={tx._id} className="border-slate-100 dark:border-slate-800">
+                              <TableCell className="text-sm text-slate-700 dark:text-slate-300">{formatDate(tx.transactionDate)}</TableCell>
+                              <TableCell className="text-sm text-slate-700 dark:text-slate-300">{tx.reference || '-'}</TableCell>
+                              <TableCell className="text-sm text-slate-700 dark:text-slate-300">{tx.notes || '-'}</TableCell>
+                              <TableCell className="text-right text-sm font-semibold text-slate-900 dark:text-white">{formatCurrency(tx.amount)}</TableCell>
+                            </TableRow>
+                          ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
 
-        {/* Drawdown History Table (Full Width) */}
-        {transactions.filter(tx => tx.type === 'drawdown').length > 0 && (
-          <Card className="mt-6 dark:bg-slate-800">
-            <CardHeader>
-              <CardTitle className="dark:text-white">{t('liabilities.drawdownHistory')}</CardTitle>
-              <CardDescription className="dark:text-slate-400">{t('liabilities.drawdownHistoryDescription')}</CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="dark:bg-slate-700/50 dark:border-slate-600">
-                    <TableHead className="dark:text-slate-200">{t('liabilities.transactionDate')}</TableHead>
-                    <TableHead className="dark:text-slate-200">{t('liabilities.reference')}</TableHead>
-                    <TableHead className="dark:text-slate-200">{t('liabilities.notes')}</TableHead>
-                    <TableHead className="text-right dark:text-slate-200">{t('liabilities.amount')}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {transactions
-                    .filter(tx => tx.type === 'drawdown')
-                    .map((tx) => (
-                      <TableRow key={tx._id} className="dark:border-slate-600">
-                        <TableCell className="dark:text-slate-300">{formatDate(tx.transactionDate)}</TableCell>
-                        <TableCell className="dark:text-slate-300">{tx.reference || '-'}</TableCell>
-                        <TableCell className="dark:text-slate-300">{tx.notes || '-'}</TableCell>
-                        <TableCell className="text-right font-medium dark:text-white">{formatCurrency(tx.amount)}</TableCell>
+          {/* Drawdown History Table (Full Width) */}
+          {transactions.filter(tx => tx.type === 'drawdown').length > 0 && (
+            <Card className="mt-6 overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardHeader className="border-b border-slate-100 bg-slate-50/50 px-5 py-4 dark:border-slate-800 dark:bg-slate-900/50">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg bg-emerald-50 p-1.5 text-emerald-600 ring-1 ring-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400 dark:ring-emerald-900/40">
+                    <TrendingUp className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base text-slate-900 dark:text-white">{t('liabilities.drawdownHistory')}</CardTitle>
+                    <CardDescription className="text-xs text-slate-500 dark:text-slate-400">{t('liabilities.drawdownHistoryDescription')}</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-slate-50/50 hover:bg-slate-50/50 dark:bg-slate-900/50 dark:hover:bg-slate-900/50">
+                        <TableHead className="text-xs font-medium text-slate-500 dark:text-slate-400">{t('liabilities.transactionDate')}</TableHead>
+                        <TableHead className="text-xs font-medium text-slate-500 dark:text-slate-400">{t('liabilities.reference')}</TableHead>
+                        <TableHead className="text-xs font-medium text-slate-500 dark:text-slate-400">{t('liabilities.notes')}</TableHead>
+                        <TableHead className="text-right text-xs font-medium text-slate-500 dark:text-slate-400">{t('liabilities.amount')}</TableHead>
                       </TableRow>
-                    ))}
-                </TableBody>
-              </Table>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                    </TableHeader>
+                    <TableBody>
+                      {transactions
+                        .filter(tx => tx.type === 'drawdown')
+                        .map((tx) => (
+                          <TableRow key={tx._id} className="border-slate-100 dark:border-slate-800">
+                            <TableCell className="text-sm text-slate-700 dark:text-slate-300">{formatDate(tx.transactionDate)}</TableCell>
+                            <TableCell className="text-sm text-slate-700 dark:text-slate-300">{tx.reference || '-'}</TableCell>
+                            <TableCell className="text-sm text-slate-700 dark:text-slate-300">{tx.notes || '-'}</TableCell>
+                            <TableCell className="text-right text-sm font-semibold text-slate-900 dark:text-white">{formatCurrency(tx.amount)}</TableCell>
+                          </TableRow>
+                        ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+        </div>
 
         {/* Repayment Dialog */}
         <Dialog open={repaymentOpen} onOpenChange={setRepaymentOpen}>
