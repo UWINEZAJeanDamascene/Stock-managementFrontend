@@ -3,18 +3,15 @@ import { Link, useNavigate } from 'react-router';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Eye, EyeOff, Loader2, ArrowLeft, ArrowRight, Building2, UserPlus, CheckCircle2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2, ArrowLeft, ArrowRight, Building2, UserPlus, CheckCircle2, Mail, Phone, ShieldCheck } from 'lucide-react';
 import { companyService } from '@/services';
 import { PUBLIC_ROUTES } from '@/config/routes';
 
-// Combined schema for the entire form
 const registerSchema = z.object({
-  // Company Information
   companyName: z.string().min(2, 'Company name must be at least 2 characters'),
   companyEmail: z.string().email('Please enter a valid company email'),
   companyTin: z.string().optional(),
   companyPhone: z.string().optional(),
-  // Admin Account Information
   adminName: z.string().min(2, 'Your name must be at least 2 characters'),
   adminEmail: z.string().email('Please enter a valid email address'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
@@ -48,57 +45,41 @@ export default function RegisterPage() {
   });
 
   const handleContinue = async () => {
-    // Validate only company fields
     const isValid = await trigger(['companyName', 'companyEmail', 'companyTin', 'companyPhone']);
-    if (isValid) {
-      setStep(2);
-    }
+    if (isValid) setStep(2);
   };
 
   const onSubmit = async () => {
-    // Get all form data
     const data = getValues();
-    
+
     setIsLoading(true);
     setError(null);
     setEmailError(null);
     setSuccessMessage(null);
 
     try {
-      // Prepare company data
-      const companyData = {
-        name: data.companyName,
-        email: data.companyEmail,
-        tin: data.companyTin || undefined,
-        phone: data.companyPhone || undefined,
-      };
-
-      // Prepare admin user data
-      const adminData = {
-        name: data.adminName,
-        email: data.adminEmail,
-        password: data.password,
-      };
-
-      // Call company registration endpoint
-      await companyService.register(companyData, adminData);
-
-      // Show success message about pending approval
-      setSuccessMessage(
-        'Registration submitted successfully! A platform administrator will review your company application. You will be notified once your company is approved or rejected.'
+      await companyService.register(
+        {
+          name: data.companyName,
+          email: data.companyEmail,
+          tin: data.companyTin || undefined,
+          phone: data.companyPhone || undefined,
+        },
+        {
+          name: data.adminName,
+          email: data.adminEmail,
+          password: data.password,
+        },
       );
-      
-      // Optionally navigate to login after a delay
+
+      setSuccessMessage('Registration submitted successfully. A platform administrator will review your company application.');
       setTimeout(() => {
         navigate(PUBLIC_ROUTES.LOGIN, {
           state: { message: 'Registration submitted. Please wait for company approval before logging in.' },
         });
       }, 5000);
-      
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Registration failed. Please try again.';
-      
-      // Handle specific error cases
       if (errorMessage.toLowerCase().includes('email')) {
         setEmailError('This email is already registered. Please use a different email or contact support.');
       } else {
@@ -109,280 +90,179 @@ export default function RegisterPage() {
     }
   };
 
-  const renderProgressBar = () => (
-    <div className="flex items-center justify-center mb-8">
-      <div className="flex items-center">
-        {/* Step 1 */}
-        <div className="flex flex-col items-center">
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all ${
-            step > 1 ? 'bg-green-500 text-white' : step === 1 ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-400'
-          }`}>
-            {step > 1 ? <CheckCircle2 className="w-5 h-5" /> : '1'}
-          </div>
-          <span className="text-xs mt-2 text-slate-400">Company</span>
-        </div>
-        
-        {/* Connector */}
-        <div className={`w-16 h-0.5 mx-2 ${step > 1 ? 'bg-green-500' : 'bg-slate-700'}`}></div>
-        
-        {/* Step 2 */}
-        <div className="flex flex-col items-center">
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all ${
-            step === 2 ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-400'
-          }`}>
-            2
-          </div>
-          <span className="text-xs mt-2 text-slate-400">Admin Account</span>
-        </div>
-      </div>
-    </div>
-  );
+  const inputClass = 'h-12 w-full rounded-lg border border-slate-200 bg-white px-4 text-slate-950 outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 dark:border-white/10 dark:bg-white/[0.06] dark:text-white';
+  const iconInputClass = `${inputClass} pl-10`;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4 py-12">
-      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMiIvPjwvZz48L2c+PC9zdmc+')] opacity-50"></div>
-      
-      <div className="relative w-full max-w-md">
-        <Link
-          to={PUBLIC_ROUTES.HOME}
-          className="absolute -top-12 left-0 flex items-center text-slate-400 hover:text-white transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Home
-        </Link>
-
-        <div className="bg-slate-800/80 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 shadow-2xl">
-          <div className="text-center mb-6">
-            <h1 className="text-2xl font-bold text-white mb-2">
-              {step === 1 ? 'Register Your Company' : 'Create Admin Account'}
+    <div className="min-h-screen bg-[#ecf5f2] text-slate-950 dark:bg-[#03110f] dark:text-white">
+      <div className="grid min-h-screen lg:grid-cols-[0.85fr_1.15fr]">
+        <aside className="hidden bg-slate-950 p-10 text-white dark:bg-white dark:text-slate-950 lg:flex lg:flex-col lg:justify-between">
+          <div>
+            <Link to={PUBLIC_ROUTES.HOME} className="inline-flex items-center gap-3 text-sm font-semibold tracking-[0.2em]">
+              <span className="grid h-10 w-10 place-items-center rounded-lg bg-white text-slate-950 dark:bg-slate-950 dark:text-white">
+                <Building2 className="h-5 w-5" />
+              </span>
+              STOCKMANAGER
+            </Link>
+            <h1 className="mt-20 max-w-xl text-6xl font-semibold leading-[0.98] tracking-tight">
+              Open a new operating workspace.
             </h1>
-            <p className="text-slate-400 text-sm">
-              {step === 1 ? 'Step 1 of 2: Enter your company details' : 'Step 2 of 2: Create your admin login'}
+            <p className="mt-6 max-w-md text-sm leading-6 text-slate-300 dark:text-slate-600">
+              Company identity, admin ownership and approval workflow in one crisp onboarding surface.
             </p>
           </div>
-
-          {renderProgressBar()}
-
-          {error && (
-            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
-              {error}
-            </div>
-          )}
-
-          {successMessage && (
-            <div className="mb-6 p-4 bg-green-500/10 border border-green-500/20 rounded-lg text-green-400 text-sm">
-              {successMessage}
-            </div>
-          )}
-
-          {/* Single form for both steps */}
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-            {/* Step 1: Company Information */}
-            {step === 1 && (
-              <div className="space-y-4">
-                <div>
-                  <label htmlFor="companyName" className="block text-sm font-medium text-slate-300 mb-2">
-                    Company Name <span className="text-red-400">*</span>
-                  </label>
-                  <input
-                    id="companyName"
-                    type="text"
-                    {...register('companyName')}
-                    className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    placeholder="Your Company Name"
-                  />
-                  {errors.companyName && (
-                    <p className="mt-1 text-sm text-red-400">{errors.companyName.message as string}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label htmlFor="companyEmail" className="block text-sm font-medium text-slate-300 mb-2">
-                    Company Email <span className="text-red-400">*</span>
-                  </label>
-                  <input
-                    id="companyEmail"
-                    type="email"
-                    {...register('companyEmail')}
-                    className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    placeholder="company@example.com"
-                  />
-                  {errors.companyEmail && (
-                    <p className="mt-1 text-sm text-red-400">{errors.companyEmail.message as string}</p>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label htmlFor="companyTin" className="block text-sm font-medium text-slate-300 mb-2">
-                      TIN (Tax ID)
-                    </label>
-                    <input
-                      id="companyTin"
-                      type="text"
-                      {...register('companyTin')}
-                      className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                      placeholder="123456789"
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="companyPhone" className="block text-sm font-medium text-slate-300 mb-2">
-                      Phone
-                    </label>
-                    <input
-                      id="companyPhone"
-                      type="tel"
-                      {...register('companyPhone')}
-                      className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                      placeholder="+1 234 567 8900"
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleContinue}
-                  className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-semibold rounded-lg transition-all transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center"
-                >
-                  Continue
-                  <ArrowRight className="w-5 h-5 ml-2" />
-                </button>
+          <div className="grid gap-3">
+            {['Company approval queue', 'Admin owner creation', 'Tenant-ready setup'].map((item) => (
+              <div key={item} className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/8 p-4 dark:border-slate-200 dark:bg-slate-50">
+                <CheckCircle2 className="h-5 w-5 text-emerald-300 dark:text-emerald-600" />
+                <span className="text-sm font-semibold">{item}</span>
               </div>
-            )}
+            ))}
+          </div>
+        </aside>
 
-            {/* Step 2: Admin Account */}
-            {step === 2 && (
-              <div className="space-y-5">
-                <button
-                  type="button"
-                  onClick={() => setStep(1)}
-                  className="flex items-center text-slate-400 hover:text-white transition-colors text-sm mb-2"
-                >
-                  <ArrowLeft className="w-4 h-4 mr-1" />
-                  Back to company info
-                </button>
+        <main className="relative flex items-center justify-center overflow-hidden px-4 py-10 sm:px-6 lg:px-10">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_12%_12%,rgba(34,211,238,.22),transparent_28%),radial-gradient(circle_at_90%_20%,rgba(52,211,153,.22),transparent_22%)] dark:bg-[radial-gradient(circle_at_12%_12%,rgba(34,211,238,.12),transparent_28%),radial-gradient(circle_at_90%_20%,rgba(52,211,153,.12),transparent_22%)]" />
+          <div className="relative w-full max-w-2xl">
+            <Link to={PUBLIC_ROUTES.HOME} className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white">
+              <ArrowLeft className="h-4 w-4" />
+              Home
+            </Link>
 
-                <div className="space-y-4">
-                  <div>
-                    <label htmlFor="adminName" className="block text-sm font-medium text-slate-300 mb-2">
-                      Your Full Name <span className="text-red-400">*</span>
-                    </label>
-                    <input
-                      id="adminName"
-                      type="text"
-                      {...register('adminName')}
-                      className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                      placeholder="John Doe"
-                    />
-                    {errors.adminName && (
-                      <p className="mt-1 text-sm text-red-400">{errors.adminName.message as string}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label htmlFor="adminEmail" className="block text-sm font-medium text-slate-300 mb-2">
-                      Your Email Address <span className="text-red-400">*</span>
-                    </label>
-                    <input
-                      id="adminEmail"
-                      type="email"
-                      {...register('adminEmail')}
-                      className={`w-full px-4 py-3 bg-slate-900/50 border rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${emailError ? 'border-red-500' : 'border-slate-600/50'}`}
-                      placeholder="you@example.com"
-                    />
-                    {errors.adminEmail && (
-                      <p className="mt-1 text-sm text-red-400">{errors.adminEmail.message as string}</p>
-                    )}
-                    {emailError && (
-                      <p className="mt-1 text-sm text-red-400">{emailError}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-2">
-                      Password <span className="text-red-400">*</span>
-                    </label>
-                    <div className="relative">
-                      <input
-                        id="password"
-                        type={showPassword ? 'text' : 'password'}
-                        {...register('password')}
-                        className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all pr-12"
-                        placeholder="••••••••"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
-                      >
-                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                      </button>
-                    </div>
-                    {errors.password && (
-                      <p className="mt-1 text-sm text-red-400">{errors.password.message as string}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-300 mb-2">
-                      Confirm Password <span className="text-red-400">*</span>
-                    </label>
-                    <div className="relative">
-                      <input
-                        id="confirmPassword"
-                        type={showConfirmPassword ? 'text' : 'password'}
-                        {...register('confirmPassword')}
-                        className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all pr-12"
-                        placeholder="••••••••"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
-                      >
-                        {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                      </button>
-                    </div>
-                    {errors.confirmPassword && (
-                      <p className="mt-1 text-sm text-red-400">{errors.confirmPassword.message as string}</p>
-                    )}
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-semibold rounded-lg transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      Registering...
-                    </>
-                  ) : (
-                    <>
-                      <UserPlus className="w-5 h-5 mr-2" />
-                      Complete Registration
-                    </>
-                  )}
-                </button>
+            <div className="overflow-hidden rounded-lg border border-white/80 bg-white/90 shadow-2xl shadow-slate-900/10 backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.06]">
+              <div className="border-b border-slate-200 bg-slate-950 p-6 text-white dark:border-white/10">
+                <p className="text-sm font-semibold uppercase tracking-[0.22em] text-cyan-300">New workspace</p>
+                <h2 className="mt-3 text-4xl font-semibold tracking-tight">{step === 1 ? 'Company setup console' : 'Admin owner console'}</h2>
+                <p className="mt-3 text-sm leading-6 text-slate-300">
+                  {step === 1 ? 'Capture the company record before approval.' : 'Create the first secure administrator for this workspace.'}
+                </p>
               </div>
-            )}
-          </form>
-
-          <div className="mt-6 text-center">
-            <p className="text-slate-400 text-sm">
-              Already have an account?{' '}
-              <Link
-                to={PUBLIC_ROUTES.LOGIN}
-                className="text-blue-400 hover:text-blue-300 font-medium"
-              >
-                Sign In
-              </Link>
-            </p>
+              <div className="p-6 sm:p-8">
+      <div className="mb-8">
+        <div className="flex items-center justify-center">
+          <div className="flex items-center">
+            <div className="flex flex-col items-center">
+              <div className={`flex h-11 w-11 items-center justify-center rounded-lg text-sm font-semibold ${step > 1 ? 'bg-emerald-500 text-white' : 'bg-slate-950 text-white dark:bg-white dark:text-slate-950'}`}>
+                {step > 1 ? <CheckCircle2 className="h-5 w-5" /> : '1'}
+              </div>
+              <span className="mt-2 text-xs font-semibold text-slate-500 dark:text-slate-400">Company</span>
+            </div>
+            <div className={`mx-3 h-0.5 w-16 ${step > 1 ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-white/10'}`} />
+            <div className="flex flex-col items-center">
+              <div className={`flex h-11 w-11 items-center justify-center rounded-lg text-sm font-semibold ${step === 2 ? 'bg-slate-950 text-white dark:bg-white dark:text-slate-950' : 'bg-slate-200 text-slate-500 dark:bg-white/10 dark:text-slate-400'}`}>
+                2
+              </div>
+              <span className="mt-2 text-xs font-semibold text-slate-500 dark:text-slate-400">Admin</span>
+            </div>
           </div>
         </div>
+      </div>
+
+      {error && <div className="mb-5 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-600 dark:text-red-300">{error}</div>}
+      {successMessage && <div className="mb-5 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">{successMessage}</div>}
+
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        {step === 1 && (
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="companyName" className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">Company name</label>
+              <div className="relative">
+                <Building2 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input id="companyName" type="text" {...register('companyName')} className={iconInputClass} placeholder="Company Ltd" />
+              </div>
+              {errors.companyName && <p className="mt-1 text-sm text-red-500">{errors.companyName.message as string}</p>}
+            </div>
+
+            <div>
+              <label htmlFor="companyEmail" className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">Company email</label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input id="companyEmail" type="email" {...register('companyEmail')} className={iconInputClass} placeholder="finance@company.com" />
+              </div>
+              {errors.companyEmail && <p className="mt-1 text-sm text-red-500">{errors.companyEmail.message as string}</p>}
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label htmlFor="companyTin" className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">TIN</label>
+                <div className="relative">
+                  <ShieldCheck className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <input id="companyTin" type="text" {...register('companyTin')} className={iconInputClass} placeholder="Tax ID" />
+                </div>
+              </div>
+              <div>
+                <label htmlFor="companyPhone" className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">Phone</label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <input id="companyPhone" type="tel" {...register('companyPhone')} className={iconInputClass} placeholder="+250..." />
+                </div>
+              </div>
+            </div>
+
+            <button type="button" onClick={handleContinue} className="flex h-12 w-full items-center justify-center rounded-lg bg-slate-950 px-4 font-semibold text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-cyan-100">
+              Continue
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </button>
+          </div>
+        )}
+
+        {step === 2 && (
+          <div className="space-y-4">
+            <button type="button" onClick={() => setStep(1)} className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white">
+              <ArrowLeft className="h-4 w-4" />
+              Company details
+            </button>
+
+            <div>
+              <label htmlFor="adminName" className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">Full name</label>
+              <input id="adminName" type="text" {...register('adminName')} className={inputClass} placeholder="Jane Operator" />
+              {errors.adminName && <p className="mt-1 text-sm text-red-500">{errors.adminName.message as string}</p>}
+            </div>
+
+            <div>
+              <label htmlFor="adminEmail" className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">Admin email</label>
+              <input id="adminEmail" type="email" {...register('adminEmail')} className={`${inputClass} ${emailError ? 'border-red-500' : ''}`} placeholder="admin@company.com" />
+              {errors.adminEmail && <p className="mt-1 text-sm text-red-500">{errors.adminEmail.message as string}</p>}
+              {emailError && <p className="mt-1 text-sm text-red-500">{emailError}</p>}
+            </div>
+
+            <div>
+              <label htmlFor="password" className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">Password</label>
+              <div className="relative">
+                <input id="password" type={showPassword ? 'text' : 'password'} {...register('password')} className={`${inputClass} pr-12`} placeholder="Minimum 8 characters" />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 dark:hover:text-white">
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
+              </div>
+              {errors.password && <p className="mt-1 text-sm text-red-500">{errors.password.message as string}</p>}
+            </div>
+
+            <div>
+              <label htmlFor="confirmPassword" className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">Confirm password</label>
+              <div className="relative">
+                <input id="confirmPassword" type={showConfirmPassword ? 'text' : 'password'} {...register('confirmPassword')} className={`${inputClass} pr-12`} placeholder="Repeat password" />
+                <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 dark:hover:text-white">
+                  {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
+              </div>
+              {errors.confirmPassword && <p className="mt-1 text-sm text-red-500">{errors.confirmPassword.message as string}</p>}
+            </div>
+
+            <button type="submit" disabled={isLoading} className="flex h-12 w-full items-center justify-center rounded-lg bg-slate-950 px-4 font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-slate-950 dark:hover:bg-cyan-100">
+              {isLoading ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" />Submitting...</> : <><UserPlus className="mr-2 h-5 w-5" />Complete registration</>}
+            </button>
+          </div>
+        )}
+      </form>
+
+      <p className="mt-6 text-center text-sm text-slate-600 dark:text-slate-300">
+        Already approved?{' '}
+        <Link to={PUBLIC_ROUTES.LOGIN} className="font-semibold text-cyan-700 hover:text-cyan-600 dark:text-cyan-300">Sign in</Link>
+      </p>
+              </div>
+            </div>
+          </div>
+        </main>
       </div>
     </div>
   );

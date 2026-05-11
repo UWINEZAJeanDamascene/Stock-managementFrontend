@@ -2,7 +2,7 @@ import { ReactNode, useState, useEffect } from 'react';
 import { Sidebar } from './Sidebar';
 import { Sheet, SheetContent } from '@/app/components/ui/sheet';
 import { useIsMobile } from '@/app/components/ui/use-mobile';
-import { Menu, Sun, Moon, Home } from 'lucide-react';
+import { Menu, Sun, Moon, Home, PanelLeft, Sparkles } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useNavigate } from 'react-router';
@@ -13,7 +13,7 @@ interface LayoutProps {
   title?: string;
 }
 
-export function Layout({ children }: LayoutProps) {
+export function Layout({ children, title }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { theme, toggleTheme } = useTheme();
@@ -35,16 +35,16 @@ export function Layout({ children }: LayoutProps) {
   }, []);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-slate-900">
+    <div className="flex h-screen overflow-hidden bg-slate-100 dark:bg-[#090f1c]">
       {/* Desktop Sidebar - always visible on lg screens */}
-      <div className={`hidden lg:block transition-all duration-300 ${sidebarCollapsed ? 'w-16' : 'w-64'}`}>
+      <div className={`hidden lg:block transition-all duration-300 ${sidebarCollapsed ? 'w-20' : 'w-72'}`}>
         <Sidebar collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)} />
       </div>
 
       {/* Mobile Sidebar - sheet/drawer (render only on mobile to avoid duplicate sidebars) */}
       {isMobile && (
         <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-          <SheetContent side="left" className="p-0 w-64 bg-slate-900 border-r border-slate-800">
+          <SheetContent side="left" className="p-0 w-72 bg-slate-900 border-r border-slate-800">
             <Sidebar onNavigate={() => setSidebarOpen(false)} />
           </SheetContent>
         </Sheet>
@@ -53,7 +53,7 @@ export function Layout({ children }: LayoutProps) {
       {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden">
         {/* Mobile Header - show on screens smaller than lg */}
-        <div className="lg:hidden sticky top-0 z-50 flex items-center gap-3 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 py-3 shadow-md">
+        <div className="lg:hidden sticky top-0 z-50 flex items-center gap-3 bg-white/95 dark:bg-[#0d1626]/95 backdrop-blur-xl border-b border-slate-200 dark:border-white/10 px-4 py-3 shadow-sm">
           <Button
             variant="ghost"
             size="icon"
@@ -78,7 +78,7 @@ export function Layout({ children }: LayoutProps) {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => navigate('/home')}
+              onClick={() => navigate('/')}
               className="h-10 w-10 flex-shrink-0 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600"
               title="Back to Home"
             >
@@ -96,32 +96,57 @@ export function Layout({ children }: LayoutProps) {
           </div>
         </div>
 
-        {/* Page Content */}
-        <div className="flex-1 overflow-auto p-4 md:p-6 bg-slate-50 dark:bg-slate-900">
-          {/* Desktop Header Utilities */}
-          {!isMobile && (
-            <div className="flex justify-end items-center gap-2 mb-4">
+        {/* Desktop Top Bar */}
+        {!isMobile && (
+          <header className="hidden lg:flex h-20 flex-shrink-0 items-center justify-between border-b border-slate-200 bg-white/92 px-6 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-[#0d1626]/92">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                className="h-10 w-10 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 dark:border-white/10 dark:bg-white/[0.06] dark:text-slate-200 dark:hover:bg-white/10"
+                title="Toggle sidebar"
+              >
+                <PanelLeft className="h-5 w-5" />
+              </Button>
+              <div>
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-cyan-700 dark:text-cyan-300">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Operating workspace
+                </div>
+                <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">
+                  {title || 'Command Center'}
+                </h1>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50/80 p-1.5 dark:border-white/10 dark:bg-white/[0.04]">
               <NotificationBell />
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
-                onClick={() => navigate('/home')}
-                className="flex items-center gap-1"
+                onClick={() => navigate('/')}
+                className="h-10 gap-2 rounded-xl px-3 text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-white/10"
                 title="Back to Home"
               >
                 <Home className="h-4 w-4" />
-                <span className="hidden md:inline">Home</span>
+                Home
               </Button>
               <Button
-                variant="outline"
+                variant="ghost"
                 size="icon"
                 onClick={toggleTheme}
-                className="h-9 w-9"
+                className="h-10 w-10 rounded-xl text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-white/10"
+                title="Toggle theme"
               >
                 {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               </Button>
             </div>
-          )}
+          </header>
+        )}
+
+        {/* Page Content */}
+        <div className="flex-1 overflow-auto p-4 md:p-6 bg-slate-100 dark:bg-[#090f1c]">
           {children}
         </div>
       </main>

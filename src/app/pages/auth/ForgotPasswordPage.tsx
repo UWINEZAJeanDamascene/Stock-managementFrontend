@@ -3,7 +3,7 @@ import { Link } from 'react-router';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Loader2, ArrowLeft, Mail, ArrowRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle2, Loader2, Mail, ShieldCheck } from 'lucide-react';
 import { authService } from '@/services';
 import { PUBLIC_ROUTES } from '@/config/routes';
 
@@ -14,9 +14,7 @@ const forgotPasswordSchema = z.object({
 type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 
 export default function ForgotPasswordPage() {
-  // const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
   const {
@@ -29,127 +27,96 @@ export default function ForgotPasswordPage() {
 
   const onSubmit = async (data: ForgotPasswordFormData) => {
     setIsLoading(true);
-    setError(null);
-
     try {
-      const response = await authService.forgotPassword(data.email);
-
-      // Always show success to prevent email enumeration
-      // Even if the email doesn't exist, we show the success message
+      await authService.forgotPassword(data.email);
       setSuccess(true);
-    } catch (err) {
-      // Even on error, show success to prevent email enumeration
+    } catch {
       setSuccess(true);
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (success) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4 py-12">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMiIvPjwvZz48L2c+PC9zdmc+')] opacity-50"></div>
-        
-        <div className="relative w-full max-w-md">
-          <Link
-            to={PUBLIC_ROUTES.LOGIN}
-            className="absolute -top-12 left-0 flex items-center text-slate-400 hover:text-white transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Login
-          </Link>
-
-          <div className="bg-slate-800/80 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 shadow-2xl text-center">
-            <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Mail className="w-8 h-8 text-green-400" />
-            </div>
-            <h1 className="text-2xl font-bold text-white mb-2">Check Your Email</h1>
-            <p className="text-slate-400 mb-6">
-              We've sent password reset instructions to your email address.
-            </p>
-            <Link
-              to={PUBLIC_ROUTES.LOGIN}
-              className="inline-flex items-center text-blue-400 hover:text-blue-300 font-medium transition-colors"
-            >
-              <ArrowRight className="w-4 h-4 mr-2" />
-              Back to Login
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4 py-12">
-      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMiIvPjwvZz48L2c+PC9zdmc+')] opacity-50"></div>
-      
-      <div className="relative w-full max-w-md">
-        <Link
-          to={PUBLIC_ROUTES.LOGIN}
-          className="absolute -top-12 left-0 flex items-center text-slate-400 hover:text-white transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Login
-        </Link>
-
-        <div className="bg-slate-800/80 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 shadow-2xl">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-white mb-2">Forgot Password?</h1>
-            <p className="text-slate-400">Enter your email and we'll send you reset instructions</p>
-          </div>
-
-          {error && (
-            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-2">
-                Email Address
-              </label>
-              <input
-                id="email"
-                type="email"
-                {...register('email')}
-                className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                placeholder="you@example.com"
-              />
-              {errors.email && (
-                <p className="mt-1 text-sm text-red-400">{errors.email.message as string}</p>
-              )}
-            </div>
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-semibold rounded-lg transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Sending...
-                </>
-              ) : (
-                'Send Reset Link'
-              )}
-            </button>
-          </form>
-
-          <div className="mt-6 text-center">
-            <p className="text-slate-400">
-              Remember your password?{' '}
-              <Link
-                to={PUBLIC_ROUTES.LOGIN}
-                className="text-blue-400 hover:text-blue-300 font-medium transition-colors"
-              >
-                Sign in
-              </Link>
+    <div className="min-h-screen bg-[#edf6f3] text-slate-950 dark:bg-[#03110f] dark:text-white">
+      <div className="grid min-h-screen lg:grid-cols-[0.9fr_1.1fr]">
+        <aside className="hidden bg-slate-950 p-10 text-white dark:bg-white dark:text-slate-950 lg:flex lg:flex-col lg:justify-between">
+          <div>
+            <Link to={PUBLIC_ROUTES.LOGIN} className="inline-flex items-center gap-2 text-sm font-semibold text-slate-300 dark:text-slate-600">
+              <ArrowLeft className="h-4 w-4" />
+              Login
+            </Link>
+            <h1 className="mt-20 max-w-xl text-6xl font-semibold leading-[0.98] tracking-tight">
+              Recover access without exposing accounts.
+            </h1>
+            <p className="mt-6 max-w-md text-sm leading-6 text-slate-300 dark:text-slate-600">
+              A clean recovery console with secure, enumeration-safe reset handling for workspace users.
             </p>
           </div>
-        </div>
+          <div className="rounded-lg border border-white/10 bg-white/8 p-5 dark:border-slate-200 dark:bg-slate-50">
+            <ShieldCheck className="h-7 w-7 text-cyan-300 dark:text-cyan-700" />
+            <p className="mt-6 text-2xl font-semibold">Private by design</p>
+            <p className="mt-2 text-sm text-slate-300 dark:text-slate-600">The same response appears whether or not an email exists.</p>
+          </div>
+        </aside>
+
+        <main className="relative flex items-center justify-center overflow-hidden px-4 py-10 sm:px-6 lg:px-10">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_14%_16%,rgba(34,211,238,.22),transparent_28%),radial-gradient(circle_at_88%_18%,rgba(52,211,153,.2),transparent_24%)] dark:bg-[radial-gradient(circle_at_14%_16%,rgba(34,211,238,.12),transparent_28%),radial-gradient(circle_at_88%_18%,rgba(52,211,153,.1),transparent_24%)]" />
+          <div className="relative w-full max-w-xl">
+            <Link to={PUBLIC_ROUTES.LOGIN} className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white">
+              <ArrowLeft className="h-4 w-4" />
+              Login
+            </Link>
+
+            <div className="overflow-hidden rounded-lg border border-white/80 bg-white/90 shadow-2xl shadow-slate-900/10 backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.06]">
+              <div className="border-b border-slate-200 bg-slate-950 p-6 text-white dark:border-white/10">
+                <p className="text-sm font-semibold uppercase tracking-[0.22em] text-cyan-300">Recovery console</p>
+                <h2 className="mt-3 text-4xl font-semibold tracking-tight">{success ? 'Reset request received' : 'Request secure reset'}</h2>
+                <p className="mt-3 text-sm leading-6 text-slate-300">
+                  {success ? 'If an account exists, reset instructions are on the way.' : 'Enter your workspace email to receive password reset instructions.'}
+                </p>
+              </div>
+
+              <div className="p-6 sm:p-8">
+                {success ? (
+                  <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-6 text-center">
+                    <div className="mx-auto grid h-14 w-14 place-items-center rounded-lg bg-emerald-500 text-white">
+                      <CheckCircle2 className="h-7 w-7" />
+                    </div>
+                    <p className="mt-4 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                      Check your inbox and keep the reset link private.
+                    </p>
+                    <Link to={PUBLIC_ROUTES.LOGIN} className="mt-5 inline-flex items-center font-semibold text-cyan-700 hover:text-cyan-600 dark:text-cyan-300">
+                      Return to login
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </div>
+                ) : (
+                  <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+                    <div>
+                      <label htmlFor="email" className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">Workspace email</label>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                        <input
+                          id="email"
+                          type="email"
+                          {...register('email')}
+                          className="h-12 w-full rounded-lg border border-slate-200 bg-white pl-10 pr-4 text-slate-950 outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 dark:border-white/10 dark:bg-white/[0.06] dark:text-white"
+                          placeholder="you@company.com"
+                        />
+                      </div>
+                      {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email.message as string}</p>}
+                    </div>
+
+                    <button type="submit" disabled={isLoading} className="flex h-12 w-full items-center justify-center rounded-lg bg-slate-950 px-4 font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-slate-950 dark:hover:bg-cyan-100">
+                      {isLoading ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" />Sending...</> : <><Mail className="mr-2 h-5 w-5" />Send secure reset</>}
+                    </button>
+                  </form>
+                )}
+              </div>
+            </div>
+          </div>
+        </main>
       </div>
     </div>
   );

@@ -73,6 +73,10 @@ import { useCompanyStore } from "@/store/companyStore";
 
 interface NavSection {
   title?: string;
+  label: string;
+  description: string;
+  accent: string;
+  glow: string;
   items: NavItem[];
 }
 
@@ -88,6 +92,10 @@ interface NavItem {
 
 const dashboardsNav: NavSection = {
   title: "nav.sectionDashboards",
+  label: "Command",
+  description: "Live executive views",
+  accent: "from-cyan-300 to-emerald-300",
+  glow: "bg-cyan-400/15",
   items: [
     {
       nameKey: "nav.dashboard",
@@ -124,6 +132,10 @@ const dashboardsNav: NavSection = {
 
 const inventoryNav: NavSection = {
   title: "nav.sectionInventory",
+  label: "Inventory Core",
+  description: "Products, stock and warehouses",
+  accent: "from-emerald-300 to-teal-200",
+  glow: "bg-emerald-400/12",
   items: [
     {
       nameKey: "nav.products",
@@ -184,6 +196,10 @@ const inventoryNav: NavSection = {
 
 const purchasingNav: NavSection = {
   title: "nav.sectionPurchasing",
+  label: "Supply Chain",
+  description: "Suppliers, buying and receiving",
+  accent: "from-amber-300 to-orange-200",
+  glow: "bg-amber-300/12",
   items: [
     {
       nameKey: "nav.suppliers",
@@ -215,6 +231,10 @@ const purchasingNav: NavSection = {
 
 const salesNav: NavSection = {
   title: "nav.sectionSales",
+  label: "Revenue Flow",
+  description: "Customers, orders and billing",
+  accent: "from-sky-300 to-indigo-300",
+  glow: "bg-sky-400/12",
   items: [
     {
       nameKey: "nav.pos",
@@ -287,6 +307,10 @@ const salesNav: NavSection = {
 
 const financeNav: NavSection = {
   title: "nav.sectionFinance",
+  label: "Finance Control",
+  description: "Cash, ledgers and payroll",
+  accent: "from-violet-300 to-cyan-200",
+  glow: "bg-violet-400/12",
   items: [
     {
       nameKey: "nav.bankAccounts",
@@ -377,6 +401,10 @@ const financeNav: NavSection = {
 
 const reportsNav: NavSection = {
   title: "nav.sectionReports",
+  label: "Intelligence",
+  description: "Reports and ratios",
+  accent: "from-lime-200 to-cyan-200",
+  glow: "bg-lime-300/12",
   items: [
     {
       nameKey: "nav.reportsHub",
@@ -419,6 +447,10 @@ const reportsNav: NavSection = {
 
 const systemNav: NavSection = {
   title: "nav.sectionSystem",
+  label: "Control Room",
+  description: "Security, data and settings",
+  accent: "from-rose-200 to-slate-200",
+  glow: "bg-rose-300/12",
   items: [
     {
       nameKey: "nav.userManagement",
@@ -493,8 +525,8 @@ const systemNav: NavSection = {
 const ALL_SECTIONS: NavSection[] = [
   dashboardsNav,
   inventoryNav,
-  purchasingNav,
   salesNav,
+  purchasingNav,
   financeNav,
   reportsNav,
   systemNav,
@@ -598,15 +630,17 @@ export function Sidebar({
   const renderNavItem = (
     item: NavItem,
     active: boolean,
+    section: NavSection,
+    compact = false,
     disabled?: boolean,
   ) => {
     if (disabled) {
       return (
         <div
           className={cn(
-            "flex items-center gap-2 rounded-lg px-2 py-2 text-xs font-medium transition-colors cursor-not-allowed opacity-40",
-            "md:text-sm md:px-3 md:py-2.5",
-            collapsed && "justify-center px-2 py-2",
+            "flex items-center gap-2 rounded-lg text-xs font-medium transition-colors cursor-not-allowed opacity-40",
+            compact ? "px-2 py-2" : "px-2 py-2 md:px-3 md:py-2.5",
+            collapsed && "justify-center px-2 py-2 h-10 w-10",
             "text-slate-500",
           )}
         >
@@ -622,21 +656,35 @@ export function Sidebar({
         onClick={handleNavigate}
         title={collapsed ? t(item.nameKey) : undefined}
         className={cn(
-          "flex items-center gap-2 rounded-lg px-2 py-2 text-xs font-medium transition-all duration-150",
-          "md:text-sm md:px-3 md:py-2.5",
-          collapsed && "justify-center px-2 py-2",
+          "group relative flex items-center overflow-hidden rounded-lg text-xs font-semibold transition-all duration-200",
+          compact ? "min-h-12 flex-col justify-center gap-1 px-2 py-2 text-center" : "gap-2 px-2 py-2 md:px-3 md:py-2.5",
+          collapsed && "mx-auto h-11 w-11 justify-center rounded-2xl px-0 py-0",
           active
-            ? "bg-indigo-600 text-white shadow-sm"
-            : "text-slate-300 hover:bg-slate-800 hover:text-white",
+            ? "bg-white text-slate-950 shadow-lg shadow-cyan-950/20"
+            : "text-slate-300 hover:bg-white/8 hover:text-white",
         )}
       >
+        {active && (
+          <span
+            className={cn(
+              "absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r",
+              section.accent,
+            )}
+          />
+        )}
         <item.icon
           className={cn(
             "flex-shrink-0 h-4 w-4 md:h-[18px] md:w-[18px]",
-            active ? "text-white" : "text-slate-400",
+            compact && "h-4 w-4",
+            collapsed && "h-5 w-5",
+            active ? "text-slate-950" : "text-slate-400 group-hover:text-white",
           )}
         />
-        {!collapsed && <span className="truncate">{t(item.nameKey)}</span>}
+        {!collapsed && (
+          <span className={cn("truncate", compact && "max-w-full text-[11px] leading-tight")}>
+            {t(item.nameKey)}
+          </span>
+        )}
       </Link>
     );
   };
@@ -646,41 +694,50 @@ export function Sidebar({
   const renderSection = (section: NavSection, isDashboards = false) => {
     const visible = filterByPermission(section.items);
     if (visible.length === 0) return null;
+    const useGrid = !collapsed && (isDashboards || visible.length > 4);
 
     return (
       <div
         className={cn(
-          "mb-1",
-          isDashboards ? "pb-2 mb-2 border-b border-slate-700/60" : "",
+          "relative mb-3 overflow-hidden",
+          collapsed
+            ? "rounded-[1.4rem] border border-white/7 bg-white/[0.025] p-1.5"
+            : "rounded-xl border border-white/8 bg-white/[0.045] p-2 shadow-sm",
         )}
       >
-        {/* Section label */}
-        {section.title && !collapsed && (
-          <div className="px-2 md:px-3 pt-3 pb-1">
-            <span
-              className={cn(
-                "text-[10px] font-bold tracking-widest uppercase",
-                isDashboards ? "text-indigo-400" : "text-slate-500",
-              )}
-            >
-              {t(section.title)}
+        {!collapsed && (
+          <div className="mb-2 flex items-start justify-between gap-2 px-1.5 pt-1">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className={cn("h-1.5 w-1.5 rounded-full bg-gradient-to-r", section.accent)} />
+                <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">
+                  {section.label}
+                </span>
+              </div>
+              <p className="mt-0.5 truncate text-[11px] text-slate-500">
+                {section.description}
+              </p>
+            </div>
+            <span className="rounded-full border border-white/10 px-2 py-0.5 text-[10px] font-semibold text-slate-400">
+              {visible.length}
             </span>
           </div>
         )}
-        {/* Collapsed divider */}
-        {section.title && collapsed && (
-          <div className="flex justify-center py-2">
-            <div className="h-px bg-slate-700 w-8" />
-          </div>
+        {collapsed && (
+          <div className={cn("mx-auto mb-1.5 h-1 w-6 rounded-full bg-gradient-to-r", section.accent)} />
         )}
 
-        {/* Items */}
-        <ul className={cn("space-y-0.5", collapsed && "space-y-1")}>
+        <ul
+          className={cn(
+            useGrid ? "grid grid-cols-2 gap-1.5" : "space-y-1",
+            collapsed && "grid grid-cols-1 gap-1 space-y-0",
+          )}
+        >
           {visible.map((item) => {
             const active = isPathActive(item.href);
             return (
               <li key={item.href}>
-                {renderNavItem(item, active, (item as any).disabled)}
+                {renderNavItem(item, active, section, useGrid, (item as any).disabled)}
               </li>
             );
           })}
@@ -694,61 +751,64 @@ export function Sidebar({
   return (
     <div
       className={cn(
-        "flex h-screen flex-col bg-slate-900 transition-all duration-200 overflow-y-auto",
-        collapsed ? "w-16" : "w-64",
+        "flex h-screen flex-col overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.16),transparent_28%),linear-gradient(180deg,#07111f_0%,#0f172a_42%,#070b13_100%)] transition-all duration-300",
+        collapsed ? "w-20" : "w-72",
       )}
     >
       {/* ── Logo / header ── */}
       <div
         className={cn(
-          "flex h-16 items-center justify-between gap-2 border-b border-slate-800 flex-shrink-0",
-          collapsed ? "px-1 justify-center" : "px-3",
+          "flex min-h-20 items-center justify-between gap-2 border-b border-white/10 bg-white/[0.035] flex-shrink-0",
+          collapsed ? "px-2 justify-center flex-col py-3" : "px-3",
         )}
       >
         {/* ── Company Profile Section ── */}
         {collapsed ? (
           <button
             onClick={() => setCompanyProfileOpen(true)}
-            className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 flex-shrink-0 hover:ring-2 hover:ring-indigo-400 transition-all"
+            className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-300 to-emerald-300 text-slate-950 flex-shrink-0 hover:ring-2 hover:ring-cyan-200/60 transition-all"
             title={company?.name || "Company"}
           >
             {company?.logo_url ? (
               <Avatar className="h-9 w-9">
                 <AvatarImage src={company.logo_url} alt={company.name} />
-                <AvatarFallback className="bg-indigo-600 text-white text-sm">
+                <AvatarFallback className="bg-cyan-300 text-slate-950 text-sm">
                   {company?.name?.charAt(0).toUpperCase() || "C"}
                 </AvatarFallback>
               </Avatar>
             ) : (
-              <Building2 className="h-5 w-5 text-white" />
+              <Building2 className="h-5 w-5" />
             )}
           </button>
         ) : (
           <button
             onClick={() => setCompanyProfileOpen(true)}
-            className="flex items-center gap-2 w-full text-left hover:bg-slate-800/50 rounded-lg p-1 transition-colors"
+            className="group flex min-w-0 flex-1 items-center gap-3 rounded-xl border border-white/10 bg-white/[0.045] p-2 text-left transition-colors hover:bg-white/[0.08]"
           >
-            <Avatar className="h-9 w-9 flex-shrink-0">
+            <Avatar className="h-10 w-10 flex-shrink-0 ring-2 ring-cyan-300/30">
               <AvatarImage src={company?.logo_url} alt={company?.name || "Company"} />
-              <AvatarFallback className="bg-indigo-600 text-white text-sm font-medium">
+              <AvatarFallback className="bg-gradient-to-br from-cyan-300 to-emerald-300 text-slate-950 text-sm font-bold">
                 {company?.name?.charAt(0).toUpperCase() || "C"}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0 overflow-hidden">
-              <p className="truncate text-base font-bold text-white tracking-tight">
+              <p className="truncate text-sm font-bold text-white tracking-tight">
                 {company?.name || "My Company"}
+              </p>
+              <p className="mt-0.5 truncate text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-300">
+                Operating atlas
               </p>
             </div>
           </button>
         )}
 
-        <div className="flex items-center gap-1">
+        <div className={cn("flex items-center gap-1", collapsed && "mt-2")}>
           {onToggleCollapse && (
             <Button
               variant="ghost"
               size="icon"
               onClick={onToggleCollapse}
-              className="h-8 w-8 text-slate-400 hover:text-white hover:bg-slate-800"
+              className="h-8 w-8 rounded-lg text-slate-400 hover:text-white hover:bg-white/10"
             >
               {collapsed ? (
                 <PanelLeftOpen className="h-4 w-4" />
@@ -762,7 +822,7 @@ export function Sidebar({
               variant="ghost"
               size="icon"
               onClick={onNavigate}
-              className="h-8 w-8 text-slate-400 hover:text-white hover:bg-slate-800 lg:hidden"
+              className="h-8 w-8 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 lg:hidden"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -774,23 +834,24 @@ export function Sidebar({
       <nav
         className={cn(
           "flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent",
-          collapsed ? "px-1 py-2" : "px-2 md:px-3 py-2",
+          collapsed
+            ? "px-2 py-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            : "px-3 py-3",
         )}
       >
         {/* DASHBOARDS — always rendered first, styled distinctly */}
-        {renderSection(dashboardsNav, true)}
+        {ALL_SECTIONS.map((section, idx) => (
+          <div key={section.label}>{renderSection(section, idx === 0)}</div>
+        ))}
 
         {/* All remaining sections */}
-        {ALL_SECTIONS.slice(1).map((section, idx) => (
-          <div key={idx}>{renderSection(section, false)}</div>
-        ))}
       </nav>
 
       {/* ── Language toggle ── */}
       <div
         className={cn(
-          "border-t border-slate-800 flex-shrink-0",
-          collapsed ? "px-1 py-2" : "px-2 md:px-3 py-2",
+          "border-t border-white/10 flex-shrink-0 bg-white/[0.025]",
+          collapsed ? "px-2 py-2" : "px-3 py-2",
         )}
       >
         {collapsed ? (
@@ -799,7 +860,7 @@ export function Sidebar({
             title={
               language === "en" ? "Passer en Français" : "Switch to English"
             }
-            className="flex w-full items-center justify-center rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+            className="flex h-10 w-full items-center justify-center rounded-2xl text-slate-400 hover:bg-white/10 hover:text-white transition-colors"
           >
             <Languages className="h-4 w-4" />
           </button>
@@ -809,11 +870,11 @@ export function Sidebar({
             title={
               language === "en" ? "Passer en Français" : "Switch to English"
             }
-            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs md:text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
+            className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs md:text-sm font-medium text-slate-300 hover:bg-white/10 hover:text-white transition-colors"
           >
             <Languages className="h-4 w-4 flex-shrink-0" />
             <span>{language === "en" ? "Français" : "English"}</span>
-            <span className="ml-auto text-[10px] bg-indigo-600 text-white rounded px-1.5 py-0.5 font-bold">
+            <span className="ml-auto text-[10px] bg-cyan-300 text-slate-950 rounded-full px-1.5 py-0.5 font-bold">
               {language.toUpperCase()}
             </span>
           </button>
@@ -822,7 +883,7 @@ export function Sidebar({
 
       {/* ── Currency selector ── */}
       {!collapsed && (
-        <div className="border-t border-slate-800 px-2 md:px-3 py-2 flex-shrink-0">
+        <div className="border-t border-white/10 px-3 py-2 flex-shrink-0 bg-white/[0.025]">
           <CurrencySelector />
         </div>
       )}
@@ -830,21 +891,21 @@ export function Sidebar({
       {/* ── User section ── */}
       <div
         className={cn(
-          "border-t border-slate-800 flex-shrink-0",
-          collapsed ? "p-1" : "p-2 md:p-4",
+          "border-t border-white/10 flex-shrink-0 bg-white/[0.025]",
+          collapsed ? "p-2" : "p-3",
         )}
       >
         {collapsed ? (
           <div className="flex flex-col items-center gap-2">
             <button
               onClick={() => setProfileOpen(true)}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600 text-white text-sm font-medium hover:ring-2 hover:ring-indigo-400 transition-all"
+              className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-cyan-400 text-white text-sm font-medium hover:ring-2 hover:ring-cyan-300/50 transition-all overflow-hidden"
               title={user?.name || "User"}
             >
               {user?.avatar ? (
-                <Avatar className="h-8 w-8">
+                <Avatar className="h-11 w-11">
 <AvatarImage src={user?.avatar} alt={user?.name || "User"} />
-                  <AvatarFallback className="bg-indigo-600 text-white text-sm">
+                  <AvatarFallback className="bg-gradient-to-br from-violet-500 to-cyan-400 text-white text-sm">
                     {user?.name?.charAt(0).toUpperCase() || "U"}
                   </AvatarFallback>
                 </Avatar>
@@ -856,7 +917,7 @@ export function Sidebar({
               <Link
                 to="/company-settings"
                 onClick={handleNavigate}
-                className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                className="flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
                 title={t("nav.settings")}
               >
                 <Settings className="h-3.5 w-3.5" />
@@ -864,7 +925,7 @@ export function Sidebar({
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <button
-                    className="flex items-center justify-center rounded-lg bg-slate-800 p-1.5 text-slate-300 hover:bg-red-600 hover:text-white transition-colors"
+                    className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/8 p-1.5 text-slate-300 hover:bg-red-600 hover:text-white transition-colors"
                     title={t("nav.logout")}
                   >
                     <LogOut className="h-3.5 w-3.5" />
