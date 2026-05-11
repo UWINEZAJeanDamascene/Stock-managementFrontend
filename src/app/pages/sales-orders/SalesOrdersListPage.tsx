@@ -2,30 +2,35 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { salesOrdersApi, clientsApi } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
-import { 
-  Plus, 
-  Search, 
-  Loader2,
+import {
+  Plus,
+  Search,
   FileText,
   Eye,
   CheckCircle,
   XCircle,
-  MoreHorizontal,
   Filter,
   User,
-  Package
+  Package,
+  RefreshCw,
+  TrendingUp,
+  CalendarDays,
+  Layers,
+  BarChart3,
+  ArrowRight,
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { Card, CardContent } from '@/app/components/ui/card';
 import { Badge } from '@/app/components/ui/badge';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import { Skeleton } from '@/app/components/ui/skeleton';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@/app/components/ui/table';
 import {
   Select,
@@ -93,14 +98,14 @@ const STATUS_OPTIONS = [
 ];
 
 const STATUS_COLORS: Record<string, string> = {
-  draft: 'bg-gray-100 text-gray-800',
-  confirmed: 'bg-blue-100 text-blue-800',
-  picking: 'bg-yellow-100 text-yellow-800',
-  packed: 'bg-orange-100 text-orange-800',
-  delivered: 'bg-green-100 text-green-800',
-  invoiced: 'bg-purple-100 text-purple-800',
-  closed: 'bg-gray-100 text-gray-800',
-  cancelled: 'bg-red-100 text-red-800',
+  draft: 'bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-950/40 dark:text-slate-300 dark:border-slate-700',
+  confirmed: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-800',
+  picking: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-800',
+  packed: 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/30 dark:text-orange-400 dark:border-orange-800',
+  delivered: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800',
+  invoiced: 'bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950/30 dark:text-violet-400 dark:border-violet-800',
+  closed: 'bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-950/40 dark:text-slate-300 dark:border-slate-700',
+  cancelled: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800',
 };
 
 export default function SalesOrdersListPage() {
@@ -202,12 +207,14 @@ export default function SalesOrdersListPage() {
     }
   };
 
-  const formatCurrency = (amount: any, currency: string) => {
-    let value = 0;
-    if (typeof amount === 'number') value = amount;
-    else if (amount && typeof amount === 'object' && '$numberDecimal' in amount) value = parseFloat(amount.$numberDecimal);
-    else value = parseFloat(String(amount)) || 0;
+  const toNumber = (val: any): number => {
+    if (typeof val === 'number') return val;
+    if (val && typeof val === 'object' && '$numberDecimal' in val) return parseFloat(val.$numberDecimal);
+    return parseFloat(String(val)) || 0;
+  };
 
+  const formatCurrency = (amount: any, currency: string) => {
+    const value = toNumber(amount);
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: currency || 'USD',
@@ -219,232 +226,440 @@ export default function SalesOrdersListPage() {
     return new Date(date).toLocaleDateString();
   };
 
-  console.log('[SalesOrdersListPage] About to render Layout');
+  const totalValue = salesOrders.reduce((sum, o) => sum + toNumber(o.grandTotal ?? (o as any).totalAmount), 0);
+  const confirmedCount = salesOrders.filter((o) => o.status === 'confirmed').length;
+  const draftCount = salesOrders.filter((o) => o.status === 'draft').length;
+  const deliveredCount = salesOrders.filter((o) => o.status === 'delivered').length;
+
   return (
     <Layout>
-      <div className="container mx-auto p-6">
-        <h1 className="text-2xl font-bold">Sales Orders Debug</h1>
-        <p>If you see this, the page is rendering correctly.</p>
-        <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Sales Orders</h1>
-            <p className="text-gray-500 mt-1">Manage sales orders and fulfillment workflow</p>
-          </div>
-          <Button onClick={() => navigate('/sales-orders/create')} className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            Create Sales Order
-          </Button>
-        </div>
-
-        <Card className="mb-6">
-          <CardContent className="p-4">
-            <div className="flex flex-col lg:flex-row gap-4">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                  <Input
-                    placeholder="Search by reference or client..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="pl-10"
-                  />
+      <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1600px] space-y-6">
+          {/* Hero Header */}
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+            <div className="grid gap-5 p-5 xl:grid-cols-[1fr_420px] xl:items-stretch">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="rounded-lg bg-violet-50 p-2.5 text-violet-700 ring-1 ring-violet-100 dark:bg-violet-950/40 dark:text-violet-300 dark:ring-violet-900/60">
+                    <Layers className="h-5 w-5" />
+                  </div>
+                  <h1 className="text-2xl font-bold tracking-tight text-slate-950 dark:text-white sm:text-3xl">
+                    Sales Orders
+                  </h1>
+                </div>
+                <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+                  Manage sales orders from confirmation through fulfillment to invoicing.
+                </p>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <Badge variant="secondary" className="dark:bg-slate-800 dark:text-slate-300">
+                    <BarChart3 className="mr-1 h-3 w-3" />
+                    {pagination.total || salesOrders.length} total
+                  </Badge>
+                  <Badge variant="secondary" className="dark:bg-slate-800 dark:text-slate-300">
+                    <TrendingUp className="mr-1 h-3 w-3" />
+                    {confirmedCount} confirmed
+                  </Badge>
+                  <Badge variant="secondary" className="dark:bg-slate-800 dark:text-slate-300">
+                    <CalendarDays className="mr-1 h-3 w-3" />
+                    {deliveredCount} delivered
+                  </Badge>
+                </div>
+                <div className="mt-5 flex flex-wrap gap-2">
+                  <Button
+                    onClick={() => navigate('/sales-orders/create')}
+                    className="h-10 gap-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-500"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Create Sales Order
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={fetchSalesOrders}
+                    className="h-10 gap-2 dark:border-slate-700 dark:text-slate-200"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                    Refresh
+                  </Button>
                 </div>
               </div>
-              
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-[180px]">
-                    <Filter className="h-4 w-4 mr-2" />
-                    <SelectValue placeholder="Filter by status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {STATUS_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                <Select value={clientFilter} onValueChange={setClientFilter}>
-                  <SelectTrigger className="w-[180px]">
-                    <User className="h-4 w-4 mr-2" />
-                    <SelectValue placeholder="Filter by client" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Clients</SelectItem>
-                    {clients.map((client) => (
-                      <SelectItem key={client._id} value={client._id}>
-                        {client.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                <div className="flex gap-2">
-                  <Input
-                    type="date"
-                    placeholder="From"
-                    value={dateFrom}
-                    onChange={(e) => setDateFrom(e.target.value)}
-                    className="w-[140px]"
-                  />
-                  <Input
-                    type="date"
-                    placeholder="To"
-                    value={dateTo}
-                    onChange={(e) => setDateTo(e.target.value)}
-                    className="w-[140px]"
-                  />
+              <div className="grid grid-cols-2 gap-3 rounded-lg border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-950/40">
+                <div className="rounded-lg bg-white p-3 shadow-sm dark:bg-slate-900">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Total Orders</p>
+                  <p className="mt-1 text-lg font-bold text-slate-950 dark:text-white">{salesOrders.length}</p>
+                </div>
+                <div className="rounded-lg bg-white p-3 shadow-sm dark:bg-slate-900">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Total Value</p>
+                  <p className="mt-1 text-lg font-bold text-slate-950 dark:text-white">{formatCurrency(totalValue, 'USD')}</p>
+                </div>
+                <div className="rounded-lg bg-white p-3 shadow-sm dark:bg-slate-900">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Draft</p>
+                  <p className="mt-1 text-lg font-bold text-amber-600 dark:text-amber-400">{draftCount}</p>
+                </div>
+                <div className="rounded-lg bg-white p-3 shadow-sm dark:bg-slate-900">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Delivered</p>
+                  <p className="mt-1 text-lg font-bold text-emerald-600 dark:text-emerald-400">{deliveredCount}</p>
                 </div>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
 
-        <Card>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Reference</TableHead>
-                  <TableHead>Client</TableHead>
-                  <TableHead>Order Date</TableHead>
-                  <TableHead>Expected Date</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Total</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8">
-                      <Loader2 className="h-8 w-8 animate-spin mx-auto text-gray-400" />
-                    </TableCell>
-                  </TableRow>
-                ) : salesOrders.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-gray-500">
-                      No sales orders found
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  salesOrders.map((order) => (
-                    <TableRow key={order._id}>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-4 w-4 text-gray-400" />
-                          <span className="font-medium">{order.referenceNo}</span>
-                          {order.isBackorder && (
-                            <Badge variant="destructive" className="text-xs">Backorder</Badge>
-                          )}
+          {/* Pipeline / Status Flow */}
+          <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+            <div className="flex min-w-[700px] items-center justify-between gap-2">
+              {['draft', 'confirmed', 'picking', 'packed', 'delivered', 'invoiced', 'closed'].map((s, i, arr) => {
+                const count = salesOrders.filter((o) => o.status === s).length;
+                const isLast = i === arr.length - 1;
+                return (
+                  <div key={s} className="flex items-center gap-2">
+                    <div className="flex flex-col items-center gap-1.5">
+                      <div className={`flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold ring-2 ${
+                        count > 0
+                          ? 'bg-indigo-50 text-indigo-700 ring-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:ring-indigo-800'
+                          : 'bg-slate-50 text-slate-400 ring-slate-200 dark:bg-slate-900 dark:text-slate-500 dark:ring-slate-700'
+                      }`}>
+                        {count}
+                      </div>
+                      <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{s}</span>
+                    </div>
+                    {!isLast && <ArrowRight className="h-3.5 w-3.5 text-slate-300 dark:text-slate-600" />}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Metric Tiles */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {loading ? (
+              <>
+                {[...Array(4)].map((_, i) => (
+                  <Card key={i} className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                    <CardContent className="p-5">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0 space-y-2">
+                          <Skeleton className="h-3 w-28" />
+                          <Skeleton className="h-8 w-32" />
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-gray-400" />
-                          <span>{order.client?.name || '-'}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>{formatDate(order.orderDate)}</TableCell>
-                      <TableCell>{formatDate(order.expectedDate || '')}</TableCell>
-                      <TableCell>
-                        <Badge className={`${STATUS_COLORS[order.status]} capitalize`}>
-                          {order.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right font-medium">
-                        {formatCurrency(order.grandTotal ?? (order as any).totalAmount, order.currencyCode)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => navigate(`/sales-orders/${order._id}`)}
-                            title="View Details"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          
-                          {order.status === 'draft' && (
-                            <>
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                onClick={() => navigate(`/sales-orders/${order._id}/edit`)}
-                                title="Edit"
-                              >
-                                <FileText className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                onClick={() => handleConfirm(order._id)}
-                                title="Confirm"
-                                className="text-green-600"
-                              >
-                                <CheckCircle className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                onClick={() => handleCancel(order._id)}
-                                title="Cancel"
-                                className="text-red-600"
-                              >
-                                <XCircle className="h-4 w-4" />
-                              </Button>
-                            </>
-                          )}
-                          
-                          {order.status === 'confirmed' && (
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={() => navigate(`/pick-packs/create?salesOrderId=${order._id}`)}
-                              title="Create Pick & Pack"
-                              className="text-blue-600"
-                            >
-                              <Package className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
+                        <Skeleton className="h-10 w-10 rounded-lg" />
+                      </div>
+                      <Skeleton className="mt-3 h-3 w-36" />
+                    </CardContent>
+                  </Card>
+                ))}
+              </>
+            ) : (
+              <>
+                <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardContent className="p-5">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Total Orders</p>
+                        <p className="mt-3 text-2xl font-bold text-slate-950 dark:text-white">{salesOrders.length}</p>
+                      </div>
+                      <div className="rounded-lg bg-blue-50 p-2.5 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60">
+                        <Layers className="h-5 w-5" />
+                      </div>
+                    </div>
+                    <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+                      {pagination.total || salesOrders.length} across all pages
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardContent className="p-5">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Total Value</p>
+                        <p className="mt-3 truncate text-2xl font-bold text-slate-950 dark:text-white">{formatCurrency(totalValue, 'USD')}</p>
+                      </div>
+                      <div className="rounded-lg bg-emerald-50 p-2.5 text-emerald-700 ring-1 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60">
+                        <TrendingUp className="h-5 w-5" />
+                      </div>
+                    </div>
+                    <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+                      Combined grand total
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardContent className="p-5">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Confirmed</p>
+                        <p className="mt-3 text-2xl font-bold text-blue-600 dark:text-blue-400">{confirmedCount}</p>
+                      </div>
+                      <div className="rounded-lg bg-blue-50 p-2.5 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60">
+                        <CheckCircle className="h-5 w-5" />
+                      </div>
+                    </div>
+                    <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+                      Ready for fulfillment
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardContent className="p-5">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Draft</p>
+                        <p className="mt-3 text-2xl font-bold text-amber-600 dark:text-amber-400">{draftCount}</p>
+                      </div>
+                      <div className="rounded-lg bg-amber-50 p-2.5 text-amber-700 ring-1 ring-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/60">
+                        <FileText className="h-5 w-5" />
+                      </div>
+                    </div>
+                    <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+                      Pending confirmation
+                    </p>
+                  </CardContent>
+                </Card>
+              </>
+            )}
+          </div>
+
+          {/* Filters */}
+          <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <CardContent className="p-5">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-end">
+                <div className="flex-1">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+                    <Input
+                      placeholder="Search by reference or client..."
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      className="h-10 bg-white pl-10 text-slate-900 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-white dark:ring-slate-700"
+                    />
+                  </div>
+                </div>
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="h-10 w-full bg-white text-slate-900 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-white dark:ring-slate-700 sm:w-[180px]">
+                      <Filter className="mr-2 h-4 w-4 text-slate-500" />
+                      <SelectValue placeholder="Filter by status" />
+                    </SelectTrigger>
+                    <SelectContent className="dark:bg-slate-900 dark:text-slate-200 dark:ring-slate-700">
+                      {STATUS_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value} className="dark:focus:bg-slate-800 dark:focus:text-white">
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={clientFilter} onValueChange={setClientFilter}>
+                    <SelectTrigger className="h-10 w-full bg-white text-slate-900 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-white dark:ring-slate-700 sm:w-[180px]">
+                      <User className="mr-2 h-4 w-4 text-slate-500" />
+                      <SelectValue placeholder="Filter by client" />
+                    </SelectTrigger>
+                    <SelectContent className="dark:bg-slate-900 dark:text-slate-200 dark:ring-slate-700">
+                      <SelectItem value="all" className="dark:focus:bg-slate-800 dark:focus:text-white">All Clients</SelectItem>
+                      {clients.map((client) => (
+                        <SelectItem key={client._id} value={client._id} className="dark:focus:bg-slate-800 dark:focus:text-white">
+                          {client.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <div className="flex gap-2">
+                    <Input
+                      type="date"
+                      placeholder="From"
+                      value={dateFrom}
+                      onChange={(e) => setDateFrom(e.target.value)}
+                      className="h-10 w-full bg-white text-slate-900 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-white dark:ring-slate-700 sm:w-[140px]"
+                    />
+                    <Input
+                      type="date"
+                      placeholder="To"
+                      value={dateTo}
+                      onChange={(e) => setDateTo(e.target.value)}
+                      className="h-10 w-full bg-white text-slate-900 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-white dark:ring-slate-700 sm:w-[140px]"
+                    />
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Table */}
+          <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-slate-50/70 hover:bg-slate-50/70 dark:bg-slate-900/50 dark:hover:bg-slate-900/50">
+                      <TableHead className="text-slate-600 dark:text-slate-400">Reference</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400">Client</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400">Order Date</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400">Expected</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400">Status</TableHead>
+                      <TableHead className="text-right text-slate-600 dark:text-slate-400">Total</TableHead>
+                      <TableHead className="text-right text-slate-600 dark:text-slate-400">Actions</TableHead>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {loading ? (
+                      <>
+                        {[...Array(5)].map((_, i) => (
+                          <TableRow key={i} className="dark:border-slate-800">
+                            <TableCell colSpan={7}>
+                              <div className="flex items-center gap-4 py-2">
+                                <Skeleton className="h-8 w-8 rounded-full" />
+                                <div className="flex-1 space-y-2">
+                                  <Skeleton className="h-3 w-32" />
+                                  <Skeleton className="h-3 w-20" />
+                                </div>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </>
+                    ) : salesOrders.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7}>
+                          <div className="flex min-h-[140px] flex-col items-center justify-center text-slate-500 dark:text-slate-400">
+                            <Layers className="mb-2 h-10 w-10 opacity-40" />
+                            <p className="text-sm font-medium">No sales orders found</p>
+                            <p className="text-xs">Try adjusting your filters or create a new order.</p>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      salesOrders.map((order) => (
+                        <TableRow key={order._id} className="group transition-colors hover:bg-slate-50/50 dark:border-slate-800 dark:hover:bg-slate-900/30">
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-700 ring-1 ring-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-300 dark:ring-indigo-900/60">
+                                <FileText className="h-4 w-4" />
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-semibold text-slate-950 dark:text-white">{order.referenceNo}</span>
+                                  {order.isBackorder && (
+                                    <Badge variant="outline" className="border-red-200 bg-red-50 text-red-700 text-[10px] dark:border-red-800 dark:bg-red-950/30 dark:text-red-400">Backorder</Badge>
+                                  )}
+                                </div>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">{order.lines.length} line{order.lines.length !== 1 ? 's' : ''}</p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <User className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500" />
+                              <span className="text-sm text-slate-700 dark:text-slate-300">{order.client?.name || '-'}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-sm text-slate-700 dark:text-slate-300">{formatDate(order.orderDate)}</TableCell>
+                          <TableCell className="text-sm text-slate-700 dark:text-slate-300">{formatDate(order.expectedDate || '')}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className={`${STATUS_COLORS[order.status]} capitalize text-xs`}>
+                              {order.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right text-sm font-semibold text-slate-950 dark:text-white">
+                            {formatCurrency(order.grandTotal ?? (order as any).totalAmount, order.currencyCode)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => navigate(`/sales-orders/${order._id}`)}
+                                title="View Details"
+                                className="h-8 w-8 p-0 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
 
-        {!loading && salesOrders.length > 0 && (
-          <div className="mt-4 flex items-center justify-between">
-            <p className="text-sm text-gray-500">
-              Showing {salesOrders.length} of {pagination.total} sales orders
-            </p>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
-                disabled={pagination.page === 1}
-              >
-                Previous
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
-                disabled={pagination.page >= pagination.pages}
-              >
-                Next
-              </Button>
+                              {order.status === 'draft' && (
+                                <>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => navigate(`/sales-orders/${order._id}/edit`)}
+                                    title="Edit"
+                                    className="h-8 w-8 p-0 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                                  >
+                                    <FileText className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleConfirm(order._id)}
+                                    title="Confirm"
+                                    className="h-8 w-8 p-0 text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
+                                  >
+                                    <CheckCircle className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleCancel(order._id)}
+                                    title="Cancel"
+                                    className="h-8 w-8 p-0 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                                  >
+                                    <XCircle className="h-4 w-4" />
+                                  </Button>
+                                </>
+                              )}
+
+                              {order.status === 'confirmed' && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => navigate(`/pick-packs/create?salesOrderId=${order._id}`)}
+                                  title="Create Pick & Pack"
+                                  className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                                >
+                                  <Package className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Pagination */}
+          {!loading && salesOrders.length > 0 && (
+            <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                Showing {salesOrders.length} of {pagination.total} sales orders
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPagination((prev) => ({ ...prev, page: prev.page - 1 }))}
+                  disabled={pagination.page === 1}
+                  className="dark:border-slate-700 dark:text-slate-200"
+                >
+                  Previous
+                </Button>
+                <span className="flex items-center px-2 text-sm text-slate-600 dark:text-slate-400">
+                  Page {pagination.page} of {pagination.pages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPagination((prev) => ({ ...prev, page: prev.page + 1 }))}
+                  disabled={pagination.page >= pagination.pages}
+                  className="dark:border-slate-700 dark:text-slate-200"
+                >
+                  Next
+                </Button>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </Layout>
   );

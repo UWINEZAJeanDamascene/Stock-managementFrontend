@@ -2,15 +2,22 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { clientsApi } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
-import { 
-  ArrowLeft, 
-  Save, 
-  Loader2
+import {
+  ArrowLeft,
+  Save,
+  Loader2,
+  Users,
+  User,
+  MapPin,
+  CreditCard,
+  ToggleLeft,
+  FileText,
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { Textarea } from '@/app/components/ui/textarea';
-import { 
+import { Skeleton } from '@/app/components/ui/skeleton';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -154,8 +161,17 @@ export default function ClientFormPage() {
   if (loading) {
     return (
       <Layout>
-        <div className="flex items-center justify-center p-8">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground dark:text-slate-400" />
+        <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-[1400px] space-y-6">
+            <Skeleton className="h-28 w-full rounded-xl" />
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+              <div className="space-y-6 lg:col-span-2">
+                <Skeleton className="h-64 w-full rounded-xl" />
+                <Skeleton className="h-80 w-full rounded-xl" />
+              </div>
+              <Skeleton className="h-96 w-full rounded-xl" />
+            </div>
+          </div>
         </div>
       </Layout>
     );
@@ -163,200 +179,259 @@ export default function ClientFormPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-6 min-h-screen bg-slate-50 dark:bg-slate-900">
-        <div className="flex items-center gap-4 mb-6">
-          <Button variant="ghost" onClick={() => navigate('/clients')}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            {t('common.back', 'Back')}
-          </Button>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-            {isEditMode ? t('clients.editClient', 'Edit Client') : t('clients.addClient', 'Add Client')}
-          </h1>
-        </div>
-
-        <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Main Fields */}
-            <div className="lg:col-span-2 space-y-6">
-              <Card className="dark:bg-slate-800">
-                <CardHeader>
-                  <CardTitle className="text-slate-900 dark:text-white">{t('clients.basicInfo', 'Basic Information')}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="name" className="text-slate-900 dark:text-white">{t('clients.name', 'Name')} *</Label>
-                      <Input 
-                        id="name"
-                        value={formData.name}
-                        onChange={(e) => handleChange('name', e.target.value)}
-                        required
-                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="code" className="text-slate-900 dark:text-white">{t('clients.code', 'Code')}</Label>
-                      <Input 
-                        id="code"
-                        value={formData.code || ''}
-                        onChange={(e) => handleChange('code', e.target.value)}
-                        placeholder={t('clients.autoGenerate', 'Auto-generate if empty')}
-                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
-                      />
-                    </div>
+      <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1400px] space-y-6">
+          {/* Hero Header */}
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+            <div className="p-5">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-3">
+                  <Button variant="ghost" size="sm" onClick={() => navigate('/clients')} className="h-8 w-8 p-0 dark:text-slate-300">
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                  <div className="rounded-lg bg-blue-50 p-2.5 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60">
+                    <Users className="h-5 w-5" />
                   </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="type" className="text-slate-900 dark:text-white">{t('clients.type', 'Type')}</Label>
-                      <Select 
-                        value={formData.type} 
-                        onValueChange={(value: 'individual' | 'company') => handleChange('type', value)}
-                      >
-                        <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
-                          <SelectItem value="individual" className="dark:text-slate-200">{t('clients.individual', 'Individual')}</SelectItem>
-                          <SelectItem value="company" className="dark:text-slate-200">{t('clients.company', 'Company')}</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="paymentTerms" className="text-slate-900 dark:text-white">{t('clients.paymentTerms', 'Payment Terms')}</Label>
-                      <Select 
-                        value={formData.paymentTerms} 
-                        onValueChange={(value) => handleChange('paymentTerms', value)}
-                      >
-                        <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
-                          <SelectItem value="cash" className="dark:text-slate-200">{t('clients.paymentTermsCash', 'Cash')}</SelectItem>
-                          <SelectItem value="credit_7" className="dark:text-slate-200">{t('clients.paymentTermsCredit7', 'Credit 7 Days')}</SelectItem>
-                          <SelectItem value="credit_15" className="dark:text-slate-200">{t('clients.paymentTermsCredit15', 'Credit 15 Days')}</SelectItem>
-                          <SelectItem value="credit_30" className="dark:text-slate-200">{t('clients.paymentTermsCredit30', 'Credit 30 Days')}</SelectItem>
-                          <SelectItem value="credit_45" className="dark:text-slate-200">{t('clients.paymentTermsCredit45', 'Credit 45 Days')}</SelectItem>
-                          <SelectItem value="credit_60" className="dark:text-slate-200">{t('clients.paymentTermsCredit60', 'Credit 60 Days')}</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="dark:bg-slate-800">
-                <CardHeader>
-                  <CardTitle className="text-slate-900 dark:text-white">{t('clients.contactInfo', 'Contact Information')}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="email" className="text-slate-900 dark:text-white">{t('clients.email', 'Email')}</Label>
-                      <Input 
-                        id="email"
-                        type="email"
-                        value={formData.contact.email || ''}
-                        onChange={(e) => handleChange('contact.email', e.target.value)}
-                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="phone" className="text-slate-900 dark:text-white">{t('clients.phone', 'Phone')}</Label>
-                      <Input 
-                        id="phone"
-                        value={formData.contact.phone || ''}
-                        onChange={(e) => handleChange('contact.phone', e.target.value)}
-                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
-                      />
-                    </div>
-                  </div>
-
                   <div>
-                    <Label htmlFor="address" className="text-slate-900 dark:text-white">{t('clients.address', 'Address')}</Label>
-                    <Textarea 
-                      id="address"
-                      value={formData.contact.address || ''}
-                      onChange={(e) => handleChange('contact.address', e.target.value)}
-                      rows={2}
-                      className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
-                    />
+                    <h1 className="text-2xl font-bold tracking-tight text-slate-950 dark:text-white">
+                      {isEditMode ? t('clients.editClient', 'Edit Client') : t('clients.addClient', 'Add Client')}
+                    </h1>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      {isEditMode ? 'Update client details and settings' : 'Create a new client record'}
+                    </p>
                   </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <Label htmlFor="city" className="text-slate-900 dark:text-white">{t('clients.city', 'City')}</Label>
-                      <Input 
-                        id="city"
-                        value={formData.contact.city || ''}
-                        onChange={(e) => handleChange('contact.city', e.target.value)}
-                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="state" className="text-slate-900 dark:text-white">{t('clients.state', 'State/Region')}</Label>
-                      <Input 
-                        id="state"
-                        value={formData.contact.state || ''}
-                        onChange={(e) => handleChange('contact.state', e.target.value)}
-                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="country" className="text-slate-900 dark:text-white">{t('clients.country', 'Country')}</Label>
-                      <Input 
-                        id="country"
-                        value={formData.contact.country || ''}
-                        onChange={(e) => handleChange('contact.country', e.target.value)}
-                        className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
-                      />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                </div>
+                {isEditMode && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleChange('isActive', !formData.isActive)}
+                    className={`gap-1.5 dark:border-slate-700 ${formData.isActive ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-300' : 'border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400'}`}
+                  >
+                    <ToggleLeft className="h-4 w-4" />
+                    {formData.isActive ? 'Active' : 'Inactive'}
+                  </Button>
+                )}
+              </div>
             </div>
+          </div>
 
-            {/* Sidebar */}
-            <div className="space-y-6">
-              <Card className="dark:bg-slate-800">
-                <CardHeader>
-                  <CardTitle className="text-slate-900 dark:text-white">{t('clients.additionalInfo', 'Additional Information')}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label htmlFor="creditLimit" className="text-slate-900 dark:text-white">{t('clients.creditLimit', 'Credit Limit')}</Label>
-                    <Input 
-                      id="creditLimit"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={formData.creditLimit}
-                      onChange={(e) => handleChange('creditLimit', parseFloat(e.target.value) || 0)}
-                      className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="notes" className="text-slate-900 dark:text-white">{t('clients.notes', 'Notes')}</Label>
-                    <Textarea 
+          <form onSubmit={handleSubmit}>
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+              {/* Main */}
+              <div className="space-y-6 lg:col-span-2">
+                {/* Basic Info */}
+                <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="rounded-lg bg-blue-50 p-1.5 text-blue-600 dark:bg-blue-950/40 dark:text-blue-300">
+                        <User className="h-4 w-4" />
+                      </div>
+                      <CardTitle className="text-base text-slate-900 dark:text-white">Basic Information</CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="name" className="text-sm text-slate-700 dark:text-slate-300">Name *</Label>
+                        <Input
+                          id="name"
+                          value={formData.name}
+                          onChange={(e) => handleChange('name', e.target.value)}
+                          required
+                          className="h-10 bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+                          placeholder="Client name"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="code" className="text-sm text-slate-700 dark:text-slate-300">Code</Label>
+                        <Input
+                          id="code"
+                          value={formData.code || ''}
+                          onChange={(e) => handleChange('code', e.target.value)}
+                          placeholder="Auto-generate if empty"
+                          className="h-10 bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="type" className="text-sm text-slate-700 dark:text-slate-300">Type</Label>
+                        <Select value={formData.type} onValueChange={(value: 'individual' | 'company') => handleChange('type', value)}>
+                          <SelectTrigger className="h-10 bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-white">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="dark:border-slate-800 dark:bg-slate-950">
+                            <SelectItem value="individual" className="dark:text-slate-200">Individual</SelectItem>
+                            <SelectItem value="company" className="dark:text-slate-200">Company</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="paymentTerms" className="text-sm text-slate-700 dark:text-slate-300">Payment Terms</Label>
+                        <Select value={formData.paymentTerms} onValueChange={(value) => handleChange('paymentTerms', value)}>
+                          <SelectTrigger className="h-10 bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-white">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="dark:border-slate-800 dark:bg-slate-950">
+                            <SelectItem value="cash" className="dark:text-slate-200">Cash</SelectItem>
+                            <SelectItem value="credit_7" className="dark:text-slate-200">Credit 7 Days</SelectItem>
+                            <SelectItem value="credit_15" className="dark:text-slate-200">Credit 15 Days</SelectItem>
+                            <SelectItem value="credit_30" className="dark:text-slate-200">Credit 30 Days</SelectItem>
+                            <SelectItem value="credit_45" className="dark:text-slate-200">Credit 45 Days</SelectItem>
+                            <SelectItem value="credit_60" className="dark:text-slate-200">Credit 60 Days</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Contact Info */}
+                <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="rounded-lg bg-violet-50 p-1.5 text-violet-600 dark:bg-violet-950/40 dark:text-violet-300">
+                        <MapPin className="h-4 w-4" />
+                      </div>
+                      <CardTitle className="text-base text-slate-900 dark:text-white">Contact Information</CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="email" className="text-sm text-slate-700 dark:text-slate-300">Email</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          value={formData.contact.email || ''}
+                          onChange={(e) => handleChange('contact.email', e.target.value)}
+                          className="h-10 bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+                          placeholder="email@example.com"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="phone" className="text-sm text-slate-700 dark:text-slate-300">Phone</Label>
+                        <Input
+                          id="phone"
+                          value={formData.contact.phone || ''}
+                          onChange={(e) => handleChange('contact.phone', e.target.value)}
+                          className="h-10 bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+                          placeholder="+1 234 567 890"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="address" className="text-sm text-slate-700 dark:text-slate-300">Address</Label>
+                      <Textarea
+                        id="address"
+                        value={formData.contact.address || ''}
+                        onChange={(e) => handleChange('contact.address', e.target.value)}
+                        rows={2}
+                        className="bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+                        placeholder="Street address"
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="city" className="text-sm text-slate-700 dark:text-slate-300">City</Label>
+                        <Input
+                          id="city"
+                          value={formData.contact.city || ''}
+                          onChange={(e) => handleChange('contact.city', e.target.value)}
+                          className="h-10 bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="state" className="text-sm text-slate-700 dark:text-slate-300">State/Region</Label>
+                        <Input
+                          id="state"
+                          value={formData.contact.state || ''}
+                          onChange={(e) => handleChange('contact.state', e.target.value)}
+                          className="h-10 bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="country" className="text-sm text-slate-700 dark:text-slate-300">Country</Label>
+                        <Input
+                          id="country"
+                          value={formData.contact.country || ''}
+                          onChange={(e) => handleChange('contact.country', e.target.value)}
+                          className="h-10 bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Sidebar */}
+              <div className="space-y-6">
+                {/* Actions */}
+                <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardContent className="space-y-3 p-4">
+                    <Button type="submit" disabled={saving || !formData.name.trim()} className="w-full gap-1.5 bg-blue-600 hover:bg-blue-700">
+                      {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                      {isEditMode ? 'Update Client' : 'Create Client'}
+                    </Button>
+                    <Button type="button" variant="outline" onClick={() => navigate('/clients')} className="w-full dark:border-slate-700 dark:text-slate-200">
+                      Cancel
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {/* Financial Settings */}
+                <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="rounded-lg bg-emerald-50 p-1.5 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300">
+                        <CreditCard className="h-4 w-4" />
+                      </div>
+                      <CardTitle className="text-base text-slate-900 dark:text-white">Financial Settings</CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="creditLimit" className="text-sm text-slate-700 dark:text-slate-300">Credit Limit</Label>
+                      <Input
+                        id="creditLimit"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={formData.creditLimit}
+                        onChange={(e) => handleChange('creditLimit', parseFloat(e.target.value) || 0)}
+                        className="h-10 bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Notes */}
+                <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="rounded-lg bg-amber-50 p-1.5 text-amber-600 dark:bg-amber-950/40 dark:text-amber-300">
+                        <FileText className="h-4 w-4" />
+                      </div>
+                      <CardTitle className="text-base text-slate-900 dark:text-white">Notes</CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <Textarea
                       id="notes"
                       value={formData.notes || ''}
                       onChange={(e) => handleChange('notes', e.target.value)}
                       rows={4}
-                      className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
+                      className="bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+                      placeholder="Additional notes about this client..."
                     />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <div className="flex flex-col gap-2">
-                <Button type="submit" disabled={saving}>
-                  {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                  {t('common.save', 'Save')}
-                </Button>
+                  </CardContent>
+                </Card>
               </div>
             </div>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
     </Layout>
   );

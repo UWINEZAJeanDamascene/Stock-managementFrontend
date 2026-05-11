@@ -3,27 +3,37 @@ import { useNavigate } from 'react-router';
 import { invoicesApi, clientsApi } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
 import { useCurrency } from '@/contexts/CurrencyContext';
-import { 
-  Plus, 
-  Search, 
-  Download, 
+import {
+  Plus,
+  Search,
+  Download,
   Loader2,
   FileText,
   Eye,
   Edit,
-  CheckCircle
+  CheckCircle,
+  Receipt,
+  DollarSign,
+  AlertTriangle,
+  X,
+  Calendar,
+  RotateCcw,
+  TrendingUp,
+  Wallet,
+  Clock,
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
+import { Skeleton } from '@/app/components/ui/skeleton';
 import { Card, CardContent } from '@/app/components/ui/card';
 import { Badge } from '@/app/components/ui/badge';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from '@/app/components/ui/table';
 import {
   Select,
@@ -230,203 +240,309 @@ export default function InvoicesListPage() {
     }
   };
 
+  const getStatusStyle = (status: string) => {
+    const map: Record<string, string> = {
+      draft: 'bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700',
+      confirmed: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900/60',
+      partially_paid: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900/60',
+      partial: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900/60',
+      fully_paid: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/60',
+      paid: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/60',
+      cancelled: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900/60',
+    };
+    return map[status] || map.draft;
+  };
+
+  const getStatusLabel = (status: string) => {
+    const map: Record<string, string> = {
+      draft: 'Draft',
+      confirmed: 'Confirmed',
+      partially_paid: 'Partially Paid',
+      partial: 'Partially Paid',
+      fully_paid: 'Fully Paid',
+      paid: 'Paid',
+      cancelled: 'Cancelled',
+    };
+    return map[status] || status;
+  };
+
+  const totalAmount = invoices.reduce((s, i) => s + i.grandTotal, 0);
+  const totalPaid = invoices.reduce((s, i) => s + i.amountPaid, 0);
+  const totalBalance = invoices.reduce((s, i) => s + (i.balance || i.grandTotal - i.amountPaid), 0);
+  const overdueCount = invoices.filter(i => {
+    const due = new Date(i.dueDate);
+    return i.status !== 'fully_paid' && i.status !== 'paid' && i.status !== 'cancelled' && due < new Date();
+  }).length;
+
   return (
     <Layout>
-      <div className="container mx-auto py-4 sm:py-6 px-3 sm:px-4">
-        {/* Page Header - Responsive */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
-          <div className="flex items-center gap-3">
-            <FileText className="h-6 w-6 text-primary flex-shrink-0" />
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold dark:text-gray-100">{t('invoice.title', 'Invoices')}</h1>
-              <p className="text-muted-foreground dark:text-gray-400 text-sm mt-0.5">{t('invoice.subtitle', 'Manage customer invoices')}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <Button variant="outline" size="sm" onClick={handleExport} className="flex-1 sm:flex-none justify-center">
-              <Download className="mr-2 h-4 w-4" />
-              <span className="hidden sm:inline">{t('common.export', 'Export')}</span>
-              <span className="sm:hidden">Export</span>
-            </Button>
-            <Button size="sm" onClick={() => navigate('/invoices/new')} className="flex-1 sm:flex-none justify-center">
-              <Plus className="mr-2 h-4 w-4" />
-              <span className="hidden sm:inline">{t('invoice.newInvoice', 'Create Invoice')}</span>
-              <span className="sm:hidden">Create</span>
-            </Button>
-          </div>
-        </div>
-
-        {/* Filters */}
-        <Card className="mb-4 sm:mb-6 dark:border-slate-700 dark:bg-slate-800">
-          <CardContent className="pt-4 sm:pt-6 px-4 sm:px-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder={t('invoice.search', 'Search invoices...')}
-                  value={search}
-                  onChange={(e) => handleSearch(e.target.value)}
-                  className="pl-9 dark:bg-slate-800 dark:border-slate-600 dark:text-gray-200"
-                />
-              </div>
-              <Select value={statusFilter} onValueChange={handleStatusFilter}>
-                <SelectTrigger className="dark:bg-slate-800 dark:border-slate-600">
-                  <SelectValue placeholder={t('invoice.filterStatus', 'Status')} />
-                </SelectTrigger>
-                <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
-                  {STATUS_OPTIONS.map(option => (
-                    <SelectItem key={option.value} value={option.value} className="dark:text-gray-200">
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={clientFilter} onValueChange={handleClientFilter}>
-                <SelectTrigger className="dark:bg-slate-800 dark:border-slate-600">
-                  <SelectValue placeholder={t('invoice.filterClient', 'Client')} />
-                </SelectTrigger>
-                <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
-                  <SelectItem value="all" className="dark:text-gray-200">{t('common.all', 'All Clients')}</SelectItem>
-                  {clients.map(client => (
-                    <SelectItem key={client._id} value={client._id} className="dark:text-gray-200">
-                      {client.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <div className="flex gap-2">
-                <Input
-                  type="date"
-                  value={dateFrom}
-                  onChange={(e) => handleDateFromChange(e.target.value)}
-                  placeholder={t('invoice.dateFrom', 'From')}
-                  className="flex-1 dark:bg-slate-800 dark:border-slate-600 dark:text-gray-200 text-sm"
-                />
-                <Input
-                  type="date"
-                  value={dateTo}
-                  onChange={(e) => handleDateToChange(e.target.value)}
-                  placeholder={t('invoice.dateTo', 'To')}
-                  className="flex-1 dark:bg-slate-800 dark:border-slate-600 dark:text-gray-200 text-sm"
-                />
+      <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1400px] space-y-6">
+          {/* Hero Header */}
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+            <div className="p-5">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg bg-blue-50 p-2.5 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60">
+                    <FileText className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h1 className="text-2xl font-bold tracking-tight text-slate-950 dark:text-white">{t('invoice.title', 'Invoices')}</h1>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">{t('invoice.subtitle', 'Manage customer invoices and payments')}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={handleExport} className="gap-1.5 dark:border-slate-700 dark:text-slate-200">
+                    <Download className="h-4 w-4" />
+                    <span className="hidden sm:inline">{t('common.export', 'Export')}</span>
+                  </Button>
+                  <Button size="sm" onClick={() => navigate('/invoices/new')} className="gap-1.5 bg-blue-600 hover:bg-blue-700">
+                    <Plus className="h-4 w-4" />
+                    {t('invoice.newInvoice', 'Create Invoice')}
+                  </Button>
+                </div>
               </div>
             </div>
-            {(search || statusFilter !== 'all' || clientFilter !== 'all' || dateFrom || dateTo) && (
-              <div className="mt-3 sm:mt-4">
-                <Button variant="ghost" size="sm" onClick={clearFilters}>
-                  {t('invoice.clearFilters', 'Clear Filters')}
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+          </div>
 
-        {/* Invoices Table */}
-        <Card className="dark:border-slate-700 dark:bg-slate-800">
-          <CardContent className="p-0 overflow-x-auto">
-            {loading ? (
-              <div className="flex items-center justify-center p-8">
-                <Loader2 className="h-8 w-8 animate-spin" />
+          {/* Metric Cards */}
+          {!loading && invoices.length > 0 && (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:gap-4">
+              <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardContent className="flex items-center gap-3 p-4">
+                  <div className="rounded-lg bg-blue-50 p-2.5 text-blue-600 dark:bg-blue-950/40 dark:text-blue-300">
+                    <Receipt className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Total Invoices</p>
+                    <p className="text-lg font-bold text-slate-900 dark:text-white">{invoices.length}</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardContent className="flex items-center gap-3 p-4">
+                  <div className="rounded-lg bg-emerald-50 p-2.5 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300">
+                    <TrendingUp className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Total Amount</p>
+                    <p className="text-lg font-bold text-slate-900 dark:text-white">{formatCurrency(totalAmount)}</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardContent className="flex items-center gap-3 p-4">
+                  <div className="rounded-lg bg-violet-50 p-2.5 text-violet-600 dark:bg-violet-950/40 dark:text-violet-300">
+                    <Wallet className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Paid</p>
+                    <p className="text-lg font-bold text-slate-900 dark:text-white">{formatCurrency(totalPaid)}</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardContent className="flex items-center gap-3 p-4">
+                  <div className={`rounded-lg p-2.5 ${overdueCount > 0 ? 'bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-300' : 'bg-slate-50 text-slate-600 dark:bg-slate-800 dark:text-slate-300'}`}>
+                    <AlertTriangle className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Outstanding</p>
+                    <p className="text-lg font-bold text-slate-900 dark:text-white">{formatCurrency(totalBalance)}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Filters */}
+          <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <CardContent className="p-4">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <Input
+                    placeholder="Search invoices..."
+                    value={search}
+                    onChange={(e) => handleSearch(e.target.value)}
+                    className="h-10 bg-white pl-9 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+                  />
+                </div>
+                <Select value={statusFilter} onValueChange={handleStatusFilter}>
+                  <SelectTrigger className="h-10 bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-white">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent className="dark:border-slate-800 dark:bg-slate-950">
+                    {STATUS_OPTIONS.map(option => (
+                      <SelectItem key={option.value} value={option.value} className="dark:text-slate-200">{option.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={clientFilter} onValueChange={handleClientFilter}>
+                  <SelectTrigger className="h-10 bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-white">
+                    <SelectValue placeholder="Client" />
+                  </SelectTrigger>
+                  <SelectContent className="dark:border-slate-800 dark:bg-slate-950">
+                    <SelectItem value="all" className="dark:text-slate-200">All Clients</SelectItem>
+                    {clients.map(client => (
+                      <SelectItem key={client._id} value={client._id} className="dark:text-slate-200">{client.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="flex gap-2">
+                  <Input type="date" value={dateFrom} onChange={(e) => handleDateFromChange(e.target.value)} className="h-10 bg-white text-sm dark:border-slate-800 dark:bg-slate-900 dark:text-white" />
+                  <Input type="date" value={dateTo} onChange={(e) => handleDateToChange(e.target.value)} className="h-10 bg-white text-sm dark:border-slate-800 dark:bg-slate-900 dark:text-white" />
+                </div>
               </div>
-            ) : invoices.length === 0 ? (
-              <div className="text-center py-12 dark:bg-slate-800">
-                <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4 dark:text-gray-400" />
-                <h3 className="text-lg font-medium dark:text-gray-200">{t('invoice.noInvoices', 'No invoices found')}</h3>
-                <p className="text-muted-foreground mb-4 dark:text-gray-400">
-                  {t('invoice.noInvoicesDescription', 'Create your first invoice to get started')}
-                </p>
-                <Button onClick={() => navigate('/invoices/new')}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  {t('invoice.newInvoice', 'New Invoice')}
-                </Button>
-              </div>
-            ) : (
-              <Table className="min-w-[800px]">
-                <TableHeader className="dark:bg-slate-800">
-                  <TableRow className="dark:hover:bg-slate-700/50 dark:border-b dark:border-slate-700">
-                    <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700 whitespace-nowrap">{t('invoice.invoiceNumber', 'Invoice #')}</TableHead>
-                    <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.client', 'Client')}</TableHead>
-                    <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700 hidden sm:table-cell">{t('invoice.invoiceDate', 'Date')}</TableHead>
-                    <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700 hidden md:table-cell">{t('invoice.dueDate', 'Due Date')}</TableHead>
-                    <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('invoice.status', 'Status')}</TableHead>
-                    <TableHead className="text-right dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700 whitespace-nowrap">{t('invoice.total', 'Total')}</TableHead>
-                    <TableHead className="text-right dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700 hidden sm:table-cell whitespace-nowrap">{t('invoice.balance', 'Balance')}</TableHead>
-                    <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700 hidden lg:table-cell">{t('invoice.source', 'Source')}</TableHead>
-                    <TableHead className="text-right dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700 whitespace-nowrap">{t('common.actions', 'Actions')}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody className="dark:bg-slate-800">
-                  {invoices.map((invoice) => (
-                    <TableRow key={invoice._id} className="dark:hover:bg-slate-700/50 dark:border-b dark:border-slate-700">
-                      <TableCell className="font-medium dark:text-gray-200 dark:bg-slate-800 whitespace-nowrap">
-                        {invoice.referenceNo || invoice.invoiceNumber || 'N/A'}
-                      </TableCell>
-                      <TableCell className="dark:text-gray-300 dark:bg-slate-800">{invoice.client?.name || '-'}</TableCell>
-                      <TableCell className="dark:text-gray-300 dark:bg-slate-800 hidden sm:table-cell">{formatDate(invoice.invoiceDate)}</TableCell>
-                      <TableCell className="dark:text-gray-300 dark:bg-slate-800 hidden md:table-cell">{formatDate(invoice.dueDate)}</TableCell>
-                      <TableCell className="dark:bg-slate-800">{getStatusBadge(invoice.status)}</TableCell>
-                      <TableCell className="text-right font-medium dark:text-gray-200 dark:bg-slate-800 whitespace-nowrap">
-                        {formatCurrency(invoice.grandTotal)}
-                      </TableCell>
-                      <TableCell className="text-right dark:text-gray-300 dark:bg-slate-800 hidden sm:table-cell whitespace-nowrap">
-                        {formatCurrency(invoice.balance || (invoice.grandTotal - invoice.amountPaid))}
-                      </TableCell>
-                      <TableCell className="dark:bg-slate-800 hidden lg:table-cell">
-                        {invoice.quotation ? (
-                          <span className="text-sm text-muted-foreground dark:text-gray-400">{invoice.quotation.referenceNo}</span>
-                        ) : (
-                          <span className="text-sm text-muted-foreground dark:text-gray-400">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right dark:bg-slate-800">
-                        <div className="flex items-center justify-end gap-1">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-slate-700"
-                            onClick={() => navigate(`/invoices/${invoice._id}`)}
-                            title={t('common.view', 'View')}
-                          >
-                            <Eye className="h-4 w-4 dark:text-gray-300" />
+              {(search || statusFilter !== 'all' || clientFilter !== 'all' || dateFrom || dateTo) && (
+                <div className="mt-3 flex items-center gap-2">
+                  <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8 gap-1 text-slate-500 dark:text-slate-400">
+                    <RotateCcw className="h-3.5 w-3.5" />
+                    Clear Filters
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Content */}
+          <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <CardContent className="p-0">
+              {loading ? (
+                <div className="space-y-3 p-4">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="flex items-center gap-4 rounded-lg">
+                      <Skeleton className="h-10 w-32" />
+                      <Skeleton className="h-10 w-40" />
+                      <Skeleton className="hidden h-10 w-24 sm:block" />
+                      <Skeleton className="hidden h-10 w-24 md:block" />
+                      <Skeleton className="h-6 w-20" />
+                      <Skeleton className="ml-auto h-10 w-24" />
+                    </div>
+                  ))}
+                </div>
+              ) : invoices.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <div className="mb-4 rounded-full bg-slate-100 p-4 dark:bg-slate-800">
+                    <FileText className="h-8 w-8 text-slate-400 dark:text-slate-500" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white">No invoices found</h3>
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Create your first invoice to get started</p>
+                  <Button onClick={() => navigate('/invoices/new')} className="mt-4 gap-1.5 bg-blue-600 hover:bg-blue-700">
+                    <Plus className="h-4 w-4" />
+                    New Invoice
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  {/* Desktop Table */}
+                  <div className="hidden overflow-x-auto md:block">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="border-b-slate-200 hover:bg-transparent dark:border-b-slate-800">
+                          <TableHead className="whitespace-nowrap text-xs font-semibold text-slate-500 dark:text-slate-400">Invoice #</TableHead>
+                          <TableHead className="text-xs font-semibold text-slate-500 dark:text-slate-400">Client</TableHead>
+                          <TableHead className="hidden text-xs font-semibold text-slate-500 dark:text-slate-400 lg:table-cell">Date</TableHead>
+                          <TableHead className="hidden text-xs font-semibold text-slate-500 dark:text-slate-400 lg:table-cell">Due Date</TableHead>
+                          <TableHead className="text-xs font-semibold text-slate-500 dark:text-slate-400">Status</TableHead>
+                          <TableHead className="whitespace-nowrap text-right text-xs font-semibold text-slate-500 dark:text-slate-400">Total</TableHead>
+                          <TableHead className="hidden whitespace-nowrap text-right text-xs font-semibold text-slate-500 dark:text-slate-400 sm:table-cell">Balance</TableHead>
+                          <TableHead className="text-right text-xs font-semibold text-slate-500 dark:text-slate-400">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {invoices.map((invoice) => (
+                          <TableRow key={invoice._id} className="border-b-slate-100 transition-colors hover:bg-slate-50 dark:border-b-slate-800/60 dark:hover:bg-slate-800/50">
+                            <TableCell className="whitespace-nowrap font-medium text-slate-900 dark:text-white">
+                              <div className="flex items-center gap-2">
+                                <span className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">#{invoice.referenceNo || invoice.invoiceNumber || 'N/A'}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-slate-700 dark:text-slate-300">{invoice.client?.name || '-'}</TableCell>
+                            <TableCell className="hidden text-slate-500 dark:text-slate-400 lg:table-cell">{formatDate(invoice.invoiceDate)}</TableCell>
+                            <TableCell className="hidden text-slate-500 dark:text-slate-400 lg:table-cell">{formatDate(invoice.dueDate)}</TableCell>
+                            <TableCell>
+                              <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium ${getStatusStyle(invoice.status)}`}>
+                                {invoice.status === 'draft' && <Clock className="h-3 w-3" />}
+                                {invoice.status === 'fully_paid' || invoice.status === 'paid' ? <CheckCircle className="h-3 w-3" /> : null}
+                                {getStatusLabel(invoice.status)}
+                              </span>
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap text-right font-semibold text-slate-900 dark:text-white">{formatCurrency(invoice.grandTotal)}</TableCell>
+                            <TableCell className="hidden whitespace-nowrap text-right text-slate-600 dark:text-slate-400 sm:table-cell">{formatCurrency(invoice.balance || invoice.grandTotal - invoice.amountPaid)}</TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end gap-1">
+                                <Button variant="ghost" size="sm" onClick={() => navigate(`/invoices/${invoice._id}`)} className="h-8 w-8 p-0 hover:bg-blue-50 dark:hover:bg-blue-950/30" title="View">
+                                  <Eye className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                </Button>
+                                {invoice.status === 'draft' && (
+                                  <Button variant="ghost" size="sm" onClick={() => navigate(`/invoices/${invoice._id}/edit`)} className="h-8 w-8 p-0 hover:bg-slate-100 dark:hover:bg-slate-700" title="Edit">
+                                    <Edit className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+                                  </Button>
+                                )}
+                                {invoice.status === 'draft' && (
+                                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-emerald-50 dark:hover:bg-emerald-950/30" onClick={async () => { try { await invoicesApi.confirm(invoice._id); fetchInvoices(); } catch (e) { console.error(e); } }} title="Confirm">
+                                    <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                                  </Button>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  {/* Mobile Cards */}
+                  <div className="space-y-3 p-4 md:hidden">
+                    {invoices.map((invoice) => (
+                      <div
+                        key={invoice._id}
+                        onClick={() => navigate(`/invoices/${invoice._id}`)}
+                        className="cursor-pointer rounded-lg border border-slate-200 bg-white p-4 transition-shadow hover:shadow-sm dark:border-slate-800 dark:bg-slate-900"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">#{invoice.referenceNo || invoice.invoiceNumber || 'N/A'}</span>
+                              <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${getStatusStyle(invoice.status)}`}>
+                                {getStatusLabel(invoice.status)}
+                              </span>
+                            </div>
+                            <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{invoice.client?.name || '-'}</p>
+                            <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+                              <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{formatDate(invoice.invoiceDate)}</span>
+                              <span>Due {formatDate(invoice.dueDate)}</span>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-bold text-slate-900 dark:text-white">{formatCurrency(invoice.grandTotal)}</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">Bal: {formatCurrency(invoice.balance || invoice.grandTotal - invoice.amountPaid)}</p>
+                          </div>
+                        </div>
+                        <div className="mt-3 flex items-center justify-end gap-1 border-t border-slate-100 pt-3 dark:border-slate-800">
+                          <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); navigate(`/invoices/${invoice._id}`); }} className="h-8 w-8 p-0">
+                            <Eye className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                           </Button>
                           {invoice.status === 'draft' && (
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-slate-700"
-                              onClick={() => navigate(`/invoices/${invoice._id}/edit`)}
-                              title={t('common.edit', 'Edit')}
-                            >
-                              <Edit className="h-4 w-4 dark:text-gray-300" />
-                            </Button>
-                          )}
-                          {invoice.status === 'draft' && (
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="h-8 w-8 p-0 hover:bg-green-100 dark:hover:bg-slate-700 text-green-600"
-                              onClick={async () => {
-                                try {
-                                  await invoicesApi.confirm(invoice._id);
-                                  fetchInvoices();
-                                } catch (error) {
-                                  console.error('Failed to confirm invoice:', error);
-                                }
-                              }}
-                              title={t('invoice.confirm', 'Confirm')}
-                            >
-                              <CheckCircle className="h-4 w-4" />
-                            </Button>
+                            <>
+                              <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); navigate(`/invoices/${invoice._id}/edit`); }} className="h-8 w-8 p-0">
+                                <Edit className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+                              </Button>
+                              <Button variant="ghost" size="sm" onClick={async (e) => { e.stopPropagation(); try { await invoicesApi.confirm(invoice._id); fetchInvoices(); } catch (err) { console.error(err); } }} className="h-8 w-8 p-0">
+                                <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                              </Button>
+                            </>
                           )}
                         </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </Layout>
   );

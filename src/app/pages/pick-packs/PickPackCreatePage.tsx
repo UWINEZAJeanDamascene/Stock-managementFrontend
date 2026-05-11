@@ -2,13 +2,15 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { pickPackApi, salesOrdersApi, warehousesApi } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
-import { 
+import {
   ArrowLeft,
   Package,
   Loader2,
   User,
   Warehouse,
-  Calendar
+  Calendar,
+  FileText,
+  Zap,
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
@@ -22,7 +24,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/app/components/ui/select';
-import { toast } from "sonner";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/app/components/ui/table';
+import { toast } from 'sonner';
 
 // Helper to convert MongoDB Decimal128 to number
 const toNumber = (value: any): number => {
@@ -180,210 +190,265 @@ export default function PickPackCreatePage() {
 
   return (
     <Layout>
-      <div className="container mx-auto p-6">
-        <div className="mb-6 flex items-center gap-4">
-          <Button variant="outline" onClick={() => navigate('/pick-packs')}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-          <h1 className="text-3xl font-bold text-gray-900">Create Pick & Pack</h1>
-        </div>
-
-        <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Main Form */}
-            <div className="lg:col-span-2 space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Task Details</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Sales Order <span className="text-red-500">*</span></Label>
-                      <div className="text-xs text-gray-400">Debug: {salesOrders.length} orders loaded</div>
-                      <Select value={formData.salesOrder} onValueChange={handleSalesOrderChange}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select sales order" />
-                        </SelectTrigger>
-                        <SelectContent className="z-50">
-                          {salesOrders.length === 0 && (
-                            <SelectItem value="_empty" disabled>No sales orders ready for picking</SelectItem>
-                          )}
-                          {salesOrders.map((order) => (
-                            <SelectItem key={order._id} value={order._id}>
-                              {order.referenceNo} - {order.client?.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <p className="text-sm text-gray-500">
-                        Only confirmed sales orders ready for picking are shown
-                      </p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Warehouse <span className="text-red-500">*</span></Label>
-                      <Select value={formData.warehouse} onValueChange={(value) => setFormData({ ...formData, warehouse: value })}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select warehouse" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {warehouses.map((warehouse) => (
-                            <SelectItem key={warehouse._id} value={warehouse._id}>
-                              {warehouse.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Priority</Label>
-                      <Select value={formData.priority} onValueChange={(value) => setFormData({ ...formData, priority: value })}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="low">Low</SelectItem>
-                          <SelectItem value="medium">Medium</SelectItem>
-                          <SelectItem value="high">High</SelectItem>
-                          <SelectItem value="urgent">Urgent</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Expected Completion Date</Label>
-                      <Input
-                        type="date"
-                        value={formData.expectedDate}
-                        onChange={(e) => setFormData({ ...formData, expectedDate: e.target.value })}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Notes</Label>
-                    <Textarea
-                      value={formData.notes}
-                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                      rows={3}
-                      placeholder="Any special instructions for the warehouse team..."
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Selected Sales Order Lines */}
-              {selectedSalesOrder && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Items to Pick</CardTitle>
-                    <p className="text-sm text-gray-500">
-                      From {selectedSalesOrder.referenceNo}
-                    </p>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="overflow-x-auto">
-                      {selectedSalesOrder.lines && selectedSalesOrder.lines.length > 0 ? (
-                        <table className="w-full">
-                          <thead className="border-b">
-                            <tr>
-                              <th className="text-left py-2">Product</th>
-                              <th className="text-right py-2">Qty Ordered</th>
-                              <th className="text-right py-2">Qty Reserved</th>
-                              <th className="text-right py-2">To Pick</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {selectedSalesOrder.lines.map((line, index) => (
-                              <tr key={line._id || index} className="border-b last:border-0">
-                                <td className="py-3">
-                                  <div className="font-medium">{line.description || '-'}</div>
-                                  <div className="text-sm text-gray-500">{line.product?.sku || '-'}</div>
-                                </td>
-                                <td className="text-right py-3">{toNumber(line.qty)}</td>
-                                <td className="text-right py-3">{toNumber(line.qtyReserved)}</td>
-                                <td className="text-right py-3 font-medium text-blue-600">
-                                  {toNumber(line.qtyReserved)}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      ) : (
-                        <p className="text-gray-500">No line items found in this sales order.</p>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-
-            {/* Sidebar */}
-            <div className="space-y-6">
-              {selectedSalesOrder && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Sales Order Info</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center gap-3">
-                      <User className="h-5 w-5 text-gray-400" />
-                      <div>
-                        <p className="font-medium">{selectedSalesOrder.client?.name}</p>
-                        <p className="text-sm text-gray-500">Client</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Package className="h-5 w-5 text-gray-400" />
-                      <div>
-                        <p className="font-medium">{(selectedSalesOrder.lines?.length || 0)} items</p>
-                        <p className="text-sm text-gray-500">Total Products</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Calendar className="h-5 w-5 text-gray-400" />
-                      <div>
-                        <p className="font-medium">{selectedSalesOrder.status}</p>
-                        <p className="text-sm text-gray-500">Status</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Actions</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Button 
-                    type="submit" 
-                    className="w-full" 
-                    disabled={loading || !formData.salesOrder || !formData.warehouse}
-                  >
-                    {loading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Creating...
-                      </>
-                    ) : (
-                      <>
-                        <Package className="h-4 w-4 mr-2" />
-                        Create Pick & Pack
-                      </>
-                    )}
-                  </Button>
-                  <p className="text-sm text-gray-500 mt-2 text-center">
-                    Creates a pick & pack task for the warehouse team
-                  </p>
-                </CardContent>
-              </Card>
+      <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1200px] space-y-6">
+          {/* Hero Header */}
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+            <div className="p-5">
+              <div className="flex flex-wrap items-center gap-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate('/pick-packs')}
+                  className="h-9 gap-1 dark:border-slate-700 dark:text-slate-200"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  <span className="hidden sm:inline">Back</span>
+                </Button>
+                <div className="rounded-lg bg-blue-50 p-2.5 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60">
+                  <Package className="h-5 w-5" />
+                </div>
+                <h1 className="text-2xl font-bold tracking-tight text-slate-950 dark:text-white sm:text-3xl">
+                  Create Pick & Pack
+                </h1>
+              </div>
+              <p className="mt-2 max-w-3xl text-sm text-slate-500 dark:text-slate-400">
+                Create a new picking and packing task from a confirmed sales order
+              </p>
             </div>
           </div>
-        </form>
+
+          <form onSubmit={handleSubmit}>
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+              {/* Main Form */}
+              <div className="lg:col-span-2 space-y-6">
+                <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardHeader className="space-y-1 pb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="rounded-lg bg-violet-50 p-1.5 text-violet-600 dark:bg-violet-950/40 dark:text-violet-300">
+                        <FileText className="h-4 w-4" />
+                      </div>
+                      <CardTitle className="text-base font-semibold text-slate-900 dark:text-white">
+                        Task Details
+                      </CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                          Sales Order <span className="text-red-500">*</span>
+                        </Label>
+                        <Select value={formData.salesOrder} onValueChange={handleSalesOrderChange}>
+                          <SelectTrigger className="bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-white">
+                            <SelectValue placeholder="Select sales order" />
+                          </SelectTrigger>
+                          <SelectContent className="z-50">
+                            {salesOrders.length === 0 && (
+                              <SelectItem value="_empty" disabled>No sales orders ready for picking</SelectItem>
+                            )}
+                            {salesOrders.map((order) => (
+                              <SelectItem key={order._id} value={order._id}>
+                                {order.referenceNo} - {order.client?.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          Only confirmed sales orders ready for picking are shown
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                          Warehouse <span className="text-red-500">*</span>
+                        </Label>
+                        <Select value={formData.warehouse} onValueChange={(value) => setFormData({ ...formData, warehouse: value })}>
+                          <SelectTrigger className="bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-white">
+                            <SelectValue placeholder="Select warehouse" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {warehouses.map((warehouse) => (
+                              <SelectItem key={warehouse._id} value={warehouse._id}>
+                                {warehouse.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">Priority</Label>
+                        <Select value={formData.priority} onValueChange={(value) => setFormData({ ...formData, priority: value })}>
+                          <SelectTrigger className="bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-white">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="low">Low</SelectItem>
+                            <SelectItem value="medium">Medium</SelectItem>
+                            <SelectItem value="high">High</SelectItem>
+                            <SelectItem value="urgent">Urgent</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">Expected Completion Date</Label>
+                        <Input
+                          type="date"
+                          value={formData.expectedDate}
+                          onChange={(e) => setFormData({ ...formData, expectedDate: e.target.value })}
+                          className="bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">Notes</Label>
+                      <Textarea
+                        value={formData.notes}
+                        onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                        rows={3}
+                        placeholder="Any special instructions for the warehouse team..."
+                        className="bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Selected Sales Order Lines */}
+                {selectedSalesOrder && (
+                  <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                    <CardHeader className="space-y-1 pb-2">
+                      <div className="flex items-center gap-2">
+                        <div className="rounded-lg bg-amber-50 p-1.5 text-amber-600 dark:bg-amber-950/40 dark:text-amber-300">
+                          <Package className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-base font-semibold text-slate-900 dark:text-white">
+                            Items to Pick
+                          </CardTitle>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            From {selectedSalesOrder.referenceNo}
+                          </p>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      <div className="overflow-x-auto">
+                        {selectedSalesOrder.lines && selectedSalesOrder.lines.length > 0 ? (
+                          <Table>
+                            <TableHeader>
+                              <TableRow className="border-b border-slate-200 bg-slate-50/50 hover:bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/50">
+                                <TableHead className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Product</TableHead>
+                                <TableHead className="text-right text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Qty Ordered</TableHead>
+                                <TableHead className="text-right text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Qty Reserved</TableHead>
+                                <TableHead className="text-right text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">To Pick</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {selectedSalesOrder.lines.map((line, index) => (
+                                <TableRow key={line._id || index} className="border-b border-slate-100 hover:bg-slate-50/50 dark:border-slate-800 dark:hover:bg-slate-900/50">
+                                  <TableCell>
+                                    <div className="font-medium text-slate-900 dark:text-white">{line.description || '-'}</div>
+                                    <div className="text-xs text-slate-500 dark:text-slate-400">{line.product?.sku || '-'}</div>
+                                  </TableCell>
+                                  <TableCell className="text-right text-sm text-slate-700 dark:text-slate-300">{toNumber(line.qty)}</TableCell>
+                                  <TableCell className="text-right text-sm text-slate-700 dark:text-slate-300">{toNumber(line.qtyReserved)}</TableCell>
+                                  <TableCell className="text-right text-sm font-medium text-blue-600 dark:text-blue-400">{toNumber(line.qtyReserved)}</TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        ) : (
+                          <div className="p-6 text-center">
+                            <p className="text-sm text-slate-500 dark:text-slate-400">No line items found in this sales order.</p>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+
+              {/* Sidebar */}
+              <div className="space-y-6">
+                {selectedSalesOrder && (
+                  <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                    <CardHeader className="space-y-1 pb-2">
+                      <div className="flex items-center gap-2">
+                        <div className="rounded-lg bg-emerald-50 p-1.5 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300">
+                          <User className="h-4 w-4" />
+                        </div>
+                        <CardTitle className="text-base font-semibold text-slate-900 dark:text-white">
+                          Sales Order Info
+                        </CardTitle>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <User className="h-5 w-5 text-slate-400 dark:text-slate-500" />
+                        <div>
+                          <p className="font-medium text-slate-900 dark:text-white">{selectedSalesOrder.client?.name}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">Client</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Package className="h-5 w-5 text-slate-400 dark:text-slate-500" />
+                        <div>
+                          <p className="font-medium text-slate-900 dark:text-white">{(selectedSalesOrder.lines?.length || 0)} items</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">Total Products</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Calendar className="h-5 w-5 text-slate-400 dark:text-slate-500" />
+                        <div>
+                          <p className="font-medium text-slate-900 dark:text-white">{selectedSalesOrder.status}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">Status</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardHeader className="space-y-1 pb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="rounded-lg bg-blue-50 p-1.5 text-blue-600 dark:bg-blue-950/40 dark:text-blue-300">
+                        <Zap className="h-4 w-4" />
+                      </div>
+                      <CardTitle className="text-base font-semibold text-slate-900 dark:text-white">
+                        Actions
+                      </CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <Button
+                      type="submit"
+                      className="w-full bg-blue-600 hover:bg-blue-700"
+                      disabled={loading || !formData.salesOrder || !formData.warehouse}
+                    >
+                      {loading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Creating...
+                        </>
+                      ) : (
+                        <>
+                          <Package className="mr-2 h-4 w-4" />
+                          Create Pick & Pack
+                        </>
+                      )}
+                    </Button>
+                    <p className="mt-2 text-center text-xs text-slate-500 dark:text-slate-400">
+                      Creates a pick & pack task for the warehouse team
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </form>
+        </div>
       </div>
     </Layout>
   );

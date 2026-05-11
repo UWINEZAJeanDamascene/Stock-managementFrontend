@@ -2,29 +2,32 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { pickPackApi, salesOrdersApi } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
-import { 
-  Plus, 
-  Search, 
-  Loader2,
+import {
+  Plus,
+  Search,
   Package,
   Eye,
   Play,
   Box,
   Filter,
   User,
-  XCircle
+  XCircle,
+  RefreshCw,
+  Truck,
+  Warehouse,
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { Card, CardContent } from '@/app/components/ui/card';
 import { Badge } from '@/app/components/ui/badge';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import { Skeleton } from '@/app/components/ui/skeleton';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@/app/components/ui/table';
 import {
   Select,
@@ -33,7 +36,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/app/components/ui/select';
-import { toast } from "sonner";
+import { toast } from 'sonner';
 
 // Helper to convert MongoDB Decimal128 to number
 const toNumber = (value: any): number => {
@@ -106,20 +109,38 @@ const STATUS_OPTIONS = [
   { value: 'cancelled', label: 'Cancelled' },
 ];
 
-const PRIORITY_COLORS: Record<string, string> = {
-  low: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300',
-  medium: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-  high: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
-  urgent: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+const STATUS_COLORS: Record<string, string> = {
+  draft: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
+  picking: 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300',
+  picked: 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300',
+  packed: 'bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300',
+  ready_for_delivery: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300',
+  cancelled: 'bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300',
 };
 
-const STATUS_COLORS: Record<string, string> = {
-  draft: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300',
-  picking: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-  picked: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-  packed: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
-  ready_for_delivery: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-  cancelled: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+const PRIORITY_COLORS: Record<string, string> = {
+  low: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
+  medium: 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300',
+  high: 'bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300',
+  urgent: 'bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300',
+};
+
+const STATUS_BORDER_COLORS: Record<string, string> = {
+  draft: 'border-l-slate-400',
+  picking: 'border-l-amber-400',
+  picked: 'border-l-blue-400',
+  packed: 'border-l-violet-400',
+  ready_for_delivery: 'border-l-emerald-400',
+  cancelled: 'border-l-red-400',
+};
+
+const PROGRESS_COLORS: Record<string, string> = {
+  draft: 'bg-slate-500',
+  picking: 'bg-amber-500',
+  picked: 'bg-blue-500',
+  packed: 'bg-violet-500',
+  ready_for_delivery: 'bg-emerald-500',
+  cancelled: 'bg-red-500',
 };
 
 export default function PickPacksListPage() {
@@ -250,232 +271,487 @@ export default function PickPacksListPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-4 sm:py-6 px-3 sm:px-4">
-        <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Pick & Pack</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage picking and packing tasks</p>
+      <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1200px] space-y-6">
+          {/* Hero Header */}
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+            <div className="grid gap-5 p-5 xl:grid-cols-[1fr_auto] xl:items-center">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="rounded-lg bg-blue-50 p-2.5 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60">
+                    <Package className="h-5 w-5" />
+                  </div>
+                  <h1 className="text-2xl font-bold tracking-tight text-slate-950 dark:text-white sm:text-3xl">
+                    Pick & Pack
+                  </h1>
+                </div>
+                <p className="mt-2 max-w-3xl text-sm text-slate-500 dark:text-slate-400">
+                  Manage picking and packing tasks across warehouses
+                </p>
+                <div className="mt-5 flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() => navigate('/pick-packs/create')}
+                    className="h-10 gap-2 bg-blue-600 hover:bg-blue-700"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Create Pick & Pack
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={fetchPickPacks}
+                    disabled={loading}
+                    className="h-10 gap-2 dark:border-slate-700 dark:text-slate-200"
+                  >
+                    <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                    Refresh
+                  </Button>
+                </div>
+              </div>
+            </div>
           </div>
-          <Button size="sm" onClick={() => navigate('/pick-packs/create')} className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Create Pick & Pack</span>
-            <span className="sm:hidden">Create</span>
-          </Button>
-        </div>
 
-        {/* Filters */}
-        <Card className="mb-4 sm:mb-6 dark:border-slate-700 dark:bg-slate-800">
-          <CardContent className="p-3 sm:p-4">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+          {/* Metric Cards */}
+          {loading ? (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Card key={i} className="border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
+                  <CardContent className="p-4">
+                    <Skeleton className="h-8 w-8 rounded-lg" />
+                    <Skeleton className="mt-2 h-7 w-16" />
+                    <Skeleton className="mt-1 h-3 w-24" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardContent className="p-4">
+                  <div className="rounded-lg bg-slate-50 p-2 text-slate-600 ring-1 ring-slate-100 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-800 w-fit">
+                    <Package className="h-4 w-4" />
+                  </div>
+                  <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">{pagination.total}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Total Tasks</p>
+                </CardContent>
+              </Card>
+              <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardContent className="p-4">
+                  <div className="rounded-lg bg-amber-50 p-2 text-amber-600 ring-1 ring-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/60 w-fit">
+                    <Play className="h-4 w-4" />
+                  </div>
+                  <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">
+                    {pickPacks.filter((t) => t.status === 'picking').length}
+                  </p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Picking</p>
+                </CardContent>
+              </Card>
+              <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardContent className="p-4">
+                  <div className="rounded-lg bg-violet-50 p-2 text-violet-600 ring-1 ring-violet-100 dark:bg-violet-950/40 dark:text-violet-300 dark:ring-violet-900/60 w-fit">
+                    <Box className="h-4 w-4" />
+                  </div>
+                  <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">
+                    {pickPacks.filter((t) => t.status === 'picked' || t.status === 'packed').length}
+                  </p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Packing</p>
+                </CardContent>
+              </Card>
+              <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardContent className="p-4">
+                  <div className="rounded-lg bg-emerald-50 p-2 text-emerald-600 ring-1 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60 w-fit">
+                    <Truck className="h-4 w-4" />
+                  </div>
+                  <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">
+                    {pickPacks.filter((t) => t.status === 'ready_for_delivery').length}
+                  </p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Ready</p>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Filters */}
+          <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                   <Input
                     placeholder="Search by reference or sales order..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="pl-10"
+                    className="bg-white pl-10 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
                   />
                 </div>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-full bg-white sm:w-[200px] dark:border-slate-800 dark:bg-slate-900 dark:text-white">
+                    <Filter className="mr-2 h-4 w-4 text-slate-500" />
+                    <SelectValue placeholder="Filter by status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {STATUS_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-[180px] dark:bg-slate-700 dark:border-slate-600">
-                  <Filter className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
-                <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
-                  {STATUS_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value} className="dark:text-gray-200">
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        {/* Pick Packs Table */}
-        <Card className="dark:border-slate-700 dark:bg-slate-800">
-          <CardContent className="p-0 overflow-x-auto">
-            <Table className="min-w-[700px]">
-              <TableHeader className="dark:bg-slate-800">
-                <TableRow className="dark:hover:bg-slate-700/50 dark:border-b dark:border-slate-700">
-                  <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">Reference</TableHead>
-                  <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">Sales Order</TableHead>
-                  <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">Client</TableHead>
-                  <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">Warehouse</TableHead>
-                  <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">Status</TableHead>
-                  <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">Priority</TableHead>
-                  <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">Progress</TableHead>
-                  <TableHead className="text-right dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8">
-                      <Loader2 className="h-8 w-8 animate-spin mx-auto text-gray-400" />
-                    </TableCell>
-                  </TableRow>
-                ) : pickPacks.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+          {/* Content */}
+          <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            {/* Desktop Table */}
+            <div className="hidden md:block">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-b border-slate-200 bg-slate-50/50 hover:bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/50">
+                      {['Reference', 'Sales Order', 'Client', 'Warehouse', 'Status', 'Priority', 'Progress', 'Actions'].map((h) => (
+                        <TableHead
+                          key={h}
+                          className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400"
+                        >
+                          {h}
+                        </TableHead>
+                      ))}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {loading ? (
+                      Array.from({ length: 5 }).map((_, i) => (
+                        <TableRow key={i} className="border-b border-slate-100 dark:border-slate-800">
+                          <TableCell colSpan={8}>
+                            <div className="flex items-center gap-3 py-2">
+                              <Skeleton className="h-8 w-8 rounded" />
+                              <div className="flex-1 space-y-1">
+                                <Skeleton className="h-4 w-32" />
+                                <Skeleton className="h-3 w-20" />
+                              </div>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : pickPacks.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="py-12 text-center">
+                          <div className="flex flex-col items-center gap-3">
+                            <div className="rounded-full bg-slate-100 p-4 dark:bg-slate-800">
+                              <Package className="h-8 w-8 text-slate-400 dark:text-slate-500" />
+                            </div>
+                            <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                              No pick pack tasks found
+                            </p>
+                            <p className="text-xs text-slate-500 dark:text-slate-500">
+                              Try adjusting your filters or create a new task
+                            </p>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      pickPacks.map((task) => {
+                        const progress = getProgress(task);
+                        const progColor = PROGRESS_COLORS[task.status] || 'bg-blue-500';
+                        return (
+                          <TableRow
+                            key={task._id}
+                            className="border-b border-slate-100 hover:bg-slate-50/50 dark:border-slate-800 dark:hover:bg-slate-900/50"
+                          >
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <div className={`h-2 w-2 rounded-full ${progColor}`} />
+                                <span className="font-medium text-slate-900 dark:text-white">
+                                  {task.referenceNo}
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-sm text-slate-700 dark:text-slate-300">
+                              {task.salesOrder?.referenceNo || '-'}
+                            </TableCell>
+                            <TableCell className="text-sm text-slate-700 dark:text-slate-300">
+                              {task.client?.name || '-'}
+                            </TableCell>
+                            <TableCell className="text-sm text-slate-700 dark:text-slate-300">
+                              {task.warehouse?.name || '-'}
+                            </TableCell>
+                            <TableCell>
+                              <Badge className={`${STATUS_COLORS[task.status]} capitalize text-xs`}>
+                                {task.status.replace(/_/g, ' ')}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Badge className={`${PRIORITY_COLORS[task.priority]} capitalize text-xs`}>
+                                {task.priority}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="w-full max-w-[120px]">
+                                <div className="mb-1 text-xs text-slate-500 dark:text-slate-400">
+                                  {progress.text}
+                                </div>
+                                <div className="h-1.5 w-full rounded-full bg-slate-200 dark:bg-slate-700">
+                                  <div
+                                    className={`${progColor} h-1.5 rounded-full transition-all duration-500`}
+                                    style={{ width: `${progress.percent}%` }}
+                                  />
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => navigate(`/pick-packs/${task._id}`)}
+                                  title="View Details"
+                                  className="h-8 w-8 p-0"
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                {task.status === 'draft' && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleStartPicking(task._id)}
+                                    title="Start Picking"
+                                    className="h-8 w-8 p-0 text-amber-600"
+                                  >
+                                    <Play className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                {task.status === 'picking' && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => navigate(`/pick-packs/${task._id}/pick`)}
+                                    title="Pick Items"
+                                    className="h-8 w-8 p-0 text-blue-600"
+                                  >
+                                    <Box className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                {task.status === 'picked' && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleStartPacking(task._id)}
+                                    title="Start Packing"
+                                    className="h-8 w-8 p-0 text-violet-600"
+                                  >
+                                    <Play className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                {task.status === 'packed' && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => navigate(`/pick-packs/${task._id}/pack`)}
+                                    title="Pack Items"
+                                    className="h-8 w-8 p-0 text-orange-600"
+                                  >
+                                    <Box className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                {task.status !== 'ready_for_delivery' && task.status !== 'cancelled' && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleCancel(task._id)}
+                                    title="Cancel"
+                                    className="h-8 w-8 p-0 text-red-600"
+                                  >
+                                    <XCircle className="h-4 w-4" />
+                                  </Button>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+
+            {/* Mobile Cards */}
+            <div className="md:hidden">
+              {loading ? (
+                <div className="space-y-3 p-3">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <Card key={i} className="border-slate-200 dark:border-slate-800">
+                      <CardContent className="space-y-3 p-4">
+                        <Skeleton className="h-5 w-32" />
+                        <Skeleton className="h-4 w-48" />
+                        <Skeleton className="h-3 w-full" />
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : pickPacks.length === 0 ? (
+                <div className="py-12 text-center">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="rounded-full bg-slate-100 p-4 dark:bg-slate-800">
+                      <Package className="h-8 w-8 text-slate-400 dark:text-slate-500" />
+                    </div>
+                    <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
                       No pick pack tasks found
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  pickPacks.map((task) => {
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3 p-3">
+                  {pickPacks.map((task) => {
                     const progress = getProgress(task);
+                    const borderColor = STATUS_BORDER_COLORS[task.status] || 'border-l-slate-400';
+                    const progColor = PROGRESS_COLORS[task.status] || 'bg-blue-500';
                     return (
-                      <TableRow key={task._id}>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Package className="h-4 w-4 text-gray-400 dark:text-gray-500" />
-                            <span className="font-medium dark:text-gray-100">{task.referenceNo}</span>
+                      <Card
+                        key={task._id}
+                        className={`${borderColor} border-l-4 border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950`}
+                      >
+                        <CardContent className="space-y-3 p-4">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <p className="font-semibold text-slate-900 dark:text-white">
+                                {task.referenceNo}
+                              </p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400">
+                                {task.salesOrder?.referenceNo}
+                              </p>
+                            </div>
+                            <Badge className={`${STATUS_COLORS[task.status]} capitalize text-xs`}>
+                              {task.status.replace(/_/g, ' ')}
+                            </Badge>
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="text-sm">
-                            <div className="font-medium dark:text-gray-100">{task.salesOrder?.referenceNo}</div>
+                          <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+                            <User className="h-3.5 w-3.5 text-slate-400" />
+                            {task.client?.name || '-'}
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <User className="h-4 w-4 text-gray-400 dark:text-gray-500" />
-                            <span className="dark:text-gray-100">{task.client?.name || '-'}</span>
+                          <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+                            <Warehouse className="h-3.5 w-3.5 text-slate-400" />
+                            {task.warehouse?.name || '-'}
                           </div>
-                        </TableCell>
-                        <TableCell className="dark:text-gray-100">{task.warehouse?.name || '-'}</TableCell>
-                        <TableCell>
-                          <Badge className={`${STATUS_COLORS[task.status]} capitalize`}>
-                            {task.status.replace(/_/g, ' ')}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={`${PRIORITY_COLORS[task.priority]} capitalize`}>
-                            {task.priority}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="w-full max-w-[120px]">
-                            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">{progress.text}</div>
-                            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-slate-500 dark:text-slate-400">
+                                {progress.text}
+                              </span>
+                              <Badge className={`${PRIORITY_COLORS[task.priority]} capitalize text-xs`}>
+                                {task.priority}
+                              </Badge>
+                            </div>
+                            <div className="h-1.5 w-full rounded-full bg-slate-200 dark:bg-slate-700">
                               <div
-                                className="bg-blue-600 h-2 rounded-full"
+                                className={`${progColor} h-1.5 rounded-full transition-all duration-500`}
                                 style={{ width: `${progress.percent}%` }}
                               />
                             </div>
                           </div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
+                          <div className="flex items-center gap-1 pt-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
                               onClick={() => navigate(`/pick-packs/${task._id}`)}
-                              title="View Details"
+                              className="h-8 w-8 p-0"
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
-                            
                             {task.status === 'draft' && (
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
+                              <Button
+                                variant="ghost"
+                                size="sm"
                                 onClick={() => handleStartPicking(task._id)}
-                                title="Start Picking"
-                                className="text-blue-600"
+                                className="h-8 w-8 p-0 text-amber-600"
                               >
                                 <Play className="h-4 w-4" />
                               </Button>
                             )}
-                            
                             {task.status === 'picking' && (
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
+                              <Button
+                                variant="ghost"
+                                size="sm"
                                 onClick={() => navigate(`/pick-packs/${task._id}/pick`)}
-                                title="Pick Items"
-                                className="text-yellow-600"
+                                className="h-8 w-8 p-0 text-blue-600"
                               >
                                 <Box className="h-4 w-4" />
                               </Button>
                             )}
-                            
                             {task.status === 'picked' && (
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
+                              <Button
+                                variant="ghost"
+                                size="sm"
                                 onClick={() => handleStartPacking(task._id)}
-                                title="Start Packing"
-                                className="text-purple-600"
+                                className="h-8 w-8 p-0 text-violet-600"
                               >
                                 <Play className="h-4 w-4" />
                               </Button>
                             )}
-                            
                             {task.status === 'packed' && (
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
+                              <Button
+                                variant="ghost"
+                                size="sm"
                                 onClick={() => navigate(`/pick-packs/${task._id}/pack`)}
-                                title="Pack Items"
-                                className="text-orange-600"
+                                className="h-8 w-8 p-0 text-orange-600"
                               >
                                 <Box className="h-4 w-4" />
                               </Button>
                             )}
-                            
                             {task.status !== 'ready_for_delivery' && task.status !== 'cancelled' && (
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
+                              <Button
+                                variant="ghost"
+                                size="sm"
                                 onClick={() => handleCancel(task._id)}
-                                title="Cancel"
-                                className="text-red-600"
+                                className="h-8 w-8 p-0 text-red-600"
                               >
                                 <XCircle className="h-4 w-4" />
                               </Button>
                             )}
                           </div>
-                        </TableCell>
-                      </TableRow>
+                        </CardContent>
+                      </Card>
                     );
-                  })
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-
-        {/* Pagination */}
-        {!loading && pickPacks.length > 0 && (
-          <div className="mt-4 flex items-center justify-between">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Showing {pickPacks.length} of {pagination.total} tasks
-            </p>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
-                disabled={pagination.page === 1}
-              >
-                Previous
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
-                disabled={pagination.page >= pagination.pages}
-              >
-                Next
-              </Button>
+                  })}
+                </div>
+              )}
             </div>
-          </div>
-        )}
+          </Card>
+
+          {/* Pagination */}
+          {!loading && pickPacks.length > 0 && (
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                Showing {pickPacks.length} of {pagination.total} tasks
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPagination((prev) => ({ ...prev, page: prev.page - 1 }))}
+                  disabled={pagination.page === 1}
+                  className="dark:border-slate-700 dark:text-slate-200"
+                >
+                  Previous
+                </Button>
+                <div className="flex items-center px-3 text-sm font-medium text-slate-600 dark:text-slate-400">
+                  {pagination.page} / {pagination.pages}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPagination((prev) => ({ ...prev, page: prev.page + 1 }))}
+                  disabled={pagination.page >= pagination.pages}
+                  className="dark:border-slate-700 dark:text-slate-200"
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </Layout>
   );

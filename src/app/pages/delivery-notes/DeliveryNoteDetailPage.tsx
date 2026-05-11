@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { deliveryNotesApi, invoicesApi } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
-import { 
+import {
   ArrowLeft,
   Edit,
   Printer,
@@ -16,14 +16,23 @@ import {
   CheckCircle,
   Clock,
   XCircle,
-  Loader2,
-  AlertCircle
+  AlertCircle,
+  BarChart3,
+  FileText,
+  Tag,
+  ArrowRight,
+  RefreshCw,
+  Send,
+  ClipboardList,
+  Hash,
+  Building,
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { Badge } from '@/app/components/ui/badge';
 import { Separator } from '@/app/components/ui/separator';
-import { toast } from "sonner";
+import { Skeleton } from '@/app/components/ui/skeleton';
+import { toast } from 'sonner';
 import { useCurrency } from '@/contexts/CurrencyContext';
 
 // Helper to convert MongoDB Decimal128 to number
@@ -255,25 +264,19 @@ export default function DeliveryNoteDetailPage() {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    const statusConfig: Record<string, { className: string; icon: any }> = {
-      draft: { className: 'bg-gray-100 text-gray-800 dark:bg-slate-700 dark:text-gray-200', icon: Clock },
-      confirmed: { className: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200', icon: CheckCircle },
-      dispatched: { className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200', icon: Truck },
-      delivered: { className: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200', icon: CheckCircle },
-      cancelled: { className: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200', icon: XCircle },
-    };
-    
-    const config = statusConfig[status] || { className: 'bg-gray-100 dark:bg-slate-700 dark:text-gray-200', icon: Clock };
-    const Icon = config.icon;
-    
-    return (
-      <Badge className={config.className}>
-        <Icon className="h-3 w-3 mr-1" />
-        {status.charAt(0).toUpperCase() + status.slice(1)}
-      </Badge>
-    );
+  const STATUS_COLORS: Record<string, string> = {
+    draft: 'bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-950/40 dark:text-slate-300 dark:border-slate-700',
+    confirmed: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-800',
+    dispatched: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-800',
+    delivered: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800',
+    cancelled: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800',
   };
+
+  const getStatusBadge = (status: string) => (
+    <Badge variant="outline" className={`${STATUS_COLORS[status] || 'bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-950/40 dark:text-slate-300 dark:border-slate-700'} capitalize text-xs`}>
+      {status}
+    </Badge>
+  );
 
   const { formatCurrency } = useCurrency();
 
@@ -289,9 +292,14 @@ export default function DeliveryNoteDetailPage() {
   if (loading) {
     return (
       <Layout>
-        <div className="container mx-auto p-6">
-          <div className="flex items-center justify-center h-64">
-            <Loader2 className="h-8 w-8 animate-spin" />
+        <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-[1600px] space-y-6">
+            <Skeleton className="h-40 w-full rounded-xl" />
+            <Skeleton className="h-24 w-full rounded-xl" />
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+              <Skeleton className="h-96 w-full rounded-xl lg:col-span-2" />
+              <Skeleton className="h-96 w-full rounded-xl" />
+            </div>
           </div>
         </div>
       </Layout>
@@ -301,11 +309,11 @@ export default function DeliveryNoteDetailPage() {
   if (!deliveryNote) {
     return (
       <Layout>
-        <div className="container mx-auto p-6">
-          <div className="text-center py-12">
-            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-gray-900">Delivery Note Not Found</h2>
-            <Button onClick={() => navigate('/delivery-notes')} className="mt-4">
+        <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+          <div className="mx-auto flex max-w-[1600px] flex-col items-center justify-center py-24">
+            <AlertCircle className="mb-4 h-12 w-12 text-red-500" />
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Delivery Note Not Found</h2>
+            <Button onClick={() => navigate('/delivery-notes')} className="mt-4 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-500">
               Back to Delivery Notes
             </Button>
           </div>
@@ -316,268 +324,351 @@ export default function DeliveryNoteDetailPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-4 sm:py-6 px-3 sm:px-4">
-        {/* Header */}
-        <div className="mb-4 sm:mb-6 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 min-w-0 flex-1">
-            <Button variant="outline" size="icon" onClick={() => navigate('/delivery-notes')} className="h-8 w-8 flex-shrink-0">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div className="min-w-0 flex items-center gap-2 flex-wrap">
-              <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white truncate">{deliveryNote.referenceNo}</h1>
-              <div className="flex items-center gap-1 sm:gap-2">
-                {getStatusBadge(deliveryNote.status)}
-                <span className="text-gray-500 dark:text-gray-400 hidden sm:inline">•</span>
-                <span className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm">{formatDate(deliveryNote.deliveryDate)}</span>
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-            <Button variant="outline" size="icon" onClick={() => window.print()} className="h-8 w-8">
-              <Printer className="h-4 w-4" />
-            </Button>
-            {deliveryNote.status === 'draft' && (
-              <Button size="icon" onClick={() => navigate(`/delivery-notes/${id}/edit`)} className="h-8 w-8">
-                <Edit className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row flex-wrap gap-2">
-          {deliveryNote.status === 'draft' && (
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2 mb-2 sm:mb-0">
-                <input
-                  type="checkbox"
-                  id="sendEmailDN"
-                  checked={sendEmail}
-                  onChange={(e) => setSendEmail(e.target.checked)}
-                  className="w-4 h-4"
-                />
-                <label htmlFor="sendEmailDN" className="text-sm cursor-pointer">
-                  Send Email
-                </label>
-              </div>
-              <Button size="sm" onClick={handleConfirm} className="bg-blue-600 flex-1 sm:flex-none justify-center">
-                <CheckCircle className="h-4 w-4 mr-1" />
-                <span className="hidden sm:inline">Confirm</span>
-                <span className="sm:hidden">Confirm</span>
-              </Button>
-            </div>
-          )}
-          {deliveryNote.status === 'confirmed' && (
-            <Button size="sm" onClick={handleDispatch} className="bg-yellow-600 flex-1 sm:flex-none justify-center">
-              <Truck className="h-4 w-4 mr-1" />
-              <span className="hidden sm:inline">Dispatch</span>
-              <span className="sm:hidden">Dispatch</span>
-            </Button>
-          )}
-          {deliveryNote.status === 'dispatched' && (
-            <Button size="sm" onClick={handleMarkDelivered} className="bg-green-600 flex-1 sm:flex-none justify-center">
-              <CheckCircle className="h-4 w-4 mr-1" />
-              <span className="hidden sm:inline">Mark Delivered</span>
-              <span className="sm:hidden">Delivered</span>
-            </Button>
-          )}
-          {(deliveryNote.status === 'draft' || deliveryNote.status === 'confirmed') && (
-            <Button size="sm" variant="destructive" onClick={handleCancel} className="flex-1 sm:flex-none justify-center">
-              <XCircle className="h-4 w-4 mr-1" />
-              <span className="hidden sm:inline">Cancel</span>
-              <span className="sm:hidden">Cancel</span>
-            </Button>
-          )}
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Items */}
-            <Card className="dark:bg-slate-800">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white">
-                  <Package className="h-5 w-5" />
-                  Items
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50 dark:bg-slate-700">
-                      <tr>
-                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-600 dark:text-gray-300">Product</th>
-                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-600 dark:text-gray-300">Description</th>
-                        <th className="px-4 py-2 text-right text-sm font-medium text-gray-600 dark:text-gray-300">Qty</th>
-                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-600 dark:text-gray-300">Unit</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200 dark:divide-slate-600">
-                        {(deliveryNote.lines || [])?.map((item: DeliveryNoteItem) => (
-                        <tr key={item._id}>
-                          <td className="px-4 py-3">
-                            <div>
-                              <div className="font-medium dark:text-white">{item.product?.name}</div>
-                              <div className="text-sm text-gray-500 dark:text-gray-400">{item.product?.sku}</div>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{item.description || '-'}</td>
-                          <td className="px-4 py-3 text-right font-medium dark:text-white">{getQty(item)}</td>
-                          <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{item.unit || 'pcs'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+      <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1600px] space-y-6">
+          {/* Hero Header */}
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+            <div className="p-5">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => navigate('/delivery-notes')}
+                    className="h-9 w-9 flex-shrink-0 dark:border-slate-700 dark:text-slate-200"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h1 className="text-2xl font-bold tracking-tight text-slate-950 dark:text-white sm:text-3xl">
+                        {deliveryNote.referenceNo}
+                      </h1>
+                      {getStatusBadge(deliveryNote.status)}
+                    </div>
+                    <p className="mt-1 flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                      <Calendar className="h-4 w-4" />
+                      {formatDate(deliveryNote.deliveryDate)}
+                      <span className="text-slate-300 dark:text-slate-600">|</span>
+                      <Building className="h-4 w-4" />
+                      {deliveryNote.client?.name}
+                    </p>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Notes */}
-            {deliveryNote.notes && (
-              <Card className="dark:bg-slate-800">
-                <CardHeader>
-                  <CardTitle className="dark:text-white">Notes</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-600 dark:text-gray-300 whitespace-pre-wrap">{deliveryNote.notes}</p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Client Info */}
-            <Card className="dark:bg-slate-800">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white">
-                  <User className="h-5 w-5" />
-                  Client
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div>
-                  <div className="font-medium text-lg dark:text-white">{deliveryNote.client?.name}</div>
-                  {deliveryNote.client?.code && (
-                    <div className="text-sm text-gray-500 dark:text-gray-400">Code: {deliveryNote.client.code}</div>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => window.print()} className="gap-2 dark:border-slate-700 dark:text-slate-200">
+                    <Printer className="h-4 w-4" />
+                    Print
+                  </Button>
+                  {deliveryNote.status === 'draft' && (
+                    <Button
+                      size="sm"
+                      onClick={() => navigate(`/delivery-notes/${id}/edit`)}
+                      className="gap-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-500"
+                    >
+                      <Edit className="h-4 w-4" />
+                      Edit
+                    </Button>
                   )}
                 </div>
-                {deliveryNote.client?.contact && (
+              </div>
+
+              {/* Action Banner */}
+              <div className="mt-5 flex flex-wrap gap-2">
+                {deliveryNote.status === 'draft' && (
                   <>
-                    <Separator />
-                    {deliveryNote.client.contact.phone && (
-                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                        <Phone className="h-4 w-4" />
-                        {deliveryNote.client.contact.phone}
-                      </div>
-                    )}
-                    {deliveryNote.client.contact.email && (
-                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                        <Mail className="h-4 w-4" />
-                        {deliveryNote.client.contact.email}
-                      </div>
-                    )}
-                    {deliveryNote.client.contact.address && (
-                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                        <MapPin className="h-4 w-4" />
-                        {deliveryNote.client.contact.address}
-                      </div>
-                    )}
+                    <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
+                      <input
+                        type="checkbox"
+                        checked={sendEmail}
+                        onChange={(e) => setSendEmail(e.target.checked)}
+                        className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 dark:border-slate-600 dark:bg-slate-950"
+                      />
+                      <Send className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                      <span className="text-sm text-slate-700 dark:text-slate-300">Send Email</span>
+                    </label>
+                    <Button size="sm" onClick={handleConfirm} className="gap-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500">
+                      <CheckCircle className="h-4 w-4" />
+                      Confirm
+                    </Button>
                   </>
                 )}
-              </CardContent>
-            </Card>
+                {deliveryNote.status === 'confirmed' && (
+                  <Button size="sm" onClick={handleDispatch} className="gap-2 bg-amber-600 hover:bg-amber-700 dark:bg-amber-600 dark:hover:bg-amber-500">
+                    <Truck className="h-4 w-4" />
+                    Dispatch
+                  </Button>
+                )}
+                {deliveryNote.status === 'dispatched' && (
+                  <Button size="sm" onClick={handleMarkDelivered} className="gap-2 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500">
+                    <CheckCircle className="h-4 w-4" />
+                    Mark Delivered
+                  </Button>
+                )}
+                {(deliveryNote.status === 'draft' || deliveryNote.status === 'confirmed') && (
+                  <Button size="sm" variant="destructive" onClick={handleCancel} className="gap-2">
+                    <XCircle className="h-4 w-4" />
+                    Cancel
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
 
-            {/* Delivery Info */}
-            <Card className="dark:bg-slate-800">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white">
-                  <Truck className="h-5 w-5" />
-                  Delivery Details
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-gray-400" />
-                  <span className="text-sm text-gray-600 dark:text-gray-300">Date:</span>
-                  <span className="font-medium dark:text-white">{formatDate(deliveryNote.deliveryDate)}</span>
-                </div>
-                {deliveryNote.carrier && (
-                  <div className="flex items-center gap-2">
-                    <Truck className="h-4 w-4 text-gray-400" />
-                    <span className="text-sm text-gray-600 dark:text-gray-300">Carrier:</span>
-                    <span className="font-medium dark:text-white">{deliveryNote.carrier}</span>
-                  </div>
-                )}
-                {deliveryNote.trackingNumber && (
-                  <div className="flex items-center gap-2">
-                    <Package className="h-4 w-4 text-gray-400" />
-                    <span className="text-sm text-gray-600 dark:text-gray-300">Tracking:</span>
-                    <span className="font-medium dark:text-white">{deliveryNote.trackingNumber}</span>
-                  </div>
-                )}
-                {deliveryNote.deliveredBy && (
-                  <div className="flex items-center gap-2">
-                    <User className="h-4 w-4 text-gray-400" />
-                    <span className="text-sm text-gray-600 dark:text-gray-300">Delivered By:</span>
-                    <span className="font-medium dark:text-white">{deliveryNote.deliveredBy}</span>
-                  </div>
-                )}
-                {deliveryNote.vehicle && (
-                  <div className="flex items-center gap-2">
-                    <Truck className="h-4 w-4 text-gray-400" />
-                    <span className="text-sm text-gray-600 dark:text-gray-300">Vehicle:</span>
-                    <span className="font-medium dark:text-white">{deliveryNote.vehicle}</span>
-                  </div>
-                )}
-                {deliveryNote.deliveryAddress && (
+          {/* Status Workflow Timeline */}
+          <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+            <div className="flex min-w-[600px] items-center justify-between">
+              {[
+                { key: 'draft', label: 'Draft', icon: FileText },
+                { key: 'confirmed', label: 'Confirmed', icon: CheckCircle },
+                { key: 'dispatched', label: 'Dispatched', icon: Truck },
+                { key: 'delivered', label: 'Delivered', icon: Package },
+              ].map((step, i, arr) => {
+                const isActive =
+                  ['draft', 'confirmed', 'dispatched', 'delivered'].indexOf(deliveryNote.status) >=
+                  i;
+                const isCancelled = deliveryNote.status === 'cancelled';
+                const isLast = i === arr.length - 1;
+                return (
                   <>
-                    <Separator />
-                    <div>
-                      <div className="text-sm text-gray-600 dark:text-gray-300 mb-1">Delivery Address:</div>
-                      <div className="text-sm dark:text-gray-300">{deliveryNote.deliveryAddress}</div>
+                    <div className="flex flex-col items-center gap-2">
+                      <div
+                        className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold ring-2 ${
+                          isCancelled
+                            ? 'bg-red-100 text-red-700 ring-red-200 dark:bg-red-950/40 dark:text-red-400 dark:ring-red-900'
+                            : isActive
+                            ? 'bg-indigo-600 text-white ring-indigo-200 dark:bg-indigo-500 dark:ring-indigo-900'
+                            : 'bg-slate-100 text-slate-500 ring-slate-200 dark:bg-slate-800 dark:text-slate-500 dark:ring-slate-700'
+                        }`}
+                      >
+                        <step.icon className="h-4 w-4" />
+                      </div>
+                      <span
+                        className={`text-xs font-medium uppercase tracking-wide ${
+                          isActive && !isCancelled
+                            ? 'text-indigo-700 dark:text-indigo-400'
+                            : isCancelled
+                            ? 'text-red-600 dark:text-red-400'
+                            : 'text-slate-500 dark:text-slate-400'
+                        }`}
+                      >
+                        {step.label}
+                      </span>
                     </div>
+                    {!isLast && (
+                      <ArrowRight
+                        className={`h-4 w-4 ${
+                          isActive && !isCancelled
+                            ? 'text-indigo-400 dark:text-indigo-600'
+                            : 'text-slate-300 dark:text-slate-600'
+                        }`}
+                      />
+                    )}
                   </>
-                )}
-              </CardContent>
-            </Card>
+                );
+              })}
+            </div>
+          </div>
 
-            {/* Summary */}
-            <Card className="dark:bg-slate-800">
-              <CardHeader>
-                <CardTitle className="dark:text-white">Summary</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {(deliveryNote.quotation || deliveryNote.salesOrder?.quotation) && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600 dark:text-gray-300">Quotation:</span>
-                    <span className="font-medium dark:text-white">
-                      {deliveryNote.quotation?.referenceNo || deliveryNote.salesOrder?.quotation?.referenceNo}
-                    </span>
+          {/* Content Grid */}
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            {/* Main Content */}
+            <div className="space-y-6 lg:col-span-2">
+              {/* Items Table */}
+              <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="border-b border-slate-100 bg-slate-50/50 px-5 py-4 dark:border-slate-800 dark:bg-slate-900/50">
+                  <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-white">
+                    <Package className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                    Items
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-slate-50/70 dark:bg-slate-900/50">
+                        <tr>
+                          <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Product</th>
+                          <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Description</th>
+                          <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Qty</th>
+                          <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Unit</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                        {(deliveryNote.lines || [])?.map((item: DeliveryNoteItem) => (
+                          <tr key={item._id} className="transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-900/30">
+                            <td className="px-5 py-3">
+                              <div>
+                                <div className="font-medium text-slate-900 dark:text-white">{item.product?.name}</div>
+                                <div className="text-xs text-slate-500 dark:text-slate-400">{item.product?.sku}</div>
+                              </div>
+                            </td>
+                            <td className="px-5 py-3 text-sm text-slate-600 dark:text-slate-300">{item.description || '—'}</td>
+                            <td className="px-5 py-3 text-right text-sm font-semibold text-slate-900 dark:text-white">{getQty(item)}</td>
+                            <td className="px-5 py-3 text-sm text-slate-600 dark:text-slate-300">{item.unit || 'pcs'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
-                )}
-                {deliveryNote.salesOrder && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600 dark:text-gray-300">Sales Order:</span>
-                    <span className="font-medium dark:text-white">{deliveryNote.salesOrder.referenceNo}</span>
+                </CardContent>
+              </Card>
+
+              {/* Notes */}
+              {deliveryNote.notes && (
+                <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardHeader className="border-b border-slate-100 bg-slate-50/50 px-5 py-4 dark:border-slate-800 dark:bg-slate-900/50">
+                    <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-white">
+                      <FileText className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                      Notes
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-5">
+                    <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-700 dark:text-slate-300">{deliveryNote.notes}</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            {/* Sidebar */}
+            <div className="space-y-6">
+              {/* Client Info */}
+              <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="border-b border-slate-100 bg-slate-50/50 px-5 py-4 dark:border-slate-800 dark:bg-slate-900/50">
+                  <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-white">
+                    <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                    Client
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 p-5">
+                  <div>
+                    <div className="text-sm font-semibold text-slate-900 dark:text-white">{deliveryNote.client?.name}</div>
+                    {deliveryNote.client?.code && (
+                      <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">Code: {deliveryNote.client.code}</div>
+                    )}
                   </div>
-                )}
-                <Separator />
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600 dark:text-gray-300">Items:</span>
-                  <span className="font-medium dark:text-white">{deliveryNote.items?.length || 0}</span>
-                </div>
-                <div className="flex justify-between text-lg font-bold">
-                  <span className="dark:text-white">Total:</span>
-                  <span className="dark:text-white">{formatCurrency(deliveryNote.grandTotal)}</span>
-                </div>
-                <Separator />
-                <div className="text-xs text-gray-500 dark:text-gray-400">
-                  <div>Created: {formatDate(deliveryNote.createdAt)}</div>
-                  <div>Updated: {formatDate(deliveryNote.updatedAt)}</div>
-                </div>
-              </CardContent>
-            </Card>
+                  {deliveryNote.client?.contact && (
+                    <>
+                      <Separator className="dark:bg-slate-800" />
+                      {deliveryNote.client.contact.phone && (
+                        <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+                          <Phone className="h-4 w-4 text-slate-400" />
+                          {deliveryNote.client.contact.phone}
+                        </div>
+                      )}
+                      {deliveryNote.client.contact.email && (
+                        <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+                          <Mail className="h-4 w-4 text-slate-400" />
+                          {deliveryNote.client.contact.email}
+                        </div>
+                      )}
+                      {deliveryNote.client.contact.address && (
+                        <div className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-300">
+                          <MapPin className="mt-0.5 h-4 w-4 text-slate-400" />
+                          {deliveryNote.client.contact.address}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Delivery Details */}
+              <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="border-b border-slate-100 bg-slate-50/50 px-5 py-4 dark:border-slate-800 dark:bg-slate-900/50">
+                  <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-white">
+                    <Truck className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                    Delivery Details
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 p-5">
+                  <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+                    <Calendar className="h-4 w-4 text-slate-400" />
+                    <span className="text-slate-500 dark:text-slate-400">Date:</span>
+                    <span className="font-medium text-slate-900 dark:text-white">{formatDate(deliveryNote.deliveryDate)}</span>
+                  </div>
+                  {deliveryNote.carrier && (
+                    <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+                      <Truck className="h-4 w-4 text-slate-400" />
+                      <span className="text-slate-500 dark:text-slate-400">Carrier:</span>
+                      <span className="font-medium text-slate-900 dark:text-white">{deliveryNote.carrier}</span>
+                    </div>
+                  )}
+                  {deliveryNote.trackingNumber && (
+                    <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+                      <Tag className="h-4 w-4 text-slate-400" />
+                      <span className="text-slate-500 dark:text-slate-400">Tracking:</span>
+                      <span className="font-medium text-slate-900 dark:text-white">{deliveryNote.trackingNumber}</span>
+                    </div>
+                  )}
+                  {deliveryNote.deliveredBy && (
+                    <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+                      <User className="h-4 w-4 text-slate-400" />
+                      <span className="text-slate-500 dark:text-slate-400">Delivered By:</span>
+                      <span className="font-medium text-slate-900 dark:text-white">{deliveryNote.deliveredBy}</span>
+                    </div>
+                  )}
+                  {deliveryNote.vehicle && (
+                    <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+                      <Truck className="h-4 w-4 text-slate-400" />
+                      <span className="text-slate-500 dark:text-slate-400">Vehicle:</span>
+                      <span className="font-medium text-slate-900 dark:text-white">{deliveryNote.vehicle}</span>
+                    </div>
+                  )}
+                  {deliveryNote.deliveryAddress && (
+                    <>
+                      <Separator className="dark:bg-slate-800" />
+                      <div className="text-sm text-slate-600 dark:text-slate-300">
+                        <div className="mb-1 flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                          <MapPin className="h-3 w-3" />
+                          Delivery Address
+                        </div>
+                        <p className="leading-relaxed text-slate-800 dark:text-slate-200">{deliveryNote.deliveryAddress}</p>
+                      </div>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Summary Card */}
+              <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="border-b border-slate-100 bg-slate-50/50 px-5 py-4 dark:border-slate-800 dark:bg-slate-900/50">
+                  <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-white">
+                    <BarChart3 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                    Summary
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 p-5">
+                  {(deliveryNote.quotation || deliveryNote.salesOrder?.quotation) && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-slate-500 dark:text-slate-400">Quotation:</span>
+                      <span className="font-medium text-slate-900 dark:text-white">
+                        {deliveryNote.quotation?.referenceNo || deliveryNote.salesOrder?.quotation?.referenceNo}
+                      </span>
+                    </div>
+                  )}
+                  {deliveryNote.salesOrder && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-slate-500 dark:text-slate-400">Sales Order:</span>
+                      <span className="font-medium text-slate-900 dark:text-white">{deliveryNote.salesOrder.referenceNo}</span>
+                    </div>
+                  )}
+                  <Separator className="dark:bg-slate-800" />
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-500 dark:text-slate-400">Items:</span>
+                    <span className="font-medium text-slate-900 dark:text-white">{(deliveryNote.lines || []).length || 0}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xl font-bold text-slate-900 dark:text-white">
+                    <span>Total</span>
+                    <span>{formatCurrency(toNumber(deliveryNote.grandTotal))}</span>
+                  </div>
+                  <Separator className="dark:bg-slate-800" />
+                  <div className="space-y-1 text-xs text-slate-500 dark:text-slate-400">
+                    <div>Created: {formatDate(deliveryNote.createdAt)}</div>
+                    <div>Updated: {formatDate(deliveryNote.updatedAt)}</div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
       </div>

@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { quotationsApi, clientsApi } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
-import { 
-  Plus, 
+import {
+  Plus,
   Search,
   Eye,
   Pencil,
@@ -14,17 +14,26 @@ import {
   Loader2,
   ChevronLeft,
   ChevronRight,
-  ArrowRight
+  ArrowRight,
+  RefreshCw,
+  TrendingUp,
+  BarChart3,
+  Layers,
+  Filter,
+  Receipt,
+  CalendarDays,
+  User,
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import { Card, CardContent } from '@/app/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@/app/components/ui/table';
 import {
   Select,
@@ -34,6 +43,7 @@ import {
   SelectValue,
 } from '@/app/components/ui/select';
 import { Badge } from '@/app/components/ui/badge';
+import { Skeleton } from '@/app/components/ui/skeleton';
 import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/app/components/ui/dialog';
 import { Label } from '@/app/components/ui/label';
@@ -212,8 +222,15 @@ export default function QuotationsListPage() {
     }
   };
 
-  const formatCurrency = (amount: number, currency: string = 'USD') => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount);
+  const toNumber = (val: any): number => {
+    if (typeof val === 'number') return val;
+    if (val && typeof val === 'object' && '$numberDecimal' in val) return parseFloat(val.$numberDecimal);
+    return parseFloat(String(val)) || 0;
+  };
+
+  const formatCurrency = (amount: any, currency: string = 'USD') => {
+    const value = toNumber(amount);
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(value);
   };
 
   const formatDate = (dateStr: string) => {
@@ -221,292 +238,503 @@ export default function QuotationsListPage() {
     return new Date(dateStr).toLocaleDateString();
   };
 
-  const getStatusBadge = (status: string) => {
-    const statusConfig: Record<string, { variant: 'default' | 'secondary' | 'outline' | 'destructive' | 'success'; label: string }> = {
-      draft: { variant: 'secondary', label: t('quotation.status.draft', 'Draft') },
-      sent: { variant: 'default', label: t('quotation.status.sent', 'Sent') },
-      accepted: { variant: 'success', label: t('quotation.status.accepted', 'Accepted') },
-      rejected: { variant: 'destructive', label: t('quotation.status.rejected', 'Rejected') },
-      expired: { variant: 'outline', label: t('quotation.status.expired', 'Expired') },
-      converted: { variant: 'success', label: t('quotation.status.converted', 'Converted') },
-    };
-    
-    const config = statusConfig[status] || { variant: 'outline', label: status };
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+  const totalValue = quotations.reduce((sum, q) => sum + toNumber(q.totalAmount), 0);
+  const draftCount = quotations.filter((q) => q.status === 'draft').length;
+  const sentCount = quotations.filter((q) => q.status === 'sent').length;
+  const acceptedCount = quotations.filter((q) => q.status === 'accepted').length;
+
+  const STATUS_COLORS: Record<string, string> = {
+    draft: 'bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-950/40 dark:text-slate-300 dark:border-slate-700',
+    sent: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-800',
+    accepted: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800',
+    rejected: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800',
+    expired: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-800',
+    converted: 'bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950/30 dark:text-violet-400 dark:border-violet-800',
   };
 
   return (
     <Layout>
-      <div className="container mx-auto py-6 min-h-screen bg-slate-50 dark:bg-slate-900">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t('quotation.title', 'Quotations')}</h1>
-            <p className="text-muted-foreground dark:text-slate-400">{t('quotation.description', 'Manage quotations')}</p>
-          </div>
-          <Button onClick={() => navigate('/quotations/new')}>
-            <Plus className="mr-2 h-4 w-4" />
-            {t('quotation.newQuotation', 'New Quotation')}
-          </Button>
-        </div>
-
-        {/* Filters */}
-        <div className="bg-card dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            <div>
-              <label className="text-sm font-medium mb-1 block text-slate-900 dark:text-white">{t('quotation.statusLabel', 'Status')}</label>
-              <Select value={statusFilter || 'all'} onValueChange={(value) => { setStatusFilter(value === 'all' ? '' : value); setPage(1); }}>
-                <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600">
-                  <SelectValue placeholder={t('quotation.allStatuses', 'All Statuses')} />
-                </SelectTrigger>
-                <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
-                  <SelectItem value="all" className="dark:text-slate-200">{t('quotation.allStatuses', 'All Statuses')}</SelectItem>
-                  <SelectItem value="draft" className="dark:text-slate-200">{t('quotation.status.draft', 'Draft')}</SelectItem>
-                  <SelectItem value="sent" className="dark:text-slate-200">{t('quotation.status.sent', 'Sent')}</SelectItem>
-                  <SelectItem value="accepted" className="dark:text-slate-200">{t('quotation.status.accepted', 'Accepted')}</SelectItem>
-                  <SelectItem value="rejected" className="dark:text-slate-200">{t('quotation.status.rejected', 'Rejected')}</SelectItem>
-                  <SelectItem value="expired" className="dark:text-slate-200">{t('quotation.status.expired', 'Expired')}</SelectItem>
-                  <SelectItem value="converted" className="dark:text-slate-200">{t('quotation.status.converted', 'Converted')}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-1 block text-slate-900 dark:text-white">{t('quotation.client', 'Client')}</label>
-              <Select value={clientFilter || 'all'} onValueChange={(value) => { setClientFilter(value === 'all' ? '' : value); setPage(1); }}>
-                <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600">
-                  <SelectValue placeholder={t('quotation.allClients', 'All Clients')} />
-                </SelectTrigger>
-                <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
-                  <SelectItem value="all" className="dark:text-slate-200">{t('quotation.allClients', 'All Clients')}</SelectItem>
-                  {clients.map((client) => (
-                    <SelectItem key={client._id} value={client._id} className="dark:text-slate-200">
-                      {client.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-1 block text-slate-900 dark:text-white">{t('quotation.dateFrom', 'Date From')}</label>
-              <Input 
-                type="date" 
-                value={dateFrom}
-                onChange={(e) => { setDateFrom(e.target.value); setPage(1); }}
-                className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-1 block text-slate-900 dark:text-white">{t('quotation.dateTo', 'Date To')}</label>
-              <Input 
-                type="date" 
-                value={dateTo}
-                onChange={(e) => { setDateTo(e.target.value); setPage(1); }}
-                className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-1 block text-slate-900 dark:text-white">{t('quotation.search', 'Search')}</label>
-              <form onSubmit={handleSearch}>
-                <div className="flex gap-2">
-                  <Input 
-                    placeholder={t('quotation.searchPlaceholder', 'Search...')}
-                    value={searchInput}
-                    onChange={(e) => setSearchInput(e.target.value)}
-                    className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
-                  />
-                  <Button type="submit" variant="secondary" size="sm">
-                    <Search className="h-4 w-4" />
+      <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1600px] space-y-6">
+          {/* Hero Header */}
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+            <div className="grid gap-5 p-5 xl:grid-cols-[1fr_420px] xl:items-stretch">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="rounded-lg bg-amber-50 p-2.5 text-amber-700 ring-1 ring-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/60">
+                    <Receipt className="h-5 w-5" />
+                  </div>
+                  <h1 className="text-2xl font-bold tracking-tight text-slate-950 dark:text-white sm:text-3xl">
+                    {t('quotation.title', 'Quotations')}
+                  </h1>
+                </div>
+                <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+                  {t('quotation.description', 'Manage quotations from draft through to invoice conversion.')}
+                </p>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <Badge variant="secondary" className="dark:bg-slate-800 dark:text-slate-300">
+                    <BarChart3 className="mr-1 h-3 w-3" />
+                    {pagination?.total || quotations.length} total
+                  </Badge>
+                  <Badge variant="secondary" className="dark:bg-slate-800 dark:text-slate-300">
+                    <TrendingUp className="mr-1 h-3 w-3" />
+                    {acceptedCount} accepted
+                  </Badge>
+                  <Badge variant="secondary" className="dark:bg-slate-800 dark:text-slate-300">
+                    <CalendarDays className="mr-1 h-3 w-3" />
+                    {sentCount} sent
+                  </Badge>
+                </div>
+                <div className="mt-5 flex flex-wrap gap-2">
+                  <Button
+                    onClick={() => navigate('/quotations/new')}
+                    className="h-10 gap-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-500"
+                  >
+                    <Plus className="h-4 w-4" />
+                    {t('quotation.newQuotation', 'New Quotation')}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={fetchQuotations}
+                    className="h-10 gap-2 dark:border-slate-700 dark:text-slate-200"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                    Refresh
                   </Button>
                 </div>
-              </form>
+              </div>
+              <div className="grid grid-cols-2 gap-3 rounded-lg border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-950/40">
+                <div className="rounded-lg bg-white p-3 shadow-sm dark:bg-slate-900">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Total Quotes</p>
+                  <p className="mt-1 text-lg font-bold text-slate-950 dark:text-white">{quotations.length}</p>
+                </div>
+                <div className="rounded-lg bg-white p-3 shadow-sm dark:bg-slate-900">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Total Value</p>
+                  <p className="mt-1 text-lg font-bold text-slate-950 dark:text-white">{formatCurrency(totalValue, 'USD')}</p>
+                </div>
+                <div className="rounded-lg bg-white p-3 shadow-sm dark:bg-slate-900">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Draft</p>
+                  <p className="mt-1 text-lg font-bold text-amber-600 dark:text-amber-400">{draftCount}</p>
+                </div>
+                <div className="rounded-lg bg-white p-3 shadow-sm dark:bg-slate-900">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Accepted</p>
+                  <p className="mt-1 text-lg font-bold text-emerald-600 dark:text-emerald-400">{acceptedCount}</p>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Table */}
-        <div className="bg-card dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
-          {loading ? (
-            <div className="flex items-center justify-center p-8">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground dark:text-slate-400" />
+          {/* Status Pipeline */}
+          <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+            <div className="flex min-w-[500px] items-center justify-between gap-2">
+              {['draft', 'sent', 'accepted', 'rejected', 'expired', 'converted'].map((s, i, arr) => {
+                const count = quotations.filter((q) => q.status === s).length;
+                const isLast = i === arr.length - 1;
+                return (
+                  <div key={s} className="flex items-center gap-2">
+                    <div className="flex flex-col items-center gap-1.5">
+                      <div className={`flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold ring-2 ${
+                        count > 0
+                          ? 'bg-indigo-50 text-indigo-700 ring-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:ring-indigo-800'
+                          : 'bg-slate-50 text-slate-400 ring-slate-200 dark:bg-slate-900 dark:text-slate-500 dark:ring-slate-700'
+                      }`}>
+                        {count}
+                      </div>
+                      <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{s}</span>
+                    </div>
+                    {!isLast && <ArrowRight className="h-3.5 w-3.5 text-slate-300 dark:text-slate-600" />}
+                  </div>
+                );
+              })}
             </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow className="dark:bg-slate-700">
-                  <TableHead className="dark:text-white">{t('quotation.reference', 'Reference')}</TableHead>
-                  <TableHead className="dark:text-white">{t('quotation.client', 'Client')}</TableHead>
-                  <TableHead className="dark:text-white">{t('quotation.date', 'Date')}</TableHead>
-                  <TableHead className="dark:text-white">{t('quotation.expiryDate', 'Expiry Date')}</TableHead>
-                  <TableHead className="dark:text-white">{t('quotation.statusLabel', 'Status')}</TableHead>
-                  <TableHead className="text-right dark:text-white">{t('quotation.total', 'Total')}</TableHead>
-                  <TableHead className="dark:text-white">{t('quotation.convertedTo', 'Converted To')}</TableHead>
-                  <TableHead className="text-right dark:text-white">{t('common.actions', 'Actions')}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {quotations.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground dark:text-slate-400">
-                      {t('quotation.noQuotations', 'No quotations found')}
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  quotations.map((quotation) => (
-                    <TableRow key={quotation._id} className="dark:hover:bg-slate-700/50">
-                      <TableCell className="font-medium dark:text-slate-200">
-                        <FileText className="inline-block mr-2 h-4 w-4" />
-                        {quotation.referenceNo || 'N/A'}
-                      </TableCell>
-                      <TableCell className="dark:text-slate-300">{quotation.client?.name || '-'}</TableCell>
-                      <TableCell className="dark:text-slate-300">{formatDate(quotation.quotationDate)}</TableCell>
-                      <TableCell className="dark:text-slate-300">{formatDate(quotation.expiryDate)}</TableCell>
-                      <TableCell>{getStatusBadge(quotation.status)}</TableCell>
-                       <TableCell className="text-right font-medium dark:text-slate-200">
-                         {formatCurrency(quotation.totalAmount, quotation.currency)}
-                       </TableCell>
-                      <TableCell>
-                        {quotation.convertedToInvoice ? (
-                          <Button
-                            variant="link"
-                            size="sm"
-                            className="text-green-600 dark:text-green-400 p-0 h-auto"
-                            onClick={() => navigate(`/invoices/${quotation.convertedToInvoice}`)}
-                          >
-                            <FileText className="h-3 w-3 mr-1" />
-                            View Invoice
-                          </Button>
-                        ) : (
-                          '-'
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => navigate(`/quotations/${quotation._id}?view=true`)}
-                            title={t('common.view', 'View')}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          {quotation.status === 'draft' && (
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => navigate(`/quotations/${quotation._id}/edit`)}
-                              title={t('common.edit', 'Edit')}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                          )}
-                          {quotation.status === 'draft' && (
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => handleActionWithEmail('send', quotation._id)}
-                              title={t('quotation.send', 'Send')}
-                            >
-                              <Send className="h-4 w-4" />
-                            </Button>
-                          )}
-                          {quotation.status === 'sent' && (
-                            <>
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                onClick={() => handleActionWithEmail('accept', quotation._id)}
-                                title={t('quotation.accept', 'Accept')}
-                              >
-                                <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                onClick={() => handleActionWithEmail('reject', quotation._id)}
-                                title={t('quotation.reject', 'Reject')}
-                              >
-                                <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
-                              </Button>
-                            </>
-                          )}
-                          {(quotation.status === 'accepted' || quotation.status === 'sent') && !quotation.convertedToInvoice && (
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => handleConvert(quotation._id)}
-                              title={t('quotation.convertToInvoice', 'Convert to Invoice')}
-                            >
-                              <ArrowRight className="h-4 w-4" />
-                            </Button>
-                          )}
+          </div>
+
+          {/* Metric Tiles */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {loading ? (
+              <>
+                {[...Array(4)].map((_, i) => (
+                  <Card key={i} className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                    <CardContent className="p-5">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0 space-y-2">
+                          <Skeleton className="h-3 w-28" />
+                          <Skeleton className="h-8 w-32" />
                         </div>
-                      </TableCell>
+                        <Skeleton className="h-10 w-10 rounded-lg" />
+                      </div>
+                      <Skeleton className="mt-3 h-3 w-36" />
+                    </CardContent>
+                  </Card>
+                ))}
+              </>
+            ) : (
+              <>
+                <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardContent className="p-5">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Total Quotes</p>
+                        <p className="mt-3 text-2xl font-bold text-slate-950 dark:text-white">{quotations.length}</p>
+                      </div>
+                      <div className="rounded-lg bg-blue-50 p-2.5 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60">
+                        <Layers className="h-5 w-5" />
+                      </div>
+                    </div>
+                    <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">{pagination?.total || quotations.length} across all pages</p>
+                  </CardContent>
+                </Card>
+                <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardContent className="p-5">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Total Value</p>
+                        <p className="mt-3 truncate text-2xl font-bold text-slate-950 dark:text-white">{formatCurrency(totalValue, 'USD')}</p>
+                      </div>
+                      <div className="rounded-lg bg-emerald-50 p-2.5 text-emerald-700 ring-1 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60">
+                        <TrendingUp className="h-5 w-5" />
+                      </div>
+                    </div>
+                    <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">Combined quotation value</p>
+                  </CardContent>
+                </Card>
+                <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardContent className="p-5">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Sent</p>
+                        <p className="mt-3 text-2xl font-bold text-blue-600 dark:text-blue-400">{sentCount}</p>
+                      </div>
+                      <div className="rounded-lg bg-blue-50 p-2.5 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60">
+                        <Send className="h-5 w-5" />
+                      </div>
+                    </div>
+                    <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">Awaiting client response</p>
+                  </CardContent>
+                </Card>
+                <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardContent className="p-5">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Draft</p>
+                        <p className="mt-3 text-2xl font-bold text-amber-600 dark:text-amber-400">{draftCount}</p>
+                      </div>
+                      <div className="rounded-lg bg-amber-50 p-2.5 text-amber-700 ring-1 ring-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/60">
+                        <FileText className="h-5 w-5" />
+                      </div>
+                    </div>
+                    <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">Pending send to client</p>
+                  </CardContent>
+                </Card>
+              </>
+            )}
+          </div>
+
+          {/* Filters */}
+          <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <CardContent className="p-5">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
+                <div>
+                  <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('quotation.statusLabel', 'Status')}</label>
+                  <Select value={statusFilter || 'all'} onValueChange={(value) => { setStatusFilter(value === 'all' ? '' : value); setPage(1); }}>
+                    <SelectTrigger className="h-10 bg-white text-slate-900 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-white dark:ring-slate-700">
+                      <Filter className="mr-2 h-4 w-4 text-slate-500" />
+                      <SelectValue placeholder={t('quotation.allStatuses', 'All Statuses')} />
+                    </SelectTrigger>
+                    <SelectContent className="dark:bg-slate-900 dark:text-slate-200 dark:ring-slate-700">
+                      <SelectItem value="all" className="dark:focus:bg-slate-800 dark:focus:text-white">{t('quotation.allStatuses', 'All Statuses')}</SelectItem>
+                      <SelectItem value="draft" className="dark:focus:bg-slate-800 dark:focus:text-white">{t('quotation.status.draft', 'Draft')}</SelectItem>
+                      <SelectItem value="sent" className="dark:focus:bg-slate-800 dark:focus:text-white">{t('quotation.status.sent', 'Sent')}</SelectItem>
+                      <SelectItem value="accepted" className="dark:focus:bg-slate-800 dark:focus:text-white">{t('quotation.status.accepted', 'Accepted')}</SelectItem>
+                      <SelectItem value="rejected" className="dark:focus:bg-slate-800 dark:focus:text-white">{t('quotation.status.rejected', 'Rejected')}</SelectItem>
+                      <SelectItem value="expired" className="dark:focus:bg-slate-800 dark:focus:text-white">{t('quotation.status.expired', 'Expired')}</SelectItem>
+                      <SelectItem value="converted" className="dark:focus:bg-slate-800 dark:focus:text-white">{t('quotation.status.converted', 'Converted')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('quotation.client', 'Client')}</label>
+                  <Select value={clientFilter || 'all'} onValueChange={(value) => { setClientFilter(value === 'all' ? '' : value); setPage(1); }}>
+                    <SelectTrigger className="h-10 bg-white text-slate-900 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-white dark:ring-slate-700">
+                      <User className="mr-2 h-4 w-4 text-slate-500" />
+                      <SelectValue placeholder={t('quotation.allClients', 'All Clients')} />
+                    </SelectTrigger>
+                    <SelectContent className="dark:bg-slate-900 dark:text-slate-200 dark:ring-slate-700">
+                      <SelectItem value="all" className="dark:focus:bg-slate-800 dark:focus:text-white">{t('quotation.allClients', 'All Clients')}</SelectItem>
+                      {clients.map((client) => (
+                        <SelectItem key={client._id} value={client._id} className="dark:focus:bg-slate-800 dark:focus:text-white">
+                          {client.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('quotation.dateFrom', 'Date From')}</label>
+                  <Input
+                    type="date"
+                    value={dateFrom}
+                    onChange={(e) => { setDateFrom(e.target.value); setPage(1); }}
+                    className="h-10 bg-white text-slate-900 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-white dark:ring-slate-700"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('quotation.dateTo', 'Date To')}</label>
+                  <Input
+                    type="date"
+                    value={dateTo}
+                    onChange={(e) => { setDateTo(e.target.value); setPage(1); }}
+                    className="h-10 bg-white text-slate-900 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-white dark:ring-slate-700"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('quotation.search', 'Search')}</label>
+                  <form onSubmit={handleSearch}>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder={t('quotation.searchPlaceholder', 'Search...')}
+                        value={searchInput}
+                        onChange={(e) => setSearchInput(e.target.value)}
+                        className="h-10 bg-white text-slate-900 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-white dark:ring-slate-700"
+                      />
+                      <Button type="submit" variant="secondary" size="sm" className="h-10 px-3">
+                        <Search className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Table */}
+          <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-slate-50/70 hover:bg-slate-50/70 dark:bg-slate-900/50 dark:hover:bg-slate-900/50">
+                      <TableHead className="text-slate-600 dark:text-slate-400">{t('quotation.reference', 'Reference')}</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400">{t('quotation.client', 'Client')}</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400">{t('quotation.date', 'Date')}</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400">{t('quotation.expiryDate', 'Expiry')}</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400">{t('quotation.statusLabel', 'Status')}</TableHead>
+                      <TableHead className="text-right text-slate-600 dark:text-slate-400">{t('quotation.total', 'Total')}</TableHead>
+                      <TableHead className="text-slate-600 dark:text-slate-400">{t('quotation.convertedTo', 'Converted')}</TableHead>
+                      <TableHead className="text-right text-slate-600 dark:text-slate-400">{t('common.actions', 'Actions')}</TableHead>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          )}
-        </div>
+                  </TableHeader>
+                  <TableBody>
+                    {loading ? (
+                      <>
+                        {[...Array(5)].map((_, i) => (
+                          <TableRow key={i} className="dark:border-slate-800">
+                            <TableCell colSpan={8}>
+                              <div className="flex items-center gap-4 py-2">
+                                <Skeleton className="h-8 w-8 rounded-lg" />
+                                <div className="flex-1 space-y-2">
+                                  <Skeleton className="h-3 w-32" />
+                                  <Skeleton className="h-3 w-20" />
+                                </div>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </>
+                    ) : quotations.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={8}>
+                          <div className="flex min-h-[140px] flex-col items-center justify-center text-slate-500 dark:text-slate-400">
+                            <Receipt className="mb-2 h-10 w-10 opacity-40" />
+                            <p className="text-sm font-medium">{t('quotation.noQuotations', 'No quotations found')}</p>
+                            <p className="text-xs">Try adjusting your filters or create a new quotation.</p>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      quotations.map((quotation) => (
+                        <TableRow key={quotation._id} className="group transition-colors hover:bg-slate-50/50 dark:border-slate-800 dark:hover:bg-slate-900/30">
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-700 ring-1 ring-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/60">
+                                <FileText className="h-4 w-4" />
+                              </div>
+                              <span className="font-semibold text-slate-950 dark:text-white">{quotation.referenceNo || 'N/A'}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-sm text-slate-700 dark:text-slate-300">{quotation.client?.name || '-'}</TableCell>
+                          <TableCell className="text-sm text-slate-700 dark:text-slate-300">{formatDate(quotation.quotationDate)}</TableCell>
+                          <TableCell className="text-sm text-slate-700 dark:text-slate-300">{formatDate(quotation.expiryDate)}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className={`${STATUS_COLORS[quotation.status]} capitalize text-xs`}>
+                              {quotation.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right text-sm font-semibold text-slate-950 dark:text-white">
+                            {formatCurrency(quotation.totalAmount, quotation.currency)}
+                          </TableCell>
+                          <TableCell>
+                            {quotation.convertedToInvoice ? (
+                              <Button
+                                variant="link"
+                                size="sm"
+                                className="h-auto p-0 text-emerald-600 hover:text-emerald-700 dark:text-emerald-400"
+                                onClick={() => navigate(`/invoices/${quotation.convertedToInvoice}`)}
+                              >
+                                <FileText className="mr-1 h-3 w-3" />
+                                View Invoice
+                              </Button>
+                            ) : (
+                              <span className="text-sm text-slate-400 dark:text-slate-500">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => navigate(`/quotations/${quotation._id}?view=true`)}
+                                title={t('common.view', 'View')}
+                                className="h-8 w-8 p-0 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              {quotation.status === 'draft' && (
+                                <>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => navigate(`/quotations/${quotation._id}/edit`)}
+                                    title={t('common.edit', 'Edit')}
+                                    className="h-8 w-8 p-0 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleActionWithEmail('send', quotation._id)}
+                                    title={t('quotation.send', 'Send')}
+                                    className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                                  >
+                                    <Send className="h-4 w-4" />
+                                  </Button>
+                                </>
+                              )}
+                              {quotation.status === 'sent' && (
+                                <>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleActionWithEmail('accept', quotation._id)}
+                                    title={t('quotation.accept', 'Accept')}
+                                    className="h-8 w-8 p-0 text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
+                                  >
+                                    <CheckCircle className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleActionWithEmail('reject', quotation._id)}
+                                    title={t('quotation.reject', 'Reject')}
+                                    className="h-8 w-8 p-0 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                                  >
+                                    <XCircle className="h-4 w-4" />
+                                  </Button>
+                                </>
+                              )}
+                              {(quotation.status === 'accepted' || quotation.status === 'sent') && !quotation.convertedToInvoice && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleConvert(quotation._id)}
+                                  title={t('quotation.convertToInvoice', 'Convert to Invoice')}
+                                  className="h-8 w-8 p-0 text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
+                                >
+                                  <ArrowRight className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
 
-        {/* Pagination */}
-        {pagination && pagination.totalPages > 1 && (
-          <div className="mt-4 flex justify-center">
-            <div className="flex items-center gap-2">
-              <button
-                className={`flex h-9 w-9 items-center justify-center rounded-md text-sm transition-colors hover:bg-accent hover:text-accent-foreground ${pagination.currentPage === 1 ? 'pointer-events-none opacity-50' : ''}`}
-                onClick={() => setPage(Math.max(1, page - 1))}
-                disabled={pagination.currentPage === 1}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              {Array.from({ length: pagination.totalPages }, (_, i) => (
-                <button
-                  key={i + 1}
-                  className={`flex h-9 w-9 items-center justify-center rounded-md text-sm transition-colors hover:bg-accent hover:text-accent-foreground ${pagination.currentPage === i + 1 ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground' : ''}`}
-                  onClick={() => setPage(i + 1)}
+          {/* Pagination */}
+          {pagination && pagination.totalPages > 1 && (
+            <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                Showing {quotations.length} of {pagination.total} quotations
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(Math.max(1, page - 1))}
+                  disabled={pagination.currentPage === 1}
+                  className="h-9 w-9 p-0 dark:border-slate-700 dark:text-slate-200"
                 >
-                  {i + 1}
-                </button>
-              ))}
-              <button
-                className={`flex h-9 w-9 items-center justify-center rounded-md text-sm transition-colors hover:bg-accent hover:text-accent-foreground ${pagination.currentPage === pagination.totalPages ? 'pointer-events-none opacity-50' : ''}`}
-                onClick={() => setPage(page + 1)}
-                disabled={pagination.currentPage === pagination.totalPages}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                {Array.from({ length: pagination.totalPages }, (_, i) => (
+                  <Button
+                    key={i + 1}
+                    variant={pagination.currentPage === i + 1 ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setPage(i + 1)}
+                    className={`h-9 w-9 p-0 text-sm ${pagination.currentPage === i + 1 ? 'bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-600' : 'dark:border-slate-700 dark:text-slate-200'}`}
+                  >
+                    {i + 1}
+                  </Button>
+                ))}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(page + 1)}
+                  disabled={pagination.currentPage === pagination.totalPages}
+                  className="h-9 w-9 p-0 dark:border-slate-700 dark:text-slate-200"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           )}
         </div>
+      </div>
 
-        <Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Send Email to Customer</DialogTitle>
-            </DialogHeader>
-            <div className="flex items-center gap-2 py-4">
-              <input
-                type="checkbox"
-                id="quotationSendEmail"
-                checked={sendEmail}
-                onChange={(e) => setSendEmail(e.target.checked)}
-                className="w-4 h-4"
-              />
-              <Label htmlFor="quotationSendEmail" className="cursor-pointer">
-                Send quotation details to customer via email
-              </Label>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setEmailDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={executePendingAction}>
-                Confirm
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </Layout>
-    );
-  }
+      <Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
+        <DialogContent className="dark:bg-slate-900 dark:border-slate-800">
+          <DialogHeader>
+            <DialogTitle className="dark:text-white">Send Email to Customer</DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center gap-2 py-4">
+            <input
+              type="checkbox"
+              id="quotationSendEmail"
+              checked={sendEmail}
+              onChange={(e) => setSendEmail(e.target.checked)}
+              className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600 dark:border-slate-700 dark:bg-slate-900"
+            />
+            <Label htmlFor="quotationSendEmail" className="cursor-pointer text-sm text-slate-600 dark:text-slate-300">
+              Send quotation details to customer via email
+            </Label>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEmailDialogOpen(false)} className="dark:border-slate-700 dark:text-slate-200">
+              Cancel
+            </Button>
+            <Button onClick={executePendingAction} className="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-500">
+              Confirm
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Layout>
+  );
+}

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { pickPackApi } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
-import { 
+import {
   ArrowLeft,
   Play,
   CheckCircle,
@@ -12,13 +12,23 @@ import {
   Package,
   User,
   Warehouse,
-  AlertCircle
+  AlertCircle,
+  RefreshCw,
+  Clock,
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { Badge } from '@/app/components/ui/badge';
-import { Progress } from '@/app/components/ui/progress';
-import { toast } from "sonner";
+import { Skeleton } from '@/app/components/ui/skeleton';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/app/components/ui/table';
+import { toast } from 'sonner';
 
 // Helper to convert MongoDB Decimal128 to number
 const toNumber = (value: any): number => {
@@ -86,19 +96,21 @@ interface PickPack {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  draft: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300',
-  picking: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-  picked: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-  packed: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
-  ready_for_delivery: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-  cancelled: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+  draft: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
+  picking: 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300',
+  picked: 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300',
+  packed: 'bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300',
+  ready_for_delivery: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300',
+  cancelled: 'bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300',
+  pending: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
+  issue: 'bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300',
 };
 
 const PRIORITY_COLORS: Record<string, string> = {
-  low: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300',
-  medium: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-  high: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
-  urgent: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+  low: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
+  medium: 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300',
+  high: 'bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300',
+  urgent: 'bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300',
 };
 
 export default function PickPackDetailPage() {
@@ -185,9 +197,49 @@ export default function PickPackDetailPage() {
   if (loading) {
     return (
       <Layout>
-        <div className="container mx-auto p-6">
-          <div className="flex justify-center items-center h-64">
-            <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+        <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-[1200px] space-y-6">
+            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900/70">
+              <div className="flex flex-wrap items-center gap-3">
+                <Skeleton className="h-10 w-10 rounded-lg" />
+                <Skeleton className="h-8 w-48" />
+              </div>
+              <Skeleton className="mt-3 h-4 w-72" />
+            </div>
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+              <div className="lg:col-span-2 space-y-6">
+                <Card className="border-slate-200 dark:border-slate-800 dark:bg-slate-950">
+                  <CardHeader className="space-y-1 pb-2">
+                    <Skeleton className="h-5 w-24" />
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <Skeleton className="h-3 w-full" />
+                    <Skeleton className="h-2.5 w-full rounded-full" />
+                  </CardContent>
+                </Card>
+                <Card className="border-slate-200 dark:border-slate-800 dark:bg-slate-950">
+                  <CardHeader className="space-y-1 pb-2">
+                    <Skeleton className="h-5 w-32" />
+                  </CardHeader>
+                  <CardContent>
+                    <Skeleton className="h-32 w-full" />
+                  </CardContent>
+                </Card>
+              </div>
+              <div className="space-y-6">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Card key={i} className="border-slate-200 dark:border-slate-800 dark:bg-slate-950">
+                    <CardHeader className="space-y-1 pb-2">
+                      <Skeleton className="h-5 w-28" />
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-3/4" />
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </Layout>
@@ -197,13 +249,26 @@ export default function PickPackDetailPage() {
   if (!pickPack) {
     return (
       <Layout>
-        <div className="container mx-auto p-6">
-          <div className="text-center py-12">
-            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-gray-900">Pick Pack Not Found</h2>
-            <Button onClick={() => navigate('/pick-packs')} className="mt-4">
-              Back to Pick Packs
-            </Button>
+        <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-[1200px]">
+            <div className="flex flex-col items-center justify-center py-20">
+              <div className="rounded-full bg-red-50 p-5 dark:bg-red-950/30">
+                <AlertCircle className="h-10 w-10 text-red-500 dark:text-red-400" />
+              </div>
+              <h2 className="mt-4 text-xl font-bold text-slate-900 dark:text-white">
+                Pick Pack Not Found
+              </h2>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                The task you are looking for does not exist.
+              </p>
+              <Button
+                onClick={() => navigate('/pick-packs')}
+                className="mt-5 gap-2 bg-blue-600 hover:bg-blue-700"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to Pick Packs
+              </Button>
+            </div>
           </div>
         </div>
       </Layout>
@@ -216,254 +281,386 @@ export default function PickPackDetailPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto p-3 sm:p-4">
-        {/* Header - All buttons on one line */}
-        <div className="mb-4 flex items-center gap-2">
-          {/* Back Button */}
-          <Button variant="outline" size="sm" onClick={() => navigate('/pick-packs')} className="px-2 flex-shrink-0">
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            <span className="hidden sm:inline">Back</span>
-          </Button>
-          
-          {/* Title */}
-          <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">{pickPack.referenceNo}</h1>
-          
-          {/* Status Badges */}
-          <div className="flex items-center gap-1 flex-shrink-0">
-            <Badge className={`${STATUS_COLORS[pickPack.status]} text-xs px-2 py-1 capitalize`}>
-              {pickPack.status.replace(/_/g, ' ')}
-            </Badge>
-            <Badge className={`${PRIORITY_COLORS[pickPack.priority]} text-xs px-2 py-1 capitalize`}>
-              {pickPack.priority}
-            </Badge>
-          </div>
-          
-          {/* Action Button */}
-          <div className="flex items-center gap-1 ml-auto flex-shrink-0">
-            {pickPack.status === 'draft' && (
-              <Button size="sm" onClick={handleStartPicking}>
-                <Play className="h-4 w-4 mr-1" />
-                <span className="hidden sm:inline">Start Picking</span>
-                <span className="sm:hidden">Start</span>
-              </Button>
-            )}
-            {pickPack.status === 'picking' && (
-              <Button size="sm" onClick={handleCompletePicking}>
-                <CheckCircle className="h-4 w-4 mr-1" />
-                <span className="hidden sm:inline">Complete Picking</span>
-                <span className="sm:hidden">Complete</span>
-              </Button>
-            )}
-            {pickPack.status === 'picked' && (
-              <Button size="sm" onClick={handleStartPacking}>
-                <Play className="h-4 w-4 mr-1" />
-                <span className="hidden sm:inline">Start Packing</span>
-                <span className="sm:hidden">Pack</span>
-              </Button>
-            )}
-            {pickPack.status === 'packed' && (
-              <Button size="sm" onClick={handleCompletePacking}>
-                <Truck className="h-4 w-4 mr-1" />
-                <span className="hidden sm:inline">Complete Packing</span>
-                <span className="sm:hidden">Done</span>
-              </Button>
-            )}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Progress */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Progress</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <span>Picking Progress</span>
-                    <span>{pickedQty} / {totalQty} items</span>
-                  </div>
-                  <Progress value={(pickedQty / totalQty) * 100} />
-                </div>
-                {(pickPack.status === 'packed' || pickPack.status === 'ready_for_delivery') && (
-                  <div>
-                    <div className="flex justify-between mb-2">
-                      <span>Packing Progress</span>
-                      <span>{packedQty} / {totalQty} items</span>
-                    </div>
-                    <Progress value={(packedQty / totalQty) * 100} />
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Line Items */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Items to Process</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="border-b">
-                      <tr>
-                        <th className="text-left py-2 dark:text-gray-200">Product</th>
-                        <th className="text-right py-2 dark:text-gray-200">To Pick</th>
-                        <th className="text-right py-2 dark:text-gray-200">Picked</th>
-                        <th className="text-right py-2 dark:text-gray-200">Packed</th>
-                        <th className="text-center py-2 dark:text-gray-200">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {pickPack.lines.map((line) => (
-                        <tr key={line._id} className="border-b last:border-0 dark:border-gray-700">
-                          <td className="py-3">
-                            <div className="font-medium dark:text-gray-100">{line.product?.name || line.description}</div>
-                            <div className="text-sm text-gray-500 dark:text-gray-400">{line.product?.sku}</div>
-                          </td>
-                          <td className="text-right py-3 dark:text-gray-100">{toNumber(line.qtyToPick)}</td>
-                          <td className="text-right py-3 dark:text-gray-100">{toNumber(line.qtyPicked)}</td>
-                          <td className="text-right py-3 dark:text-gray-100">{toNumber(line.qtyPacked)}</td>
-                          <td className="text-center py-3">
-                            <Badge className="capitalize dark:bg-gray-700 dark:text-gray-200">{line.status}</Badge>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Sales Order</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <Package className="h-5 w-5 text-gray-400 dark:text-gray-500" />
-                  <div>
-                    <p className="font-medium dark:text-gray-100">{pickPack.salesOrder?.referenceNo}</p>
-                    <Button 
-                      variant="link" 
-                      className="p-0 h-auto text-sm"
-                      onClick={() => navigate(`/sales-orders/${pickPack.salesOrder?._id}`)}
-                    >
-                      View Sales Order
+      <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1200px] space-y-6">
+          {/* Hero Header */}
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+            <div className="p-5">
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate('/pick-packs')}
+                  className="h-9 gap-1 dark:border-slate-700 dark:text-slate-200"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  <span className="hidden sm:inline">Back</span>
+                </Button>
+                <h1 className="truncate text-xl font-bold tracking-tight text-slate-950 dark:text-white sm:text-2xl">
+                  {pickPack.referenceNo}
+                </h1>
+                <Badge className={`${STATUS_COLORS[pickPack.status]} capitalize`}>
+                  {pickPack.status.replace(/_/g, ' ')}
+                </Badge>
+                <Badge className={`${PRIORITY_COLORS[pickPack.priority]} capitalize`}>
+                  {pickPack.priority}
+                </Badge>
+                <div className="ml-auto flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={fetchPickPack}
+                    disabled={loading}
+                    className="h-9 gap-2 dark:border-slate-700 dark:text-slate-200"
+                  >
+                    <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                    <span className="hidden sm:inline">Refresh</span>
+                  </Button>
+                  {pickPack.status === 'draft' && (
+                    <Button size="sm" onClick={handleStartPicking} className="h-9 gap-1 bg-blue-600 hover:bg-blue-700">
+                      <Play className="h-4 w-4" />
+                      <span className="hidden sm:inline">Start Picking</span>
                     </Button>
-                  </div>
+                  )}
+                  {pickPack.status === 'picking' && (
+                    <Button size="sm" onClick={handleCompletePicking} className="h-9 gap-1 bg-blue-600 hover:bg-blue-700">
+                      <CheckCircle className="h-4 w-4" />
+                      <span className="hidden sm:inline">Complete Picking</span>
+                    </Button>
+                  )}
+                  {pickPack.status === 'picked' && (
+                    <Button size="sm" onClick={handleStartPacking} className="h-9 gap-1 bg-violet-600 hover:bg-violet-700">
+                      <Play className="h-4 w-4" />
+                      <span className="hidden sm:inline">Start Packing</span>
+                    </Button>
+                  )}
+                  {pickPack.status === 'packed' && (
+                    <Button size="sm" onClick={handleCompletePacking} className="h-9 gap-1 bg-emerald-600 hover:bg-emerald-700">
+                      <Truck className="h-4 w-4" />
+                      <span className="hidden sm:inline">Complete Packing</span>
+                    </Button>
+                  )}
                 </div>
-                <div className="flex items-center gap-3">
-                  <User className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+              </div>
+            </div>
+          </div>
+
+          {/* Status Pipeline */}
+          <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <CardHeader className="space-y-1 pb-2">
+              <div className="flex items-center gap-2">
+                <div className="rounded-lg bg-blue-50 p-1.5 text-blue-600 dark:bg-blue-950/40 dark:text-blue-300">
+                  <Truck className="h-4 w-4" />
+                </div>
+                <CardTitle className="text-base font-semibold text-slate-900 dark:text-white">
+                  Workflow Pipeline
+                </CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-1 overflow-x-auto py-1">
+                {[
+                  { key: 'draft', label: 'Draft', icon: Package },
+                  { key: 'picking', label: 'Picking', icon: Box },
+                  { key: 'picked', label: 'Picked', icon: CheckCircle },
+                  { key: 'packed', label: 'Packed', icon: Box },
+                  { key: 'ready_for_delivery', label: 'Ready', icon: Truck },
+                ].map((step, idx) => {
+                  const currentIndex = ['draft', 'picking', 'picked', 'packed', 'ready_for_delivery'].indexOf(pickPack.status);
+                  const isDone = idx < currentIndex;
+                  const isActive = idx === currentIndex;
+                  const Icon = step.icon;
+                  return (
+                    <div key={step.key} className="flex items-center gap-1">
+                      <div className={`flex flex-col items-center gap-1 rounded-lg border px-2 py-1.5 min-w-[70px] sm:min-w-[90px] ${
+                        isActive
+                          ? 'border-blue-200 bg-blue-50 ring-1 ring-blue-100 dark:border-blue-900/60 dark:bg-blue-950/30 dark:ring-blue-900/60'
+                          : isDone
+                          ? 'border-emerald-200 bg-emerald-50 dark:border-emerald-900/60 dark:bg-emerald-950/30'
+                          : 'border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/50'
+                      }`}>
+                        <Icon className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${
+                          isActive
+                            ? 'text-blue-600 dark:text-blue-300'
+                            : isDone
+                            ? 'text-emerald-600 dark:text-emerald-300'
+                            : 'text-slate-400 dark:text-slate-500'
+                        }`} />
+                        <span className={`text-[10px] font-medium sm:text-xs ${
+                          isActive
+                            ? 'text-blue-700 dark:text-blue-300'
+                            : isDone
+                            ? 'text-emerald-700 dark:text-emerald-300'
+                            : 'text-slate-500 dark:text-slate-400'
+                        }`}>
+                          {step.label}
+                        </span>
+                      </div>
+                      {idx < 4 && (
+                        <div className={`h-px w-2 flex-shrink-0 sm:w-4 ${
+                          isDone ? 'bg-emerald-300 dark:bg-emerald-800' : 'bg-slate-200 dark:bg-slate-700'
+                        }`} />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            {/* Main Content */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Progress */}
+              <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="space-y-1 pb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="rounded-lg bg-amber-50 p-1.5 text-amber-600 dark:bg-amber-950/40 dark:text-amber-300">
+                      <CheckCircle className="h-4 w-4" />
+                    </div>
+                    <CardTitle className="text-base font-semibold text-slate-900 dark:text-white">
+                      Progress
+                    </CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-5">
                   <div>
-                    <p className="font-medium dark:text-gray-100">{pickPack.client?.name || pickPack.salesOrder?.client?.name || pickPack.salesOrder?.clientName || '—'}</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Client</p>
+                    <div className="mb-2 flex items-center justify-between text-sm">
+                      <span className="font-medium text-slate-700 dark:text-slate-300">Picking Progress</span>
+                      <span className="text-slate-500 dark:text-slate-400">{pickedQty} / {totalQty} items</span>
+                    </div>
+                    <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+                      <div
+                        className="h-2.5 rounded-full bg-amber-500 transition-all duration-500"
+                        style={{ width: `${totalQty > 0 ? (pickedQty / totalQty) * 100 : 0}%` }}
+                      />
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                  {(pickPack.status === 'packed' || pickPack.status === 'ready_for_delivery') && (
+                    <div>
+                      <div className="mb-2 flex items-center justify-between text-sm">
+                        <span className="font-medium text-slate-700 dark:text-slate-300">Packing Progress</span>
+                        <span className="text-slate-500 dark:text-slate-400">{packedQty} / {totalQty} items</span>
+                      </div>
+                      <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+                        <div
+                          className="h-2.5 rounded-full bg-violet-500 transition-all duration-500"
+                          style={{ width: `${totalQty > 0 ? (packedQty / totalQty) * 100 : 0}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Warehouse</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-3">
-                  <Warehouse className="h-5 w-5 text-gray-400 dark:text-gray-500" />
-                  <span className="dark:text-gray-100">{pickPack.warehouse?.name}</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Shipping Info</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Method:</span>
-                  <span className="dark:text-gray-100">{pickPack.shippingMethod || '-'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Packages:</span>
-                  <span className="dark:text-gray-100">{toNumber(pickPack.packageCount)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Weight:</span>
-                  <span className="dark:text-gray-100">{toNumber(pickPack.totalWeight)} kg</span>
-                </div>
-                {pickPack.trackingNumber && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Tracking:</span>
-                    <span className="dark:text-gray-100">{pickPack.trackingNumber}</span>
+              {/* Line Items */}
+              <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="space-y-1 pb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="rounded-lg bg-blue-50 p-1.5 text-blue-600 dark:bg-blue-950/40 dark:text-blue-300">
+                      <Package className="h-4 w-4" />
+                    </div>
+                    <CardTitle className="text-base font-semibold text-slate-900 dark:text-white">
+                      Items to Process
+                    </CardTitle>
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="border-b border-slate-200 bg-slate-50/50 hover:bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/50">
+                          <TableHead className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Product</TableHead>
+                          <TableHead className="text-right text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">To Pick</TableHead>
+                          <TableHead className="text-right text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Picked</TableHead>
+                          <TableHead className="text-right text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Packed</TableHead>
+                          <TableHead className="text-center text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Status</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {pickPack.lines.map((line) => (
+                          <TableRow key={line._id} className="border-b border-slate-100 hover:bg-slate-50/50 dark:border-slate-800 dark:hover:bg-slate-900/50">
+                            <TableCell>
+                              <div className="font-medium text-slate-900 dark:text-white">{line.product?.name || line.description}</div>
+                              <div className="text-xs text-slate-500 dark:text-slate-400">{line.product?.sku}</div>
+                            </TableCell>
+                            <TableCell className="text-right text-sm text-slate-700 dark:text-slate-300">{toNumber(line.qtyToPick)}</TableCell>
+                            <TableCell className="text-right text-sm text-slate-700 dark:text-slate-300">{toNumber(line.qtyPicked)}</TableCell>
+                            <TableCell className="text-right text-sm text-slate-700 dark:text-slate-300">{toNumber(line.qtyPacked)}</TableCell>
+                            <TableCell className="text-center">
+                              <Badge className={`${STATUS_COLORS[line.status] || 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'} capitalize text-xs`}>
+                                {line.status}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
 
-            {pickPack.deliveryNote && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Delivery Note</CardTitle>
+            {/* Sidebar */}
+            <div className="space-y-6">
+              {/* Sales Order */}
+              <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="space-y-1 pb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="rounded-lg bg-emerald-50 p-1.5 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300">
+                      <Package className="h-4 w-4" />
+                    </div>
+                    <CardTitle className="text-base font-semibold text-slate-900 dark:text-white">
+                      Sales Order
+                    </CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <Package className="h-5 w-5 text-slate-400 dark:text-slate-500" />
+                    <div>
+                      <p className="font-medium text-slate-900 dark:text-white">{pickPack.salesOrder?.referenceNo}</p>
+                      <Button
+                        variant="link"
+                        className="h-auto p-0 text-sm text-blue-600 dark:text-blue-400"
+                        onClick={() => navigate(`/sales-orders/${pickPack.salesOrder?._id}`)}
+                      >
+                        View Sales Order
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <User className="h-5 w-5 text-slate-400 dark:text-slate-500" />
+                    <div>
+                      <p className="font-medium text-slate-900 dark:text-white">
+                        {pickPack.client?.name || pickPack.salesOrder?.client?.name || pickPack.salesOrder?.clientName || '—'}
+                      </p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Client</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Warehouse */}
+              <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="space-y-1 pb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="rounded-lg bg-violet-50 p-1.5 text-violet-600 dark:bg-violet-950/40 dark:text-violet-300">
+                      <Warehouse className="h-4 w-4" />
+                    </div>
+                    <CardTitle className="text-base font-semibold text-slate-900 dark:text-white">
+                      Warehouse
+                    </CardTitle>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center gap-3">
-                    <Truck className="h-5 w-5 text-gray-400 dark:text-gray-500" />
-                    <div>
-                      <Button 
-                        variant="link" 
-                        className="p-0 h-auto"
+                    <Warehouse className="h-5 w-5 text-slate-400 dark:text-slate-500" />
+                    <span className="text-slate-900 dark:text-white">{pickPack.warehouse?.name}</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Shipping Info */}
+              <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="space-y-1 pb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="rounded-lg bg-amber-50 p-1.5 text-amber-600 dark:bg-amber-950/40 dark:text-amber-300">
+                      <Truck className="h-4 w-4" />
+                    </div>
+                    <CardTitle className="text-base font-semibold text-slate-900 dark:text-white">
+                      Shipping Info
+                    </CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500 dark:text-slate-400">Method</span>
+                    <span className="font-medium text-slate-900 dark:text-white">{pickPack.shippingMethod || '-'}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500 dark:text-slate-400">Packages</span>
+                    <span className="font-medium text-slate-900 dark:text-white">{toNumber(pickPack.packageCount)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500 dark:text-slate-400">Weight</span>
+                    <span className="font-medium text-slate-900 dark:text-white">{toNumber(pickPack.totalWeight)} kg</span>
+                  </div>
+                  {pickPack.trackingNumber && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500 dark:text-slate-400">Tracking</span>
+                      <span className="font-medium text-slate-900 dark:text-white">{pickPack.trackingNumber}</span>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Delivery Note */}
+              {pickPack.deliveryNote && (
+                <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardHeader className="space-y-1 pb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="rounded-lg bg-emerald-50 p-1.5 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300">
+                        <Truck className="h-4 w-4" />
+                      </div>
+                      <CardTitle className="text-base font-semibold text-slate-900 dark:text-white">
+                        Delivery Note
+                      </CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center gap-3">
+                      <Truck className="h-5 w-5 text-slate-400 dark:text-slate-500" />
+                      <Button
+                        variant="link"
+                        className="h-auto p-0 text-sm text-blue-600 dark:text-blue-400"
                         onClick={() => navigate(`/delivery-notes/${pickPack.deliveryNote}`)}
                       >
                         View Delivery Note
                       </Button>
                     </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Timeline */}
+              <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="space-y-1 pb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="rounded-lg bg-slate-50 p-1.5 text-slate-600 ring-1 ring-slate-100 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-800">
+                      <Clock className="h-4 w-4" />
+                    </div>
+                    <CardTitle className="text-base font-semibold text-slate-900 dark:text-white">
+                      Timeline
+                    </CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="relative space-y-4 pl-5">
+                    <div className="absolute bottom-2 left-[9px] top-2 w-px bg-slate-200 dark:bg-slate-700" />
+                    {[
+                      { label: 'Created', date: pickPack.createdAt },
+                      { label: 'Picking Started', date: pickPack.pickingStartedAt },
+                      { label: 'Picking Completed', date: pickPack.pickingCompletedAt },
+                      { label: 'Packing Started', date: pickPack.packingStartedAt },
+                      { label: 'Packing Completed', date: pickPack.packingCompletedAt },
+                    ].map((event, idx) => (
+                      <div key={idx} className="relative">
+                        <div className={`absolute -left-[11px] top-1.5 h-2.5 w-2.5 rounded-full border-2 ${
+                          event.date
+                            ? 'border-blue-500 bg-blue-500'
+                            : 'border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-900'
+                        }`} />
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-slate-600 dark:text-slate-400">{event.label}</span>
+                          <span className="text-slate-900 dark:text-white">{event.date ? formatDate(event.date) : '-'}</span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
-            )}
-
-            {/* Timeline */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Timeline</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Created:</span>
-                  <span className="dark:text-gray-100">{formatDate(pickPack.createdAt)}</span>
-                </div>
-                {pickPack.pickingStartedAt && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Picking Started:</span>
-                    <span className="dark:text-gray-100">{formatDate(pickPack.pickingStartedAt)}</span>
-                  </div>
-                )}
-                {pickPack.pickingCompletedAt && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Picking Completed:</span>
-                    <span className="dark:text-gray-100">{formatDate(pickPack.pickingCompletedAt)}</span>
-                  </div>
-                )}
-                {pickPack.packingStartedAt && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Packing Started:</span>
-                    <span className="dark:text-gray-100">{formatDate(pickPack.packingStartedAt)}</span>
-                  </div>
-                )}
-                {pickPack.packingCompletedAt && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Packing Completed:</span>
-                    <span className="dark:text-gray-100">{formatDate(pickPack.packingCompletedAt)}</span>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            </div>
           </div>
         </div>
       </div>

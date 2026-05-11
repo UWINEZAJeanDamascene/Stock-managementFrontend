@@ -3,26 +3,35 @@ import { useNavigate, useParams } from 'react-router';
 import { quotationsApi, clientsApi } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
 import { useCurrency } from '@/contexts/CurrencyContext';
-import { 
-  ArrowLeft, 
-  CheckCircle, 
+import {
+  ArrowLeft,
+  CheckCircle,
   XCircle,
   Loader2,
   FileText,
-  Calendar,
+  CalendarDays,
   User,
-  DollarSign
+  DollarSign,
+  Receipt,
+  Ban,
+  BadgeCheck,
+  Package,
+  Calculator,
+  Clock,
+  Info,
+  Send,
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { Badge } from '@/app/components/ui/badge';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import { Skeleton } from '@/app/components/ui/skeleton';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@/app/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/app/components/ui/dialog';
 import { Textarea } from '@/app/components/ui/textarea';
@@ -193,25 +202,27 @@ export default function ClientQuotationViewPage() {
     return new Date(dateStr).toLocaleDateString();
   };
 
-  const getStatusBadge = (status: string) => {
-    const statusConfig: Record<string, { variant: 'default' | 'secondary' | 'outline' | 'destructive'; label: string }> = {
-      draft: { variant: 'secondary', label: 'Draft' },
-      sent: { variant: 'default', label: 'Sent' },
-      accepted: { variant: 'default', label: 'Accepted' },
-      rejected: { variant: 'destructive', label: 'Rejected' },
-      expired: { variant: 'outline', label: 'Expired' },
-      converted: { variant: 'default', label: 'Converted' },
-    };
-    
-    const config = statusConfig[status] || { variant: 'outline', label: status };
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+  const STATUS_COLORS: Record<string, string> = {
+    draft: 'bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-950/40 dark:text-slate-300 dark:border-slate-700',
+    sent: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-800',
+    accepted: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800',
+    rejected: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800',
+    expired: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-800',
+    converted: 'bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950/30 dark:text-violet-400 dark:border-violet-800',
   };
 
   if (loading) {
     return (
       <Layout>
-        <div className="flex items-center justify-center min-h-screen">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground dark:text-slate-400" />
+        <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-5xl space-y-6">
+            <Skeleton className="h-28 w-full rounded-xl" />
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <Skeleton className="h-72 w-full rounded-xl" />
+              <Skeleton className="h-72 w-full rounded-xl" />
+            </div>
+            <Skeleton className="h-48 w-full rounded-xl" />
+          </div>
         </div>
       </Layout>
     );
@@ -220,14 +231,17 @@ export default function ClientQuotationViewPage() {
   if (!quotation) {
     return (
       <Layout>
-        <div className="container mx-auto py-6 min-h-screen bg-slate-50 dark:bg-slate-900">
-          <div className="text-center py-12">
-            <FileText className="mx-auto h-12 w-12 text-muted-foreground dark:text-slate-400 mb-4" />
-            <h3 className="text-lg font-medium dark:text-white">Quotation not found</h3>
-            <Button variant="outline" className="mt-4" onClick={() => navigate('/')}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Go Back
-            </Button>
+        <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-5xl">
+            <div className="flex min-h-[400px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900/70">
+              <Receipt className="mb-3 h-12 w-12 text-slate-300 dark:text-slate-600" />
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Quotation not found</h3>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">The quotation you are looking for does not exist or has been removed.</p>
+              <Button variant="outline" className="mt-4 dark:border-slate-700 dark:text-slate-200" onClick={() => navigate('/')}>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Go Back
+              </Button>
+            </div>
           </div>
         </div>
       </Layout>
@@ -238,239 +252,301 @@ export default function ClientQuotationViewPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-4 sm:py-6 px-3 sm:px-4 max-w-5xl min-h-screen bg-slate-50 dark:bg-slate-900">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
-          <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm" onClick={() => navigate(-1)} className="px-2">
-              <ArrowLeft className="mr-1 h-4 w-4" />
-              <span className="hidden sm:inline">Back</span>
-            </Button>
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">Quotation {quotation.referenceNo}</h1>
-              <p className="text-sm text-muted-foreground dark:text-slate-400">Review your quotation details</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {getStatusBadge(quotation.status)}
-          </div>
-        </div>
-
-        {/* Action Buttons - Only show for 'sent' status */}
-        {canTakeAction && (
-          <Card className="mb-4 sm:mb-6 border-primary/20 bg-primary/5 dark:bg-slate-800 dark:border-slate-700">
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                <div className="flex-1">
-                  <h3 className="font-medium text-base sm:text-lg dark:text-white">Action Required</h3>
-                  <p className="text-muted-foreground dark:text-slate-400 text-sm">
-                    Please review and accept or reject this quotation
-                  </p>
+      <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-5xl space-y-6">
+          {/* Hero Header */}
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+            <div className="grid gap-5 p-5 sm:grid-cols-[1fr_auto] sm:items-start">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="rounded-lg bg-amber-50 p-2.5 text-amber-700 ring-1 ring-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/60">
+                    <Receipt className="h-5 w-5" />
+                  </div>
+                  <h1 className="text-2xl font-bold tracking-tight text-slate-950 dark:text-white sm:text-3xl">
+                    Quotation {quotation.referenceNo}
+                  </h1>
+                  <Badge variant="outline" className={`${STATUS_COLORS[quotation.status]} capitalize text-xs`}>
+                    {quotation.status}
+                  </Badge>
                 </div>
-                <div className="flex gap-2 sm:gap-3">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setShowRejectDialog(true)}
-                    disabled={processing}
-                    className="flex-1 sm:flex-none"
-                  >
-                    <XCircle className="mr-1 h-4 w-4 text-red-600 dark:text-red-400" />
-                    <span className="hidden sm:inline">Reject</span>
-                    <span className="sm:hidden">Reject</span>
+                <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+                  Review your quotation details and take action if required.
+                </p>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <Badge variant="secondary" className="dark:bg-slate-800 dark:text-slate-300">
+                    <User className="mr-1 h-3 w-3" />
+                    {quotation.client?.name || clientName}
+                  </Badge>
+                  <Badge variant="secondary" className="dark:bg-slate-800 dark:text-slate-300">
+                    <DollarSign className="mr-1 h-3 w-3" />
+                    {quotation.currency}
+                  </Badge>
+                  <Badge variant="secondary" className="dark:bg-slate-800 dark:text-slate-300">
+                    <CalendarDays className="mr-1 h-3 w-3" />
+                    {formatDate(quotation.quotationDate)}
+                  </Badge>
+                </div>
+                <div className="mt-5 flex flex-wrap gap-2">
+                  <Button variant="outline" size="sm" onClick={() => navigate(-1)} className="h-9 gap-2 dark:border-slate-700 dark:text-slate-200">
+                    <ArrowLeft className="h-4 w-4" />
+                    Back
                   </Button>
-                  <Button 
-                    size="sm"
-                    onClick={handleAccept}
-                    disabled={processing}
-                    className="bg-green-600 hover:bg-green-700 flex-1 sm:flex-none"
-                  >
-                    {processing ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-1 h-4 w-4" />}
-                    <span className="hidden sm:inline">Accept Quotation</span>
-                    <span className="sm:hidden">Accept</span>
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Already Actioned Messages */}
-        {quotation.status === 'accepted' && (
-          <Card className="mb-6 border-green-200 bg-green-50 dark:bg-green-900/20">
-            <CardContent className="py-4">
-              <div className="flex items-center gap-3">
-                <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
-                <div>
-                  <h3 className="font-medium text-green-900 dark:text-green-400">Quotation Accepted</h3>
-                  <p className="text-green-700 dark:text-green-400 text-sm">
-                    You accepted this quotation on {formatDate(quotation.acceptedDate || new Date().toISOString())}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {quotation.status === 'rejected' && (
-          <Card className="mb-6 border-red-200 bg-red-50 dark:bg-red-900/20">
-            <CardContent className="py-4">
-              <div className="flex items-start gap-3">
-                <XCircle className="h-5 w-5 text-red-600 dark:text-red-400 mt-0.5" />
-                <div>
-                  <h3 className="font-medium text-red-900 dark:text-red-400">Quotation Rejected</h3>
-                  <p className="text-red-700 dark:text-red-400 text-sm">
-                    Rejected on {formatDate(quotation.rejectionDate || new Date().toISOString())}
-                  </p>
-                  {quotation.rejectionReason && (
-                    <div className="mt-2 p-2 bg-white dark:bg-slate-800 rounded border border-red-200 dark:border-red-800">
-                      <p className="text-sm text-red-800 dark:text-red-400">
-                        <span className="font-medium">Reason:</span> {quotation.rejectionReason}
-                      </p>
-                    </div>
+                  {canTakeAction && (
+                    <>
+                      <Button variant="outline" size="sm" onClick={() => setShowRejectDialog(true)} disabled={processing} className="h-9 gap-2 border-red-200 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950/20">
+                        <Ban className="h-4 w-4" />
+                        Reject
+                      </Button>
+                      <Button size="sm" onClick={handleAccept} disabled={processing} className="h-9 gap-2 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500">
+                        {processing ? <Loader2 className="h-4 w-4 animate-spin" /> : <BadgeCheck className="h-4 w-4" />}
+                        Accept
+                      </Button>
+                    </>
                   )}
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-            {/* Basic Information */}
-            <Card className="dark:bg-slate-800 dark:border-slate-700">
-              <CardHeader className="px-4 sm:px-6">
-                <CardTitle className="flex items-center gap-2 text-base sm:text-lg text-slate-900 dark:text-white">
-                  <FileText className="h-5 w-5" />
-                  Quotation Details
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="px-4 sm:px-6 space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="flex items-center gap-2">
-                    <User className="h-4 w-4 text-muted-foreground dark:text-slate-400 flex-shrink-0" />
-                    <span className="text-sm text-muted-foreground dark:text-slate-400">Client:</span>
-                    <span className="text-sm font-medium dark:text-slate-200">{quotation.client?.name || clientName}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="h-4 w-4 text-muted-foreground dark:text-slate-400 flex-shrink-0" />
-                    <span className="text-sm text-muted-foreground dark:text-slate-400">Currency:</span>
-                    <span className="text-sm font-medium dark:text-slate-200">{quotation.currency}</span>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground dark:text-slate-400 flex-shrink-0" />
-                    <span className="text-sm text-muted-foreground dark:text-slate-400">Quotation Date:</span>
-                    <span className="text-sm font-medium dark:text-slate-200">{formatDate(quotation.quotationDate)}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground dark:text-slate-400 flex-shrink-0" />
-                    <span className="text-sm text-muted-foreground dark:text-slate-400">Expiry Date:</span>
-                    <span className="text-sm font-medium dark:text-slate-200">{formatDate(quotation.expiryDate)}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Line Items */}
-            <Card className="dark:bg-slate-800">
-              <CardHeader>
-                <CardTitle className="text-slate-900 dark:text-white">Line Items</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow className="dark:bg-slate-700">
-                      <TableHead className="dark:text-white">Product</TableHead>
-                      <TableHead className="dark:text-white">Description</TableHead>
-                      <TableHead className="text-right dark:text-white">Qty</TableHead>
-                      <TableHead className="text-right dark:text-white">Unit Price</TableHead>
-                      <TableHead className="text-right dark:text-white">Discount %</TableHead>
-                      <TableHead className="text-right dark:text-white">Tax %</TableHead>
-                      <TableHead className="text-right dark:text-white">Total</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {quotation.lines?.map((line, index) => (
-                      <TableRow key={line._id || index} className="dark:hover:bg-slate-700/50">
-                        <TableCell>
-                          <div className="font-medium dark:text-slate-200">{line.productName || line.product?.name}</div>
-                          <div className="text-sm text-muted-foreground dark:text-slate-400">{line.productSku || line.product?.sku}</div>
-                        </TableCell>
-                        <TableCell className="dark:text-slate-300">{line.description || '-'}</TableCell>
-                        <TableCell className="text-right dark:text-slate-300">{line.qty}</TableCell>
-                        <TableCell className="text-right dark:text-slate-300">{formatCurrency(line.unitPrice)}</TableCell>
-                        <TableCell className="text-right dark:text-slate-300">{line.discountPercent}%</TableCell>
-                        <TableCell className="text-right dark:text-slate-300">{line.taxRate}%</TableCell>
-                        <TableCell className="text-right font-medium dark:text-slate-200">{formatCurrency(line.lineTotal)}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-
-            {/* Notes */}
-            {quotation.notes && (
-              <Card className="dark:bg-slate-800">
-                <CardHeader>
-                  <CardTitle className="text-slate-900 dark:text-white">Notes</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground dark:text-slate-400">{quotation.notes}</p>
-                </CardContent>
-              </Card>
-            )}
+              <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-950/40">
+                <p className="text-xs text-slate-500 dark:text-slate-400">Total Amount</p>
+                <p className="mt-1 text-2xl font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(quotation.totalAmount)}</p>
+                <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">{quotation.currency}</p>
+              </div>
+            </div>
           </div>
 
-          {/* Sidebar - Summary */}
-          <div className="space-y-6">
-            <Card className="dark:bg-slate-800">
-              <CardHeader>
-                <CardTitle className="text-slate-900 dark:text-white">Summary</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground dark:text-slate-400">Subtotal</span>
-                  <span className="font-medium dark:text-slate-200">{formatCurrency(quotation.subtotal)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground dark:text-slate-400">Tax</span>
-                  <span className="font-medium dark:text-slate-200">{formatCurrency(quotation.taxAmount)}</span>
-                </div>
-                <div className="border-t pt-3 flex justify-between text-lg font-bold dark:border-slate-600">
-                  <span className="text-slate-900 dark:text-white">Total</span>
-                  <span className="text-slate-900 dark:text-white">{formatCurrency(quotation.totalAmount)}</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Validity Info */}
-            <Card className="dark:bg-slate-800">
-              <CardHeader>
-                <CardTitle className="text-slate-900 dark:text-white">Validity</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground dark:text-slate-400">
-                  This quotation is valid until <span className="font-medium text-foreground dark:text-slate-200">{formatDate(quotation.expiryDate)}</span>
-                </p>
-                {new Date(quotation.expiryDate) < new Date() && quotation.status === 'sent' && (
-                  <div className="mt-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded">
-                    <p className="text-sm text-yellow-800 dark:text-yellow-400">
-                      This quotation has expired. Please contact us for an updated quotation.
+          {/* Action Banner */}
+          {canTakeAction && (
+            <Card className="overflow-hidden border-indigo-200 bg-indigo-50/60 shadow-sm dark:border-indigo-900/30 dark:bg-indigo-950/20">
+              <CardContent className="py-5">
+                <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300">
+                    <Send className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-base font-semibold text-indigo-900 dark:text-indigo-300">Action Required</h3>
+                    <p className="text-sm text-indigo-700/80 dark:text-indigo-400/80">
+                      This quotation is awaiting your response. Please review the details below and accept or reject it.
                     </p>
                   </div>
-                )}
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => setShowRejectDialog(true)} disabled={processing} className="border-red-200 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950/20">
+                      <XCircle className="mr-1 h-4 w-4" />
+                      Reject
+                    </Button>
+                    <Button size="sm" onClick={handleAccept} disabled={processing} className="bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500">
+                      {processing ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-1 h-4 w-4" />}
+                      Accept
+                    </Button>
+                  </div>
+                </div>
               </CardContent>
             </Card>
+          )}
+
+          {/* Status Banners */}
+          {quotation.status === 'accepted' && (
+            <Card className="overflow-hidden border-emerald-200 bg-emerald-50/80 shadow-sm dark:border-emerald-900/30 dark:bg-emerald-950/20">
+              <CardContent className="py-5">
+                <div className="flex items-start gap-4">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900">
+                    <BadgeCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-base font-semibold text-emerald-900 dark:text-emerald-400">Quotation Accepted</h3>
+                    <p className="text-sm text-emerald-700/80 dark:text-emerald-400/80">
+                      You accepted this quotation on {formatDate(quotation.acceptedDate || new Date().toISOString())}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          {quotation.status === 'rejected' && (
+            <Card className="overflow-hidden border-red-200 bg-red-50/80 shadow-sm dark:border-red-900/30 dark:bg-red-950/20">
+              <CardContent className="py-5">
+                <div className="flex items-start gap-4">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-900">
+                    <Ban className="h-5 w-5 text-red-600 dark:text-red-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-base font-semibold text-red-900 dark:text-red-400">Quotation Rejected</h3>
+                    <p className="text-sm text-red-700/80 dark:text-red-400/80">
+                      Rejected on {formatDate(quotation.rejectionDate || new Date().toISOString())}
+                    </p>
+                    {quotation.rejectionReason && (
+                      <div className="mt-3 rounded-md border border-red-200 bg-white p-3 dark:border-red-800 dark:bg-slate-900">
+                        <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-red-700 dark:text-red-400">Your Reason</p>
+                        <p className="text-sm leading-relaxed text-slate-800 dark:text-slate-200">{quotation.rejectionReason}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_340px]">
+            {/* Main Content */}
+            <div className="space-y-6">
+              {/* Quotation Details */}
+              <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="border-b border-slate-100 bg-slate-50/60 dark:border-slate-800 dark:bg-slate-900/50">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-md bg-blue-50 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60">
+                      <FileText className="h-4 w-4" />
+                    </div>
+                    <CardTitle className="text-base font-semibold text-slate-900 dark:text-white">Quotation Details</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4 p-5">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="flex items-center gap-3 rounded-lg border border-slate-100 bg-slate-50/50 p-3 dark:border-slate-800 dark:bg-slate-900/40">
+                      <User className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+                      <div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">Client</p>
+                        <p className="text-sm font-semibold text-slate-950 dark:text-white">{quotation.client?.name || clientName}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 rounded-lg border border-slate-100 bg-slate-50/50 p-3 dark:border-slate-800 dark:bg-slate-900/40">
+                      <DollarSign className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+                      <div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">Currency</p>
+                        <p className="text-sm font-semibold text-slate-950 dark:text-white">{quotation.currency}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 rounded-lg border border-slate-100 bg-slate-50/50 p-3 dark:border-slate-800 dark:bg-slate-900/40">
+                      <CalendarDays className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+                      <div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">Quotation Date</p>
+                        <p className="text-sm font-semibold text-slate-950 dark:text-white">{formatDate(quotation.quotationDate)}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 rounded-lg border border-slate-100 bg-slate-50/50 p-3 dark:border-slate-800 dark:bg-slate-900/40">
+                      <Clock className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+                      <div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">Expiry Date</p>
+                        <p className="text-sm font-semibold text-slate-950 dark:text-white">{formatDate(quotation.expiryDate)}</p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Line Items */}
+              <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="border-b border-slate-100 bg-slate-50/60 dark:border-slate-800 dark:bg-slate-900/50">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-md bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60">
+                      <Package className="h-4 w-4" />
+                    </div>
+                    <CardTitle className="text-base font-semibold text-slate-900 dark:text-white">Line Items</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-slate-50/70 hover:bg-slate-50/70 dark:bg-slate-900/50 dark:hover:bg-slate-900/50">
+                          <TableHead className="text-slate-600 dark:text-slate-400">Product</TableHead>
+                          <TableHead className="text-slate-600 dark:text-slate-400">Description</TableHead>
+                          <TableHead className="text-right text-slate-600 dark:text-slate-400">Qty</TableHead>
+                          <TableHead className="text-right text-slate-600 dark:text-slate-400">Unit Price</TableHead>
+                          <TableHead className="text-right text-slate-600 dark:text-slate-400">Disc %</TableHead>
+                          <TableHead className="text-right text-slate-600 dark:text-slate-400">Tax %</TableHead>
+                          <TableHead className="text-right text-slate-600 dark:text-slate-400">Total</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {quotation.lines?.map((line, index) => (
+                          <TableRow key={line._id || index} className="transition-colors hover:bg-slate-50/50 dark:border-slate-800 dark:hover:bg-slate-900/30">
+                            <TableCell>
+                              <div className="font-medium text-slate-950 dark:text-white">{line.productName || line.product?.name}</div>
+                              <div className="text-xs text-slate-500 dark:text-slate-400">{line.productSku || line.product?.sku}</div>
+                            </TableCell>
+                            <TableCell className="text-sm text-slate-700 dark:text-slate-300">{line.description || '—'}</TableCell>
+                            <TableCell className="text-right text-sm text-slate-700 dark:text-slate-300">{line.qty}</TableCell>
+                            <TableCell className="text-right text-sm text-slate-700 dark:text-slate-300">{formatCurrency(line.unitPrice)}</TableCell>
+                            <TableCell className="text-right text-sm text-slate-700 dark:text-slate-300">{line.discountPercent}%</TableCell>
+                            <TableCell className="text-right text-sm text-slate-700 dark:text-slate-300">{line.taxRate}%</TableCell>
+                            <TableCell className="text-right text-sm font-semibold text-slate-950 dark:text-white">{formatCurrency(line.lineTotal)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Notes */}
+              {quotation.notes && (
+                <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardHeader className="border-b border-slate-100 bg-slate-50/60 dark:border-slate-800 dark:bg-slate-900/50">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-md bg-amber-50 text-amber-700 ring-1 ring-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/60">
+                        <Info className="h-4 w-4" />
+                      </div>
+                      <CardTitle className="text-base font-semibold text-slate-900 dark:text-white">Notes</CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-5">
+                    <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300">{quotation.notes}</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            {/* Sidebar */}
+            <div className="space-y-6">
+              {/* Summary */}
+              <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="border-b border-slate-100 bg-slate-50/60 dark:border-slate-800 dark:bg-slate-900/50">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-md bg-violet-50 text-violet-700 ring-1 ring-violet-100 dark:bg-violet-950/40 dark:text-violet-300 dark:ring-violet-900/60">
+                      <Calculator className="h-4 w-4" />
+                    </div>
+                    <CardTitle className="text-base font-semibold text-slate-900 dark:text-white">Summary</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4 p-5">
+                  <div className="flex justify-between text-sm text-slate-700 dark:text-slate-300">
+                    <span>Subtotal</span>
+                    <span className="font-medium">{formatCurrency(quotation.subtotal)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm text-slate-700 dark:text-slate-300">
+                    <span>Tax</span>
+                    <span className="font-medium">{formatCurrency(quotation.taxAmount)}</span>
+                  </div>
+                  <div className="flex justify-between border-t border-slate-100 pt-4 text-lg font-bold dark:border-slate-800">
+                    <span className="text-slate-950 dark:text-white">Total</span>
+                    <span className="text-emerald-700 dark:text-emerald-400">{formatCurrency(quotation.totalAmount)}</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Validity */}
+              <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="border-b border-slate-100 bg-slate-50/60 dark:border-slate-800 dark:bg-slate-900/50">
+                  <CardTitle className="text-base font-semibold text-slate-900 dark:text-white">Validity</CardTitle>
+                </CardHeader>
+                <CardContent className="p-5">
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                    This quotation is valid until <span className="font-semibold text-slate-950 dark:text-white">{formatDate(quotation.expiryDate)}</span>
+                  </p>
+                  {new Date(quotation.expiryDate) < new Date() && quotation.status === 'sent' && (
+                    <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/20">
+                      <p className="text-sm text-amber-800 dark:text-amber-400">
+                        This quotation has expired. Please contact us for an updated quotation.
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
 
         {/* Reject Dialog */}
         <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
-          <DialogContent className="dark:bg-slate-800">
+          <DialogContent className="dark:bg-slate-900 dark:border-slate-800">
             <DialogHeader>
               <DialogTitle className="dark:text-white">Reject Quotation</DialogTitle>
               <DialogDescription className="dark:text-slate-400">
@@ -482,16 +558,16 @@ export default function ClientQuotationViewPage() {
                 value={rejectionReason}
                 onChange={(e) => setRejectionReason(e.target.value)}
                 placeholder="Enter your reason for rejection..."
-                className="min-h-[100px] bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
+                className="min-h-[100px] bg-white text-slate-900 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-white dark:ring-slate-700"
               />
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowRejectDialog(false)} disabled={processing} className="dark:border-slate-600 dark:text-slate-200">
+              <Button variant="outline" onClick={() => setShowRejectDialog(false)} disabled={processing} className="dark:border-slate-700 dark:text-slate-200">
                 Cancel
               </Button>
-              <Button 
-                variant="destructive" 
-                onClick={handleReject} 
+              <Button
+                variant="destructive"
+                onClick={handleReject}
                 disabled={processing || !rejectionReason.trim()}
               >
                 {processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

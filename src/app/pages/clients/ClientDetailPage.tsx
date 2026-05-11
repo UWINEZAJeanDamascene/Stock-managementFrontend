@@ -3,25 +3,36 @@ import { useNavigate, useParams } from 'react-router';
 import { clientsApi } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
 import { useCurrency } from '@/contexts/CurrencyContext';
-import { 
-  ArrowLeft, 
+import {
+  ArrowLeft,
   Pencil,
   FileText,
   Loader2,
-  Download,
-  Plus
+  Users,
+  Mail,
+  Phone,
+  MapPin,
+  CreditCard,
+  TrendingUp,
+  DollarSign,
+  Calendar,
+  Receipt,
+  ClipboardList,
+  AlertCircle,
+  Building2,
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { Badge } from '@/app/components/ui/badge';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import { Skeleton } from '@/app/components/ui/skeleton';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@/app/components/ui/table';
 import { useTranslation } from 'react-i18next';
 
@@ -223,11 +234,45 @@ export default function ClientDetailPage() {
     return termsMap[terms] || terms;
   };
 
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  const AVATAR_COLORS = [
+    'bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300',
+    'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300',
+    'bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300',
+    'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300',
+    'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300',
+  ];
+
+  const getAvatarColor = (name: string) => {
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+  };
+
   if (loading) {
     return (
       <Layout>
-        <div className="flex items-center justify-center p-8">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground dark:text-slate-400" />
+        <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-[1400px] space-y-6">
+            <Skeleton className="h-28 w-full rounded-xl" />
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:gap-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-24 w-full rounded-xl" />
+              ))}
+            </div>
+            <Skeleton className="h-12 w-full rounded-xl" />
+            <Skeleton className="h-96 w-full rounded-xl" />
+          </div>
         </div>
       </Layout>
     );
@@ -236,8 +281,17 @@ export default function ClientDetailPage() {
   if (!client) {
     return (
       <Layout>
-        <div className="container mx-auto py-6 min-h-screen bg-slate-50 dark:bg-slate-900">
-          <p className="text-muted-foreground dark:text-slate-400">Client not found</p>
+        <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-[1400px]">
+            <div className="flex flex-col items-center justify-center py-24 text-center">
+              <AlertCircle className="h-12 w-12 text-slate-300 dark:text-slate-600" />
+              <h2 className="mt-4 text-xl font-semibold text-slate-900 dark:text-white">Client not found</h2>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">The client you're looking for doesn't exist or has been removed.</p>
+              <Button variant="outline" className="mt-6 dark:border-slate-700" onClick={() => navigate('/clients')}>
+                <ArrowLeft className="mr-2 h-4 w-4" /> Back to Clients
+              </Button>
+            </div>
+          </div>
         </div>
       </Layout>
     );
@@ -245,313 +299,416 @@ export default function ClientDetailPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-4 sm:py-6 px-3 sm:px-4 min-h-screen bg-slate-50 dark:bg-slate-900">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-          <div className="flex items-center gap-3 sm:gap-4">
-            <Button variant="ghost" size="sm" onClick={() => navigate('/clients')} className="px-2">
-              <ArrowLeft className="mr-1 sm:mr-2 h-4 w-4" />
-              <span className="hidden sm:inline">{t('common.back', 'Back')}</span>
-            </Button>
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white truncate">{client.name}</h1>
-              <p className="text-sm text-muted-foreground dark:text-slate-400">{client.code}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <Button variant="outline" size="sm" onClick={handleDownloadStatement} className="flex-1 sm:flex-none justify-center">
-              <FileText className="mr-2 h-4 w-4" />
-              <span className="hidden sm:inline">{t('clients.downloadStatement', 'Download Statement')}</span>
-              <span className="sm:hidden">Statement</span>
-            </Button>
-            <Button size="sm" onClick={() => navigate(`/clients/${id}/edit`)} className="flex-1 sm:flex-none justify-center">
-              <Pencil className="mr-2 h-4 w-4" />
-              {t('common.edit', 'Edit')}
-            </Button>
-          </div>
-        </div>
-
-        {/* Client Info Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
-          <Card className="dark:bg-slate-800">
-            <CardHeader className="pb-2 px-3 sm:px-6">
-              <CardTitle className="text-xs sm:text-sm font-medium text-slate-900 dark:text-white">{t('clients.outstandingBalance', 'Outstanding')}</CardTitle>
-            </CardHeader>
-            <CardContent className="px-3 sm:px-6">
-              <div className="text-lg sm:text-2xl font-bold dark:text-slate-200">{formatCurrency(client.outstandingBalance || 0)}</div>
-            </CardContent>
-          </Card>
-          <Card className="dark:bg-slate-800">
-            <CardHeader className="pb-2 px-3 sm:px-6">
-              <CardTitle className="text-xs sm:text-sm font-medium text-slate-900 dark:text-white">{t('clients.totalInvoiced', 'Total Invoiced')}</CardTitle>
-            </CardHeader>
-            <CardContent className="px-3 sm:px-6">
-              <div className="text-lg sm:text-2xl font-bold dark:text-slate-200">{formatCurrency(invoiceSummary.totalAmount)}</div>
-            </CardContent>
-          </Card>
-          <Card className="dark:bg-slate-800">
-            <CardHeader className="pb-2 px-3 sm:px-6">
-              <CardTitle className="text-xs sm:text-sm font-medium text-slate-900 dark:text-white">{t('clients.totalPaid', 'Total Paid')}</CardTitle>
-            </CardHeader>
-            <CardContent className="px-3 sm:px-6">
-              <div className="text-lg sm:text-2xl font-bold dark:text-slate-200">{formatCurrency(invoiceSummary.totalPaid)}</div>
-            </CardContent>
-          </Card>
-          <Card className="dark:bg-slate-800">
-            <CardHeader className="pb-2 px-3 sm:px-6">
-              <CardTitle className="text-xs sm:text-sm font-medium text-slate-900 dark:text-white">{t('clients.creditLimit', 'Credit Limit')}</CardTitle>
-            </CardHeader>
-            <CardContent className="px-3 sm:px-6">
-              <div className="text-lg sm:text-2xl font-bold dark:text-slate-200">{formatCurrency(client.creditLimit || 0)}</div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Tabs */}
-        <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="dark:bg-slate-700 flex flex-wrap h-auto p-1 gap-1">
-            <TabsTrigger value="overview" className="dark:data-[state=active]:bg-slate-600 dark:data-[state=active]:text-white text-xs sm:text-sm px-2 sm:px-3 py-1.5">{t('clients.tabs.overview', 'Overview')}</TabsTrigger>
-            <TabsTrigger value="quotations" className="dark:data-[state=active]:bg-slate-600 dark:data-[state=active]:text-white text-xs sm:text-sm px-2 sm:px-3 py-1.5">{t('clients.tabs.quotations', 'Quotations')}</TabsTrigger>
-            <TabsTrigger value="invoices" className="dark:data-[state=active]:bg-slate-600 dark:data-[state=active]:text-white text-xs sm:text-sm px-2 sm:px-3 py-1.5">{t('clients.tabs.invoices', 'Invoices')}</TabsTrigger>
-            <TabsTrigger value="receipts" className="dark:data-[state=active]:bg-slate-600 dark:data-[state=active]:text-white text-xs sm:text-sm px-2 sm:px-3 py-1.5">{t('clients.tabs.receipts', 'Receipts')}</TabsTrigger>
-            <TabsTrigger value="creditNotes" className="dark:data-[state=active]:bg-slate-600 dark:data-[state=active]:text-white text-xs sm:text-sm px-2 sm:px-3 py-1.5">{t('clients.tabs.creditNotes', 'Credit')}</TabsTrigger>
-          </TabsList>
-
-          {/* Overview Tab */}
-          <TabsContent value="overview">
-            <div className="grid grid-cols-1 gap-4 sm:gap-6">
-              <Card className="dark:bg-slate-800">
-                <CardHeader className="px-4 sm:px-6">
-                  <CardTitle className="text-base sm:text-lg text-slate-900 dark:text-white">{t('clients.contactInfo', 'Contact Information')}</CardTitle>
-                </CardHeader>
-                <CardContent className="px-4 sm:px-6 space-y-2">
-                  <div className="grid grid-cols-2 gap-2">
-                    <span className="text-sm text-muted-foreground dark:text-slate-400">{t('clients.email', 'Email')}</span>
-                    <span className="text-sm dark:text-slate-200 text-right">{client.contact?.email || '-'}</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <span className="text-sm text-muted-foreground dark:text-slate-400">{t('clients.phone', 'Phone')}</span>
-                    <span className="text-sm dark:text-slate-200 text-right">{client.contact?.phone || '-'}</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <span className="text-sm text-muted-foreground dark:text-slate-400">{t('clients.address', 'Address')}</span>
-                    <span className="text-sm dark:text-slate-200 text-right">{client.contact?.address || '-'}</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <span className="text-sm text-muted-foreground dark:text-slate-400">{t('clients.city', 'City')}</span>
-                    <span className="text-sm dark:text-slate-200 text-right">{client.contact?.city || '-'}</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <span className="text-sm text-muted-foreground dark:text-slate-400">{t('clients.country', 'Country')}</span>
-                    <span className="text-sm dark:text-slate-200 text-right">{client.contact?.country || '-'}</span>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="dark:bg-slate-800">
-                <CardHeader className="px-4 sm:px-6">
-                  <CardTitle className="text-base sm:text-lg text-slate-900 dark:text-white">{t('clients.accountInfo', 'Account Information')}</CardTitle>
-                </CardHeader>
-                <CardContent className="px-4 sm:px-6 space-y-2">
-                  <div className="grid grid-cols-2 gap-2">
-                    <span className="text-sm text-muted-foreground dark:text-slate-400">{t('clients.type', 'Type')}</span>
-                    <span className="text-sm capitalize dark:text-slate-200 text-right">{client.type}</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <span className="text-sm text-muted-foreground dark:text-slate-400">{t('clients.paymentTerms', 'Payment Terms')}</span>
-                    <span className="text-sm dark:text-slate-200 text-right">{getPaymentTermsLabel(client.paymentTerms)}</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <span className="text-sm text-muted-foreground dark:text-slate-400">{t('clients.status', 'Status')}</span>
-                    <div className="text-right">
-                      <Badge variant={client.isActive ? 'default' : 'secondary'}>
-                        {client.isActive ? t('common.active', 'Active') : t('common.inactive', 'Inactive')}
-                      </Badge>
+      <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1400px] space-y-6">
+          {/* Hero Header */}
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+            <div className="p-5">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="flex items-start gap-4">
+                  <Button variant="ghost" size="sm" onClick={() => navigate('/clients')} className="mt-1 h-8 w-8 p-0 dark:text-slate-300">
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                  <div className="flex items-center gap-4">
+                    <div className={`flex h-14 w-14 items-center justify-center rounded-xl text-lg font-bold ${getAvatarColor(client.name)}`}>
+                      {getInitials(client.name)}
+                    </div>
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h1 className="text-xl font-bold text-slate-950 dark:text-white sm:text-2xl">{client.name}</h1>
+                        <Badge className={client.isActive ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'}>
+                          {client.isActive ? t('common.active', 'Active') : t('common.inactive', 'Inactive')}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">{client.code} &middot; {getPaymentTermsLabel(client.paymentTerms)}</p>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <span className="text-sm text-muted-foreground dark:text-slate-400">{t('clients.lastPurchase', 'Last Purchase')}</span>
-                    <span className="text-sm dark:text-slate-200 text-right">{formatDate(client.lastPurchaseDate)}</span>
+                </div>
+                <div className="flex items-center gap-2 sm:mt-2">
+                  <Button variant="outline" size="sm" onClick={handleDownloadStatement} className="gap-1.5 dark:border-slate-700 dark:text-slate-200">
+                    <FileText className="h-4 w-4" />
+                    <span className="hidden sm:inline">Statement</span>
+                  </Button>
+                  <Button size="sm" onClick={() => navigate(`/clients/${id}/edit`)} className="gap-1.5 bg-blue-600 hover:bg-blue-700">
+                    <Pencil className="h-4 w-4" /> Edit
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Metrics */}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:gap-4">
+            <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg bg-rose-50 p-2 text-rose-600 dark:bg-rose-950/40 dark:text-rose-300">
+                    <TrendingUp className="h-4 w-4" />
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <span className="text-sm text-muted-foreground dark:text-slate-400">{t('clients.createdAt', 'Created')}</span>
-                    <span className="text-sm dark:text-slate-200 text-right">{formatDate(client.createdAt)}</span>
+                  <div>
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Outstanding</p>
+                    <p className="text-lg font-bold text-slate-900 dark:text-white">{formatCurrency(client.outstandingBalance || 0)}</p>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg bg-blue-50 p-2 text-blue-600 dark:bg-blue-950/40 dark:text-blue-300">
+                    <DollarSign className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Total Invoiced</p>
+                    <p className="text-lg font-bold text-slate-900 dark:text-white">{formatCurrency(invoiceSummary.totalAmount)}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg bg-emerald-50 p-2 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300">
+                    <Receipt className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Total Paid</p>
+                    <p className="text-lg font-bold text-slate-900 dark:text-white">{formatCurrency(invoiceSummary.totalPaid)}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg bg-violet-50 p-2 text-violet-600 dark:bg-violet-950/40 dark:text-violet-300">
+                    <CreditCard className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Credit Limit</p>
+                    <p className="text-lg font-bold text-slate-900 dark:text-white">{formatCurrency(client.creditLimit || 0)}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Credit Utilization */}
+          {client.creditLimit > 0 && (
+            <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-slate-900 dark:text-white">Credit Utilization</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {formatCurrency(client.outstandingBalance || 0)} of {formatCurrency(client.creditLimit)} used
+                    </p>
+                  </div>
+                  <div className="flex-1 sm:max-w-xs">
+                    <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                      <div
+                        className={`h-full rounded-full transition-all ${(client.outstandingBalance || 0) / client.creditLimit > 0.8 ? 'bg-rose-500' : (client.outstandingBalance || 0) / client.creditLimit > 0.5 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                        style={{ width: `${Math.min(100, ((client.outstandingBalance || 0) / client.creditLimit) * 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className={`text-sm font-bold ${(client.outstandingBalance || 0) / client.creditLimit > 0.8 ? 'text-rose-600 dark:text-rose-400' : (client.outstandingBalance || 0) / client.creditLimit > 0.5 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                      {Math.round(((client.outstandingBalance || 0) / client.creditLimit) * 100)}%
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Tabs */}
+          <Tabs defaultValue="overview" className="w-full">
+            <TabsList className="mb-4 flex h-auto flex-wrap gap-1 rounded-lg border border-slate-200 bg-white p-1 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <TabsTrigger value="overview" className="gap-1.5 text-xs sm:text-sm dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-white">
+                <Users className="h-3.5 w-3.5" /> Overview
+              </TabsTrigger>
+              <TabsTrigger value="quotations" className="gap-1.5 text-xs sm:text-sm dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-white">
+                <ClipboardList className="h-3.5 w-3.5" /> Quotations
+              </TabsTrigger>
+              <TabsTrigger value="invoices" className="gap-1.5 text-xs sm:text-sm dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-white">
+                <FileText className="h-3.5 w-3.5" /> Invoices
+              </TabsTrigger>
+              <TabsTrigger value="receipts" className="gap-1.5 text-xs sm:text-sm dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-white">
+                <Receipt className="h-3.5 w-3.5" /> Receipts
+              </TabsTrigger>
+              <TabsTrigger value="creditNotes" className="gap-1.5 text-xs sm:text-sm dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-white">
+                <CreditCard className="h-3.5 w-3.5" /> Credit
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Overview */}
+            <TabsContent value="overview">
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="rounded-lg bg-blue-50 p-1.5 text-blue-600 dark:bg-blue-950/40 dark:text-blue-300">
+                        <Mail className="h-4 w-4" />
+                      </div>
+                      <CardTitle className="text-base text-slate-900 dark:text-white">Contact Information</CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {[
+                      { icon: Mail, label: 'Email', value: client.contact?.email },
+                      { icon: Phone, label: 'Phone', value: client.contact?.phone },
+                      { icon: MapPin, label: 'Address', value: client.contact?.address },
+                      { icon: MapPin, label: 'City', value: client.contact?.city },
+                      { icon: MapPin, label: 'State', value: client.contact?.state },
+                      { icon: MapPin, label: 'Country', value: client.contact?.country },
+                    ].map((item, i) => (
+                      item.value ? (
+                        <div key={i} className="flex items-center gap-3 rounded-lg bg-slate-50 p-2.5 dark:bg-slate-900/50">
+                          <item.icon className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+                          <div>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">{item.label}</p>
+                            <p className="text-sm font-medium text-slate-900 dark:text-white">{item.value}</p>
+                          </div>
+                        </div>
+                      ) : null
+                    ))}
+                    {!client.contact?.email && !client.contact?.phone && !client.contact?.address && (
+                      <p className="py-4 text-center text-sm text-slate-500 dark:text-slate-400">No contact information available</p>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="rounded-lg bg-violet-50 p-1.5 text-violet-600 dark:bg-violet-950/40 dark:text-violet-300">
+                        <CreditCard className="h-4 w-4" />
+                      </div>
+                      <CardTitle className="text-base text-slate-900 dark:text-white">Account Information</CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {[
+                      { icon: Building2, label: 'Type', value: client.type.charAt(0).toUpperCase() + client.type.slice(1) },
+                      { icon: CreditCard, label: 'Payment Terms', value: getPaymentTermsLabel(client.paymentTerms) },
+                      { icon: CreditCard, label: 'Credit Limit', value: formatCurrency(client.creditLimit || 0) },
+                      { icon: TrendingUp, label: 'Total Purchases', value: formatCurrency(client.totalPurchases || 0) },
+                      { icon: Calendar, label: 'Last Purchase', value: formatDate(client.lastPurchaseDate) },
+                      { icon: Calendar, label: 'Created', value: formatDate(client.createdAt) },
+                    ].map((item, i) => (
+                      <div key={i} className="flex items-center gap-3 rounded-lg bg-slate-50 p-2.5 dark:bg-slate-900/50">
+                        <item.icon className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+                        <div>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">{item.label}</p>
+                          <p className="text-sm font-medium text-slate-900 dark:text-white">{item.value}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            {/* Quotations */}
+            <TabsContent value="quotations">
+              <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="rounded-lg bg-amber-50 p-1.5 text-amber-600 dark:bg-amber-950/40 dark:text-amber-300">
+                      <ClipboardList className="h-4 w-4" />
+                    </div>
+                    <CardTitle className="text-base text-slate-900 dark:text-white">Quotations</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className="overflow-x-auto px-0 sm:px-6">
+                  <Table className="min-w-[600px]">
+                    <TableHeader>
+                      <TableRow className="border-b border-slate-200 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/50">
+                        <TableHead className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Quotation #</TableHead>
+                        <TableHead className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Date</TableHead>
+                        <TableHead className="hidden text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 sm:table-cell">Expiry</TableHead>
+                        <TableHead className="text-right text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Total</TableHead>
+                        <TableHead className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {quotations.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={5} className="py-12 text-center">
+                            <div className="flex flex-col items-center gap-2">
+                              <ClipboardList className="h-8 w-8 text-slate-300 dark:text-slate-600" />
+                              <p className="text-sm text-slate-500 dark:text-slate-400">No quotations found</p>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        quotations.map((quotation) => (
+                          <TableRow key={quotation._id} className="cursor-pointer border-b border-slate-100 hover:bg-slate-50/50 dark:border-slate-800 dark:hover:bg-slate-900/50" onClick={() => navigate(`/client/quotations/${quotation._id}`)}>
+                            <TableCell className="whitespace-nowrap font-medium text-slate-900 dark:text-white">{quotation.referenceNo || '-'}</TableCell>
+                            <TableCell className="text-slate-600 dark:text-slate-400">{formatDate(quotation.quotationDate)}</TableCell>
+                            <TableCell className="hidden text-slate-600 dark:text-slate-400 sm:table-cell">{formatDate(quotation.expiryDate)}</TableCell>
+                            <TableCell className="whitespace-nowrap text-right font-medium text-slate-900 dark:text-white">{formatCurrency(quotation.totalAmount)}</TableCell>
+                            <TableCell>{getStatusBadge(quotation.status)}</TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
                 </CardContent>
               </Card>
-            </div>
-          </TabsContent>
+            </TabsContent>
 
-          {/* Quotations Tab */}
-          <TabsContent value="quotations">
-            <Card className="dark:bg-slate-800">
-              <CardHeader className="px-4 sm:px-6">
-                <CardTitle className="text-base sm:text-lg text-slate-900 dark:text-white">{t('clients.quotations', 'Quotations')}</CardTitle>
-              </CardHeader>
-              <CardContent className="px-0 sm:px-6 overflow-x-auto">
-                <Table className="min-w-[600px]">
-                  <TableHeader>
-                    <TableRow className="dark:bg-slate-700">
-                      <TableHead className="dark:text-white whitespace-nowrap">{t('clients.quotationNumber', 'Quotation #')}</TableHead>
-                      <TableHead className="dark:text-white">{t('clients.date', 'Date')}</TableHead>
-                      <TableHead className="dark:text-white hidden sm:table-cell">{t('clients.expiryDate', 'Expiry')}</TableHead>
-                      <TableHead className="text-right dark:text-white whitespace-nowrap">{t('clients.total', 'Total')}</TableHead>
-                      <TableHead className="dark:text-white">{t('clients.status', 'Status')}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {quotations.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground dark:text-slate-400">
-                          {t('clients.noQuotations', 'No quotations found')}
-                        </TableCell>
+            {/* Invoices */}
+            <TabsContent value="invoices">
+              <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="rounded-lg bg-blue-50 p-1.5 text-blue-600 dark:bg-blue-950/40 dark:text-blue-300">
+                      <FileText className="h-4 w-4" />
+                    </div>
+                    <CardTitle className="text-base text-slate-900 dark:text-white">Invoices</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className="overflow-x-auto px-0 sm:px-6">
+                  <Table className="min-w-[700px]">
+                    <TableHeader>
+                      <TableRow className="border-b border-slate-200 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/50">
+                        <TableHead className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Invoice #</TableHead>
+                        <TableHead className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Date</TableHead>
+                        <TableHead className="hidden text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 sm:table-cell">Due</TableHead>
+                        <TableHead className="text-right text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Total</TableHead>
+                        <TableHead className="hidden text-right text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 md:table-cell">Paid</TableHead>
+                        <TableHead className="hidden text-right text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 sm:table-cell">Balance</TableHead>
+                        <TableHead className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Status</TableHead>
                       </TableRow>
-                    ) : (
-                      quotations.map((quotation) => (
-                        <TableRow 
-                          key={quotation._id}
-                          className="cursor-pointer hover:bg-muted/50 dark:hover:bg-slate-700/50"
-                          onClick={() => navigate(`/client/quotations/${quotation._id}`)}
-                        >
-                          <TableCell className="font-medium dark:text-slate-200 whitespace-nowrap">{quotation.referenceNo || '-'}</TableCell>
-                          <TableCell className="dark:text-slate-300">{formatDate(quotation.quotationDate)}</TableCell>
-                          <TableCell className="dark:text-slate-300 hidden sm:table-cell">{formatDate(quotation.expiryDate)}</TableCell>
-                          <TableCell className="text-right dark:text-slate-200 whitespace-nowrap">{formatCurrency(quotation.totalAmount)}</TableCell>
-                          <TableCell>{getStatusBadge(quotation.status)}</TableCell>
+                    </TableHeader>
+                    <TableBody>
+                      {invoices.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={7} className="py-12 text-center">
+                            <div className="flex flex-col items-center gap-2">
+                              <FileText className="h-8 w-8 text-slate-300 dark:text-slate-600" />
+                              <p className="text-sm text-slate-500 dark:text-slate-400">No invoices found</p>
+                            </div>
+                          </TableCell>
                         </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                      ) : (
+                        invoices.map((invoice) => (
+                          <TableRow key={invoice._id} className="border-b border-slate-100 hover:bg-slate-50/50 dark:border-slate-800 dark:hover:bg-slate-900/50">
+                            <TableCell className="whitespace-nowrap font-medium text-slate-900 dark:text-white">{invoice.referenceNo || '-'}</TableCell>
+                            <TableCell className="text-slate-600 dark:text-slate-400">{formatDate(invoice.invoiceDate)}</TableCell>
+                            <TableCell className="hidden text-slate-600 dark:text-slate-400 sm:table-cell">{formatDate(invoice.dueDate)}</TableCell>
+                            <TableCell className="whitespace-nowrap text-right font-medium text-slate-900 dark:text-white">{formatCurrency(invoice.grandTotal)}</TableCell>
+                            <TableCell className="hidden whitespace-nowrap text-right text-slate-600 dark:text-slate-400 md:table-cell">{formatCurrency(invoice.amountPaid)}</TableCell>
+                            <TableCell className="hidden whitespace-nowrap text-right text-rose-600 dark:text-rose-400 sm:table-cell">{formatCurrency(invoice.balance)}</TableCell>
+                            <TableCell>{getStatusBadge(invoice.status)}</TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-          {/* Invoices Tab */}
-          <TabsContent value="invoices">
-            <Card className="dark:bg-slate-800">
-              <CardHeader className="px-4 sm:px-6">
-                <CardTitle className="text-base sm:text-lg text-slate-900 dark:text-white">{t('clients.invoices', 'Invoices')}</CardTitle>
-              </CardHeader>
-              <CardContent className="px-0 sm:px-6 overflow-x-auto">
-                <Table className="min-w-[700px]">
-                  <TableHeader>
-                    <TableRow className="dark:bg-slate-700">
-                      <TableHead className="dark:text-white whitespace-nowrap">{t('clients.invoiceNumber', 'Invoice #')}</TableHead>
-                      <TableHead className="dark:text-white">{t('clients.date', 'Date')}</TableHead>
-                      <TableHead className="dark:text-white hidden sm:table-cell">{t('clients.dueDate', 'Due')}</TableHead>
-                      <TableHead className="text-right dark:text-white whitespace-nowrap">{t('clients.total', 'Total')}</TableHead>
-                      <TableHead className="text-right dark:text-white hidden md:table-cell whitespace-nowrap">{t('clients.paid', 'Paid')}</TableHead>
-                      <TableHead className="text-right dark:text-white hidden sm:table-cell whitespace-nowrap">{t('clients.balance', 'Balance')}</TableHead>
-                      <TableHead className="dark:text-white">{t('clients.status', 'Status')}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {invoices.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground dark:text-slate-400">
-                          {t('clients.noInvoices', 'No invoices found')}
-                        </TableCell>
+            {/* Receipts */}
+            <TabsContent value="receipts">
+              <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="rounded-lg bg-emerald-50 p-1.5 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300">
+                      <Receipt className="h-4 w-4" />
+                    </div>
+                    <CardTitle className="text-base text-slate-900 dark:text-white">Receipts</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className="overflow-x-auto px-0 sm:px-6">
+                  <Table className="min-w-[500px]">
+                    <TableHeader>
+                      <TableRow className="border-b border-slate-200 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/50">
+                        <TableHead className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Receipt #</TableHead>
+                        <TableHead className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Date</TableHead>
+                        <TableHead className="text-right text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Amount</TableHead>
+                        <TableHead className="hidden text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 sm:table-cell">Method</TableHead>
+                        <TableHead className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Status</TableHead>
                       </TableRow>
-                    ) : (
-                      invoices.map((invoice) => (
-                        <TableRow key={invoice._id} className="dark:hover:bg-slate-700/50">
-                          <TableCell className="font-medium dark:text-slate-200 whitespace-nowrap">{invoice.referenceNo || '-'}</TableCell>
-                          <TableCell className="dark:text-slate-300">{formatDate(invoice.invoiceDate)}</TableCell>
-                          <TableCell className="dark:text-slate-300 hidden sm:table-cell">{formatDate(invoice.dueDate)}</TableCell>
-                          <TableCell className="text-right dark:text-slate-200 whitespace-nowrap">{formatCurrency(invoice.grandTotal)}</TableCell>
-                          <TableCell className="text-right dark:text-slate-200 hidden md:table-cell whitespace-nowrap">{formatCurrency(invoice.amountPaid)}</TableCell>
-                          <TableCell className="text-right dark:text-slate-200 hidden sm:table-cell whitespace-nowrap">{formatCurrency(invoice.balance)}</TableCell>
-                          <TableCell>{getStatusBadge(invoice.status)}</TableCell>
+                    </TableHeader>
+                    <TableBody>
+                      {receipts.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={5} className="py-12 text-center">
+                            <div className="flex flex-col items-center gap-2">
+                              <Receipt className="h-8 w-8 text-slate-300 dark:text-slate-600" />
+                              <p className="text-sm text-slate-500 dark:text-slate-400">No receipts found</p>
+                            </div>
+                          </TableCell>
                         </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                      ) : (
+                        receipts.map((receipt) => (
+                          <TableRow key={receipt._id} className="border-b border-slate-100 hover:bg-slate-50/50 dark:border-slate-800 dark:hover:bg-slate-900/50">
+                            <TableCell className="whitespace-nowrap font-medium text-slate-900 dark:text-white">{receipt.referenceNo || '-'}</TableCell>
+                            <TableCell className="text-slate-600 dark:text-slate-400">{formatDate(receipt.receiptDate)}</TableCell>
+                            <TableCell className="whitespace-nowrap text-right font-medium text-slate-900 dark:text-white">{formatCurrency(receipt.amount)}</TableCell>
+                            <TableCell className="hidden text-slate-600 dark:text-slate-400 sm:table-cell">{receipt.paymentMethod || '-'}</TableCell>
+                            <TableCell>{getStatusBadge(receipt.status)}</TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-          {/* Receipts Tab */}
-          <TabsContent value="receipts">
-            <Card className="dark:bg-slate-800">
-              <CardHeader className="px-4 sm:px-6">
-                <CardTitle className="text-base sm:text-lg text-slate-900 dark:text-white">{t('clients.receipts', 'Receipts')}</CardTitle>
-              </CardHeader>
-              <CardContent className="px-0 sm:px-6 overflow-x-auto">
-                <Table className="min-w-[500px]">
-                  <TableHeader>
-                    <TableRow className="dark:bg-slate-700">
-                      <TableHead className="dark:text-white whitespace-nowrap">{t('clients.receiptNumber', 'Receipt #')}</TableHead>
-                      <TableHead className="dark:text-white">{t('clients.date', 'Date')}</TableHead>
-                      <TableHead className="text-right dark:text-white whitespace-nowrap">{t('clients.amount', 'Amount')}</TableHead>
-                      <TableHead className="dark:text-white hidden sm:table-cell">{t('clients.paymentMethod', 'Method')}</TableHead>
-                      <TableHead className="dark:text-white">{t('clients.status', 'Status')}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {receipts.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground dark:text-slate-400">
-                          {t('clients.noReceipts', 'No receipts found')}
-                        </TableCell>
+            {/* Credit Notes */}
+            <TabsContent value="creditNotes">
+              <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="rounded-lg bg-orange-50 p-1.5 text-orange-600 dark:bg-orange-950/40 dark:text-orange-300">
+                      <CreditCard className="h-4 w-4" />
+                    </div>
+                    <CardTitle className="text-base text-slate-900 dark:text-white">Credit Notes</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className="overflow-x-auto px-0 sm:px-6">
+                  <Table className="min-w-[450px]">
+                    <TableHeader>
+                      <TableRow className="border-b border-slate-200 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/50">
+                        <TableHead className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Credit Note #</TableHead>
+                        <TableHead className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Date</TableHead>
+                        <TableHead className="text-right text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Amount</TableHead>
+                        <TableHead className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Status</TableHead>
                       </TableRow>
-                    ) : (
-                      receipts.map((receipt) => (
-                        <TableRow key={receipt._id} className="dark:hover:bg-slate-700/50">
-                          <TableCell className="font-medium dark:text-slate-200 whitespace-nowrap">{receipt.referenceNo || '-'}</TableCell>
-                          <TableCell className="dark:text-slate-300">{formatDate(receipt.receiptDate)}</TableCell>
-                          <TableCell className="text-right dark:text-slate-200 whitespace-nowrap">{formatCurrency(receipt.amount)}</TableCell>
-                          <TableCell className="dark:text-slate-300 hidden sm:table-cell">{receipt.paymentMethod || '-'}</TableCell>
-                          <TableCell>{getStatusBadge(receipt.status)}</TableCell>
+                    </TableHeader>
+                    <TableBody>
+                      {creditNotes.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={4} className="py-12 text-center">
+                            <div className="flex flex-col items-center gap-2">
+                              <CreditCard className="h-8 w-8 text-slate-300 dark:text-slate-600" />
+                              <p className="text-sm text-slate-500 dark:text-slate-400">No credit notes found</p>
+                            </div>
+                          </TableCell>
                         </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Credit Notes Tab */}
-          <TabsContent value="creditNotes">
-            <Card className="dark:bg-slate-800">
-              <CardHeader className="px-4 sm:px-6">
-                <CardTitle className="text-base sm:text-lg text-slate-900 dark:text-white">{t('clients.creditNotes', 'Credit Notes')}</CardTitle>
-              </CardHeader>
-              <CardContent className="px-0 sm:px-6 overflow-x-auto">
-                <Table className="min-w-[450px]">
-                  <TableHeader>
-                    <TableRow className="dark:bg-slate-700">
-                      <TableHead className="dark:text-white whitespace-nowrap">{t('clients.creditNoteNumber', 'Credit Note #')}</TableHead>
-                      <TableHead className="dark:text-white">{t('clients.date', 'Date')}</TableHead>
-                      <TableHead className="text-right dark:text-white whitespace-nowrap">{t('clients.amount', 'Amount')}</TableHead>
-                      <TableHead className="dark:text-white">{t('clients.status', 'Status')}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {creditNotes.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={4} className="text-center py-8 text-muted-foreground dark:text-slate-400">
-                          {t('clients.noCreditNotes', 'No credit notes found')}
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      creditNotes.map((cn) => (
-                        <TableRow key={cn._id} className="dark:hover:bg-slate-700/50">
-                          <TableCell className="font-medium dark:text-slate-200 whitespace-nowrap">{cn.referenceNo || '-'}</TableCell>
-                          <TableCell className="dark:text-slate-300">{formatDate(cn.creditNoteDate)}</TableCell>
-                          <TableCell className="text-right dark:text-slate-200 whitespace-nowrap">{formatCurrency(cn.grandTotal)}</TableCell>
-                          <TableCell>{getStatusBadge(cn.status)}</TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                      ) : (
+                        creditNotes.map((cn) => (
+                          <TableRow key={cn._id} className="border-b border-slate-100 hover:bg-slate-50/50 dark:border-slate-800 dark:hover:bg-slate-900/50">
+                            <TableCell className="whitespace-nowrap font-medium text-slate-900 dark:text-white">{cn.referenceNo || '-'}</TableCell>
+                            <TableCell className="text-slate-600 dark:text-slate-400">{formatDate(cn.creditNoteDate)}</TableCell>
+                            <TableCell className="whitespace-nowrap text-right font-medium text-slate-900 dark:text-white">{formatCurrency(cn.grandTotal)}</TableCell>
+                            <TableCell>{getStatusBadge(cn.status)}</TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
     </Layout>
   );

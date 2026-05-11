@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { clientsApi } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
-import { 
-  Plus, 
+import {
+  Plus,
   Search,
   Eye,
   Pencil,
@@ -13,19 +13,27 @@ import {
   ChevronRight,
   UserCheck,
   UserX,
-  Trash2
+  Trash2,
+  Users,
+  RefreshCw,
+  Phone,
+  Mail,
+  TrendingUp,
+  AlertTriangle,
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@/app/components/ui/table';
 import { Badge } from '@/app/components/ui/badge';
+import { Skeleton } from '@/app/components/ui/skeleton';
+import { Card, CardContent } from '@/app/components/ui/card';
 import { useTranslation } from 'react-i18next';
 
 interface Client {
@@ -172,201 +180,451 @@ export default function ClientsListPage() {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
   };
 
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  const AVATAR_COLORS = [
+    'bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300',
+    'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300',
+    'bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300',
+    'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300',
+    'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300',
+  ];
+
+  const getAvatarColor = (name: string) => {
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+  };
+
   return (
     <Layout>
-      <div className="container mx-auto py-4 sm:py-6 px-3 sm:px-4 min-h-screen bg-slate-50 dark:bg-slate-900">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">{t('clients.title', 'Clients')}</h1>
-            <p className="text-sm text-muted-foreground dark:text-slate-400">{t('clients.description', 'Manage your clients')}</p>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <Button variant="outline" size="sm" onClick={() => navigate('/bulk-data')} className="flex-1 sm:flex-none justify-center">
-              <FileText className="mr-2 h-4 w-4" />
-              <span className="hidden sm:inline">{t('clients.import', 'Import CSV')}</span>
-              <span className="sm:hidden">Import</span>
-            </Button>
-            <Button size="sm" onClick={() => navigate('/clients/new')} className="flex-1 sm:flex-none justify-center">
-              <Plus className="mr-2 h-4 w-4" />
-              <span className="hidden sm:inline">{t('clients.addClient', 'Add Client')}</span>
-              <span className="sm:hidden">Add</span>
-            </Button>
-          </div>
-        </div>
-
-        {/* Search Bar */}
-        <div className="bg-card dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-3 sm:p-4 mb-4 sm:mb-6">
-          <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-2 sm:gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground dark:text-slate-400" />
-              <Input 
-                placeholder={t('clients.searchPlaceholder', 'Search by name or email...')}
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                className="pl-10 bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600"
-              />
-            </div>
-            <Button type="submit" variant="secondary" size="sm" className="w-full sm:w-auto">
-              {t('common.search', 'Search')}
-            </Button>
-          </form>
-        </div>
-
-        {/* Table */}
-        <div className="bg-card dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-x-auto">
-          {loading ? (
-            <div className="flex items-center justify-center p-8">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground dark:text-slate-400" />
-            </div>
-          ) : (
-            <Table className="min-w-[800px]">
-              <TableHeader>
-                <TableRow className="dark:bg-slate-700">
-                  <TableHead className="dark:text-white whitespace-nowrap">{t('clients.name', 'Name')}</TableHead>
-                  <TableHead className="dark:text-white hidden sm:table-cell">{t('clients.email', 'Email')}</TableHead>
-                  <TableHead className="dark:text-white hidden md:table-cell">{t('clients.phone', 'Phone')}</TableHead>
-                  <TableHead className="dark:text-white whitespace-nowrap">{t('clients.outstandingBalance', 'Outstanding')}</TableHead>
-                  <TableHead className="dark:text-white hidden lg:table-cell whitespace-nowrap">{t('clients.overdueAmount', 'Overdue')}</TableHead>
-                  <TableHead className="dark:text-white">{t('clients.status', 'Status')}</TableHead>
-                  <TableHead className="text-right dark:text-white whitespace-nowrap">{t('common.actions', 'Actions')}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {clients.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground dark:text-slate-400">
-                      {t('clients.noClients', 'No clients found')}
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  clients.map((client) => (
-                    <TableRow key={client._id} className="dark:hover:bg-slate-700/50">
-                      <TableCell className="font-medium dark:text-slate-200">
-                        <div>{client.name}</div>
-                        <div className="text-xs text-muted-foreground dark:text-slate-400 sm:hidden">{client.code}</div>
-                        <div className="text-xs text-muted-foreground dark:text-slate-400 sm:hidden">{client.contact?.email || client.contact?.phone || '-'}</div>
-                      </TableCell>
-                      <TableCell className="dark:text-slate-300 hidden sm:table-cell">{client.contact?.email || '-'}</TableCell>
-                      <TableCell className="dark:text-slate-300 hidden md:table-cell">{client.contact?.phone || '-'}</TableCell>
-                      <TableCell className="font-medium dark:text-slate-200 whitespace-nowrap">
-                        {formatCurrency(client.totalOutstanding || client.outstandingBalance)}
-                      </TableCell>
-                      <TableCell className="font-medium dark:text-slate-200 hidden lg:table-cell whitespace-nowrap">
-                        {formatCurrency(client.overdueAmount || 0)}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={client.isActive ? 'default' : 'secondary'}>
-                          {client.isActive ? t('common.active', 'Active') : t('common.inactive', 'Inactive')}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right whitespace-nowrap">
-                        <div className="flex justify-end gap-1">
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => navigate(`/clients/${client._id}`)}
-                            title={t('common.view', 'View')}
-                            className="h-8 w-8 p-0"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => navigate(`/clients/${client._id}/edit`)}
-                            title={t('common.edit', 'Edit')}
-                            className="h-8 w-8 p-0 hidden sm:flex"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleStatement(client._id)}
-                            title={t('clients.statement', 'Statement')}
-                            className="h-8 w-8 p-0 hidden md:flex"
-                          >
-                            <FileText className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleToggleStatus(client._id)}
-                            title={client.isActive ? t('common.deactivate', 'Deactivate') : t('common.activate', 'Activate')}
-                            className="h-8 w-8 p-0"
-                          >
-                            {client.isActive ? <UserX className="h-4 w-4 text-destructive" /> : <UserCheck className="h-4 w-4 text-green-600 dark:text-green-400" />}
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => setDeleteTarget({ id: client._id, name: client.name })}
-                            title={t('common.delete', 'Delete')}
-                            className="h-8 w-8 p-0"
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          )}
-        </div>
-
-        {/* Pagination */}
-        {pagination && pagination.totalPages > 1 && (
-          <div className="mt-4 flex justify-center">
-            <div className="flex items-center gap-2">
-              <button
-                className={`flex h-9 w-9 items-center justify-center rounded-md text-sm transition-colors hover:bg-accent hover:text-accent-foreground ${pagination.currentPage === 1 ? 'pointer-events-none opacity-50' : ''}`}
-                onClick={() => setPage(Math.max(1, page - 1))}
-                disabled={pagination.currentPage === 1}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              {Array.from({ length: pagination.totalPages }, (_, i) => (
-                <button
-                  key={i + 1}
-                  className={`flex h-9 w-9 items-center justify-center rounded-md text-sm transition-colors hover:bg-accent hover:text-accent-foreground ${pagination.currentPage === i + 1 ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground' : ''}`}
-                  onClick={() => setPage(i + 1)}
-                >
-                  {i + 1}
-                </button>
-              ))}
-              <button
-                className={`flex h-9 w-9 items-center justify-center rounded-md text-sm transition-colors hover:bg-accent hover:text-accent-foreground ${pagination.currentPage === pagination.totalPages ? 'pointer-events-none opacity-50' : ''}`}
-                onClick={() => setPage(page + 1)}
-                disabled={pagination.currentPage === pagination.totalPages}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Delete Confirmation Dialog */}
-        {deleteTarget && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-            <div className="bg-background dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6 max-w-md w-full mx-4">
-              <h3 className="text-lg font-semibold mb-2 text-slate-900 dark:text-white">{t('common.confirmDelete', 'Confirm Delete')}</h3>
-              <p className="text-muted-foreground dark:text-slate-400 mb-4">
-                {t('clients.deleteConfirm', 'Are you sure you want to delete')} <strong className="text-slate-900 dark:text-white">{deleteTarget.name}</strong>? {t('common.cannotUndo', 'This action cannot be undone.')}
-              </p>
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={deleting}>
-                  {t('common.cancel', 'Cancel')}
-                </Button>
-                <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
-                  {deleting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
-                  {t('common.delete', 'Delete')}
-                </Button>
+      <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1400px] space-y-6">
+          {/* Hero Header */}
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+            <div className="p-5">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg bg-blue-50 p-2.5 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60">
+                    <Users className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h1 className="text-2xl font-bold tracking-tight text-slate-950 dark:text-white">
+                      {t('clients.title', 'Clients')}
+                    </h1>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      {t('clients.description', 'Manage your clients')}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate('/bulk-data')}
+                    className="h-9 gap-1.5 dark:border-slate-700 dark:text-slate-200"
+                  >
+                    <FileText className="h-4 w-4" />
+                    <span className="hidden sm:inline">{t('clients.import', 'Import CSV')}</span>
+                    <span className="sm:hidden">Import</span>
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => navigate('/clients/new')}
+                    className="h-9 gap-1.5 bg-blue-600 hover:bg-blue-700"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span className="hidden sm:inline">{t('clients.addClient', 'Add Client')}</span>
+                    <span className="sm:hidden">Add</span>
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
-        )}
+
+          {/* Metrics */}
+          {loading ? (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:gap-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Card key={i} className="border-slate-200 dark:border-slate-800 dark:bg-slate-950">
+                  <CardContent className="p-4">
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="mt-2 h-8 w-24" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:gap-4">
+              <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-lg bg-blue-50 p-2 text-blue-600 dark:bg-blue-950/40 dark:text-blue-300">
+                      <Users className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Total Clients</p>
+                      <p className="text-xl font-bold text-slate-900 dark:text-white">{clients.length}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-lg bg-emerald-50 p-2 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300">
+                      <UserCheck className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Active</p>
+                      <p className="text-xl font-bold text-slate-900 dark:text-white">
+                        {clients.filter(c => c.isActive).length}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-lg bg-amber-50 p-2 text-amber-600 dark:bg-amber-950/40 dark:text-amber-300">
+                      <TrendingUp className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Outstanding</p>
+                      <p className="text-xl font-bold text-slate-900 dark:text-white">
+                        {formatCurrency(clients.reduce((s, c) => s + (c.totalOutstanding || c.outstandingBalance || 0), 0))}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-lg bg-red-50 p-2 text-red-600 dark:bg-red-950/40 dark:text-red-300">
+                      <AlertTriangle className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Overdue</p>
+                      <p className="text-xl font-bold text-slate-900 dark:text-white">
+                        {formatCurrency(clients.reduce((s, c) => s + (c.overdueAmount || 0), 0))}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Search */}
+          <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <CardContent className="p-3 sm:p-4">
+              <form onSubmit={handleSearch} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+                  <Input
+                    placeholder={t('clients.searchPlaceholder', 'Search by name or email...')}
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    className="h-9 bg-white pl-10 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button type="submit" variant="secondary" size="sm" className="h-9">
+                    {t('common.search', 'Search')}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={fetchClients}
+                    disabled={loading}
+                    className="h-9 gap-1.5 dark:border-slate-700"
+                  >
+                    <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+
+          {/* Desktop Table */}
+          <div className="hidden md:block">
+            <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              {loading ? (
+                <CardContent className="space-y-3 p-6">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Skeleton key={i} className="h-12 w-full" />
+                  ))}
+                </CardContent>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-b border-slate-200 bg-slate-50/50 hover:bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/50">
+                        <TableHead className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Client</TableHead>
+                        <TableHead className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Contact</TableHead>
+                        <TableHead className="text-right text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Outstanding</TableHead>
+                        <TableHead className="text-right text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Overdue</TableHead>
+                        <TableHead className="text-center text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Status</TableHead>
+                        <TableHead className="text-right text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {clients.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="py-12 text-center">
+                            <div className="flex flex-col items-center gap-2">
+                              <Users className="h-8 w-8 text-slate-300 dark:text-slate-600" />
+                              <p className="text-sm text-slate-500 dark:text-slate-400">{t('clients.noClients', 'No clients found')}</p>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        clients.map((client) => (
+                          <TableRow key={client._id} className="border-b border-slate-100 hover:bg-slate-50/50 dark:border-slate-800 dark:hover:bg-slate-900/50">
+                            <TableCell>
+                              <div className="flex items-center gap-3">
+                                <div className={`flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold ${getAvatarColor(client.name)}`}>
+                                  {getInitials(client.name)}
+                                </div>
+                                <div>
+                                  <div className="font-medium text-slate-900 dark:text-white">{client.name}</div>
+                                  <div className="text-xs text-slate-500 dark:text-slate-400">{client.code}</div>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="space-y-0.5 text-sm">
+                                {client.contact?.email && (
+                                  <div className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
+                                    <Mail className="h-3 w-3" />
+                                    <span>{client.contact.email}</span>
+                                  </div>
+                                )}
+                                {client.contact?.phone && (
+                                  <div className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
+                                    <Phone className="h-3 w-3" />
+                                    <span>{client.contact.phone}</span>
+                                  </div>
+                                )}
+                                {!client.contact?.email && !client.contact?.phone && (
+                                  <span className="text-slate-400 dark:text-slate-500">-</span>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right font-medium text-slate-900 dark:text-white">
+                              {formatCurrency(client.totalOutstanding || client.outstandingBalance)}
+                            </TableCell>
+                            <TableCell className="text-right font-medium text-rose-600 dark:text-rose-400">
+                              {formatCurrency(client.overdueAmount || 0)}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Badge className={client.isActive ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'}>
+                                {client.isActive ? t('common.active', 'Active') : t('common.inactive', 'Inactive')}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-1">
+                                <Button variant="ghost" size="sm" onClick={() => navigate(`/clients/${client._id}`)} className="h-8 w-8 p-0 dark:text-slate-300 dark:hover:bg-slate-800">
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="sm" onClick={() => navigate(`/clients/${client._id}/edit`)} className="h-8 w-8 p-0 dark:text-slate-300 dark:hover:bg-slate-800">
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="sm" onClick={() => handleStatement(client._id)} className="h-8 w-8 p-0 dark:text-slate-300 dark:hover:bg-slate-800">
+                                  <FileText className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="sm" onClick={() => handleToggleStatus(client._id)} className="h-8 w-8 p-0 dark:text-slate-300 dark:hover:bg-slate-800">
+                                  {client.isActive ? <UserX className="h-4 w-4 text-rose-500" /> : <UserCheck className="h-4 w-4 text-emerald-500" />}
+                                </Button>
+                                <Button variant="ghost" size="sm" onClick={() => setDeleteTarget({ id: client._id, name: client.name })} className="h-8 w-8 p-0 dark:text-slate-300 dark:hover:bg-slate-800">
+                                  <Trash2 className="h-4 w-4 text-rose-500" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </Card>
+          </div>
+
+          {/* Mobile Cards */}
+          <div className="space-y-3 md:hidden">
+            {loading ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <Card key={i} className="border-slate-200 dark:border-slate-800 dark:bg-slate-950">
+                  <CardContent className="space-y-3 p-4">
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="h-10 w-10 rounded-full" />
+                      <div className="flex-1 space-y-1">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-3 w-20" />
+                      </div>
+                    </div>
+                    <Skeleton className="h-3 w-full" />
+                    <Skeleton className="h-3 w-2/3" />
+                  </CardContent>
+                </Card>
+              ))
+            ) : clients.length === 0 ? (
+              <div className="flex flex-col items-center gap-2 py-12">
+                <Users className="h-8 w-8 text-slate-300 dark:text-slate-600" />
+                <p className="text-sm text-slate-500 dark:text-slate-400">{t('clients.noClients', 'No clients found')}</p>
+              </div>
+            ) : (
+              clients.map((client) => (
+                <Card
+                  key={client._id}
+                  className={`border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950 ${client.isActive ? 'border-l-4 border-l-emerald-400' : 'border-l-4 border-l-slate-300'}`}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold ${getAvatarColor(client.name)}`}>
+                          {getInitials(client.name)}
+                        </div>
+                        <div>
+                          <div className="font-medium text-slate-900 dark:text-white">{client.name}</div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400">{client.code}</div>
+                        </div>
+                      </div>
+                      <Badge className={client.isActive ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'}>
+                        {client.isActive ? t('common.active', 'Active') : t('common.inactive', 'Inactive')}
+                      </Badge>
+                    </div>
+
+                    <div className="mt-3 space-y-1 text-sm">
+                      {client.contact?.email && (
+                        <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
+                          <Mail className="h-3.5 w-3.5" />
+                          <span>{client.contact.email}</span>
+                        </div>
+                      )}
+                      {client.contact?.phone && (
+                        <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
+                          <Phone className="h-3.5 w-3.5" />
+                          <span>{client.contact.phone}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mt-3 grid grid-cols-2 gap-2 rounded-lg bg-slate-50 p-2.5 dark:bg-slate-900/50">
+                      <div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400">Outstanding</div>
+                        <div className="text-sm font-semibold text-slate-900 dark:text-white">
+                          {formatCurrency(client.totalOutstanding || client.outstandingBalance)}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400">Overdue</div>
+                        <div className="text-sm font-semibold text-rose-600 dark:text-rose-400">
+                          {formatCurrency(client.overdueAmount || 0)}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 flex gap-1">
+                      <Button variant="outline" size="sm" onClick={() => navigate(`/clients/${client._id}`)} className="flex-1 gap-1 text-xs dark:border-slate-700">
+                        <Eye className="h-3.5 w-3.5" /> View
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => navigate(`/clients/${client._id}/edit`)} className="flex-1 gap-1 text-xs dark:border-slate-700">
+                        <Pencil className="h-3.5 w-3.5" /> Edit
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => handleToggleStatus(client._id)} className="h-8 w-8 p-0 dark:border-slate-700">
+                        {client.isActive ? <UserX className="h-3.5 w-3.5 text-rose-500" /> : <UserCheck className="h-3.5 w-3.5 text-emerald-500" />}
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => setDeleteTarget({ id: client._id, name: client.name })} className="h-8 w-8 p-0 dark:border-slate-700">
+                        <Trash2 className="h-3.5 w-3.5 text-rose-500" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+
+          {/* Pagination */}
+          {pagination && pagination.totalPages > 1 && (
+            <div className="flex justify-center">
+              <div className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white p-1 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 dark:text-slate-300"
+                  onClick={() => setPage(Math.max(1, page - 1))}
+                  disabled={pagination.currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                {Array.from({ length: pagination.totalPages }, (_, i) => (
+                  <Button
+                    key={i + 1}
+                    variant={pagination.currentPage === i + 1 ? 'default' : 'ghost'}
+                    size="sm"
+                    className={`h-8 w-8 p-0 text-xs ${pagination.currentPage === i + 1 ? 'bg-blue-600 text-white hover:bg-blue-700' : 'dark:text-slate-300'}`}
+                    onClick={() => setPage(i + 1)}
+                  >
+                    {i + 1}
+                  </Button>
+                ))}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 dark:text-slate-300"
+                  onClick={() => setPage(page + 1)}
+                  disabled={pagination.currentPage === pagination.totalPages}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Delete Modal */}
+          {deleteTarget && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+              <Card className="w-full max-w-sm border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-900">
+                <CardContent className="p-6">
+                  <div className="flex flex-col items-center text-center">
+                    <div className="rounded-full bg-red-50 p-3 dark:bg-red-950/30">
+                      <Trash2 className="h-6 w-6 text-red-500 dark:text-red-400" />
+                    </div>
+                    <h3 className="mt-3 text-lg font-semibold text-slate-900 dark:text-white">
+                      {t('common.confirmDelete', 'Confirm Delete')}
+                    </h3>
+                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                      {t('clients.deleteConfirm', 'Are you sure you want to delete')} <strong className="text-slate-900 dark:text-white">{deleteTarget.name}</strong>? {t('common.cannotUndo', 'This action cannot be undone.')}
+                    </p>
+                    <div className="mt-5 flex w-full gap-2">
+                      <Button variant="outline" className="flex-1 dark:border-slate-700" onClick={() => setDeleteTarget(null)} disabled={deleting}>
+                        {t('common.cancel', 'Cancel')}
+                      </Button>
+                      <Button variant="destructive" className="flex-1" onClick={handleDelete} disabled={deleting}>
+                        {deleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                        {t('common.delete', 'Delete')}
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </div>
       </div>
     </Layout>
   );

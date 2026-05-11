@@ -4,14 +4,24 @@ import { deliveryNotesApi, invoicesApi, clientsApi, productsApi, warehousesApi, 
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { Layout } from '../../layout/Layout';
 import { ErrorBoundary } from '../../components/ErrorBoundary';
-import { 
-  ArrowLeft, 
-  Save, 
-  Loader2, 
-  Plus, 
+import {
+  ArrowLeft,
+  Save,
+  Plus,
   Trash2,
   CheckCircle,
-  Truck
+  Truck,
+  Package,
+  ClipboardList,
+  Building,
+  User,
+  CalendarDays,
+  MapPin,
+  Hash,
+  FileText,
+  TrendingUp,
+  BarChart3,
+  Layers,
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
@@ -25,13 +35,14 @@ import {
 } from '@/app/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { Label } from '@/app/components/ui/label';
+import { Skeleton } from '@/app/components/ui/skeleton';
 import {
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
-  TableRow
+  TableRow,
 } from '@/app/components/ui/table';
 import { useTranslation } from 'react-i18next';
 
@@ -561,8 +572,14 @@ function DeliveryNoteCreatePageContent() {
   if (loading) {
     return (
       <Layout>
-        <div className="flex items-center justify-center p-8">
-          <Loader2 className="h-8 w-8 animate-spin" />
+        <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-[1600px] space-y-6">
+            <Skeleton className="h-40 w-full rounded-xl" />
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+              <Skeleton className="h-96 w-full rounded-xl lg:col-span-2" />
+              <Skeleton className="h-96 w-full rounded-xl" />
+            </div>
+          </div>
         </div>
       </Layout>
     );
@@ -570,262 +587,328 @@ function DeliveryNoteCreatePageContent() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-6">
-        <div className="flex items-center gap-4 mb-6">
-          <Button variant="ghost" onClick={() => navigate('/delivery-notes')}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            {t('common.back', 'Back')}
-          </Button>
-          <h1 className="text-2xl font-bold dark:text-white">
-            {isEditMode ? t('deliveryNote.editDeliveryNote', 'Edit Delivery Note') : t('deliveryNote.newDeliveryNote', 'New Delivery Note')}
-          </h1>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            <Card className="dark:bg-slate-800">
-              <CardHeader>
-                <CardTitle className="dark:text-white">{t('deliveryNote.basicInfo', 'Basic Information')}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label className="dark:text-gray-200">{t('deliveryNote.invoice', 'Invoice')} *</Label>
-                  <Select 
-                    value={formData.invoice} 
-                    onValueChange={(value) => handleInvoiceChange(value)}
-                    disabled={isEditMode || !!invoiceId}
+      <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1600px] space-y-6">
+          {/* Hero Header */}
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+            <div className="p-5">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => navigate('/delivery-notes')}
+                    className="h-9 w-9 flex-shrink-0 dark:border-slate-700 dark:text-slate-200"
                   >
-                    <SelectTrigger className="dark:bg-slate-700 dark:border-slate-600 dark:text-white">
-                      <SelectValue placeholder={t('deliveryNote.selectInvoice', 'Select Invoice')} />
-                    </SelectTrigger>
-                    <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
-                      {invoices.length === 0 ? (
-                        <div className="p-4 text-center text-muted-foreground">
-                          No invoices available
-                        </div>
-                      ) : (
-                        invoices.map(inv => (
-                          <SelectItem key={inv._id} value={inv._id} className="dark:text-white">
-                            {inv.referenceNo || inv.invoiceNumber} - {inv.client?.name || 'No client'}
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                  <div>
+                    <h1 className="text-2xl font-bold tracking-tight text-slate-950 dark:text-white sm:text-3xl">
+                      {isEditMode ? t('deliveryNote.editDeliveryNote', 'Edit Delivery Note') : t('deliveryNote.newDeliveryNote', 'New Delivery Note')}
+                    </h1>
+                    <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+                      {isEditMode ? 'Update delivery note details and line items.' : 'Create a new delivery note from an invoice.'}
+                    </p>
+                  </div>
                 </div>
-
-                <div>
-                  <Label className="dark:text-gray-200">Warehouse *</Label>
-                  <Select 
-                    value={warehouse} 
-                    onValueChange={(value) => setWarehouse(value)}
-                    disabled={isEditMode}
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => handleSave(false)}
+                    disabled={saving || !formData.invoice}
+                    className="gap-2 dark:border-slate-700 dark:text-slate-200"
                   >
-                    <SelectTrigger className="dark:bg-slate-700 dark:border-slate-600 dark:text-white">
-                      <SelectValue placeholder="Select warehouse" />
-                    </SelectTrigger>
-                    <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
-                      {warehouses.map(wh => (
-                        <SelectItem key={wh._id} value={wh._id} className="dark:text-white">
-                          {wh.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    <Save className="h-4 w-4" />
+                    {t('deliveryNote.saveDraft', 'Save as Draft')}
+                  </Button>
+                  <Button
+                    onClick={() => handleSave(true)}
+                    disabled={saving || !formData.invoice}
+                    className="gap-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-500"
+                  >
+                    <CheckCircle className="h-4 w-4" />
+                    {t('deliveryNote.confirmDispatch', 'Confirm & Dispatch')}
+                  </Button>
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label className="dark:text-gray-200">{t('deliveryNote.client', 'Client')}</Label>
-                    <Input className="dark:bg-slate-700 dark:border-slate-600 dark:text-white" value={formData.client ? clients.find(c => c._id === formData.client)?.name || '' : ''} disabled />
-                  </div>
-                  <div>
-                    <Label className="dark:text-gray-200">{t('deliveryNote.deliveryDate', 'Delivery Date')}</Label>
-                    <Input
-                      type="date"
-                      className="dark:bg-slate-700 dark:border-slate-600 dark:text-white"
-                      value={formData.deliveryDate}
-                      onChange={(e) => setFormData(prev => ({ ...prev, deliveryDate: e.target.value }))}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label className="dark:text-gray-200">{t('deliveryNote.deliveredBy', 'Delivered By')}</Label>
-                    <Input
-                      className="dark:bg-slate-700 dark:border-slate-600 dark:text-white"
-                      value={formData.deliveredBy}
-                      onChange={(e) => setFormData(prev => ({ ...prev, deliveredBy: e.target.value }))}
-                      placeholder={t('deliveryNote.deliveredByPlaceholder', 'Driver name')}
-                    />
-                  </div>
-                  <div>
-                    <Label className="dark:text-gray-200">{t('deliveryNote.vehicle', 'Vehicle')}</Label>
-                    <Input
-                      className="dark:bg-slate-700 dark:border-slate-600 dark:text-white"
-                      value={formData.vehicle}
-                      onChange={(e) => setFormData(prev => ({ ...prev, vehicle: e.target.value }))}
-                      placeholder={t('deliveryNote.vehiclePlaceholder', 'Vehicle plate number')}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label className="dark:text-gray-200">{t('deliveryNote.deliveryAddress', 'Delivery Address')}</Label>
-                  <Textarea
-                    className="dark:bg-slate-700 dark:border-slate-600 dark:text-white"
-                    value={formData.deliveryAddress}
-                    onChange={(e) => setFormData(prev => ({ ...prev, deliveryAddress: e.target.value }))}
-                    placeholder={t('deliveryNote.deliveryAddressPlaceholder', 'Delivery address')}
-                    rows={2}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label className="dark:text-gray-200">{t('deliveryNote.carrier', 'Carrier')}</Label>
-                    <Input
-                      className="dark:bg-slate-700 dark:border-slate-600 dark:text-white"
-                      value={formData.carrier}
-                      onChange={(e) => setFormData(prev => ({ ...prev, carrier: e.target.value }))}
-                      placeholder={t('deliveryNote.carrierPlaceholder', 'Carrier name')}
-                    />
-                  </div>
-                  <div>
-                    <Label className="dark:text-gray-200">{t('deliveryNote.trackingNumber', 'Tracking Number')}</Label>
-                    <Input
-                      className="dark:bg-slate-700 dark:border-slate-600 dark:text-white"
-                      value={formData.trackingNumber}
-                      onChange={(e) => setFormData(prev => ({ ...prev, trackingNumber: e.target.value }))}
-                      placeholder={t('deliveryNote.trackingNumberPlaceholder', 'Tracking number')}
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Line Items */}
-            <Card className="dark:bg-slate-800">
-              <CardHeader>
-                <CardTitle className="dark:text-white">{t('deliveryNote.lineItems', 'Line Items')}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {formData.lines.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Truck className="mx-auto h-8 w-8 mb-2" />
-                    <p>{t('deliveryNote.selectQuotationFirst', 'Select a quotation first')}</p>
-                  </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="dark:hover:bg-slate-700">
-                        <TableHead className="dark:text-gray-300">{t('deliveryNote.product', 'Product')}</TableHead>
-                        <TableHead className="text-right dark:text-gray-300">{t('deliveryNote.qtyOrdered', 'Qty Ordered')}</TableHead>
-                        <TableHead className="text-right dark:text-gray-300">{t('deliveryNote.qtyDelivered', 'Delivered')}</TableHead>
-                        <TableHead className="text-right dark:text-gray-300">{t('deliveryNote.qtyToDeliver', 'To Deliver')}</TableHead>
-                        <TableHead className="dark:text-gray-300">{t('deliveryNote.batch', 'Batch')}</TableHead>
-                        <TableHead className="text-right dark:text-gray-300">{t('deliveryNote.unitPrice', 'Unit Price')}</TableHead>
-                        <TableHead className="text-right dark:text-gray-300">{t('deliveryNote.total', 'Total')}</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {formData.lines.map((line, index) => (
-                        <TableRow key={index} className="dark:hover:bg-slate-700">
-                          <TableCell>
-                            <div className="font-medium dark:text-white">{line.productName}</div>
-                            <div className="text-sm text-muted-foreground">{line.productSku}</div>
-                          </TableCell>
-                          <TableCell className="text-right dark:text-white">{line.qtyOrdered}</TableCell>
-                          <TableCell className="text-right dark:text-white">{line.qtyDelivered}</TableCell>
-                          <TableCell>
-                            <Input
-                              type="number"
-                              min="0"
-                              max={line.qtyOrdered - line.qtyDelivered}
-                              value={line.qtyToDeliver}
-                              onChange={(e) => handleLineChange(index, 'qtyToDeliver', e.target.value)}
-                              className="w-20 text-right dark:bg-slate-700 dark:border-slate-600 dark:text-white"
-                              disabled={line.qtyOrdered - line.qtyDelivered === 0}
-                            />
-                            <div className="text-xs text-muted-foreground mt-1">
-                              Max: {line.qtyOrdered - line.qtyDelivered}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {line.trackBatches && (
-                              <BatchAutocomplete
-                                productId={line.product}
-                                warehouseId={warehouse}
-                                value={line.batchId}
-                                onChange={(value) => handleLineChange(index, 'batchId', value)}
-                                disabled={!warehouse || !line.product || line.qtyToDeliver === 0}
-                              />
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right dark:text-white">{formatCurrency(line.unitPrice)}</TableCell>
-                          <TableCell className="text-right font-medium dark:text-white">
-                            {formatCurrency(line.lineTotal)}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
-            <Card className="dark:bg-slate-800">
-              <CardHeader>
-                <CardTitle className="dark:text-white">{t('deliveryNote.summary', 'Summary')}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex justify-between dark:text-white">
-                  <span>{t('deliveryNote.itemsToDeliver', 'Items to Deliver')}</span>
-                  <span>{formData.lines.filter(l => l.qtyToDeliver > 0).length}</span>
-                </div>
-                <div className="flex justify-between text-lg font-bold pt-3 border-t dark:text-white">
-                  <span>{t('deliveryNote.total', 'Total')}</span>
-                  <span>{formatCurrency(calculateTotal())}</span>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            {/* Main Content */}
+            <div className="space-y-6 lg:col-span-2">
+              {/* Basic Information */}
+              <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="border-b border-slate-100 bg-slate-50/50 px-5 py-4 dark:border-slate-800 dark:bg-slate-900/50">
+                  <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-white">
+                    <ClipboardList className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                    {t('deliveryNote.basicInfo', 'Basic Information')}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4 p-5">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                      <Label className="text-sm text-slate-700 dark:text-slate-300">
+                        {t('deliveryNote.invoice', 'Invoice')} *
+                      </Label>
+                      <Select
+                        value={formData.invoice}
+                        onValueChange={(value) => handleInvoiceChange(value)}
+                        disabled={isEditMode || !!invoiceId}
+                      >
+                        <SelectTrigger className="mt-1 bg-slate-50 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700 dark:text-white">
+                          <SelectValue placeholder={t('deliveryNote.selectInvoice', 'Select Invoice')} />
+                        </SelectTrigger>
+                        <SelectContent className="dark:bg-slate-900 dark:border-slate-700">
+                          {invoices.length === 0 ? (
+                            <div className="p-4 text-center text-sm text-muted-foreground">No invoices available</div>
+                          ) : (
+                            invoices.map((inv) => (
+                              <SelectItem key={inv._id} value={inv._id} className="dark:text-white">
+                                {inv.referenceNo || inv.invoiceNumber} - {inv.client?.name || 'No client'}
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-            <Card className="dark:bg-slate-800">
-              <CardHeader>
-                <CardTitle className="dark:text-white">{t('deliveryNote.notes', 'Notes')}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Textarea
-                  className="dark:bg-slate-700 dark:border-slate-600 dark:text-white"
-                  value={formData.notes}
-                  onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                  placeholder={t('deliveryNote.notesPlaceholder', 'Add notes...')}
-                  rows={4}
-                />
-              </CardContent>
-            </Card>
+                    <div>
+                      <Label className="text-sm text-slate-700 dark:text-slate-300">Warehouse *</Label>
+                      <Select value={warehouse} onValueChange={(value) => setWarehouse(value)} disabled={isEditMode}>
+                        <SelectTrigger className="mt-1 bg-slate-50 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700 dark:text-white">
+                          <SelectValue placeholder="Select warehouse" />
+                        </SelectTrigger>
+                        <SelectContent className="dark:bg-slate-900 dark:border-slate-700">
+                          {warehouses.map((wh) => (
+                            <SelectItem key={wh._id} value={wh._id} className="dark:text-white">
+                              {wh.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
 
-            <div className="flex flex-col gap-2">
-              <Button
-                onClick={() => handleSave(false)}
-                disabled={saving || !formData.invoice}
-                variant="outline"
-              >
-                {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                {t('deliveryNote.saveDraft', 'Save as Draft')}
-              </Button>
-              <Button
-                onClick={() => handleSave(true)}
-                disabled={saving || !formData.invoice}
-              >
-                {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
-                {t('deliveryNote.confirmDispatch', 'Confirm & Dispatch')}
-              </Button>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                      <Label className="text-sm text-slate-700 dark:text-slate-300">{t('deliveryNote.client', 'Client')}</Label>
+                      <div className="mt-1 flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                        <User className="h-4 w-4 text-slate-400" />
+                        {formData.client ? clients.find((c) => c._id === formData.client)?.name || '' : 'Select an invoice'}
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-sm text-slate-700 dark:text-slate-300">{t('deliveryNote.deliveryDate', 'Delivery Date')}</Label>
+                      <div className="relative mt-1">
+                        <CalendarDays className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                        <Input
+                          type="date"
+                          className="bg-slate-50 pl-9 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700 dark:text-white"
+                          value={formData.deliveryDate}
+                          onChange={(e) => setFormData((prev) => ({ ...prev, deliveryDate: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                      <Label className="text-sm text-slate-700 dark:text-slate-300">{t('deliveryNote.deliveredBy', 'Delivered By')}</Label>
+                      <Input
+                        className="mt-1 bg-slate-50 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700 dark:text-white"
+                        value={formData.deliveredBy}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, deliveredBy: e.target.value }))}
+                        placeholder={t('deliveryNote.deliveredByPlaceholder', 'Driver name')}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-sm text-slate-700 dark:text-slate-300">{t('deliveryNote.vehicle', 'Vehicle')}</Label>
+                      <Input
+                        className="mt-1 bg-slate-50 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700 dark:text-white"
+                        value={formData.vehicle}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, vehicle: e.target.value }))}
+                        placeholder={t('deliveryNote.vehiclePlaceholder', 'Vehicle plate number')}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label className="text-sm text-slate-700 dark:text-slate-300">{t('deliveryNote.deliveryAddress', 'Delivery Address')}</Label>
+                    <Textarea
+                      className="mt-1 bg-slate-50 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700 dark:text-white"
+                      value={formData.deliveryAddress}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, deliveryAddress: e.target.value }))}
+                      placeholder={t('deliveryNote.deliveryAddressPlaceholder', 'Delivery address')}
+                      rows={2}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                      <Label className="text-sm text-slate-700 dark:text-slate-300">{t('deliveryNote.carrier', 'Carrier')}</Label>
+                      <Input
+                        className="mt-1 bg-slate-50 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700 dark:text-white"
+                        value={formData.carrier}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, carrier: e.target.value }))}
+                        placeholder={t('deliveryNote.carrierPlaceholder', 'Carrier name')}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-sm text-slate-700 dark:text-slate-300">{t('deliveryNote.trackingNumber', 'Tracking Number')}</Label>
+                      <Input
+                        className="mt-1 bg-slate-50 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700 dark:text-white"
+                        value={formData.trackingNumber}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, trackingNumber: e.target.value }))}
+                        placeholder={t('deliveryNote.trackingNumberPlaceholder', 'Tracking number')}
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Line Items */}
+              <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="border-b border-slate-100 bg-slate-50/50 px-5 py-4 dark:border-slate-800 dark:bg-slate-900/50">
+                  <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-white">
+                    <Package className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                    {t('deliveryNote.lineItems', 'Line Items')}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  {formData.lines.length === 0 ? (
+                    <div className="flex min-h-[160px] flex-col items-center justify-center p-8">
+                      <Truck className="mb-2 h-8 w-8 text-slate-300 dark:text-slate-600" />
+                      <p className="text-sm text-slate-500 dark:text-slate-400">{t('deliveryNote.selectQuotationFirst', 'Select an invoice first')}</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-slate-50/70 hover:bg-slate-50/70 dark:bg-slate-900/50 dark:hover:bg-slate-900/50">
+                            <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Product</TableHead>
+                            <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Ordered</TableHead>
+                            <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Delivered</TableHead>
+                            <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">To Deliver</TableHead>
+                            <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Batch</TableHead>
+                            <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Unit Price</TableHead>
+                            <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Total</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {formData.lines.map((line, index) => (
+                            <TableRow
+                              key={index}
+                              className="transition-colors hover:bg-slate-50/50 dark:border-slate-800 dark:hover:bg-slate-900/30"
+                            >
+                              <TableCell>
+                                <div className="font-medium text-slate-900 dark:text-white">{line.productName}</div>
+                                <div className="text-xs text-slate-500 dark:text-slate-400">{line.productSku}</div>
+                              </TableCell>
+                              <TableCell className="text-right text-sm text-slate-700 dark:text-slate-300">{line.qtyOrdered}</TableCell>
+                              <TableCell className="text-right text-sm text-slate-700 dark:text-slate-300">{line.qtyDelivered}</TableCell>
+                              <TableCell>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  max={line.qtyOrdered - line.qtyDelivered}
+                                  value={line.qtyToDeliver}
+                                  onChange={(e) => handleLineChange(index, 'qtyToDeliver', e.target.value)}
+                                  className="w-20 text-right bg-slate-50 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700 dark:text-white"
+                                  disabled={line.qtyOrdered - line.qtyDelivered === 0}
+                                />
+                                <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">Max: {line.qtyOrdered - line.qtyDelivered}</div>
+                              </TableCell>
+                              <TableCell>
+                                {line.trackBatches && (
+                                  <BatchAutocomplete
+                                    productId={line.product}
+                                    warehouseId={warehouse}
+                                    value={line.batchId}
+                                    onChange={(value) => handleLineChange(index, 'batchId', value)}
+                                    disabled={!warehouse || !line.product || line.qtyToDeliver === 0}
+                                  />
+                                )}
+                              </TableCell>
+                              <TableCell className="text-right text-sm text-slate-700 dark:text-slate-300">{formatCurrency(line.unitPrice)}</TableCell>
+                              <TableCell className="text-right text-sm font-semibold text-slate-900 dark:text-white">{formatCurrency(line.lineTotal)}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Sidebar */}
+            <div className="space-y-6">
+              {/* Summary */}
+              <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="border-b border-slate-100 bg-slate-50/50 px-5 py-4 dark:border-slate-800 dark:bg-slate-900/50">
+                  <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-white">
+                    <BarChart3 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                    {t('deliveryNote.summary', 'Summary')}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4 p-5">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-500 dark:text-slate-400">{t('deliveryNote.itemsToDeliver', 'Items to Deliver')}</span>
+                    <span className="font-medium text-slate-900 dark:text-white">{formData.lines.filter((l) => l.qtyToDeliver > 0).length}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-500 dark:text-slate-400">Total Qty</span>
+                    <span className="font-medium text-slate-900 dark:text-white">
+                      {formData.lines.reduce((sum, l) => sum + l.qtyToDeliver, 0)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between border-t border-slate-100 pt-4 text-lg font-bold text-slate-900 dark:border-slate-800 dark:text-white">
+                    <span>{t('deliveryNote.total', 'Total')}</span>
+                    <span>{formatCurrency(calculateTotal())}</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Notes */}
+              <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="border-b border-slate-100 bg-slate-50/50 px-5 py-4 dark:border-slate-800 dark:bg-slate-900/50">
+                  <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-white">
+                    <FileText className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                    {t('deliveryNote.notes', 'Notes')}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-5">
+                  <Textarea
+                    className="bg-slate-50 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700 dark:text-white"
+                    value={formData.notes}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value }))}
+                    placeholder={t('deliveryNote.notesPlaceholder', 'Add notes...')}
+                    rows={4}
+                  />
+                </CardContent>
+              </Card>
+
+              {/* Actions */}
+              <div className="flex flex-col gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => handleSave(false)}
+                  disabled={saving || !formData.invoice}
+                  className="h-10 gap-2 dark:border-slate-700 dark:text-slate-200"
+                >
+                  <Save className="h-4 w-4" />
+                  {t('deliveryNote.saveDraft', 'Save as Draft')}
+                </Button>
+                <Button
+                  onClick={() => handleSave(true)}
+                  disabled={saving || !formData.invoice}
+                  className="h-10 gap-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-500"
+                >
+                  <CheckCircle className="h-4 w-4" />
+                  {t('deliveryNote.confirmDispatch', 'Confirm & Dispatch')}
+                </Button>
+              </div>
             </div>
           </div>
         </div>

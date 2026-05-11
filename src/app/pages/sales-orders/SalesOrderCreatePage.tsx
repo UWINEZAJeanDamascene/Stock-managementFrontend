@@ -2,16 +2,23 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { salesOrdersApi, clientsApi, productsApi, quotationsApi } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
-import { 
+import {
   ArrowLeft,
   Plus,
   Trash2,
   Loader2,
-  Package
+  Package,
+  DollarSign,
+  Calculator,
+  Tag,
+  Layers,
+  Receipt,
+  Calendar,
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { Label } from '@/app/components/ui/label';
+import { Badge } from '@/app/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { Textarea } from '@/app/components/ui/textarea';
 import {
@@ -280,275 +287,418 @@ export default function SalesOrderCreatePage() {
   };
 
   const { subtotal, taxTotal, grandTotal } = calculateTotals();
+  const selectedClient = clients.find((c) => c._id === formData.client);
 
   return (
     <Layout>
-      <div className="container mx-auto p-6 min-h-screen bg-slate-50 dark:bg-slate-900">
-        <div className="mb-6 flex items-center gap-4">
-          <Button variant="outline" onClick={() => navigate('/sales-orders')} className="dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Create Sales Order</h1>
-        </div>
-
-        <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
-              <Card className="dark:bg-slate-800/50 dark:border-slate-700">
-                <CardHeader>
-                  <CardTitle className="text-slate-900 dark:text-white">Order Details</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-slate-900 dark:text-white">Convert from Quotation</Label>
-                      <Select value={formData.quotation || '_none'} onValueChange={handleQuotationChange}>
-                        <SelectTrigger className="dark:bg-slate-700 dark:border-slate-600 dark:text-white">
-                          <SelectValue placeholder="Select quotation (optional)" />
-                        </SelectTrigger>
-                        <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
-                          <SelectItem value="_none" className="dark:text-slate-200">None</SelectItem>
-                          {quotations.map((quotation) => (
-                            <SelectItem key={quotation._id} value={quotation._id} className="dark:text-slate-200">
-                              {quotation.referenceNo} - {quotation.client?.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-slate-900 dark:text-white">Client <span className="text-red-500">*</span></Label>
-                      <Select value={formData.client} onValueChange={(value) => setFormData({ ...formData, client: value })}>
-                        <SelectTrigger className="dark:bg-slate-700 dark:border-slate-600 dark:text-white">
-                          <SelectValue placeholder="Select client" />
-                        </SelectTrigger>
-                        <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
-                          {clients.map((client) => (
-                            <SelectItem key={client._id} value={client._id} className="dark:text-slate-200">
-                              {client.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-slate-900 dark:text-white">Order Date <span className="text-red-500">*</span></Label>
-                      <Input
-                        type="date"
-                        value={formData.orderDate}
-                        onChange={(e) => setFormData({ ...formData, orderDate: e.target.value })}
-                        required
-                        className="dark:bg-slate-700 dark:border-slate-600 dark:text-white"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-slate-900 dark:text-white">Expected Date</Label>
-                      <Input
-                        type="date"
-                        value={formData.expectedDate}
-                        onChange={(e) => setFormData({ ...formData, expectedDate: e.target.value })}
-                        className="dark:bg-slate-700 dark:border-slate-600 dark:text-white"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-slate-900 dark:text-white">Currency</Label>
-                      <Select value={formData.currencyCode} onValueChange={(value) => setFormData({ ...formData, currencyCode: value })}>
-                        <SelectTrigger className="dark:bg-slate-700 dark:border-slate-600 dark:text-white">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
-                          <SelectItem value="USD" className="dark:text-slate-200">USD</SelectItem>
-                          <SelectItem value="EUR" className="dark:text-slate-200">EUR</SelectItem>
-                          <SelectItem value="GBP" className="dark:text-slate-200">GBP</SelectItem>
-                          <SelectItem value="RWF" className="dark:text-slate-200">RWF</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-slate-900 dark:text-white">Terms & Conditions</Label>
-                    <Textarea
-                      value={formData.terms}
-                      onChange={(e) => setFormData({ ...formData, terms: e.target.value })}
-                      rows={3}
-                      className="dark:bg-slate-700 dark:border-slate-600 dark:text-white"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-slate-900 dark:text-white">Notes</Label>
-                    <Textarea
-                      value={formData.notes}
-                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                      rows={2}
-                      className="dark:bg-slate-700 dark:border-slate-600 dark:text-white"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="dark:bg-slate-800/50 dark:border-slate-700">
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle className="text-slate-900 dark:text-white">Line Items</CardTitle>
-                  <Button type="button" onClick={addLine} variant="outline" size="sm" className="dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Line
-                  </Button>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {lines.map((line, index) => (
-                      <div key={line.id} className="grid grid-cols-12 gap-2 items-end border p-4 rounded-lg dark:border-slate-600">
-                        <div className="col-span-4">
-                          <Label className="text-xs text-slate-900 dark:text-white">Product</Label>
-                          <Select value={line.product} onValueChange={(value) => updateLine(line.id, 'product', value)}>
-                            <SelectTrigger className="dark:bg-slate-700 dark:border-slate-600 dark:text-white">
-                              <SelectValue placeholder="Select product" />
-                            </SelectTrigger>
-                            <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
-                              {products.map((product) => (
-                                <SelectItem key={product._id} value={product._id} className="dark:text-slate-200">
-                                  {product.name} ({product.sku})
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className="col-span-2">
-                          <Label className="text-xs text-slate-900 dark:text-white">Qty</Label>
-                          <Input
-                            type="number"
-                            min="1"
-                            value={line.qty}
-                            onChange={(e) => updateLine(line.id, 'qty', parseFloat(e.target.value) || 0)}
-                            className="dark:bg-slate-700 dark:border-slate-600 dark:text-white"
-                          />
-                        </div>
-
-                        <div className="col-span-2">
-                          <Label className="text-xs text-slate-900 dark:text-white">Unit Price</Label>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            value={line.unitPrice}
-                            onChange={(e) => updateLine(line.id, 'unitPrice', parseFloat(e.target.value) || 0)}
-                            className="dark:bg-slate-700 dark:border-slate-600 dark:text-white"
-                          />
-                        </div>
-
-                        <div className="col-span-2">
-                          <Label className="text-xs text-slate-900 dark:text-white">Discount %</Label>
-                          <Input
-                            type="number"
-                            min="0"
-                            max="100"
-                            value={line.discountPct}
-                            onChange={(e) => updateLine(line.id, 'discountPct', parseFloat(e.target.value) || 0)}
-                            className="dark:bg-slate-700 dark:border-slate-600 dark:text-white"
-                          />
-                        </div>
-
-                        <div className="col-span-1">
-                          <Label className="text-xs text-slate-900 dark:text-white">Tax %</Label>
-                          <Input
-                            type="number"
-                            min="0"
-                            value={line.taxRate}
-                            onChange={(e) => updateLine(line.id, 'taxRate', parseFloat(e.target.value) || 0)}
-                            className="dark:bg-slate-700 dark:border-slate-600 dark:text-white"
-                          />
-                        </div>
-
-                        <div className="col-span-1">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeLine(line.id)}
-                            disabled={lines.length === 1}
-                            className="text-red-500 dark:text-red-400"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-
-                        <div className="col-span-12 text-right text-sm text-slate-600 dark:text-slate-400">
-                          Line Total: {new Intl.NumberFormat('en-US', { style: 'currency', currency: formData.currencyCode }).format(toNumber(line.lineTotal) || 0)}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="space-y-6">
-              <Card className="dark:bg-slate-800/50 dark:border-slate-700">
-                <CardHeader>
-                  <CardTitle className="text-slate-900 dark:text-white">Summary</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex justify-between">
-                    <span className="text-slate-600 dark:text-slate-400">Subtotal:</span>
-                    <span className="font-medium dark:text-white">
-                      {new Intl.NumberFormat('en-US', { style: 'currency', currency: formData.currencyCode || 'RWF' }).format(Number(subtotal) || 0)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-600 dark:text-slate-400">Tax:</span>
-                    <span className="font-medium dark:text-white">
-                      {new Intl.NumberFormat('en-US', { style: 'currency', currency: formData.currencyCode || 'RWF' }).format(Number(taxTotal) || 0)}
-                    </span>
-                  </div>
-                  <div className="border-t pt-4 flex justify-between text-lg font-bold dark:border-slate-600">
-                    <span className="text-slate-900 dark:text-white">Grand Total:</span>
-                    <span className="text-slate-900 dark:text-white">
-                      {new Intl.NumberFormat('en-US', { style: 'currency', currency: formData.currencyCode || 'RWF' }).format(Number(grandTotal) || 0)}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center space-x-2 py-3">
-                    <input
-                      type="checkbox"
-                      id="sendEmail"
-                      checked={sendEmail}
-                      onChange={(e) => setSendEmail(e.target.checked)}
-                      className="h-4 w-4"
-                    />
-                    <Label htmlFor="sendEmail" className="cursor-pointer">
-                      Send email notification to customer
-                    </Label>
-                  </div>
-
-                  <Button 
-                    type="submit" 
-                    className="w-full" 
-                    disabled={loading}
+      <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1600px] space-y-6">
+          {/* Hero Header */}
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+            <div className="grid gap-5 p-5 xl:grid-cols-[1fr_420px] xl:items-stretch">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => navigate('/sales-orders')}
+                    className="h-9 gap-1.5 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
                   >
-                    {loading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Creating...
-                      </>
-                    ) : (
-                      <>
-                        <Package className="h-4 w-4 mr-2" />
-                        Create Sales Order
-                      </>
-                    )}
+                    <ArrowLeft className="h-4 w-4" />
+                    Back
                   </Button>
-                </CardContent>
-              </Card>
+                  <div className="rounded-lg bg-violet-50 p-2.5 text-violet-700 ring-1 ring-violet-100 dark:bg-violet-950/40 dark:text-violet-300 dark:ring-violet-900/60">
+                    <Receipt className="h-5 w-5" />
+                  </div>
+                  <h1 className="text-2xl font-bold tracking-tight text-slate-950 dark:text-white sm:text-3xl">
+                    Create Sales Order
+                  </h1>
+                </div>
+                <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+                  Draft a new sales order, add line items, and confirm to begin fulfillment.
+                </p>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  {selectedClient && (
+                    <Badge variant="secondary" className="dark:bg-slate-800 dark:text-slate-300">
+                      <Layers className="mr-1 h-3 w-3" />
+                      {selectedClient.name}
+                    </Badge>
+                  )}
+                  <Badge variant="secondary" className="dark:bg-slate-800 dark:text-slate-300">
+                    <Calculator className="mr-1 h-3 w-3" />
+                    {lines.length} line{lines.length !== 1 ? 's' : ''}
+                  </Badge>
+                  <Badge variant="secondary" className="dark:bg-slate-800 dark:text-slate-300">
+                    <DollarSign className="mr-1 h-3 w-3" />
+                    {formData.currencyCode}
+                  </Badge>
+                </div>
+                <div className="mt-5 flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate('/sales-orders')}
+                    className="h-10 gap-2 dark:border-slate-700 dark:text-slate-200"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3 rounded-lg border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-950/40">
+                <div className="rounded-lg bg-white p-3 shadow-sm dark:bg-slate-900">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Subtotal</p>
+                  <p className="mt-1 text-lg font-bold text-slate-950 dark:text-white">
+                    {new Intl.NumberFormat('en-US', { style: 'currency', currency: formData.currencyCode || 'USD' }).format(Number(subtotal) || 0)}
+                  </p>
+                </div>
+                <div className="rounded-lg bg-white p-3 shadow-sm dark:bg-slate-900">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Tax</p>
+                  <p className="mt-1 text-lg font-bold text-blue-600 dark:text-blue-400">
+                    {new Intl.NumberFormat('en-US', { style: 'currency', currency: formData.currencyCode || 'USD' }).format(Number(taxTotal) || 0)}
+                  </p>
+                </div>
+                <div className="rounded-lg bg-white p-3 shadow-sm dark:bg-slate-900">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Grand Total</p>
+                  <p className="mt-1 text-lg font-bold text-indigo-600 dark:text-indigo-400">
+                    {new Intl.NumberFormat('en-US', { style: 'currency', currency: formData.currencyCode || 'USD' }).format(Number(grandTotal) || 0)}
+                  </p>
+                </div>
+                <div className="rounded-lg bg-white p-3 shadow-sm dark:bg-slate-900">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Lines</p>
+                  <p className="mt-1 text-lg font-bold text-slate-950 dark:text-white">{lines.length}</p>
+                </div>
+              </div>
             </div>
           </div>
-        </form>
+
+          <form onSubmit={handleSubmit}>
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+              <div className="lg:col-span-2 space-y-6">
+                {/* Order Details */}
+                <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-lg text-slate-950 dark:text-white">
+                      <Receipt className="h-5 w-5 text-slate-500 dark:text-slate-400" />
+                      Order Details
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label className="text-sm font-semibold text-slate-700 dark:text-slate-200">Convert from Quotation</Label>
+                        <Select value={formData.quotation || '_none'} onValueChange={handleQuotationChange}>
+                          <SelectTrigger className="h-10 bg-white text-slate-900 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-white dark:ring-slate-700">
+                            <SelectValue placeholder="Select quotation (optional)" />
+                          </SelectTrigger>
+                          <SelectContent className="dark:bg-slate-900 dark:text-slate-200 dark:ring-slate-700">
+                            <SelectItem value="_none" className="dark:focus:bg-slate-800 dark:focus:text-white">None</SelectItem>
+                            {quotations.map((quotation) => (
+                              <SelectItem key={quotation._id} value={quotation._id} className="dark:focus:bg-slate-800 dark:focus:text-white">
+                                {quotation.referenceNo} — {quotation.client?.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                          Client <span className="text-red-500">*</span>
+                        </Label>
+                        <Select value={formData.client} onValueChange={(value) => setFormData({ ...formData, client: value })}>
+                          <SelectTrigger className="h-10 bg-white text-slate-900 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-white dark:ring-slate-700">
+                            <SelectValue placeholder="Select client" />
+                          </SelectTrigger>
+                          <SelectContent className="dark:bg-slate-900 dark:text-slate-200 dark:ring-slate-700">
+                            {clients.map((client) => (
+                              <SelectItem key={client._id} value={client._id} className="dark:focus:bg-slate-800 dark:focus:text-white">
+                                {client.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                          Order Date <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          type="date"
+                          value={formData.orderDate}
+                          onChange={(e) => setFormData({ ...formData, orderDate: e.target.value })}
+                          required
+                          className="h-10 bg-white text-slate-900 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-white dark:ring-slate-700"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-sm font-semibold text-slate-700 dark:text-slate-200">Expected Date</Label>
+                        <Input
+                          type="date"
+                          value={formData.expectedDate}
+                          onChange={(e) => setFormData({ ...formData, expectedDate: e.target.value })}
+                          className="h-10 bg-white text-slate-900 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-white dark:ring-slate-700"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-sm font-semibold text-slate-700 dark:text-slate-200">Currency</Label>
+                        <Select value={formData.currencyCode} onValueChange={(value) => setFormData({ ...formData, currencyCode: value })}>
+                          <SelectTrigger className="h-10 bg-white text-slate-900 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-white dark:ring-slate-700">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="dark:bg-slate-900 dark:text-slate-200 dark:ring-slate-700">
+                            <SelectItem value="USD" className="dark:focus:bg-slate-800 dark:focus:text-white">USD</SelectItem>
+                            <SelectItem value="EUR" className="dark:focus:bg-slate-800 dark:focus:text-white">EUR</SelectItem>
+                            <SelectItem value="GBP" className="dark:focus:bg-slate-800 dark:focus:text-white">GBP</SelectItem>
+                            <SelectItem value="RWF" className="dark:focus:bg-slate-800 dark:focus:text-white">RWF</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-sm font-semibold text-slate-700 dark:text-slate-200">Terms & Conditions</Label>
+                      <Textarea
+                        value={formData.terms}
+                        onChange={(e) => setFormData({ ...formData, terms: e.target.value })}
+                        rows={3}
+                        className="bg-white text-slate-900 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-white dark:ring-slate-700"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-sm font-semibold text-slate-700 dark:text-slate-200">Notes</Label>
+                      <Textarea
+                        value={formData.notes}
+                        onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                        rows={2}
+                        className="bg-white text-slate-900 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-white dark:ring-slate-700"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Line Items */}
+                <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle className="flex items-center gap-2 text-lg text-slate-950 dark:text-white">
+                      <Layers className="h-5 w-5 text-slate-500 dark:text-slate-400" />
+                      Line Items
+                    </CardTitle>
+                    <Button type="button" onClick={addLine} variant="outline" size="sm" className="h-9 gap-2 dark:border-slate-700 dark:text-slate-200">
+                      <Plus className="h-4 w-4" />
+                      Add Line
+                    </Button>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {/* Header row for desktop */}
+                      <div className="hidden grid-cols-12 gap-2 rounded-lg bg-slate-50 px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:bg-slate-900 dark:text-slate-400 sm:grid">
+                        <div className="col-span-4">Product</div>
+                        <div className="col-span-2 text-center">Qty</div>
+                        <div className="col-span-2 text-center">Unit Price</div>
+                        <div className="col-span-2 text-center">Disc %</div>
+                        <div className="col-span-1 text-center">Tax %</div>
+                        <div className="col-span-1 text-right">Del</div>
+                      </div>
+
+                      {lines.map((line) => (
+                        <div
+                          key={line.id}
+                          className="rounded-lg border border-slate-200 bg-slate-50/40 p-3 dark:border-slate-700 dark:bg-slate-900/30 sm:border-0 sm:bg-transparent sm:p-0 sm:dark:bg-transparent"
+                        >
+                          <div className="grid grid-cols-1 gap-3 sm:grid-cols-12 sm:items-end sm:gap-2">
+                            <div className="sm:col-span-4">
+                              <Label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400 sm:hidden">Product</Label>
+                              <Select value={line.product} onValueChange={(value) => updateLine(line.id, 'product', value)}>
+                                <SelectTrigger className="h-10 bg-white text-slate-900 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-white dark:ring-slate-700">
+                                  <SelectValue placeholder="Select product" />
+                                </SelectTrigger>
+                                <SelectContent className="dark:bg-slate-900 dark:text-slate-200 dark:ring-slate-700">
+                                  {products.map((product) => (
+                                    <SelectItem key={product._id} value={product._id} className="dark:focus:bg-slate-800 dark:focus:text-white">
+                                      {product.name} ({product.sku})
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div className="sm:col-span-2">
+                              <Label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400 sm:hidden">Qty</Label>
+                              <Input
+                                type="number"
+                                min="1"
+                                value={line.qty}
+                                onChange={(e) => updateLine(line.id, 'qty', parseFloat(e.target.value) || 0)}
+                                className="h-10 bg-white text-slate-900 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-white dark:ring-slate-700"
+                              />
+                            </div>
+
+                            <div className="sm:col-span-2">
+                              <Label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400 sm:hidden">Unit Price</Label>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={line.unitPrice}
+                                onChange={(e) => updateLine(line.id, 'unitPrice', parseFloat(e.target.value) || 0)}
+                                className="h-10 bg-white text-slate-900 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-white dark:ring-slate-700"
+                              />
+                            </div>
+
+                            <div className="sm:col-span-2">
+                              <Label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400 sm:hidden">Discount %</Label>
+                              <Input
+                                type="number"
+                                min="0"
+                                max="100"
+                                value={line.discountPct}
+                                onChange={(e) => updateLine(line.id, 'discountPct', parseFloat(e.target.value) || 0)}
+                                className="h-10 bg-white text-slate-900 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-white dark:ring-slate-700"
+                              />
+                            </div>
+
+                            <div className="sm:col-span-1">
+                              <Label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400 sm:hidden">Tax %</Label>
+                              <Input
+                                type="number"
+                                min="0"
+                                value={line.taxRate}
+                                onChange={(e) => updateLine(line.id, 'taxRate', parseFloat(e.target.value) || 0)}
+                                className="h-10 bg-white text-slate-900 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-white dark:ring-slate-700"
+                              />
+                            </div>
+
+                            <div className="flex items-end justify-end sm:col-span-1">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeLine(line.id)}
+                                disabled={lines.length === 1}
+                                className="h-10 w-10 p-0 text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/30"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+
+                          <div className="mt-2 text-right text-sm font-medium text-slate-700 dark:text-slate-300">
+                            Line Total: {' '}
+                            <span className="font-bold text-slate-950 dark:text-white">
+                              {new Intl.NumberFormat('en-US', { style: 'currency', currency: formData.currencyCode }).format(toNumber(line.lineTotal) || 0)}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Sidebar Summary */}
+              <div className="space-y-6">
+                <Card className="overflow-hidden border border-slate-200 bg-slate-50 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-lg text-slate-950 dark:text-white">
+                      <Calculator className="h-5 w-5 text-slate-500 dark:text-slate-400" />
+                      Summary
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3 p-5">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-slate-500 dark:text-slate-400">Subtotal</span>
+                      <span className="font-medium text-slate-950 dark:text-white">
+                        {new Intl.NumberFormat('en-US', { style: 'currency', currency: formData.currencyCode || 'USD' }).format(Number(subtotal) || 0)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-slate-500 dark:text-slate-400">Tax</span>
+                      <span className="font-medium text-slate-950 dark:text-white">
+                        {new Intl.NumberFormat('en-US', { style: 'currency', currency: formData.currencyCode || 'USD' }).format(Number(taxTotal) || 0)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between border-t border-slate-200 pt-3 dark:border-slate-800">
+                      <span className="text-base font-bold text-slate-950 dark:text-white">Grand Total</span>
+                      <span className="text-base font-bold text-indigo-600 dark:text-indigo-400">
+                        {new Intl.NumberFormat('en-US', { style: 'currency', currency: formData.currencyCode || 'USD' }).format(Number(grandTotal) || 0)}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-3">
+                      <input
+                        type="checkbox"
+                        id="sendEmail"
+                        checked={sendEmail}
+                        onChange={(e) => setSendEmail(e.target.checked)}
+                        className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600 dark:border-slate-700 dark:bg-slate-900"
+                      />
+                      <Label htmlFor="sendEmail" className="cursor-pointer text-sm text-slate-600 dark:text-slate-300">
+                        Send email notification
+                      </Label>
+                    </div>
+
+                    <Button
+                      type="submit"
+                      className="mt-3 h-11 w-full bg-indigo-600 text-base font-semibold hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-500"
+                      disabled={loading}
+                    >
+                      {loading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Creating...
+                        </>
+                      ) : (
+                        <>
+                          <Package className="mr-2 h-4 w-4" />
+                          Create Sales Order
+                        </>
+                      )}
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {/* Quick Preview */}
+                <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardHeader>
+                    <CardTitle className="text-sm font-semibold text-slate-950 dark:text-white">Order Preview</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3 p-5">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-600 dark:bg-slate-900 dark:text-slate-400">
+                        <Layers className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">Lines</p>
+                        <p className="text-sm font-semibold text-slate-950 dark:text-white">{lines.length}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-600 dark:bg-slate-900 dark:text-slate-400">
+                        <Tag className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">Currency</p>
+                        <p className="text-sm font-semibold text-slate-950 dark:text-white">{formData.currencyCode}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-600 dark:bg-slate-900 dark:text-slate-400">
+                        <Calendar className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">Order Date</p>
+                        <p className="text-sm font-semibold text-slate-950 dark:text-white">{formData.orderDate || '—'}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </form>
+        </div>
       </div>
     </Layout>
   );
