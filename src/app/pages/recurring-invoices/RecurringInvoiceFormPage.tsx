@@ -2,28 +2,28 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { recurringInvoicesApi, clientsApi, productsApi, warehousesApi } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
-import { 
-  ArrowLeft, 
+import {
+  ArrowLeft,
   Save,
-  Loader2,
   Plus,
   Trash2,
   CheckCircle,
   Package,
-  Calendar,
-  Repeat,
-  X
+  ClipboardList,
+  BarChart3,
+  FileText,
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/app/components/ui/card';
 import { Badge } from '@/app/components/ui/badge';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import { Skeleton } from '@/app/components/ui/skeleton';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@/app/components/ui/table';
 import { Input } from '@/app/components/ui/input';
 import { Label } from '@/app/components/ui/label';
@@ -362,8 +362,14 @@ export default function RecurringInvoiceFormPage() {
   if (loading) {
     return (
       <Layout>
-        <div className="flex items-center justify-center p-8">
-          <Loader2 className="h-8 w-8 animate-spin" />
+        <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-[1600px] space-y-6">
+            <Skeleton className="h-40 w-full rounded-xl" />
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+              <Skeleton className="h-96 w-full rounded-xl lg:col-span-2" />
+              <Skeleton className="h-96 w-full rounded-xl" />
+            </div>
+          </div>
         </div>
       </Layout>
     );
@@ -371,352 +377,396 @@ export default function RecurringInvoiceFormPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-6">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" onClick={() => navigate('/recurring-invoices')} className="dark:text-gray-300">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold dark:text-gray-100">
-                {isEdit ? t('recurringInvoices.editTitle', 'Edit Recurring Invoice') : t('recurringInvoices.createTitle', 'Create Recurring Invoice')}
-              </h1>
+      <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1600px] space-y-6">
+          {/* Hero Header */}
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+            <div className="p-5">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => navigate('/recurring-invoices')}
+                    className="h-9 w-9 flex-shrink-0 dark:border-slate-700 dark:text-slate-200"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                  <div>
+                    <h1 className="text-2xl font-bold tracking-tight text-slate-950 dark:text-white sm:text-3xl">
+                      {isEdit ? t('recurringInvoices.editTitle', 'Edit Recurring Invoice') : t('recurringInvoices.createTitle', 'Create Recurring Invoice')}
+                    </h1>
+                    <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+                      {isEdit ? 'Update recurring invoice schedule and line items.' : 'Set up an automated recurring invoice template.'}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="gap-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-500"
+                >
+                  <Save className="h-4 w-4" />
+                  {t('common.save', 'Save')}
+                </Button>
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={handleSave} disabled={saving}>
-              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              <Save className="mr-2 h-4 w-4" />
-              {t('common.save', 'Save')}
-            </Button>
-          </div>
-        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Form */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Basic Info */}
-            <Card className="dark:border-slate-700">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 dark:text-gray-100">
-                  <Calendar className="h-5 w-5" />
-                  {t('recurringInvoices.basicInfo', 'Basic Information')}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label className="dark:text-gray-200">{t('recurringInvoices.client', 'Client')} *</Label>
-                    <Select value={selectedClient} onValueChange={setSelectedClient} disabled={isEdit}>
-                      <SelectTrigger className="mt-2 dark:bg-slate-800 dark:border-slate-600">
-                        <SelectValue placeholder={t('recurringInvoices.selectClient', 'Select Client')} />
-                      </SelectTrigger>
-                      <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
-                        {clients.map(client => (
-                          <SelectItem key={client._id} value={client._id} className="dark:text-gray-200">
-                            {client.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label className="dark:text-gray-200">{t('recurringInvoices.currency', 'Currency')}</Label>
-                    <Select value={currencyCode} onValueChange={setCurrencyCode}>
-                      <SelectTrigger className="mt-2 dark:bg-slate-800 dark:border-slate-600">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
-                        <SelectItem value="USD" className="dark:text-gray-200">USD</SelectItem>
-                        <SelectItem value="EUR" className="dark:text-gray-200">EUR</SelectItem>
-                        <SelectItem value="GBP" className="dark:text-gray-200">GBP</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <Label className="dark:text-gray-200">{t('recurringInvoices.frequency', 'Frequency')} *</Label>
-                    <Select value={frequency} onValueChange={setFrequency}>
-                      <SelectTrigger className="mt-2 dark:bg-slate-800 dark:border-slate-600">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
-                        {FREQUENCY_OPTIONS.map(opt => (
-                          <SelectItem key={opt.value} value={opt.value} className="dark:text-gray-200">
-                            {opt.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label className="dark:text-gray-200">{t('recurringInvoices.interval', 'Every')}</Label>
-                    <Input
-                      type="number"
-                      min="1"
-                      value={interval}
-                      onChange={(e) => setInterval(parseInt(e.target.value) || 1)}
-                      className="mt-2 dark:bg-slate-800 dark:border-slate-600 dark:text-gray-200"
-                    />
-                  </div>
-                  <div>
-                    <Label className="dark:text-gray-200">{t('recurringInvoices.startDate', 'Start Date')} *</Label>
-                    <Input
-                      type="date"
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                      className="mt-2 dark:bg-slate-800 dark:border-slate-600 dark:text-gray-200"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label className="dark:text-gray-200">{t('recurringInvoices.endDate', 'End Date')} ({t('common.optional', 'optional')})</Label>
-                    <Input
-                      type="date"
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
-                      className="mt-2 dark:bg-slate-800 dark:border-slate-600 dark:text-gray-200"
-                    />
-                  </div>
-                  {frequency === 'monthly' && (
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            {/* Main Form */}
+            <div className="space-y-6 lg:col-span-2">
+              {/* Basic Info */}
+              <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="border-b border-slate-100 bg-slate-50/50 px-5 py-4 dark:border-slate-800 dark:bg-slate-900/50">
+                  <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-white">
+                    <ClipboardList className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                    {t('recurringInvoices.basicInfo', 'Basic Information')}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4 p-5">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
-                      <Label className="dark:text-gray-200">{t('recurringInvoices.dayOfMonth', 'Day of Month')} ({t('common.optional', 'optional')})</Label>
-                      <Input
-                        type="number"
-                        min="1"
-                        max="28"
-                        value={dayOfMonth || ''}
-                        onChange={(e) => setDayOfMonth(e.target.value ? parseInt(e.target.value) : undefined)}
-                        className="mt-2 dark:bg-slate-800 dark:border-slate-600 dark:text-gray-200"
-                        placeholder="1-28"
-                      />
-                    </div>
-                  )}
-                  {frequency === 'weekly' && (
-                    <div>
-                      <Label className="dark:text-gray-200">{t('recurringInvoices.dayOfWeek', 'Day of Week')} ({t('common.optional', 'optional')})</Label>
-                      <Select 
-                        value={dayOfWeek?.toString() || ''} 
-                        onValueChange={(v) => setDayOfWeek(v ? parseInt(v) : undefined)}
-                      >
-                        <SelectTrigger className="mt-2 dark:bg-slate-800 dark:border-slate-600">
-                          <SelectValue placeholder={t('recurringInvoices.selectDay', 'Select Day')} />
+                      <Label className="text-sm text-slate-700 dark:text-slate-300">{t('recurringInvoices.client', 'Client')} *</Label>
+                      <Select value={selectedClient} onValueChange={setSelectedClient} disabled={isEdit}>
+                        <SelectTrigger className="mt-1 bg-slate-50 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700 dark:text-white">
+                          <SelectValue placeholder={t('recurringInvoices.selectClient', 'Select Client')} />
                         </SelectTrigger>
-                        <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
-                          <SelectItem value="0" className="dark:text-gray-200">Sunday</SelectItem>
-                          <SelectItem value="1" className="dark:text-gray-200">Monday</SelectItem>
-                          <SelectItem value="2" className="dark:text-gray-200">Tuesday</SelectItem>
-                          <SelectItem value="3" className="dark:text-gray-200">Wednesday</SelectItem>
-                          <SelectItem value="4" className="dark:text-gray-200">Thursday</SelectItem>
-                          <SelectItem value="5" className="dark:text-gray-200">Friday</SelectItem>
-                          <SelectItem value="6" className="dark:text-gray-200">Saturday</SelectItem>
+                        <SelectContent className="dark:bg-slate-900 dark:border-slate-700">
+                          {clients.map((client) => (
+                            <SelectItem key={client._id} value={client._id} className="dark:text-white">
+                              {client.name}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
-                  )}
-                </div>
-
-                <div className="flex items-center space-x-2 pt-2">
-                  <Checkbox
-                    id="autoConfirm"
-                    checked={autoConfirm}
-                    onCheckedChange={(checked) => setAutoConfirm(checked as boolean)}
-                  />
-                  <Label htmlFor="autoConfirm" className="cursor-pointer dark:text-gray-200">
-                    {t('recurringInvoices.autoConfirmLabel', 'Auto-confirm generated invoices (deduct stock and create journal entries)')}
-                  </Label>
-                </div>
-
-                <div>
-                  <Label className="dark:text-gray-200">{t('recurringInvoices.notes', 'Notes')}</Label>
-                  <Input
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder={t('recurringInvoices.notesPlaceholder', 'Additional notes...')}
-                    className="mt-2 dark:bg-slate-800 dark:border-slate-600 dark:text-gray-200"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Line Items */}
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Package className="h-5 w-5" />
-                    {t('recurringInvoices.lineItems', 'Line Items')}
-                  </CardTitle>
-                  <CardDescription>
-                    {t('recurringInvoices.lineItemsDescription', 'Products to include in each generated invoice')}
-                  </CardDescription>
-                </div>
-                <Button onClick={handleAddLine} size="sm">
-                  <Plus className="mr-2 h-4 w-4" />
-                  {t('recurringInvoices.addLine', 'Add Line')}
-                </Button>
-              </CardHeader>
-              <CardContent>
-                {lines.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Package className="mx-auto h-8 w-8 mb-2" />
-                    <p>{t('recurringInvoices.noLineItems', 'No line items yet. Click "Add Line" to add products.')}</p>
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto -mx-2 px-2">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="min-w-[140px] sm:min-w-[180px]">{t('recurringInvoices.product', 'Product')}</TableHead>
-                          <TableHead className="min-w-[100px] sm:min-w-[140px]">{t('recurringInvoices.warehouse', 'Warehouse')}</TableHead>
-                          <TableHead className="text-right min-w-[80px] sm:min-w-[100px]">{t('recurringInvoices.qty', 'Qty')}</TableHead>
-                          <TableHead className="text-right min-w-[100px] sm:min-w-[120px]">{t('recurringInvoices.unitPrice', 'Unit Price')}</TableHead>
-                          <TableHead className="text-right min-w-[70px] sm:min-w-[80px]">{t('recurringInvoices.taxRate', 'Tax %')}</TableHead>
-                          <TableHead className="text-right min-w-[70px] sm:min-w-[80px]">{t('recurringInvoices.discount', 'Discount %')}</TableHead>
-                          <TableHead className="text-right min-w-[100px]">{t('recurringInvoices.total', 'Total')}</TableHead>
-                          <TableHead className="w-[50px]"></TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {lines.map((line) => (
-                          <TableRow key={line.id}>
-                            <TableCell>
-                              <Select
-                                value={line.product?._id || ''}
-                                onValueChange={(v) => handleLineChange(line.id, 'product', v)}
-                              >
-                                <SelectTrigger className="w-full min-w-[140px]">
-                                  <SelectValue placeholder={t('recurringInvoices.selectProduct', 'Select Product')} />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {products.map(product => (
-                                    <SelectItem key={product._id} value={product._id}>
-                                      {product.name} ({product.code})
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </TableCell>
-                            <TableCell>
-                              <Select
-                                value={line.warehouse?._id || ''}
-                                onValueChange={(v) => handleLineChange(line.id, 'warehouse', v)}
-                              >
-                                <SelectTrigger className="w-full min-w-[100px]">
-                                  <SelectValue placeholder={t('recurringInvoices.selectWarehouse', 'Select')} />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {warehouses.map(warehouse => (
-                                    <SelectItem key={warehouse._id} value={warehouse._id}>
-                                      {warehouse.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </TableCell>
-                            <TableCell>
-                              <Input
-                                type="number"
-                                min="0.0001"
-                                step="0.0001"
-                                value={line.qty}
-                                onChange={(e) => handleLineChange(line.id, 'qty', e.target.value)}
-                                className="text-right w-full min-w-[80px]"
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <Input
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                value={line.unitPrice}
-                                onChange={(e) => handleLineChange(line.id, 'unitPrice', e.target.value)}
-                                className="text-right w-full min-w-[100px]"
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <Input
-                                type="number"
-                                min="0"
-                                max="100"
-                                value={line.taxRate}
-                                onChange={(e) => handleLineChange(line.id, 'taxRate', e.target.value)}
-                                className="text-right w-full min-w-[70px]"
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <Input
-                                type="number"
-                                min="0"
-                                max="100"
-                                value={line.discountPct}
-                                onChange={(e) => handleLineChange(line.id, 'discountPct', e.target.value)}
-                                className="text-right w-full min-w-[70px]"
-                              />
-                            </TableCell>
-                            <TableCell className="text-right font-medium">
-                              {formatCurrency(line.lineTotal)}
-                            </TableCell>
-                            <TableCell>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleRemoveLine(line.id)}
-                                className="text-red-600"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Sidebar */}
-          <div>
-            <Card>
-              <CardHeader>
-                <CardTitle>{t('recurringInvoices.summary', 'Summary')}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">{t('recurringInvoices.subtotal', 'Subtotal')}</span>
-                  <span className="font-medium">{formatCurrency(subtotal)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">{t('recurringInvoices.tax', 'Tax')}</span>
-                  <span className="font-medium">{formatCurrency(taxAmount)}</span>
-                </div>
-                <div className="border-t pt-4 flex justify-between">
-                  <span className="font-bold">{t('recurringInvoices.total', 'Total')}</span>
-                  <span className="font-bold text-lg">{formatCurrency(totalAmount)}</span>
-                </div>
-                
-                {autoConfirm && (
-                  <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                    <div className="flex items-start gap-2">
-                      <CheckCircle className="h-4 w-4 text-blue-600 mt-0.5" />
-                      <div className="text-sm">
-                        <p className="font-medium text-blue-900">{t('recurringInvoices.autoConfirmEnabled', 'Auto-Confirm Enabled')}</p>
-                        <p className="text-blue-700">
-                          {t('recurringInvoices.autoConfirmDescription', 'Generated invoices will be automatically confirmed with stock deduction and journal entries.')}
-                        </p>
-                      </div>
+                    <div>
+                      <Label className="text-sm text-slate-700 dark:text-slate-300">{t('recurringInvoices.currency', 'Currency')}</Label>
+                      <Select value={currencyCode} onValueChange={setCurrencyCode}>
+                        <SelectTrigger className="mt-1 bg-slate-50 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700 dark:text-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="dark:bg-slate-900 dark:border-slate-700">
+                          <SelectItem value="USD" className="dark:text-white">USD</SelectItem>
+                          <SelectItem value="EUR" className="dark:text-white">EUR</SelectItem>
+                          <SelectItem value="GBP" className="dark:text-white">GBP</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
-                )}
-              </CardContent>
-            </Card>
+
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    <div>
+                      <Label className="text-sm text-slate-700 dark:text-slate-300">{t('recurringInvoices.frequency', 'Frequency')} *</Label>
+                      <Select value={frequency} onValueChange={setFrequency}>
+                        <SelectTrigger className="mt-1 bg-slate-50 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700 dark:text-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="dark:bg-slate-900 dark:border-slate-700">
+                          {FREQUENCY_OPTIONS.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value} className="dark:text-white">
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-sm text-slate-700 dark:text-slate-300">{t('recurringInvoices.interval', 'Every')}</Label>
+                      <Input
+                        type="number"
+                        min="1"
+                        value={interval}
+                        onChange={(e) => setInterval(parseInt(e.target.value) || 1)}
+                        className="mt-1 bg-slate-50 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700 dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-sm text-slate-700 dark:text-slate-300">{t('recurringInvoices.startDate', 'Start Date')} *</Label>
+                      <Input
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        className="mt-1 bg-slate-50 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700 dark:text-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                      <Label className="text-sm text-slate-700 dark:text-slate-300">{t('recurringInvoices.endDate', 'End Date')} ({t('common.optional', 'optional')})</Label>
+                      <Input
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        className="mt-1 bg-slate-50 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700 dark:text-white"
+                      />
+                    </div>
+                    {frequency === 'monthly' && (
+                      <div>
+                        <Label className="text-sm text-slate-700 dark:text-slate-300">{t('recurringInvoices.dayOfMonth', 'Day of Month')} ({t('common.optional', 'optional')})</Label>
+                        <Input
+                          type="number"
+                          min="1"
+                          max="28"
+                          value={dayOfMonth || ''}
+                          onChange={(e) => setDayOfMonth(e.target.value ? parseInt(e.target.value) : undefined)}
+                          className="mt-1 bg-slate-50 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700 dark:text-white"
+                          placeholder="1-28"
+                        />
+                      </div>
+                    )}
+                    {frequency === 'weekly' && (
+                      <div>
+                        <Label className="text-sm text-slate-700 dark:text-slate-300">{t('recurringInvoices.dayOfWeek', 'Day of Week')} ({t('common.optional', 'optional')})</Label>
+                        <Select
+                          value={dayOfWeek?.toString() || ''}
+                          onValueChange={(v) => setDayOfWeek(v ? parseInt(v) : undefined)}
+                        >
+                          <SelectTrigger className="mt-1 bg-slate-50 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700 dark:text-white">
+                            <SelectValue placeholder={t('recurringInvoices.selectDay', 'Select Day')} />
+                          </SelectTrigger>
+                          <SelectContent className="dark:bg-slate-900 dark:border-slate-700">
+                            <SelectItem value="0" className="dark:text-white">Sunday</SelectItem>
+                            <SelectItem value="1" className="dark:text-white">Monday</SelectItem>
+                            <SelectItem value="2" className="dark:text-white">Tuesday</SelectItem>
+                            <SelectItem value="3" className="dark:text-white">Wednesday</SelectItem>
+                            <SelectItem value="4" className="dark:text-white">Thursday</SelectItem>
+                            <SelectItem value="5" className="dark:text-white">Friday</SelectItem>
+                            <SelectItem value="6" className="dark:text-white">Saturday</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center space-x-2 rounded-lg border border-slate-200 bg-slate-50/50 p-3 dark:border-slate-700 dark:bg-slate-900/30">
+                    <Checkbox
+                      id="autoConfirm"
+                      checked={autoConfirm}
+                      onCheckedChange={(checked) => setAutoConfirm(checked as boolean)}
+                    />
+                    <Label htmlFor="autoConfirm" className="cursor-pointer text-sm text-slate-700 dark:text-slate-300">
+                      {t('recurringInvoices.autoConfirmLabel', 'Auto-confirm generated invoices (deduct stock and create journal entries)')}
+                    </Label>
+                  </div>
+
+                  <div>
+                    <Label className="text-sm text-slate-700 dark:text-slate-300">{t('recurringInvoices.notes', 'Notes')}</Label>
+                    <Input
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      placeholder={t('recurringInvoices.notesPlaceholder', 'Additional notes...')}
+                      className="mt-1 bg-slate-50 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700 dark:text-white"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Line Items */}
+              <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="flex flex-row items-center justify-between border-b border-slate-100 bg-slate-50/50 px-5 py-4 dark:border-slate-800 dark:bg-slate-900/50">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-white">
+                      <Package className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                      {t('recurringInvoices.lineItems', 'Line Items')}
+                    </CardTitle>
+                    <CardDescription className="text-slate-500 dark:text-slate-400">
+                      {t('recurringInvoices.lineItemsDescription', 'Products to include in each generated invoice')}
+                    </CardDescription>
+                  </div>
+                  <Button onClick={handleAddLine} size="sm" className="gap-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-500">
+                    <Plus className="h-4 w-4" />
+                    {t('recurringInvoices.addLine', 'Add Line')}
+                  </Button>
+                </CardHeader>
+                <CardContent className="p-0">
+                  {lines.length === 0 ? (
+                    <div className="flex min-h-[160px] flex-col items-center justify-center p-8">
+                      <Package className="mb-2 h-8 w-8 text-slate-300 dark:text-slate-600" />
+                      <p className="text-sm text-slate-500 dark:text-slate-400">{t('recurringInvoices.noLineItems', 'No line items yet. Click "Add Line" to add products.')}</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-slate-50/70 hover:bg-slate-50/70 dark:bg-slate-900/50 dark:hover:bg-slate-900/50">
+                            <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('recurringInvoices.product', 'Product')}</TableHead>
+                            <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('recurringInvoices.warehouse', 'Warehouse')}</TableHead>
+                            <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('recurringInvoices.qty', 'Qty')}</TableHead>
+                            <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('recurringInvoices.unitPrice', 'Unit Price')}</TableHead>
+                            <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('recurringInvoices.taxRate', 'Tax %')}</TableHead>
+                            <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('recurringInvoices.discount', 'Discount %')}</TableHead>
+                            <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('recurringInvoices.total', 'Total')}</TableHead>
+                            <TableHead className="w-[50px]"></TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {lines.map((line) => (
+                            <TableRow key={line.id} className="transition-colors hover:bg-slate-50/50 dark:border-slate-800 dark:hover:bg-slate-900/30">
+                              <TableCell>
+                                <Select
+                                  value={line.product?._id || ''}
+                                  onValueChange={(v) => handleLineChange(line.id, 'product', v)}
+                                >
+                                  <SelectTrigger className="w-full min-w-[140px] bg-slate-50 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700 dark:text-white">
+                                    <SelectValue placeholder={t('recurringInvoices.selectProduct', 'Select Product')} />
+                                  </SelectTrigger>
+                                  <SelectContent className="dark:bg-slate-900 dark:border-slate-700">
+                                    {products.map((product) => (
+                                      <SelectItem key={product._id} value={product._id} className="dark:text-white">
+                                        {product.name} ({product.code})
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </TableCell>
+                              <TableCell>
+                                <Select
+                                  value={line.warehouse?._id || ''}
+                                  onValueChange={(v) => handleLineChange(line.id, 'warehouse', v)}
+                                >
+                                  <SelectTrigger className="w-full min-w-[100px] bg-slate-50 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700 dark:text-white">
+                                    <SelectValue placeholder={t('recurringInvoices.selectWarehouse', 'Select')} />
+                                  </SelectTrigger>
+                                  <SelectContent className="dark:bg-slate-900 dark:border-slate-700">
+                                    {warehouses.map((warehouse) => (
+                                      <SelectItem key={warehouse._id} value={warehouse._id} className="dark:text-white">
+                                        {warehouse.name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </TableCell>
+                              <TableCell>
+                                <Input
+                                  type="number"
+                                  min="0.0001"
+                                  step="0.0001"
+                                  value={line.qty}
+                                  onChange={(e) => handleLineChange(line.id, 'qty', e.target.value)}
+                                  className="w-full min-w-[80px] bg-slate-50 text-right ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700 dark:text-white"
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  step="0.01"
+                                  value={line.unitPrice}
+                                  onChange={(e) => handleLineChange(line.id, 'unitPrice', e.target.value)}
+                                  className="w-full min-w-[100px] bg-slate-50 text-right ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700 dark:text-white"
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  max="100"
+                                  value={line.taxRate}
+                                  onChange={(e) => handleLineChange(line.id, 'taxRate', e.target.value)}
+                                  className="w-full min-w-[70px] bg-slate-50 text-right ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700 dark:text-white"
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  max="100"
+                                  value={line.discountPct}
+                                  onChange={(e) => handleLineChange(line.id, 'discountPct', e.target.value)}
+                                  className="w-full min-w-[70px] bg-slate-50 text-right ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700 dark:text-white"
+                                />
+                              </TableCell>
+                              <TableCell className="text-right text-sm font-semibold text-slate-900 dark:text-white">
+                                {formatCurrency(line.lineTotal)}
+                              </TableCell>
+                              <TableCell>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleRemoveLine(line.id)}
+                                  className="h-8 w-8 p-0 text-red-600 dark:text-red-400 dark:hover:bg-slate-800"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Sidebar */}
+            <div className="space-y-6">
+              <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="border-b border-slate-100 bg-slate-50/50 px-5 py-4 dark:border-slate-800 dark:bg-slate-900/50">
+                  <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-white">
+                    <BarChart3 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                    {t('recurringInvoices.summary', 'Summary')}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 p-5">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-500 dark:text-slate-400">{t('recurringInvoices.subtotal', 'Subtotal')}</span>
+                    <span className="font-medium text-slate-900 dark:text-white">{formatCurrency(subtotal)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-500 dark:text-slate-400">{t('recurringInvoices.tax', 'Tax')}</span>
+                    <span className="font-medium text-slate-900 dark:text-white">{formatCurrency(taxAmount)}</span>
+                  </div>
+                  <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-lg font-bold text-slate-900 dark:border-slate-800 dark:text-white">
+                    <span>{t('recurringInvoices.total', 'Total')}</span>
+                    <span>{formatCurrency(totalAmount)}</span>
+                  </div>
+
+                  {autoConfirm && (
+                    <div className="mt-3 rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-900 dark:bg-blue-950/30">
+                      <div className="flex items-start gap-2">
+                        <CheckCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-600 dark:text-blue-400" />
+                        <div className="text-sm">
+                          <p className="font-medium text-blue-900 dark:text-blue-300">{t('recurringInvoices.autoConfirmEnabled', 'Auto-Confirm Enabled')}</p>
+                          <p className="text-blue-700 dark:text-blue-400">
+                            {t('recurringInvoices.autoConfirmDescription', 'Generated invoices will be automatically confirmed with stock deduction and journal entries.')}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="border-b border-slate-100 bg-slate-50/50 px-5 py-4 dark:border-slate-800 dark:bg-slate-900/50">
+                  <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-white">
+                    <FileText className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                    Preview
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 p-5">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-500 dark:text-slate-400">Line Items</span>
+                    <span className="font-medium text-slate-900 dark:text-white">{lines.length}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-500 dark:text-slate-400">Frequency</span>
+                    <span className="font-medium text-slate-900 dark:text-white">
+                      {interval > 1 ? `Every ${interval} ` : ''}
+                      {frequency.charAt(0).toUpperCase() + frequency.slice(1)}{interval > 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-500 dark:text-slate-400">Currency</span>
+                    <span className="font-medium text-slate-900 dark:text-white">{currencyCode}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
       </div>

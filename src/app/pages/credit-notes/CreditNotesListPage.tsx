@@ -3,20 +3,23 @@ import { useNavigate } from 'react-router';
 import { creditNotesApi, clientsApi, invoicesApi } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
 import { useCompany } from '@/hooks/useCompany';
-import { 
-  Plus, 
-  Search, 
-  Download, 
-  Loader2,
+import {
+  Plus,
+  Search,
+  Download,
   FileText,
   Eye,
   Edit,
-  MoreHorizontal,
-  CreditCard,
   X,
   CheckCircle,
-  Trash2
+  Trash2,
+  Receipt,
+  TrendingUp,
+  Wallet,
+  RotateCcw,
+  Ban,
 } from 'lucide-react';
+import { Skeleton } from '@/app/components/ui/skeleton';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { Card, CardContent } from '@/app/components/ui/card';
@@ -257,6 +260,48 @@ export default function CreditNotesListPage() {
     setDateTo('');
   };
 
+  const getStatusStyle = (status: string) => {
+    const map: Record<string, string> = {
+      draft: 'bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700',
+      confirmed: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900/60',
+      issued: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/60',
+      applied: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900/60',
+      refunded: 'bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950/40 dark:text-violet-300 dark:border-violet-900/60',
+      cancelled: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900/60',
+    };
+    return map[status] || map.draft;
+  };
+
+  const getStatusLabel = (status: string) => {
+    const map: Record<string, string> = {
+      draft: 'Draft',
+      confirmed: 'Confirmed',
+      issued: 'Issued',
+      applied: 'Applied',
+      refunded: 'Refunded',
+      cancelled: 'Cancelled',
+    };
+    return map[status] || status;
+  };
+
+  const getTypeStyle = (type: string) => {
+    const map: Record<string, string> = {
+      goods_return: 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/40 dark:text-orange-300 dark:border-orange-900/60',
+      price_adjustment: 'bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-950/40 dark:text-cyan-300 dark:border-cyan-900/60',
+      cancelled_order: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900/60',
+    };
+    return map[type] || 'bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700';
+  };
+
+  const getTypeLabel = (type: string) => {
+    const map: Record<string, string> = {
+      goods_return: 'Goods Return',
+      price_adjustment: 'Price Adjustment',
+      cancelled_order: 'Cancelled Order',
+    };
+    return map[type] || type;
+  };
+
   const filteredCreditNotes = creditNotes.filter(cn => {
     if (search && !(cn.referenceNo || cn.creditNoteNumber || '').toLowerCase().includes(search.toLowerCase())) {
       return false;
@@ -362,329 +407,428 @@ export default function CreditNotesListPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-6">
-        {/* Page Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold dark:text-white">{t('creditNotes.title', 'Credit Notes')}</h1>
-            <p className="text-sm text-muted-foreground">{t('creditNotes.subtitle', 'Manage customer credit notes')}</p>
+      <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1400px] space-y-6">
+          {/* Hero Header */}
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+            <div className="p-5">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg bg-violet-50 p-2.5 text-violet-700 ring-1 ring-violet-100 dark:bg-violet-950/40 dark:text-violet-300 dark:ring-violet-900/60">
+                    <Receipt className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h1 className="text-xl font-bold tracking-tight text-slate-950 dark:text-white sm:text-2xl">Credit Notes</h1>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Manage returns, price adjustments, and cancelled orders</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={handleExport} className="gap-1.5 dark:border-slate-700 dark:text-slate-200">
+                    <Download className="h-4 w-4" />
+                    <span className="hidden sm:inline">Export</span>
+                  </Button>
+                  <Button size="sm" onClick={() => setShowCreateModal(true)} className="gap-1.5 bg-violet-600 hover:bg-violet-700">
+                    <Plus className="h-4 w-4" />
+                    <span className="hidden sm:inline">New Credit Note</span>
+                    <span className="sm:hidden">New</span>
+                  </Button>
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={handleExport} size="sm" className="sm:size-default">
-              <Download className="mr-1.5 sm:mr-2 h-4 w-4" />
-              <span className="hidden sm:inline">{t('common.export', 'Export')}</span>
-              <span className="sm:hidden">{t('common.export', 'Export')}</span>
-            </Button>
-            <Button onClick={() => setShowCreateModal(true)} size="sm" className="sm:size-default">
-              <Plus className="mr-1.5 sm:mr-2 h-4 w-4" />
-              <span className="hidden sm:inline">{t('creditNotes.newCreditNote', 'New Credit Note')}</span>
-              <span className="sm:hidden">{t('creditNotes.new', 'New')}</span>
-            </Button>
-          </div>
-        </div>
 
-        {/* Filters */}
-        <Card className="mb-6 dark:bg-slate-800">
-          <CardContent className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+          {/* Metric Cards */}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg bg-violet-50 p-2 text-violet-600 dark:bg-violet-950/40 dark:text-violet-300">
+                    <Receipt className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Total Notes</p>
+                    <p className="text-lg font-bold text-slate-900 dark:text-white">{filteredCreditNotes.length}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg bg-emerald-50 p-2 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300">
+                    <Wallet className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Total Amount</p>
+                    <p className="text-lg font-bold text-slate-900 dark:text-white">
+                      {formatCurrency(filteredCreditNotes.reduce((s, c) => s + (c.grandTotal || c.totalAmount || 0), 0))}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg bg-blue-50 p-2 text-blue-600 dark:bg-blue-950/40 dark:text-blue-300">
+                    <CheckCircle className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Confirmed</p>
+                    <p className="text-lg font-bold text-slate-900 dark:text-white">{filteredCreditNotes.filter(c => c.status === 'confirmed').length}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg bg-amber-50 p-2 text-amber-600 dark:bg-amber-950/40 dark:text-amber-300">
+                    <TrendingUp className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Issued</p>
+                    <p className="text-lg font-bold text-slate-900 dark:text-white">{filteredCreditNotes.filter(c => c.status === 'issued').length}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg bg-rose-50 p-2 text-rose-600 dark:bg-rose-950/40 dark:text-rose-300">
+                    <Ban className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Cancelled</p>
+                    <p className="text-lg font-bold text-slate-900 dark:text-white">{filteredCreditNotes.filter(c => c.status === 'cancelled').length}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Filter Bar */}
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <div className="flex flex-wrap items-center gap-3 p-4">
+              <div className="relative flex-1 min-w-[200px]">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <Input
-                  placeholder={t('creditNotes.search', 'Search credit notes...')}
+                  placeholder="Search credit notes..."
                   value={search}
                   onChange={(e) => handleSearch(e.target.value)}
-                  className="pl-9"
+                  className="bg-white pl-9 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
                 />
               </div>
               <Select value={statusFilter} onValueChange={handleStatusFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t('creditNotes.filterStatus', 'Status')} />
+                <SelectTrigger className="w-[150px] bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-white">
+                  <SelectValue placeholder="Status" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="dark:border-slate-800 dark:bg-slate-950">
                   {STATUS_OPTIONS.map(option => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
+                    <SelectItem key={option.value} value={option.value} className="dark:text-slate-200">{option.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               <Select value={typeFilter} onValueChange={handleTypeFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t('creditNotes.filterType', 'Type')} />
+                <SelectTrigger className="w-[160px] bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-white">
+                  <SelectValue placeholder="Type" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="dark:border-slate-800 dark:bg-slate-950">
                   {TYPE_OPTIONS.map(option => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
+                    <SelectItem key={option.value} value={option.value} className="dark:text-slate-200">{option.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               <Select value={clientFilter} onValueChange={handleClientFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t('creditNotes.filterClient', 'Client')} />
+                <SelectTrigger className="w-[180px] bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-white">
+                  <SelectValue placeholder="Client" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('common.all', 'All Clients')}</SelectItem>
+                <SelectContent className="dark:border-slate-800 dark:bg-slate-950">
+                  <SelectItem value="all" className="dark:text-slate-200">All Clients</SelectItem>
                   {clients.map(client => (
-                    <SelectItem key={client._id} value={client._id}>
-                      {client.name}
-                    </SelectItem>
+                    <SelectItem key={client._id} value={client._id} className="dark:text-slate-200">{client.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <Input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => handleDateFromChange(e.target.value)}
-                placeholder={t('creditNotes.dateFrom', 'From')}
-              />
-              <Input
-                type="date"
-                value={dateTo}
-                onChange={(e) => handleDateToChange(e.target.value)}
-                placeholder={t('creditNotes.dateTo', 'To')}
-              />
-            </div>
-            {(search || statusFilter !== 'all' || clientFilter !== 'all' || typeFilter !== 'all' || dateFrom || dateTo) && (
-              <div className="mt-4">
-                <Button variant="ghost" onClick={clearFilters}>
-                  {t('creditNotes.clearFilters', 'Clear Filters')}
+              <Input type="date" value={dateFrom} onChange={(e) => handleDateFromChange(e.target.value)} className="w-[140px] bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-white" />
+              <Input type="date" value={dateTo} onChange={(e) => handleDateToChange(e.target.value)} className="w-[140px] bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-white" />
+              {(search || statusFilter !== 'all' || clientFilter !== 'all' || typeFilter !== 'all' || dateFrom || dateTo) && (
+                <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-1.5 text-slate-500 dark:text-slate-400">
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  Clear
                 </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Credit Notes Table */}
-        <Card className="dark:bg-slate-800">
-          <CardContent className="p-0">
-            {loading ? (
-              <div className="flex items-center justify-center p-8">
-                <Loader2 className="h-8 w-8 animate-spin" />
-              </div>
-            ) : filteredCreditNotes.length === 0 ? (
-              <div className="text-center py-12">
-                <CreditCard className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium dark:text-white">{t('creditNotes.noCreditNotes', 'No credit notes found')}</h3>
-                <p className="text-muted-foreground mb-4">
-                  {t('creditNotes.noCreditNotesDescription', 'Create your first credit note to get started')}
-                </p>
-                <Button onClick={() => setShowCreateModal(true)}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  {t('creditNotes.newCreditNote', 'New Credit Note')}
-                </Button>
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow className="dark:hover:bg-slate-700">
-                    <TableHead className="dark:text-gray-300">{t('creditNotes.reference', 'Reference')}</TableHead>
-                    <TableHead className="dark:text-gray-300">{t('creditNotes.invoice', 'Invoice')}</TableHead>
-                    <TableHead className="dark:text-gray-300">{t('creditNotes.client', 'Client')}</TableHead>
-                    <TableHead className="dark:text-gray-300">{t('creditNotes.date', 'Date')}</TableHead>
-                    <TableHead className="dark:text-gray-300">{t('creditNotes.typeLabel', 'Type')}</TableHead>
-                    <TableHead className="dark:text-gray-300">{t('creditNotes.statusLabel', 'Status')}</TableHead>
-                    <TableHead className="text-right dark:text-gray-300">{t('creditNotes.total', 'Total')}</TableHead>
-                    <TableHead></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredCreditNotes.map((cn) => (
-                    <TableRow key={cn._id} className="dark:hover:bg-slate-700">
-                      <TableCell className="font-medium dark:text-white">
-                        {cn.referenceNo || cn.creditNoteNumber || 'N/A'}
-                      </TableCell>
-                      <TableCell className="dark:text-gray-300">{cn.invoice?.referenceNo || '-'}</TableCell>
-                      <TableCell className="dark:text-gray-300">{cn.client?.name || '-'}</TableCell>
-                      <TableCell className="dark:text-gray-300">{formatDate(cn.creditDate)}</TableCell>
-                      <TableCell>{getTypeBadge(cn.type)}</TableCell>
-                      <TableCell>{getStatusBadge(cn.status)}</TableCell>
-                      <TableCell className="text-right font-medium dark:text-white">
-                        {formatCurrency(cn.grandTotal || cn.totalAmount, cn.currencyCode)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => navigate(`/credit-notes/${cn._id}`)}
-                            title={t('common.view', 'View')}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          {(cn.status === 'draft' || cn.status === 'issued') && (
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={() => navigate(`/credit-notes/${cn._id}/edit`)}
-                              title={t('common.edit', 'Edit')}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          )}
-                          {cn.status === 'draft' && (
-                            <>
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                onClick={() => openConfirmDialog(cn)}
-                                title={t('creditNotes.confirm', 'Confirm')}
-                              >
-                                <CheckCircle className="h-4 w-4 text-green-600" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                onClick={() => openDeleteDialog(cn)}
-                                title={t('common.delete', 'Delete')}
-                              >
-                                <Trash2 className="h-4 w-4 text-red-600" />
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Create Credit Note Modal */}
-      <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-        <DialogContent className="dark:bg-slate-800">
-          <DialogHeader>
-            <DialogTitle className="dark:text-white">{t('creditNotes.createNew', 'Create New Credit Note')}</DialogTitle>
-            <DialogDescription className="dark:text-gray-400">
-              {t('creditNotes.selectInvoice', 'Select an invoice to create a credit note for')}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4 space-y-4">
-            <div>
-              <Label className="dark:text-gray-200">{t('creditNotes.invoice', 'Invoice')} *</Label>
-              <Select value={selectedInvoice} onValueChange={setSelectedInvoice}>
-                <SelectTrigger className="mt-2 dark:bg-slate-700 dark:border-slate-600 dark:text-white">
-                  <SelectValue placeholder={t('creditNotes.selectInvoicePlaceholder', 'Select an invoice')} />
-                </SelectTrigger>
-                <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
-                  {invoices.map(inv => (
-                    <SelectItem key={inv._id} value={inv._id} className="dark:text-white">
-                      {inv.referenceNo}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label className="dark:text-gray-200">{t('creditNotes.reason', 'Reason')} *</Label>
-              <Select value={createReason} onValueChange={setCreateReason}>
-                <SelectTrigger className="mt-2 dark:bg-slate-700 dark:border-slate-600 dark:text-white">
-                  <SelectValue placeholder={t('creditNotes.selectReason', 'Select a reason')} />
-                </SelectTrigger>
-                <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
-                  <SelectItem value="Goods returned by customer" className="dark:text-white">Goods returned by customer</SelectItem>
-                  <SelectItem value="Price adjustment" className="dark:text-white">Price adjustment</SelectItem>
-                  <SelectItem value="Order cancelled" className="dark:text-white">Order cancelled</SelectItem>
-                  <SelectItem value="Damaged goods" className="dark:text-white">Damaged goods</SelectItem>
-                  <SelectItem value="Wrong item shipped" className="dark:text-white">Wrong item shipped</SelectItem>
-                  <SelectItem value="Quality issues" className="dark:text-white">Quality issues</SelectItem>
-                  <SelectItem value="Customer discount" className="dark:text-white">Customer discount</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setShowCreateModal(false);
-              setCreateReason('');
-              setSelectedInvoice('');
-            }}>
-              <X className="mr-2 h-4 w-4" />
-              {t('common.cancel', 'Cancel')}
-            </Button>
-            <Button onClick={handleCreateCreditNote} disabled={!selectedInvoice || !createReason.trim() || creating}>
-              {creating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {t('creditNotes.create', 'Create')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Confirm Credit Note Dialog */}
-      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <DialogContent className="dark:bg-slate-800">
-          <DialogHeader>
-            <DialogTitle className="dark:text-white">{t('creditNotes.confirmTitle', 'Confirm Credit Note')}</DialogTitle>
-            <DialogDescription className="dark:text-gray-400">
-              {t('creditNotes.confirmDescription', 'This will process the credit note, reverse the journal entries, and return stock to inventory (for goods returns). This action cannot be undone.')}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <div className="p-4 bg-muted dark:bg-slate-700 rounded-lg">
-              <div className="flex justify-between mb-2">
-                <span className="dark:text-gray-300">Reference:</span>
-                <span className="font-bold dark:text-white">{selectedCreditNote?.referenceNo}</span>
-              </div>
-              <div className="flex justify-between mb-2">
-                <span className="dark:text-gray-300">Total Amount:</span>
-                <span className="font-bold dark:text-white">{formatCurrency(selectedCreditNote?.grandTotal || selectedCreditNote?.totalAmount || 0, selectedCreditNote?.currencyCode)}</span>
-              </div>
-              {selectedCreditNote?.type === 'goods_return' && (
-                <div className="flex justify-between text-sm">
-                  <span className="dark:text-gray-300">Type:</span>
-                  <span className="dark:text-white">Goods Return - Stock will be returned to inventory</span>
-                </div>
               )}
             </div>
           </div>
+
+          {/* Content */}
+          {loading ? (
+            <div className="space-y-3">
+              <Skeleton className="h-10 w-full rounded-lg" />
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} className="h-14 w-full rounded-lg" />
+              ))}
+            </div>
+          ) : filteredCreditNotes.length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-xl border border-slate-200 bg-white py-16 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
+                <Receipt className="h-8 w-8 text-slate-400 dark:text-slate-500" />
+              </div>
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">No Credit Notes Found</h3>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Create your first credit note to get started</p>
+              <Button onClick={() => setShowCreateModal(true)} className="mt-4 gap-1.5 bg-violet-600 hover:bg-violet-700">
+                <Plus className="h-4 w-4" />
+                New Credit Note
+              </Button>
+            </div>
+          ) : (
+            <>
+              {/* Desktop Table */}
+              <Card className="hidden overflow-hidden border-slate-200 bg-white shadow-sm sm:block dark:border-slate-800 dark:bg-slate-950">
+                <CardContent className="p-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-b-slate-200 hover:bg-transparent dark:border-b-slate-800">
+                        <TableHead className="text-xs font-semibold text-slate-500 dark:text-slate-400">Reference</TableHead>
+                        <TableHead className="text-xs font-semibold text-slate-500 dark:text-slate-400">Invoice</TableHead>
+                        <TableHead className="text-xs font-semibold text-slate-500 dark:text-slate-400">Client</TableHead>
+                        <TableHead className="text-xs font-semibold text-slate-500 dark:text-slate-400">Date</TableHead>
+                        <TableHead className="text-xs font-semibold text-slate-500 dark:text-slate-400">Type</TableHead>
+                        <TableHead className="text-xs font-semibold text-slate-500 dark:text-slate-400">Status</TableHead>
+                        <TableHead className="text-right text-xs font-semibold text-slate-500 dark:text-slate-400">Total</TableHead>
+                        <TableHead className="w-24"></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredCreditNotes.map((cn) => (
+                        <TableRow key={cn._id} className="border-b-slate-100 transition-colors hover:bg-slate-50 dark:border-b-slate-800/60 dark:hover:bg-slate-800/50">
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-50 text-violet-600 dark:bg-violet-950/40 dark:text-violet-300">
+                                <FileText className="h-4 w-4" />
+                              </div>
+                              <div>
+                                <p className="text-sm font-semibold text-slate-900 dark:text-white">{cn.referenceNo || cn.creditNoteNumber || 'N/A'}</p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-sm text-slate-600 dark:text-slate-300">{cn.invoice?.referenceNo || '-'}</TableCell>
+                          <TableCell className="text-sm text-slate-600 dark:text-slate-300">{cn.client?.name || '-'}</TableCell>
+                          <TableCell className="text-sm text-slate-600 dark:text-slate-300">{formatDate(cn.creditDate)}</TableCell>
+                          <TableCell>
+                            <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${getTypeStyle(cn.type)}`}>{getTypeLabel(cn.type)}</span>
+                          </TableCell>
+                          <TableCell>
+                            <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${getStatusStyle(cn.status)}`}>{getStatusLabel(cn.status)}</span>
+                          </TableCell>
+                          <TableCell className="text-right text-sm font-semibold text-slate-900 dark:text-white">{formatCurrency(cn.grandTotal || cn.totalAmount, cn.currencyCode)}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center justify-end gap-1">
+                              <Button variant="ghost" size="sm" onClick={() => navigate(`/credit-notes/${cn._id}`)} className="h-8 w-8 p-0 dark:text-slate-300">
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              {(cn.status === 'draft' || cn.status === 'issued') && (
+                                <Button variant="ghost" size="sm" onClick={() => navigate(`/credit-notes/${cn._id}/edit`)} className="h-8 w-8 p-0 dark:text-slate-300">
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                              )}
+                              {cn.status === 'draft' && (
+                                <>
+                                  <Button variant="ghost" size="sm" onClick={() => openConfirmDialog(cn)} className="h-8 w-8 p-0">
+                                    <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                                  </Button>
+                                  <Button variant="ghost" size="sm" onClick={() => openDeleteDialog(cn)} className="h-8 w-8 p-0">
+                                    <Trash2 className="h-4 w-4 text-rose-600 dark:text-rose-400" />
+                                  </Button>
+                                </>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+
+              {/* Mobile Cards */}
+              <div className="space-y-3 sm:hidden">
+                {filteredCreditNotes.map((cn) => (
+                  <Card key={cn._id} className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-50 text-violet-600 dark:bg-violet-950/40 dark:text-violet-300">
+                            <FileText className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold text-slate-900 dark:text-white">{cn.referenceNo || cn.creditNoteNumber || 'N/A'}</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">{cn.client?.name || '-'} &middot; {formatDate(cn.creditDate)}</p>
+                          </div>
+                        </div>
+                        <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${getStatusStyle(cn.status)}`}>{getStatusLabel(cn.status)}</span>
+                      </div>
+                      <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3 dark:border-slate-800">
+                        <div className="space-y-1">
+                          <p className="text-xs text-slate-500 dark:text-slate-400">Invoice: <span className="font-medium text-slate-700 dark:text-slate-200">{cn.invoice?.referenceNo || '-'}</span></p>
+                          <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${getTypeStyle(cn.type)}`}>{getTypeLabel(cn.type)}</span>
+                        </div>
+                        <p className="text-base font-bold text-slate-900 dark:text-white">{formatCurrency(cn.grandTotal || cn.totalAmount, cn.currencyCode)}</p>
+                      </div>
+                      <div className="mt-3 flex items-center justify-end gap-1">
+                        <Button variant="ghost" size="sm" onClick={() => navigate(`/credit-notes/${cn._id}`)} className="h-8 w-8 p-0 dark:text-slate-300">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        {(cn.status === 'draft' || cn.status === 'issued') && (
+                          <Button variant="ghost" size="sm" onClick={() => navigate(`/credit-notes/${cn._id}/edit`)} className="h-8 w-8 p-0 dark:text-slate-300">
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {cn.status === 'draft' && (
+                          <>
+                            <Button variant="ghost" size="sm" onClick={() => openConfirmDialog(cn)} className="h-8 w-8 p-0">
+                              <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => openDeleteDialog(cn)} className="h-8 w-8 p-0">
+                              <Trash2 className="h-4 w-4 text-rose-600 dark:text-rose-400" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Create Modal */}
+      <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+        <DialogContent className="sm:max-w-md dark:border-slate-800 dark:bg-slate-950">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-slate-900 dark:text-white">
+              <div className="rounded-lg bg-violet-50 p-1.5 text-violet-600 dark:bg-violet-950/40 dark:text-violet-300">
+                <Receipt className="h-4 w-4" />
+              </div>
+              Create New Credit Note
+            </DialogTitle>
+            <DialogDescription className="text-slate-500 dark:text-slate-400">Select an invoice to create a credit note for</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-1.5">
+              <Label className="text-sm text-slate-700 dark:text-slate-300">Invoice *</Label>
+              <Select value={selectedInvoice} onValueChange={setSelectedInvoice}>
+                <SelectTrigger className="bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-white">
+                  <SelectValue placeholder="Select an invoice" />
+                </SelectTrigger>
+                <SelectContent className="dark:border-slate-800 dark:bg-slate-950">
+                  {invoices.map(inv => (
+                    <SelectItem key={inv._id} value={inv._id} className="dark:text-slate-200">{inv.referenceNo}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm text-slate-700 dark:text-slate-300">Reason *</Label>
+              <Select value={createReason} onValueChange={setCreateReason}>
+                <SelectTrigger className="bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-white">
+                  <SelectValue placeholder="Select a reason" />
+                </SelectTrigger>
+                <SelectContent className="dark:border-slate-800 dark:bg-slate-950">
+                  <SelectItem value="Goods returned by customer" className="dark:text-slate-200">Goods returned by customer</SelectItem>
+                  <SelectItem value="Price adjustment" className="dark:text-slate-200">Price adjustment</SelectItem>
+                  <SelectItem value="Order cancelled" className="dark:text-slate-200">Order cancelled</SelectItem>
+                  <SelectItem value="Damaged goods" className="dark:text-slate-200">Damaged goods</SelectItem>
+                  <SelectItem value="Wrong item shipped" className="dark:text-slate-200">Wrong item shipped</SelectItem>
+                  <SelectItem value="Quality issues" className="dark:text-slate-200">Quality issues</SelectItem>
+                  <SelectItem value="Customer discount" className="dark:text-slate-200">Customer discount</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowConfirmDialog(false)} disabled={!!confirmingId}>
-              <X className="mr-2 h-4 w-4" />
-              {t('common.cancel', 'Cancel')}
+            <Button variant="outline" size="sm" onClick={() => { setShowCreateModal(false); setCreateReason(''); setSelectedInvoice(''); }} className="dark:border-slate-700 dark:text-slate-200">
+              <X className="mr-1.5 h-4 w-4" /> Cancel
             </Button>
-            <Button onClick={handleConfirm} disabled={!!confirmingId}>
-              {confirmingId && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              <CheckCircle className="mr-2 h-4 w-4" />
-              {t('creditNotes.confirm', 'Confirm')}
+            <Button size="sm" onClick={handleCreateCreditNote} disabled={!selectedInvoice || !createReason.trim() || creating} className="bg-violet-600 hover:bg-violet-700">
+              {creating ? 'Creating...' : 'Create'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Delete Credit Note Dialog */}
-      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <DialogContent className="dark:bg-slate-800">
+      {/* Confirm Dialog */}
+      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <DialogContent className="sm:max-w-md dark:border-slate-800 dark:bg-slate-950">
           <DialogHeader>
-            <DialogTitle className="dark:text-white">{t('creditNotes.deleteTitle', 'Delete Credit Note')}</DialogTitle>
-            <DialogDescription className="dark:text-gray-400">
-              {t('creditNotes.deleteDescription', 'Are you sure you want to delete this draft credit note? This action cannot be undone.')}
+            <DialogTitle className="flex items-center gap-2 text-slate-900 dark:text-white">
+              <div className="rounded-lg bg-emerald-50 p-1.5 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300">
+                <CheckCircle className="h-4 w-4" />
+              </div>
+              Confirm Credit Note
+            </DialogTitle>
+            <DialogDescription className="text-slate-500 dark:text-slate-400">
+              This will process the credit note, reverse the journal entries, and return stock to inventory (for goods returns). This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
-            <div className="p-4 bg-destructive/10 dark:bg-red-900/20 rounded-lg">
-              <div className="flex justify-between mb-2">
-                <span className="dark:text-gray-300">Reference:</span>
-                <span className="font-bold dark:text-white">{selectedCreditNote?.referenceNo}</span>
+          <div className="space-y-3 rounded-lg border border-slate-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-slate-500 dark:text-slate-400">Reference</span>
+              <span className="font-semibold text-slate-900 dark:text-white">{selectedCreditNote?.referenceNo}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-slate-500 dark:text-slate-400">Total Amount</span>
+              <span className="font-semibold text-slate-900 dark:text-white">{formatCurrency(selectedCreditNote?.grandTotal || selectedCreditNote?.totalAmount || 0, selectedCreditNote?.currencyCode)}</span>
+            </div>
+            {selectedCreditNote?.type === 'goods_return' && (
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-500 dark:text-slate-400">Type</span>
+                <span className="text-slate-700 dark:text-slate-300">Goods Return - Stock will be returned</span>
               </div>
-              <div className="flex justify-between">
-                <span className="dark:text-gray-300">Status:</span>
-                <Badge variant="secondary" className="dark:bg-slate-700 dark:text-gray-200">{selectedCreditNote?.status}</Badge>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setShowConfirmDialog(false)} disabled={!!confirmingId} className="dark:border-slate-700 dark:text-slate-200">
+              <X className="mr-1.5 h-4 w-4" /> Cancel
+            </Button>
+            <Button size="sm" onClick={handleConfirm} disabled={!!confirmingId} className="bg-emerald-600 hover:bg-emerald-700">
+              <CheckCircle className="mr-1.5 h-4 w-4" /> Confirm
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="sm:max-w-md dark:border-slate-800 dark:bg-slate-950">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-slate-900 dark:text-white">
+              <div className="rounded-lg bg-rose-50 p-1.5 text-rose-600 dark:bg-rose-950/40 dark:text-rose-300">
+                <Ban className="h-4 w-4" />
               </div>
+              Delete Credit Note
+            </DialogTitle>
+            <DialogDescription className="text-slate-500 dark:text-slate-400">Are you sure you want to delete this draft credit note? This action cannot be undone.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 rounded-lg border border-rose-100 bg-rose-50 p-4 dark:border-rose-900/40 dark:bg-rose-950/20">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-slate-500 dark:text-slate-400">Reference</span>
+              <span className="font-semibold text-slate-900 dark:text-white">{selectedCreditNote?.referenceNo}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-slate-500 dark:text-slate-400">Status</span>
+              <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${getStatusStyle(selectedCreditNote?.status || '')}`}>{getStatusLabel(selectedCreditNote?.status || '')}</span>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDeleteDialog(false)} disabled={!!deletingId}>
-              <X className="mr-2 h-4 w-4" />
-              {t('common.cancel', 'Cancel')}
+            <Button variant="outline" size="sm" onClick={() => setShowDeleteDialog(false)} disabled={!!deletingId} className="dark:border-slate-700 dark:text-slate-200">
+              <X className="mr-1.5 h-4 w-4" /> Cancel
             </Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={!!deletingId}>
-              {deletingId && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              <Trash2 className="mr-2 h-4 w-4" />
-              {t('common.delete', 'Delete')}
+            <Button variant="destructive" size="sm" onClick={handleDelete} disabled={!!deletingId}>
+              <Trash2 className="mr-1.5 h-4 w-4" /> Delete
             </Button>
           </DialogFooter>
         </DialogContent>

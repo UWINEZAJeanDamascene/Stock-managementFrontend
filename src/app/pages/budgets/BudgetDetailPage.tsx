@@ -22,6 +22,8 @@ import {
 } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
+import { Skeleton } from "../../components/ui/skeleton";
+import { Progress } from "../../components/ui/progress";
 import { Label } from "../../components/ui/label";
 import { Input } from "../../components/ui/input";
 import { Textarea } from "../../components/ui/textarea";
@@ -68,7 +70,6 @@ import {
   BarChart3,
   TrendingUp,
   TrendingDown,
-  DollarSign,
   FileText,
   CalendarDays,
   ArrowRightLeft,
@@ -83,6 +84,14 @@ import {
   Wallet,
   Eye,
   Receipt,
+  Sparkles,
+  Target,
+  Layers,
+  CircleDollarSign,
+  Activity,
+  Landmark,
+  Clock,
+  User,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -600,8 +609,18 @@ export default function BudgetDetailPage() {
   if (loading) {
     return (
       <Layout>
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin" />
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+          <div className="mx-auto max-w-[1600px] px-4 py-5 sm:px-6 lg:px-8">
+            <Skeleton className="h-32 w-full rounded-xl" />
+            <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <Skeleton className="h-28 rounded-xl" />
+              <Skeleton className="h-28 rounded-xl" />
+              <Skeleton className="h-28 rounded-xl" />
+              <Skeleton className="h-28 rounded-xl" />
+            </div>
+            <Skeleton className="mt-6 h-10 w-full rounded-lg" />
+            <Skeleton className="mt-4 h-96 w-full rounded-xl" />
+          </div>
         </div>
       </Layout>
     );
@@ -613,263 +632,337 @@ export default function BudgetDetailPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-6">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row items-start md:items-center gap-4 mb-6">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate("/budgets")}
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div className="flex-1">
-            <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold">{budget.name}</h1>
-              {getStatusBadge(budget.status)}
-              {getTypeBadge(budget.type)}
-            </div>
-            <p className="text-muted-foreground mt-1">
-              {budget.description ||
-                t("budgets.noDescription", "No description")}
-            </p>
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+        {/* Hero Header */}
+        <div className="relative overflow-hidden border-b border-slate-200 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 dark:border-slate-800">
+          <div className="absolute inset-0 opacity-20">
+            <div className="absolute right-20 top-0 h-64 w-64 rounded-full bg-indigo-500 blur-3xl"></div>
+            <div className="absolute left-10 bottom-0 h-48 w-48 rounded-full bg-emerald-500 blur-3xl"></div>
           </div>
-          <div className="flex gap-2 flex-wrap items-center">
-            {/* Scenario Selector */}
-            <BudgetScenarioSelector
-              budgetId={id!}
-              budgetName={budget.name}
-              currentScenario={{
-                scenario_type: budget.scenario_type,
-                scenario_name: budget.scenario_name,
-                is_primary_scenario: budget.is_primary_scenario
-              }}
-              onScenarioChange={(scenario) => {
-                // Navigate to the selected scenario
-                navigate(`/budgets/${scenario._id}`);
-              }}
-              onRefresh={() => {
-                fetchBudget();
-                fetchLines();
-              }}
-            />
-
-            {budget.status === "draft" && (
-              <>
+          <div className="relative mx-auto max-w-[1600px] px-4 py-8 sm:px-6 lg:px-8">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+              <div className="flex items-start gap-4">
                 <Button
-                  variant="outline"
-                  onClick={() => navigate(`/budgets/${id}/edit`)}
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate("/budgets")}
+                  className="h-9 w-9 shrink-0 p-0 text-slate-300 hover:bg-white/10 hover:text-white"
                 >
-                  <Pencil className="mr-2 h-4 w-4" />
-                  {t("common.edit", "Edit")}
+                  <ArrowLeft className="h-5 w-5" />
                 </Button>
-                <Button onClick={() => setApproveOpen(true)}>
-                  <CheckCircle className="mr-2 h-4 w-4" />
-                  {t("budgets.approve", "Approve")}
-                </Button>
-              </>
-            )}
-            {(budget.status === "draft" || budget.status === "approved") && (
-              <Button variant="outline" onClick={() => setRejectOpen(true)}>
-                <XCircle className="mr-2 h-4 w-4" />
-                {t("budgets.reject", "Reject")}
-              </Button>
-            )}
-            {budget.status === "approved" && (
-              <Button
-                variant="outline"
-                onClick={() => setLockOpen(true)}
-                className="bg-amber-50 hover:bg-amber-100"
-              >
-                <Lock className="mr-2 h-4 w-4" />
-                {t("budgets.lock", "Lock")}
-              </Button>
-            )}
-            {budget.status === "locked" && (
-              <Button
-                variant="outline"
-                onClick={() => setUnlockOpen(true)}
-                className="bg-green-50 hover:bg-green-100"
-              >
-                <Unlock className="mr-2 h-4 w-4" />
-                {t("budgets.unlock", "Unlock")}
-              </Button>
-            )}
-            {(budget.status === "approved" || budget.status === "locked") && (
-              <Button variant="outline" onClick={() => setCloseOpen(true)}>
-                <Power className="mr-2 h-4 w-4" />
-                {t("budgets.close", "Close")}
-              </Button>
-            )}
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h1 className="text-xl font-bold tracking-tight text-white sm:text-2xl lg:text-3xl">
+                      {budget.name}
+                    </h1>
+                    {getStatusBadge(budget.status)}
+                    {getTypeBadge(budget.type)}
+                  </div>
+                  <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-slate-300">
+                    {budget.description || t("budgets.noDescription", "No description")}
+                  </p>
+                  <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-400">
+                    <span className="flex items-center gap-1">
+                      <Landmark className="h-3.5 w-3.5" />
+                      {t("budgets.fiscalYear", "FY")}: {budget.fiscal_year || "-"}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <CalendarDays className="h-3.5 w-3.5" />
+                      {budget.periodStart ? formatDate(budget.periodStart) : "-"} — {budget.periodEnd ? formatDate(budget.periodEnd) : "-"}
+                    </span>
+                    {budget.scenario_name && (
+                      <span className="flex items-center gap-1">
+                        <Sparkles className="h-3.5 w-3.5" />
+                        {budget.scenario_name}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <BudgetScenarioSelector
+                  budgetId={id!}
+                  budgetName={budget.name}
+                  currentScenario={{
+                    scenario_type: budget.scenario_type,
+                    scenario_name: budget.scenario_name,
+                    is_primary_scenario: budget.is_primary_scenario
+                  }}
+                  onScenarioChange={(scenario) => navigate(`/budgets/${scenario._id}`)}
+                  onRefresh={() => { fetchBudget(); fetchLines(); }}
+                />
+                {budget.status === "draft" && (
+                  <>
+                    <Button variant="outline" onClick={() => navigate(`/budgets/${id}/edit`)} className="gap-2 border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white">
+                      <Pencil className="h-4 w-4" />
+                      {t("common.edit", "Edit")}
+                    </Button>
+                    <Button onClick={() => setApproveOpen(true)} className="gap-2 bg-emerald-600 text-white hover:bg-emerald-700">
+                      <CheckCircle className="h-4 w-4" />
+                      {t("budgets.approve", "Approve")}
+                    </Button>
+                  </>
+                )}
+                {(budget.status === "draft" || budget.status === "approved") && (
+                  <Button variant="outline" onClick={() => setRejectOpen(true)} className="gap-2 border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white">
+                    <XCircle className="h-4 w-4" />
+                    {t("budgets.reject", "Reject")}
+                  </Button>
+                )}
+                {budget.status === "approved" && (
+                  <Button variant="outline" onClick={() => setLockOpen(true)} className="gap-2 border-amber-500/30 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20">
+                    <Lock className="h-4 w-4" />
+                    {t("budgets.lock", "Lock")}
+                  </Button>
+                )}
+                {budget.status === "locked" && (
+                  <Button variant="outline" onClick={() => setUnlockOpen(true)} className="gap-2 border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20">
+                    <Unlock className="h-4 w-4" />
+                    {t("budgets.unlock", "Unlock")}
+                  </Button>
+                )}
+                {(budget.status === "approved" || budget.status === "locked") && (
+                  <Button variant="outline" onClick={() => setCloseOpen(true)} className="gap-2 border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white">
+                    <Power className="h-4 w-4" />
+                    {t("budgets.close", "Close")}
+                  </Button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <CalendarDays className="h-4 w-4 text-muted-foreground" />
-                {t("budgets.fiscalYear", "Fiscal Year")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {budget.fiscal_year || "-"}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1 capitalize">
-                {budget.periodType}
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <DollarSign className="h-4 w-4 text-blue-500" />
-                {t("budgets.budgetAmount", "Budget Amount")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-600">
-                {formatCurrency(headerBudgetAmount)}
-              </div>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Controlled total across all allocation lines
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                {t("budgets.lines", "Lines")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{lines.length}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {formatCurrency(totalBudgeted)}{" "}
-                {t("budgets.allocated", "allocated")}
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <FileText className="h-4 w-4 text-muted-foreground" />
-                {t("budgets.period", "Period")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-sm">
-                {budget.periodStart ? formatDate(budget.periodStart) : "-"}
-                {" to "}
-                {budget.periodEnd ? formatDate(budget.periodEnd) : "-"}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <div className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {/* Budget Amount */}
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("budgets.budgetAmount", "Budget Amount")}</p>
+                    <p className="mt-1 text-2xl font-bold tracking-tight text-slate-950 dark:text-white">{formatCurrency(headerBudgetAmount)}</p>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{formatCurrency(totalBudgeted)} {t("budgets.allocated", "allocated")}</p>
+                  </div>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-50 dark:bg-indigo-950/50">
+                    <Target className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                  </div>
+                </div>
+                <div className="mt-3">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-slate-500 dark:text-slate-400">{t("budgets.utilization", "Utilization")}</span>
+                    <span className="font-medium text-slate-900 dark:text-white">{comparisonUtilization.toFixed(1)}%</span>
+                  </div>
+                  <Progress value={Math.min(comparisonUtilization, 100)} className="mt-1.5 h-1.5" />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Actual Spent */}
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("budgets.totalActual", "Actual Spent")}</p>
+                    <p className="mt-1 text-2xl font-bold tracking-tight text-slate-950 dark:text-white">{formatCurrency(totalActualConsumed)}</p>
+                    <div className="mt-1 flex items-center gap-1 text-xs">
+                      {totalActualConsumed <= totalBudgeted ? (
+                        <>
+                          <TrendingDown className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                          <span className="text-emerald-600 dark:text-emerald-400">{formatCurrency(totalBudgeted - totalActualConsumed)} {t("budgets.underBudget", "under budget")}</span>
+                        </>
+                      ) : (
+                        <>
+                          <TrendingUp className="h-3 w-3 text-red-600 dark:text-red-400" />
+                          <span className="text-red-600 dark:text-red-400">{formatCurrency(totalActualConsumed - totalBudgeted)} {t("budgets.overBudget", "over budget")}</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-950/50">
+                    <Activity className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Available */}
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("budgets.available", "Available")}</p>
+                    <p className={`mt-1 text-2xl font-bold tracking-tight ${totalAvailable < 0 ? "text-red-600 dark:text-red-400" : "text-slate-950 dark:text-white"}`}>
+                      {formatCurrency(totalAvailable)}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{formatCurrency(totalCommitted)} {t("budgets.committed", "committed")}</p>
+                  </div>
+                  <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${totalAvailable < 0 ? "bg-red-50 dark:bg-red-950/50" : "bg-emerald-50 dark:bg-emerald-950/50"}`}>
+                    <Wallet className={`h-5 w-5 ${totalAvailable < 0 ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}`} />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Lines & Coverage */}
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("budgets.lines", "Budget Lines")}</p>
+                    <p className="mt-1 text-2xl font-bold tracking-tight text-slate-950 dark:text-white">{lines.length}</p>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{linkedProjectLines} {t("budgets.linkedToProjects", "linked to projects")}</p>
+                  </div>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-950/50">
+                    <Layers className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <div className="rounded-md bg-slate-50 p-2 text-center dark:bg-slate-900/50">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{t("budgets.onTrack", "On track")}</p>
+                    <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+                      {lines.filter((l) => getLineUtilization(l) < 85 && getLineAvailable(l) >= 0).length}
+                    </p>
+                  </div>
+                  <div className="rounded-md bg-slate-50 p-2 text-center dark:bg-slate-900/50">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{t("budgets.atRisk", "At risk")}</p>
+                    <p className="text-sm font-semibold text-red-600 dark:text-red-400">
+                      {lines.filter((l) => getLineAvailable(l) < 0 || getLineUtilization(l) >= 85).length}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="lines" className="space-y-4">
-          <TabsList className="flex flex-wrap">
-            <TabsTrigger value="lines">
+        <Tabs defaultValue="lines" className="mt-6 space-y-5">
+          <TabsList className="w-full flex-wrap justify-start gap-1 border border-slate-200 bg-white p-1 dark:border-slate-800 dark:bg-slate-900/50">
+            <TabsTrigger value="lines" className="gap-1.5 rounded-md text-xs data-[state=active]:bg-slate-100 data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-white">
+              <FolderTree className="h-3.5 w-3.5" />
               {t("budgets.budgetLines", "Budget Lines")}
             </TabsTrigger>
-            <TabsTrigger value="comparison">
+            <TabsTrigger value="comparison" className="gap-1.5 rounded-md text-xs data-[state=active]:bg-slate-100 data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-white">
+              <BarChart3 className="h-3.5 w-3.5" />
               {t("budgets.comparison", "Budget vs Actual")}
             </TabsTrigger>
-            <TabsTrigger value="transfers">
-              <ArrowRightLeft className="h-4 w-4 mr-1" />
+            <TabsTrigger value="transfers" className="gap-1.5 rounded-md text-xs data-[state=active]:bg-slate-100 data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-white">
+              <ArrowRightLeft className="h-3.5 w-3.5" />
               {t("budgets.transfers", "Transfers")}
             </TabsTrigger>
-            <TabsTrigger value="encumbrances">
-              <LockIcon className="h-4 w-4 mr-1" />
+            <TabsTrigger value="encumbrances" className="gap-1.5 rounded-md text-xs data-[state=active]:bg-slate-100 data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-white">
+              <LockIcon className="h-3.5 w-3.5" />
               {t("budgets.encumbrances", "Encumbrances")}
             </TabsTrigger>
-            <TabsTrigger value="approvals">
-              <CheckCircle className="h-4 w-4 mr-1" />
+            <TabsTrigger value="approvals" className="gap-1.5 rounded-md text-xs data-[state=active]:bg-slate-100 data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-white">
+              <CheckCircle className="h-3.5 w-3.5" />
               {t("budgets.approvals", "Approvals")}
             </TabsTrigger>
-            <TabsTrigger value="alerts">
-              <Bell className="h-4 w-4 mr-1" />
+            <TabsTrigger value="alerts" className="gap-1.5 rounded-md text-xs data-[state=active]:bg-slate-100 data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-white">
+              <Bell className="h-3.5 w-3.5" />
               {t("budgets.alerts", "Alerts")}
             </TabsTrigger>
-            <TabsTrigger value="periods">
-              <CalendarDays className="h-4 w-4 mr-1" />
+            <TabsTrigger value="periods" className="gap-1.5 rounded-md text-xs data-[state=active]:bg-slate-100 data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-white">
+              <CalendarDays className="h-3.5 w-3.5" />
               {t("budgets.periods", "Period Locks")}
             </TabsTrigger>
-            <TabsTrigger value="revisions">
-              <History className="h-4 w-4 mr-1" />
+            <TabsTrigger value="revisions" className="gap-1.5 rounded-md text-xs data-[state=active]:bg-slate-100 data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-white">
+              <History className="h-3.5 w-3.5" />
               {t("budgets.revisions", "Revisions")}
             </TabsTrigger>
-            <TabsTrigger value="info">
+            <TabsTrigger value="info" className="gap-1.5 rounded-md text-xs data-[state=active]:bg-slate-100 data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-white">
+              <FileText className="h-3.5 w-3.5" />
               {t("budgets.details", "Details")}
             </TabsTrigger>
           </TabsList>
 
           {/* Budget Lines Tab */}
-          <TabsContent value="lines">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <CardTitle>
-                      {t("budgets.budgetLines", "Budget Lines")}
-                    </CardTitle>
-                    <Badge variant="outline" className="gap-1 border-emerald-200 bg-emerald-50 text-emerald-700">
-                      <Link2 className="h-3 w-3" />
-                      Project / WBS ready
-                    </Badge>
+          <TabsContent value="lines" className="space-y-5">
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardHeader className="border-b border-slate-100 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/50">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <CardTitle className="text-base font-semibold dark:text-white">{t("budgets.budgetLines", "Budget Lines")}</CardTitle>
+                      <Badge variant="outline" className="gap-1 border-emerald-200 bg-emerald-50 text-emerald-700 text-xs dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-400">
+                        <Link2 className="h-3 w-3" />
+                        Project / WBS ready
+                      </Badge>
+                    </div>
+                    <CardDescription className="text-xs sm:text-sm">
+                      Assign each budget line to a general ledger account and, where needed, link it to a project or WBS node for operational tracking.
+                    </CardDescription>
                   </div>
-                  <CardDescription>
-                    Assign each budget line to a general ledger account and, where needed, link it to a project or WBS node for operational tracking.
-                  </CardDescription>
+                  {budget.status === "draft" && (
+                    <Button variant="outline" size="sm" onClick={() => setShowAddLine(!showAddLine)} className="shrink-0 gap-2 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
+                      <Plus className="h-4 w-4" />
+                      {showAddLine ? "Hide entry panel" : "Add budget line"}
+                    </Button>
+                  )}
                 </div>
-                {budget.status === "draft" && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowAddLine(!showAddLine)}
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    {showAddLine ? "Hide entry panel" : "Add budget line"}
-                  </Button>
-                )}
               </CardHeader>
-              <CardContent>
-                <div className="mb-4 grid gap-3 md:grid-cols-3">
-                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900">
-                    <div className="text-xs uppercase text-slate-500">Budget lines</div>
-                    <div className="mt-1 text-2xl font-semibold">{lines.length}</div>
+              <CardContent className="p-5">
+                {/* Sub-metrics */}
+                <div className="mb-5 grid gap-3 sm:grid-cols-3">
+                  <div className="flex items-center gap-3 rounded-lg border border-slate-100 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900/50">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 dark:bg-indigo-950/50">
+                      <FolderTree className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Budget lines</p>
+                      <p className="text-lg font-bold text-slate-950 dark:text-white">{lines.length}</p>
+                    </div>
                   </div>
-                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900">
-                    <div className="text-xs uppercase text-slate-500">Linked to projects</div>
-                    <div className="mt-1 text-2xl font-semibold">{linkedProjectLines}</div>
+                  <div className="flex items-center gap-3 rounded-lg border border-slate-100 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900/50">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-950/50">
+                      <Link2 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Linked to projects</p>
+                      <p className="text-lg font-bold text-slate-950 dark:text-white">{linkedProjectLines}</p>
+                    </div>
                   </div>
-                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900">
-                    <div className="text-xs uppercase text-slate-500">Unassigned lines</div>
-                    <div className="mt-1 text-2xl font-semibold">{Math.max(0, lines.length - linkedProjectLines)}</div>
+                  <div className="flex items-center gap-3 rounded-lg border border-slate-100 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900/50">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800">
+                      <Layers className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Unassigned lines</p>
+                      <p className="text-lg font-bold text-slate-950 dark:text-white">{Math.max(0, lines.length - linkedProjectLines)}</p>
+                    </div>
                   </div>
                 </div>
 
-                <div className="mb-4 grid gap-3 md:grid-cols-4">
-                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900">
-                    <div className="text-xs uppercase text-slate-500">Budgeted</div>
-                    <div className="mt-1 text-xl font-semibold">{formatCurrency(totalBudgeted)}</div>
+                {/* Financial summary */}
+                <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  <div className="rounded-lg border border-slate-100 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/50">
+                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("budgets.budgeted", "Budgeted")}</p>
+                    <p className="mt-1 text-xl font-bold text-slate-950 dark:text-white">{formatCurrency(totalBudgeted)}</p>
+                    <div className="mt-2 h-1 w-full rounded-full bg-slate-100 dark:bg-slate-800">
+                      <div className="h-1 rounded-full bg-indigo-500" style={{ width: "100%" }}></div>
+                    </div>
                   </div>
-                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900">
-                    <div className="text-xs uppercase text-slate-500">Open committed</div>
-                    <div className="mt-1 text-xl font-semibold">{formatCurrency(totalCommitted)}</div>
+                  <div className="rounded-lg border border-slate-100 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/50">
+                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("budgets.openCommitted", "Open Committed")}</p>
+                    <p className="mt-1 text-xl font-bold text-slate-950 dark:text-white">{formatCurrency(totalCommitted)}</p>
+                    <div className="mt-2 h-1 w-full rounded-full bg-slate-100 dark:bg-slate-800">
+                      <div className="h-1 rounded-full bg-amber-500" style={{ width: `${headerBudgetAmount > 0 ? Math.min((totalCommitted / headerBudgetAmount) * 100, 100) : 0}%` }}></div>
+                    </div>
                   </div>
-                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900">
-                    <div className="text-xs uppercase text-slate-500">Actual consumed</div>
-                    <div className="mt-1 text-xl font-semibold">{formatCurrency(totalActualConsumed)}</div>
+                  <div className="rounded-lg border border-slate-100 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/50">
+                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("budgets.actualConsumed", "Actual Consumed")}</p>
+                    <p className="mt-1 text-xl font-bold text-slate-950 dark:text-white">{formatCurrency(totalActualConsumed)}</p>
+                    <div className="mt-2 h-1 w-full rounded-full bg-slate-100 dark:bg-slate-800">
+                      <div className="h-1 rounded-full bg-blue-500" style={{ width: `${headerBudgetAmount > 0 ? Math.min((totalActualConsumed / headerBudgetAmount) * 100, 100) : 0}%` }}></div>
+                    </div>
                   </div>
-                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900">
-                    <div className="text-xs uppercase text-slate-500">Available</div>
-                    <div className={`mt-1 text-xl font-semibold ${totalAvailable < 0 ? "text-red-600" : "text-emerald-600"}`}>
+                  <div className="rounded-lg border border-slate-100 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/50">
+                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("budgets.available", "Available")}</p>
+                    <p className={`mt-1 text-xl font-bold ${totalAvailable < 0 ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}`}>
                       {formatCurrency(totalAvailable)}
+                    </p>
+                    <div className="mt-2 h-1 w-full rounded-full bg-slate-100 dark:bg-slate-800">
+                      <div className={`h-1 rounded-full ${totalAvailable < 0 ? "bg-red-500" : "bg-emerald-500"}`} style={{ width: `${headerBudgetAmount > 0 ? Math.min((Math.max(totalAvailable, 0) / headerBudgetAmount) * 100, 100) : 0}%` }}></div>
                     </div>
                   </div>
                 </div>
@@ -1069,283 +1162,211 @@ export default function BudgetDetailPage() {
                 )}
 
                 {lines.length === 0 ? (
-                  <div className="text-center py-12">
-                    <AlertCircle className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                    <p className="text-muted-foreground">
-                      {t("budgets.noLines", "No line items yet")}
-                    </p>
+                  <div className="py-12 text-center">
+                    <AlertCircle className="mx-auto mb-3 h-10 w-10 text-slate-300 dark:text-slate-600" />
+                    <p className="text-sm text-slate-500 dark:text-slate-400">{t("budgets.noLines", "No line items yet")}</p>
                     {budget.status === "draft" && (
-                      <Button
-                        variant="outline"
-                        className="mt-4"
-                        onClick={() => setShowAddLine(true)}
-                      >
-                        <Plus className="mr-2 h-4 w-4" />
+                      <Button variant="outline" size="sm" className="mt-3 gap-2 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800" onClick={() => setShowAddLine(true)}>
+                        <Plus className="h-4 w-4" />
                         {t("budgets.addFirstLine", "Add First Line")}
                       </Button>
                     )}
                   </div>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>{t("budgets.account", "Account")}</TableHead>
-                        <TableHead>{t("projects.project", "Project")}</TableHead>
-                        <TableHead>{t("budgets.period", "Period")}</TableHead>
-                        <TableHead>{t("budgets.month", "Month")}</TableHead>
-                        <TableHead>{t("budgets.year", "Year")}</TableHead>
-                        <TableHead className="text-right">
-                          {t("budgets.budgetedAmount", "Budgeted")}
-                        </TableHead>
-                        <TableHead className="text-right">Open committed</TableHead>
-                        <TableHead className="text-right">Actual</TableHead>
-                        <TableHead className="text-right">Available</TableHead>
-                        <TableHead className="text-right">Use %</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>
-                          {t("budgets.category", "Category")}
-                        </TableHead>
-                        <TableHead>{t("budgets.notes", "Notes")}</TableHead>
-                        <TableHead className="sticky right-0 bg-card text-right shadow-[-8px_0_8px_-8px_rgba(0,0,0,0.35)]">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {lines.map((line) => (
-                        <TableRow key={line._id}>
-                          <TableCell className="font-medium">
-                            {getAccountName(line.account_id)}
-                          </TableCell>
-                          <TableCell>
-                            {line.project_id ? (
-                              <span
-                                className="text-xs font-mono bg-primary/10 text-primary px-1.5 py-0.5 rounded cursor-pointer hover:bg-primary/20"
-                                onClick={() => {
-                                  const projectMeta = getProjectMeta(line.project_id, line.wbs_code);
-                                  if (projectMeta.id) navigate(`/projects/${projectMeta.id}`);
-                                }}
-                                title={getProjectMeta(line.project_id, line.wbs_code).label}
-                              >
-                                {getProjectMeta(line.project_id, line.wbs_code).code}
-                              </span>
-                            ) : (
-                              <span className="text-xs text-muted-foreground">—</span>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {`${MONTHS.find((m) => m.value === line.period_month)?.label || line.period_month} ${line.period_year}`}
-                          </TableCell>
-                          <TableCell>
-                            {MONTHS.find((m) => m.value === line.period_month)
-                              ?.label || line.period_month}
-                          </TableCell>
-                          <TableCell>{line.period_year}</TableCell>
-                          <TableCell className="text-right font-medium">
-                            {formatCurrency(line.budgeted_amount)}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {formatCurrency(line.encumbered_amount || 0)}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {formatCurrency(line.actual_amount || 0)}
-                          </TableCell>
-                          <TableCell className={`text-right font-medium ${getLineAvailable(line) < 0 ? "text-red-600" : "text-emerald-600"}`}>
-                            {formatCurrency(getLineAvailable(line))}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {getLineUtilization(line).toFixed(1)}%
-                          </TableCell>
-                          <TableCell>
-                            {(() => {
-                              const status = getLineStatus(line);
-                              const StatusIcon = status.icon;
-                              return (
-                                <Badge variant="outline" className={`gap-1 ${status.className}`}>
-                                  <StatusIcon className="h-3 w-3" />
-                                  {status.label}
-                                </Badge>
-                              );
-                            })()}
-                          </TableCell>
-                          <TableCell>{line.category || "-"}</TableCell>
-                          <TableCell className="text-muted-foreground text-sm">
-                            {line.notes || "-"}
-                          </TableCell>
-                          <TableCell className="sticky right-0 bg-card text-right shadow-[-8px_0_8px_-8px_rgba(0,0,0,0.35)]">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => openLineConsumption(line)}
-                              className="h-8 px-2"
-                            >
-                              <Eye className="mr-2 h-4 w-4" />
-                              View
-                            </Button>
-                          </TableCell>
+                  <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-800">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-slate-50/70 hover:bg-slate-50/70 dark:bg-slate-900/50 dark:hover:bg-slate-900/50">
+                          <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("budgets.account", "Account")}</TableHead>
+                          <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("projects.project", "Project")}</TableHead>
+                          <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("budgets.period", "Period")}</TableHead>
+                          <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("budgets.budgetedAmount", "Budgeted")}</TableHead>
+                          <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("budgets.committed", "Committed")}</TableHead>
+                          <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("budgets.actual", "Actual")}</TableHead>
+                          <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("budgets.available", "Available")}</TableHead>
+                          <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("budgets.utilization", "Use %")}</TableHead>
+                          <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("budgets.statusLabel", "Status")}</TableHead>
+                          <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("budgets.category", "Category")}</TableHead>
+                          <TableHead className="w-[100px] text-right text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("common.actions", "Actions")}</TableHead>
                         </TableRow>
-                      ))}
-                      <TableRow className="bg-muted/30">
-                        <TableCell colSpan={5} className="font-semibold">
-                          {t("budgets.total", "Total")}
-                        </TableCell>
-                        <TableCell className="text-right font-bold">
-                          {formatCurrency(totalBudgeted)}
-                        </TableCell>
-                        <TableCell className="text-right font-bold">
-                          {formatCurrency(totalCommitted)}
-                        </TableCell>
-                        <TableCell className="text-right font-bold">
-                          {formatCurrency(totalActualConsumed)}
-                        </TableCell>
-                        <TableCell className={`text-right font-bold ${totalAvailable < 0 ? "text-red-600" : "text-emerald-600"}`}>
-                          {formatCurrency(totalAvailable)}
-                        </TableCell>
-                        <TableCell className="text-right font-bold">
-                          {totalBudgeted > 0 ? (((totalCommitted + totalActualConsumed) / totalBudgeted) * 100).toFixed(1) : "0.0"}%
-                        </TableCell>
-                        <TableCell></TableCell>
-                        <TableCell colSpan={2}></TableCell>
-                        <TableCell className="sticky right-0 bg-muted/30"></TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {lines.map((line) => {
+                          const util = getLineUtilization(line);
+                          return (
+                            <TableRow key={line._id} className="transition-colors hover:bg-slate-50/50 dark:border-slate-800 dark:hover:bg-slate-900/30">
+                              <TableCell className="text-sm font-medium text-slate-900 dark:text-white">{getAccountName(line.account_id)}</TableCell>
+                              <TableCell>
+                                {line.project_id ? (
+                                  <span
+                                    className="inline-flex cursor-pointer items-center gap-1 rounded bg-indigo-50 px-1.5 py-0.5 text-xs font-mono text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-300 dark:hover:bg-indigo-950/60"
+                                    onClick={() => { const projectMeta = getProjectMeta(line.project_id, line.wbs_code); if (projectMeta.id) navigate(`/projects/${projectMeta.id}`); }}
+                                    title={getProjectMeta(line.project_id, line.wbs_code).label}
+                                  >
+                                    {getProjectMeta(line.project_id, line.wbs_code).code}
+                                  </span>
+                                ) : (
+                                  <span className="text-xs text-slate-400 dark:text-slate-500">—</span>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-sm text-slate-500 dark:text-slate-400">
+                                {`${MONTHS.find((m) => m.value === line.period_month)?.label || line.period_month} ${line.period_year}`}
+                              </TableCell>
+                              <TableCell className="text-right text-sm font-medium text-slate-900 dark:text-white">{formatCurrency(line.budgeted_amount)}</TableCell>
+                              <TableCell className="text-right text-sm text-slate-600 dark:text-slate-300">{formatCurrency(line.encumbered_amount || 0)}</TableCell>
+                              <TableCell className="text-right text-sm text-slate-600 dark:text-slate-300">{formatCurrency(line.actual_amount || 0)}</TableCell>
+                              <TableCell className={`text-right text-sm font-medium ${getLineAvailable(line) < 0 ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}`}>
+                                {formatCurrency(getLineAvailable(line))}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex items-center justify-end gap-2">
+                                  <span className="text-xs text-slate-600 dark:text-slate-300">{util.toFixed(1)}%</span>
+                                  <div className="h-1.5 w-12 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                                    <div className={`h-1.5 rounded-full ${util >= 85 ? "bg-red-500" : util >= 50 ? "bg-amber-500" : "bg-emerald-500"}`} style={{ width: `${Math.min(util, 100)}%` }}></div>
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                {(() => {
+                                  const status = getLineStatus(line);
+                                  const StatusIcon = status.icon;
+                                  return (
+                                    <Badge variant="outline" className={`gap-1 text-xs ${status.className}`}>
+                                      <StatusIcon className="h-3 w-3" />
+                                      {status.label}
+                                    </Badge>
+                                  );
+                                })()}
+                              </TableCell>
+                              <TableCell className="text-xs text-slate-600 dark:text-slate-300">{line.category || "-"}</TableCell>
+                              <TableCell className="text-right">
+                                <Button variant="ghost" size="sm" onClick={() => openLineConsumption(line)} className="h-8 gap-1.5 px-2 text-xs dark:text-slate-300 dark:hover:bg-slate-800">
+                                  <Eye className="h-3.5 w-3.5" />
+                                  View
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                        <TableRow className="bg-slate-50/70 font-semibold dark:bg-slate-900/50">
+                          <TableCell colSpan={3} className="text-slate-900 dark:text-white">{t("budgets.total", "Total")}</TableCell>
+                          <TableCell className="text-right text-slate-900 dark:text-white">{formatCurrency(totalBudgeted)}</TableCell>
+                          <TableCell className="text-right text-slate-900 dark:text-white">{formatCurrency(totalCommitted)}</TableCell>
+                          <TableCell className="text-right text-slate-900 dark:text-white">{formatCurrency(totalActualConsumed)}</TableCell>
+                          <TableCell className={`text-right ${totalAvailable < 0 ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}`}>{formatCurrency(totalAvailable)}</TableCell>
+                          <TableCell className="text-right text-slate-900 dark:text-white">
+                            <div className="flex items-center justify-end gap-2">
+                              <span className="text-xs">{totalBudgeted > 0 ? (((totalCommitted + totalActualConsumed) / totalBudgeted) * 100).toFixed(1) : "0.0"}%</span>
+                              <div className="h-1.5 w-12 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                                <div className="h-1.5 rounded-full bg-slate-500" style={{ width: `${totalBudgeted > 0 ? Math.min(((totalCommitted + totalActualConsumed) / totalBudgeted) * 100, 100) : 0}%` }}></div>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell></TableCell>
+                          <TableCell></TableCell>
+                          <TableCell></TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </div>
                 )}
               </CardContent>
             </Card>
           </TabsContent>
 
           {/* Comparison Tab */}
-          <TabsContent value="comparison">
-            <Card>
-              <CardHeader>
-                <CardTitle>
-                  {t("budgets.comparison", "Budget vs Actual")}
-                </CardTitle>
-                <CardDescription>
-                  {t(
-                    "budgets.comparisonDescription",
-                    "Compare budgeted amounts against actual spending",
-                  )}
-                </CardDescription>
+          <TabsContent value="comparison" className="space-y-5">
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardHeader className="border-b border-slate-100 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/50">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 dark:bg-indigo-950/50">
+                    <BarChart3 className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base font-semibold dark:text-white">{t("budgets.comparison", "Budget vs Actual")}</CardTitle>
+                    <CardDescription className="text-xs sm:text-sm">{t("budgets.comparisonDescription", "Compare budgeted amounts against actual spending")}</CardDescription>
+                  </div>
+                </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-5">
                 {comparison || lines.length > 0 ? (
-                  <div className="space-y-6">
+                  <div className="space-y-5">
                     {/* Summary Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <Card>
-                        <CardContent className="pt-4">
-                          <div className="text-sm text-muted-foreground">
-                            {t("budgets.totalBudgeted", "Total Budgeted")}
-                          </div>
-                          <div className="text-2xl font-bold text-blue-600">
-                            {formatCurrency(
-                              comparisonBudgeted,
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                      <Card>
-                        <CardContent className="pt-4">
-                          <div className="text-sm text-muted-foreground">
-                            {t("budgets.totalActual", "Total Actual")}
-                          </div>
-                          <div className="text-2xl font-bold">
-                            {formatCurrency(
-                              comparisonActual,
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                      <Card>
-                        <CardContent className="pt-4">
-                          <div className="text-sm text-muted-foreground">
-                            {t("budgets.variance", "Variance")}
-                          </div>
-                          <div
-                            className={`text-2xl font-bold ${comparisonVariance >= 0 ? "text-green-600" : "text-red-600"}`}
-                          >
-                            {formatCurrency(
-                              comparisonVariance,
-                            )}
-                          </div>
-                          <div className="flex items-center gap-1 mt-1">
-                            {comparisonVariance >= 0 ? (
-                              <TrendingDown className="h-3 w-3 text-green-600" />
-                            ) : (
-                              <TrendingUp className="h-3 w-3 text-red-600" />
-                            )}
-                            <span className="text-xs text-muted-foreground">
-                              {comparisonUtilization.toFixed(1)}
-                              %
-                            </span>
-                          </div>
-                        </CardContent>
-                      </Card>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                      <div className="rounded-lg border border-slate-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/50">
+                        <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("budgets.totalBudgeted", "Total Budgeted")}</p>
+                        <p className="mt-1 text-2xl font-bold text-indigo-600 dark:text-indigo-400">{formatCurrency(comparisonBudgeted)}</p>
+                        <div className="mt-2 h-1 w-full rounded-full bg-slate-200 dark:bg-slate-800">
+                          <div className="h-1 rounded-full bg-indigo-500" style={{ width: "100%" }}></div>
+                        </div>
+                      </div>
+                      <div className="rounded-lg border border-slate-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/50">
+                        <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("budgets.totalActual", "Total Actual")}</p>
+                        <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-white">{formatCurrency(comparisonActual)}</p>
+                        <div className="mt-2 h-1 w-full rounded-full bg-slate-200 dark:bg-slate-800">
+                          <div className="h-1 rounded-full bg-blue-500" style={{ width: `${comparisonBudgeted > 0 ? Math.min((comparisonActual / comparisonBudgeted) * 100, 100) : 0}%` }}></div>
+                        </div>
+                      </div>
+                      <div className="rounded-lg border border-slate-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/50">
+                        <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("budgets.variance", "Variance")}</p>
+                        <p className={`mt-1 text-2xl font-bold ${comparisonVariance >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                          {formatCurrency(comparisonVariance)}
+                        </p>
+                        <div className="mt-2 flex items-center gap-1">
+                          {comparisonVariance >= 0 ? (
+                            <TrendingDown className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                          ) : (
+                            <TrendingUp className="h-3 w-3 text-red-600 dark:text-red-400" />
+                          )}
+                          <span className="text-xs text-slate-500 dark:text-slate-400">{comparisonUtilization.toFixed(1)}% {t("budgets.utilized", "utilized")}</span>
+                        </div>
+                      </div>
                     </div>
 
                     {/* Item Comparison Table */}
                     {comparisonItems.length > 0 && (
+                      <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-800">
                         <Table>
                           <TableHeader>
-                            <TableRow>
-                              <TableHead>
-                                {t("budgets.category", "Category")}
-                              </TableHead>
-                              <TableHead className="text-right">
-                                {t("budgets.budgeted", "Budgeted")}
-                              </TableHead>
-                              <TableHead className="text-right">
-                                {t("budgets.actual", "Actual")}
-                              </TableHead>
-                              <TableHead className="text-right">
-                                {t("budgets.variance", "Variance")}
-                              </TableHead>
-                              <TableHead className="text-right">
-                                {t("budgets.utilization", "Utilization")}
-                              </TableHead>
+                            <TableRow className="bg-slate-50/70 hover:bg-slate-50/70 dark:bg-slate-900/50 dark:hover:bg-slate-900/50">
+                              <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("budgets.category", "Category")}</TableHead>
+                              <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("budgets.budgeted", "Budgeted")}</TableHead>
+                              <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("budgets.actual", "Actual")}</TableHead>
+                              <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("budgets.variance", "Variance")}</TableHead>
+                              <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("budgets.utilization", "Utilization")}</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {comparisonItems.map(
-                              (item: any, idx: number) => (
-                                <TableRow key={idx}>
-                                  <TableCell className="font-medium">
-                                    {item.category ||
-                                      item.description ||
-                                      `Item ${idx + 1}`}
-                                  </TableCell>
-                                  <TableCell className="text-right">
-                                    {formatCurrency(item.budgetedAmount || 0)}
-                                  </TableCell>
-                                  <TableCell className="text-right">
-                                    {formatCurrency(item.actualAmount || 0)}
-                                  </TableCell>
-                                  <TableCell
-                                    className={`text-right font-medium ${(item.variance || 0) >= 0 ? "text-green-600" : "text-red-600"}`}
-                                  >
+                            {comparisonItems.map((item: any, idx: number) => {
+                              const util = item.utilizationPercent || 0;
+                              return (
+                                <TableRow key={idx} className="transition-colors hover:bg-slate-50/50 dark:border-slate-800 dark:hover:bg-slate-900/30">
+                                  <TableCell className="text-sm font-medium text-slate-900 dark:text-white">{item.category || item.description || `Item ${idx + 1}`}</TableCell>
+                                  <TableCell className="text-right text-sm text-slate-600 dark:text-slate-300">{formatCurrency(item.budgetedAmount || 0)}</TableCell>
+                                  <TableCell className="text-right text-sm text-slate-600 dark:text-slate-300">{formatCurrency(item.actualAmount || 0)}</TableCell>
+                                  <TableCell className={`text-right text-sm font-medium ${(item.variance || 0) >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
                                     {formatCurrency(item.variance || 0)}
                                   </TableCell>
                                   <TableCell className="text-right">
-                                    {item.utilizationPercent !== undefined
-                                      ? `${item.utilizationPercent.toFixed(1)}%`
-                                      : "-"}
+                                    <div className="flex items-center justify-end gap-2">
+                                      <span className="text-xs text-slate-600 dark:text-slate-300">{item.utilizationPercent !== undefined ? `${item.utilizationPercent.toFixed(1)}%` : "-"}</span>
+                                      <div className="h-1.5 w-12 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                                        <div className={`h-1.5 rounded-full ${util >= 85 ? "bg-red-500" : util >= 50 ? "bg-amber-500" : "bg-emerald-500"}`} style={{ width: `${Math.min(util, 100)}%` }}></div>
+                                      </div>
+                                    </div>
                                   </TableCell>
                                 </TableRow>
-                              ),
-                            )}
+                              );
+                            })}
                           </TableBody>
                         </Table>
-                      )}
+                      </div>
+                    )}
                   </div>
                 ) : (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <BarChart3 className="h-12 w-12 mx-auto mb-4" />
-                    <p>
-                      {t(
-                        "budgets.noComparisonData",
-                        "No comparison data available yet",
-                      )}
-                    </p>
+                  <div className="py-12 text-center">
+                    <BarChart3 className="mx-auto mb-3 h-10 w-10 text-slate-300 dark:text-slate-600" />
+                    <p className="text-sm text-slate-500 dark:text-slate-400">{t("budgets.noComparisonData", "No comparison data available yet")}</p>
                   </div>
                 )}
               </CardContent>
@@ -1353,138 +1374,96 @@ export default function BudgetDetailPage() {
           </TabsContent>
 
           {/* Details Tab */}
-          <TabsContent value="info">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>
-                    {t("budgets.budgetInfo", "Budget Information")}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">
-                      {t("budgets.name", "Name")}
-                    </span>
-                    <span className="font-medium">{budget.name}</span>
+          <TabsContent value="info" className="space-y-5">
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+              <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="border-b border-slate-100 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/50">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 dark:bg-indigo-950/50">
+                      <FileText className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                    </div>
+                    <CardTitle className="text-base font-semibold dark:text-white">{t("budgets.budgetInfo", "Budget Information")}</CardTitle>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">
-                      {t("budgets.type", "Type")}
-                    </span>
+                </CardHeader>
+                <CardContent className="space-y-3 p-5">
+                  <div className="flex items-center justify-between gap-4 rounded-lg border border-slate-100 p-3 dark:border-slate-800/60">
+                    <span className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400"><Target className="h-3.5 w-3.5" />{t("budgets.name", "Name")}</span>
+                    <span className="text-sm font-medium text-slate-900 dark:text-white">{budget.name}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-4 rounded-lg border border-slate-100 p-3 dark:border-slate-800/60">
+                    <span className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400"><Layers className="h-3.5 w-3.5" />{t("budgets.type", "Type")}</span>
                     {getTypeBadge(budget.type)}
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">
-                      {t("budgets.fiscalYear", "Fiscal Year")}
-                    </span>
-                    <span className="font-medium">
-                      {budget.fiscal_year || "-"}
-                    </span>
+                  <div className="flex items-center justify-between gap-4 rounded-lg border border-slate-100 p-3 dark:border-slate-800/60">
+                    <span className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400"><Landmark className="h-3.5 w-3.5" />{t("budgets.fiscalYear", "Fiscal Year")}</span>
+                    <span className="text-sm font-medium text-slate-900 dark:text-white">{budget.fiscal_year || "-"}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">
-                      {t("budgets.periodType", "Period Type")}
-                    </span>
-                    <span className="capitalize">{budget.periodType}</span>
+                  <div className="flex items-center justify-between gap-4 rounded-lg border border-slate-100 p-3 dark:border-slate-800/60">
+                    <span className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400"><CalendarDays className="h-3.5 w-3.5" />{t("budgets.periodType", "Period Type")}</span>
+                    <span className="text-sm capitalize text-slate-900 dark:text-white">{budget.periodType}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">
-                      {t("budgets.amount", "Amount")}
-                    </span>
-                    <span className="font-medium">
-                          {formatCurrency(Number(budget.amount || 0))}
-                    </span>
+                  <div className="flex items-center justify-between gap-4 rounded-lg border border-slate-100 p-3 dark:border-slate-800/60">
+                    <span className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400"><CircleDollarSign className="h-3.5 w-3.5" />{t("budgets.amount", "Amount")}</span>
+                    <span className="text-sm font-medium text-slate-900 dark:text-white">{formatCurrency(Number(budget.amount || 0))}</span>
                   </div>
                   {budget.notes && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">
-                        {t("budgets.notes", "Notes")}
-                      </span>
-                      <span className="text-sm max-w-[200px] text-right">
-                        {budget.notes}
-                      </span>
+                    <div className="rounded-lg border border-slate-100 p-3 dark:border-slate-800/60">
+                      <span className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400"><FileText className="h-3.5 w-3.5" />{t("budgets.notes", "Notes")}</span>
+                      <p className="mt-1.5 text-sm leading-relaxed text-slate-700 dark:text-slate-300">{budget.notes}</p>
                     </div>
                   )}
                 </CardContent>
               </Card>
-              <Card>
-                <CardHeader>
-                  <CardTitle>
-                    {t("budgets.auditInfo", "Audit Information")}
-                  </CardTitle>
+              <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="border-b border-slate-100 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/50">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-950/50">
+                      <Clock className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <CardTitle className="text-base font-semibold dark:text-white">{t("budgets.auditInfo", "Audit Information")}</CardTitle>
+                  </div>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">
-                      {t("budgets.createdBy", "Created By")}
-                    </span>
-                    <span className="font-medium">
-                      {budget.createdBy?.name || budget.created_by?.name || "-"}
-                    </span>
+                <CardContent className="space-y-3 p-5">
+                  <div className="flex items-center justify-between gap-4 rounded-lg border border-slate-100 p-3 dark:border-slate-800/60">
+                    <span className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400"><User className="h-3.5 w-3.5" />{t("budgets.createdBy", "Created By")}</span>
+                    <span className="text-sm font-medium text-slate-900 dark:text-white">{budget.createdBy?.name || budget.created_by?.name || "-"}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">
-                      {t("budgets.createdAt", "Created At")}
-                    </span>
-                    <span>
-                      {budget.createdAt ? formatDate(budget.createdAt) : "-"}
-                    </span>
+                  <div className="flex items-center justify-between gap-4 rounded-lg border border-slate-100 p-3 dark:border-slate-800/60">
+                    <span className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400"><CalendarDays className="h-3.5 w-3.5" />{t("budgets.createdAt", "Created At")}</span>
+                    <span className="text-sm text-slate-700 dark:text-slate-300">{budget.createdAt ? formatDate(budget.createdAt) : "-"}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">
-                      {t("budgets.updatedAt", "Updated At")}
-                    </span>
-                    <span>
-                      {budget.updatedAt ? formatDate(budget.updatedAt) : "-"}
-                    </span>
+                  <div className="flex items-center justify-between gap-4 rounded-lg border border-slate-100 p-3 dark:border-slate-800/60">
+                    <span className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400"><Clock className="h-3.5 w-3.5" />{t("budgets.updatedAt", "Updated At")}</span>
+                    <span className="text-sm text-slate-700 dark:text-slate-300">{budget.updatedAt ? formatDate(budget.updatedAt) : "-"}</span>
                   </div>
                   {budget.approvedBy?.name || budget.approved_by?.name ? (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">
-                        {t("budgets.approvedBy", "Approved By")}
-                      </span>
-                      <span className="font-medium text-green-600">
-                        {budget.approvedBy?.name || budget.approved_by?.name}
-                      </span>
+                    <div className="flex items-center justify-between gap-4 rounded-lg border border-emerald-100 bg-emerald-50/40 p-3 dark:border-emerald-900/30 dark:bg-emerald-950/20">
+                      <span className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-400"><CheckCircle className="h-3.5 w-3.5" />{t("budgets.approvedBy", "Approved By")}</span>
+                      <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">{budget.approvedBy?.name || budget.approved_by?.name}</span>
                     </div>
                   ) : null}
                   {budget.approvedAt || budget.approved_at ? (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">
-                        {t("budgets.approvedAt", "Approved At")}
-                      </span>
-                      <span>
-                        {formatDate(
-                          budget.approvedAt || budget.approved_at || "",
-                        )}
-                      </span>
+                    <div className="flex items-center justify-between gap-4 rounded-lg border border-emerald-100 bg-emerald-50/40 p-3 dark:border-emerald-900/30 dark:bg-emerald-950/20">
+                      <span className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-400"><CalendarDays className="h-3.5 w-3.5" />{t("budgets.approvedAt", "Approved At")}</span>
+                      <span className="text-sm text-emerald-700 dark:text-emerald-400">{formatDate(budget.approvedAt || budget.approved_at || "")}</span>
                     </div>
                   ) : null}
                   {budget.rejectionReason && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">
-                        {t("budgets.rejectionReason", "Rejection Reason")}
-                      </span>
-                      <span className="text-red-600 text-sm max-w-[200px] text-right">
-                        {budget.rejectionReason}
-                      </span>
+                    <div className="rounded-lg border border-red-100 bg-red-50/40 p-3 dark:border-red-900/30 dark:bg-red-950/20">
+                      <span className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400"><XCircle className="h-3.5 w-3.5" />{t("budgets.rejectionReason", "Rejection Reason")}</span>
+                      <p className="mt-1.5 text-sm text-red-600 dark:text-red-400">{budget.rejectionReason}</p>
                     </div>
                   )}
                   {budget.locked_at && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">
-                        {t("budgets.lockedAt", "Locked At")}
-                      </span>
-                      <span>{formatDate(budget.locked_at)}</span>
+                    <div className="flex items-center justify-between gap-4 rounded-lg border border-amber-100 bg-amber-50/40 p-3 dark:border-amber-900/30 dark:bg-amber-950/20">
+                      <span className="flex items-center gap-2 text-sm text-amber-700 dark:text-amber-400"><Lock className="h-3.5 w-3.5" />{t("budgets.lockedAt", "Locked At")}</span>
+                      <span className="text-sm text-amber-700 dark:text-amber-400">{formatDate(budget.locked_at)}</span>
                     </div>
                   )}
                   {budget.closed_at && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">
-                        {t("budgets.closedAt", "Closed At")}
-                      </span>
-                      <span>{formatDate(budget.closed_at)}</span>
+                    <div className="flex items-center justify-between gap-4 rounded-lg border border-slate-100 p-3 dark:border-slate-800/60">
+                      <span className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400"><Power className="h-3.5 w-3.5" />{t("budgets.closedAt", "Closed At")}</span>
+                      <span className="text-sm text-slate-700 dark:text-slate-300">{formatDate(budget.closed_at)}</span>
                     </div>
                   )}
                 </CardContent>
@@ -1493,54 +1472,144 @@ export default function BudgetDetailPage() {
           </TabsContent>
 
           {/* Transfers Tab */}
-          <TabsContent value="transfers">
-            <BudgetTransferPanel
-              budgetId={id!}
-              budgetLines={lines}
-              budgetStatus={budget.status}
-              canApprove={budget.status === "approved"}
-              canUpdate={budget.status === "draft" || budget.status === "approved"}
-            />
+          <TabsContent value="transfers" className="space-y-5">
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardHeader className="border-b border-slate-100 bg-slate-50/70 px-5 py-4 dark:border-slate-800 dark:bg-slate-900/50">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-950/50">
+                    <ArrowRightLeft className="h-4.5 w-4.5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base">{t("budgets.transfers", "Budget Transfers")}</CardTitle>
+                    <CardDescription className="text-xs">{t("budgets.transfersDescription", "Move funds between budget lines with proper authorization.")}</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-5">
+                <BudgetTransferPanel
+                  budgetId={id!}
+                  budgetLines={lines}
+                  budgetStatus={budget.status}
+                  canApprove={budget.status === "approved"}
+                  canUpdate={budget.status === "draft" || budget.status === "approved"}
+                />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Encumbrances Tab */}
-          <TabsContent value="encumbrances">
-            <BudgetEncumbrancePanel
-              budgetId={id!}
-              budgetLines={lines}
-              budgetStatus={budget.status}
-              canUpdate={budget.status === "draft" || budget.status === "approved"}
-            />
+          <TabsContent value="encumbrances" className="space-y-5">
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardHeader className="border-b border-slate-100 bg-slate-50/70 px-5 py-4 dark:border-slate-800 dark:bg-slate-900/50">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50 dark:bg-amber-950/50">
+                    <Receipt className="h-4.5 w-4.5 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base">{t("budgets.encumbrances", "Encumbrances")}</CardTitle>
+                    <CardDescription className="text-xs">{t("budgets.encumbrancesDescription", "Track committed expenses and obligations against the budget.")}</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-5">
+                <BudgetEncumbrancePanel
+                  budgetId={id!}
+                  budgetLines={lines}
+                  budgetStatus={budget.status}
+                  canUpdate={budget.status === "draft" || budget.status === "approved"}
+                />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Approvals Tab */}
-          <TabsContent value="approvals">
-            <BudgetApprovalPanel
-              budgetId={id!}
-              budgetStatus={budget.status}
-              budgetAmount={totalBudgeted}
-              departmentId={
-                typeof budget.department === "object"
-                  ? budget.department?._id || null
-                  : budget.department || null
-              }
-              onApprovalChange={fetchBudget}
-            />
+          <TabsContent value="approvals" className="space-y-5">
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardHeader className="border-b border-slate-100 bg-slate-50/70 px-5 py-4 dark:border-slate-800 dark:bg-slate-900/50">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-950/50">
+                    <CheckCircle className="h-4.5 w-4.5 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base">{t("budgets.approvals", "Approval Workflow")}</CardTitle>
+                    <CardDescription className="text-xs">{t("budgets.approvalsDescription", "Manage review and approval stages for this budget.")}</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-5">
+                <BudgetApprovalPanel
+                  budgetId={id!}
+                  budgetStatus={budget.status}
+                  budgetAmount={totalBudgeted}
+                  departmentId={
+                    typeof budget.department === "object"
+                      ? budget.department?._id || null
+                      : budget.department || null
+                  }
+                  onApprovalChange={fetchBudget}
+                />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Alerts Tab */}
-          <TabsContent value="alerts">
-            <BudgetAlertPanel budgetId={id!} />
+          <TabsContent value="alerts" className="space-y-5">
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardHeader className="border-b border-slate-100 bg-slate-50/70 px-5 py-4 dark:border-slate-800 dark:bg-slate-900/50">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-50 dark:bg-red-950/50">
+                    <Bell className="h-4.5 w-4.5 text-red-600 dark:text-red-400" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base">{t("budgets.alerts", "Budget Alerts")}</CardTitle>
+                    <CardDescription className="text-xs">{t("budgets.alertsDescription", "Monitor threshold breaches and anomalous spending patterns.")}</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-5">
+                <BudgetAlertPanel budgetId={id!} />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Period Locks Tab */}
-          <TabsContent value="periods">
-            <BudgetPeriodLockPanel budgetId={id!} />
+          <TabsContent value="periods" className="space-y-5">
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardHeader className="border-b border-slate-100 bg-slate-50/70 px-5 py-4 dark:border-slate-800 dark:bg-slate-900/50">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-purple-50 dark:bg-purple-950/50">
+                    <LockIcon className="h-4.5 w-4.5 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base">{t("budgets.periodLocks", "Period Locks")}</CardTitle>
+                    <CardDescription className="text-xs">{t("budgets.periodLocksDescription", "Control editing access by fiscal period to prevent unauthorized changes.")}</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-5">
+                <BudgetPeriodLockPanel budgetId={id!} />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Revisions Tab */}
-          <TabsContent value="revisions">
-            <BudgetRevisionPanel budgetId={id!} />
+          <TabsContent value="revisions" className="space-y-5">
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardHeader className="border-b border-slate-100 bg-slate-50/70 px-5 py-4 dark:border-slate-800 dark:bg-slate-900/50">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-cyan-50 dark:bg-cyan-950/50">
+                    <History className="h-4.5 w-4.5 text-cyan-600 dark:text-cyan-400" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base">{t("budgets.revisions", "Budget Revisions")}</CardTitle>
+                    <CardDescription className="text-xs">{t("budgets.revisionsDescription", "Review historical changes and amendment history for this budget.")}</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-5">
+                <BudgetRevisionPanel budgetId={id!} />
+              </CardContent>
+            </Card>
           </TabsContent>
 
         </Tabs>
@@ -1720,7 +1789,6 @@ export default function BudgetDetailPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </div>
 
       <Dialog open={lineConsumptionOpen} onOpenChange={setLineConsumptionOpen}>
         <DialogContent className="max-h-[85vh] max-w-6xl overflow-y-auto">
@@ -1870,6 +1938,8 @@ export default function BudgetDetailPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      </div>
+      </div>
     </Layout>
   );
 }

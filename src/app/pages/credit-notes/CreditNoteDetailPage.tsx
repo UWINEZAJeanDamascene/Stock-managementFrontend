@@ -3,22 +3,24 @@ import { useNavigate, useParams } from 'react-router';
 import { creditNotesApi } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
 import { useCompany } from '@/hooks/useCompany';
-import { 
-  ArrowLeft, 
+import {
+  ArrowLeft,
   Edit,
   CheckCircle,
   X,
   Printer,
   FileText,
-  Loader2,
   Package,
   Receipt,
   ArrowRightLeft,
   Calendar,
   User,
   AlertTriangle,
-  Trash2
+  Wallet,
+  TrendingUp,
+  Ban,
 } from 'lucide-react';
+import { Skeleton } from '@/app/components/ui/skeleton';
 import { Button } from '@/app/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { Badge } from '@/app/components/ui/badge';
@@ -224,15 +226,39 @@ export default function CreditNoteDetailPage() {
     return <Badge variant={config.variant} className={config.className}>{config.label}</Badge>;
   };
 
-  const getTypeBadge = (type: string) => {
-    const typeConfig: Record<string, { variant: 'default' | 'secondary' | 'outline'; label: string; className?: string }> = {
-      goods_return: { variant: 'outline', label: t('creditNotes.typeList.goods_return', 'Goods Return'), className: 'dark:text-gray-300 dark:border-gray-600' },
-      price_adjustment: { variant: 'secondary', label: t('creditNotes.typeList.price_adjustment', 'Price Adjustment'), className: 'dark:bg-slate-700 dark:text-gray-200' },
-      cancelled_order: { variant: 'outline', label: t('creditNotes.typeList.cancelled_order', 'Cancelled Order'), className: 'dark:text-gray-300 dark:border-gray-600' },
+  const getStatusStyle = (status: string) => {
+    const map: Record<string, string> = {
+      draft: 'bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700',
+      confirmed: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900/60',
+      issued: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/60',
+      applied: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900/60',
+      refunded: 'bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950/40 dark:text-violet-300 dark:border-violet-900/60',
+      cancelled: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900/60',
     };
-    
-    const config = typeConfig[type] || { variant: 'outline', label: type, className: 'dark:text-gray-300 dark:border-gray-600' };
-    return <Badge variant={config.variant} className={config.className}>{config.label}</Badge>;
+    return map[status] || map.draft;
+  };
+
+  const getStatusLabel = (status: string) => {
+    const map: Record<string, string> = {
+      draft: 'Draft', confirmed: 'Confirmed', issued: 'Issued', applied: 'Applied', refunded: 'Refunded', cancelled: 'Cancelled',
+    };
+    return map[status] || status;
+  };
+
+  const getTypeStyle = (type: string) => {
+    const map: Record<string, string> = {
+      goods_return: 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/40 dark:text-orange-300 dark:border-orange-900/60',
+      price_adjustment: 'bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-950/40 dark:text-cyan-300 dark:border-cyan-900/60',
+      cancelled_order: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900/60',
+    };
+    return map[type] || 'bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700';
+  };
+
+  const getTypeLabel = (type: string) => {
+    const map: Record<string, string> = {
+      goods_return: 'Goods Return', price_adjustment: 'Price Adjustment', cancelled_order: 'Cancelled Order',
+    };
+    return map[type] || type;
   };
 
   const handlePrint = () => {
@@ -242,8 +268,17 @@ export default function CreditNoteDetailPage() {
   if (loading) {
     return (
       <Layout>
-        <div className="flex items-center justify-center p-8">
-          <Loader2 className="h-8 w-8 animate-spin" />
+        <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-[1400px] space-y-6">
+            <Skeleton className="h-40 w-full rounded-xl" />
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} className="h-24 w-full rounded-xl" />
+              ))}
+            </div>
+            <Skeleton className="h-12 w-full rounded-xl" />
+            <Skeleton className="h-96 w-full rounded-xl" />
+          </div>
         </div>
       </Layout>
     );
@@ -252,12 +287,15 @@ export default function CreditNoteDetailPage() {
   if (!creditNote) {
     return (
       <Layout>
-        <div className="container mx-auto py-6">
-          <div className="text-center py-12">
-            <AlertTriangle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium">Credit Note Not Found</h3>
-            <Button onClick={() => navigate('/credit-notes')} className="mt-4">
-              <ArrowLeft className="mr-2 h-4 w-4" />
+        <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 dark:bg-slate-950">
+          <div className="text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
+              <AlertTriangle className="h-8 w-8 text-slate-400 dark:text-slate-500" />
+            </div>
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Credit Note Not Found</h2>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">The credit note you are looking for does not exist.</p>
+            <Button onClick={() => navigate('/credit-notes')} className="mt-4 gap-1.5 bg-violet-600 hover:bg-violet-700">
+              <ArrowLeft className="h-4 w-4" />
               Back to Credit Notes
             </Button>
           </div>
@@ -272,359 +310,425 @@ export default function CreditNoteDetailPage() {
     totalAmount: acc.totalAmount + toNumber(line.lineTotal),
   }), { subtotal: 0, taxAmount: 0, totalAmount: 0 });
 
-  // Prefer backend-provided totals when present (creditNote.taxAmount / totalAmount / grandTotal),
-  // otherwise fall back to sums computed from lines. This handles cases where the backend stores
-  // totals at the root instead of populating per-line tax fields.
   const displaySubtotal = (creditNote.subtotal ?? creditNote.totalAmount ?? creditNote.grandTotal) ? (creditNote.subtotal ?? lineSums.subtotal) : lineSums.subtotal;
   const displayTax = typeof creditNote.taxAmount === 'number' && !isNaN(creditNote.taxAmount) ? creditNote.taxAmount : lineSums.taxAmount;
   const displayTotal = typeof creditNote.totalAmount === 'number' && !isNaN(creditNote.totalAmount) ? creditNote.totalAmount : (typeof creditNote.grandTotal === 'number' && !isNaN(creditNote.grandTotal) ? creditNote.grandTotal : lineSums.totalAmount);
 
   return (
     <Layout>
-      <div className="container mx-auto py-6">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" onClick={() => navigate('/credit-notes')}>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold dark:text-white">
-                {creditNote.referenceNo || creditNote.creditNoteNumber}
-              </h1>
-              <div className="flex items-center gap-2 mt-1">
-                {getStatusBadge(creditNote.status)}
-                {getTypeBadge(creditNote.type)}
+      <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1400px] space-y-6">
+          {/* Hero Header */}
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+            <div className="p-5">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="flex items-start gap-3">
+                  <Button variant="ghost" size="sm" onClick={() => navigate('/credit-notes')} className="h-8 w-8 p-0 dark:text-slate-300">
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                  <div>
+                    <h1 className="text-xl font-bold tracking-tight text-slate-950 dark:text-white sm:text-2xl">{creditNote.referenceNo || creditNote.creditNoteNumber}</h1>
+                    <div className="mt-1 flex flex-wrap items-center gap-2">
+                      <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${getStatusStyle(creditNote.status)}`}>{getStatusLabel(creditNote.status)}</span>
+                      <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${getTypeStyle(creditNote.type)}`}>{getTypeLabel(creditNote.type)}</span>
+                      <span className="text-sm text-slate-500 dark:text-slate-400">{formatDate(creditNote.creditDate)}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={handlePrint} className="gap-1.5 dark:border-slate-700 dark:text-slate-200">
+                    <Printer className="h-4 w-4" /> Print
+                  </Button>
+                  {creditNote.status === 'draft' && (
+                    <>
+                      <Button variant="outline" size="sm" onClick={() => navigate(`/credit-notes/${id}/edit`)} className="gap-1.5 dark:border-slate-700 dark:text-slate-200">
+                        <Edit className="h-4 w-4" /> Edit
+                      </Button>
+                      <Button variant="destructive" size="sm" onClick={() => setCancelDialogOpen(true)} className="gap-1.5">
+                        <Ban className="h-4 w-4" /> Delete
+                      </Button>
+                      <Button size="sm" onClick={() => setConfirmDialogOpen(true)} className="gap-1.5 bg-emerald-600 hover:bg-emerald-700">
+                        <CheckCircle className="h-4 w-4" /> Confirm
+                      </Button>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={handlePrint}>
-              <Printer className="mr-2 h-4 w-4" />
-              {t('common.print', 'Print')}
-            </Button>
-            {creditNote.status === 'draft' && (
-              <>
-                <Button variant="outline" onClick={() => navigate(`/credit-notes/${id}/edit`)}>
-                  <Edit className="mr-2 h-4 w-4" />
-                  {t('common.edit', 'Edit')}
-                </Button>
-                <Button variant="destructive" onClick={() => setCancelDialogOpen(true)}>
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  {t('common.delete', 'Delete')}
-                </Button>
-                <Button onClick={() => setConfirmDialogOpen(true)}>
-                  <CheckCircle className="mr-2 h-4 w-4" />
-                  {t('creditNotes.confirm', 'Confirm')}
-                </Button>
-              </>
-            )}
+
+          {/* Metric Cards */}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg bg-violet-50 p-2 text-violet-600 dark:bg-violet-950/40 dark:text-violet-300">
+                    <Receipt className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Lines</p>
+                    <p className="text-lg font-bold text-slate-900 dark:text-white">{creditNote.lines.length}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg bg-blue-50 p-2 text-blue-600 dark:bg-blue-950/40 dark:text-blue-300">
+                    <Wallet className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Subtotal</p>
+                    <p className="text-lg font-bold text-slate-900 dark:text-white">{formatCurrency(displaySubtotal, creditNote.currencyCode)}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg bg-amber-50 p-2 text-amber-600 dark:bg-amber-950/40 dark:text-amber-300">
+                    <TrendingUp className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Tax</p>
+                    <p className="text-lg font-bold text-slate-900 dark:text-white">{formatCurrency(displayTax, creditNote.currencyCode)}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg bg-emerald-50 p-2 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300">
+                    <Wallet className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Total</p>
+                    <p className="text-lg font-bold text-slate-900 dark:text-white">{formatCurrency(displayTotal, creditNote.currencyCode)}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg bg-slate-50 p-2 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                    <Package className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Stock Reversed</p>
+                    <p className="text-lg font-bold text-slate-900 dark:text-white">{creditNote.stockReversed ? 'Yes' : 'No'}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
-        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Credit Note Details */}
-            <Card className="dark:bg-slate-800">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white">
-                  <FileText className="h-5 w-5" />
-                  {t('creditNotes.details', 'Credit Note Details')}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm text-muted-foreground dark:text-gray-400">{t('creditNotes.invoice', 'Invoice')}</label>
-                    <p className="font-medium dark:text-white">
-                      {creditNote.invoice?.referenceNo || '-'}
-                      {creditNote.invoice && (
-                        <Button 
-                          variant="link" 
-                          className="h-auto p-0 ml-2"
-                          onClick={() => navigate(`/invoices/${creditNote.invoice?._id}`)}
-                        >
-                          View Invoice
-                        </Button>
-                      )}
-                    </p>
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            {/* Main Content */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Details */}
+              <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="rounded-lg bg-slate-50 p-1.5 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                      <FileText className="h-4 w-4" />
+                    </div>
+                    <CardTitle className="text-base text-slate-900 dark:text-white">Credit Note Details</CardTitle>
                   </div>
-                  <div>
-                    <label className="text-sm text-muted-foreground dark:text-gray-400">{t('creditNotes.client', 'Client')}</label>
-                    <p className="font-medium dark:text-white">{creditNote.client?.name || '-'}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm text-muted-foreground dark:text-gray-400">{t('creditNotes.date', 'Credit Date')}</label>
-                    <p className="font-medium dark:text-white">{formatDate(creditNote.creditDate)}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm text-muted-foreground dark:text-gray-400">{t('creditNotes.created', 'Created')}</label>
-                    <p className="font-medium dark:text-white">{formatDate(creditNote.createdAt)}</p>
-                  </div>
-                </div>
-                <Separator />
-                <div>
-                  <label className="text-sm text-muted-foreground dark:text-gray-400">{t('creditNotes.reason', 'Reason')}</label>
-                  <p className="font-medium mt-1 dark:text-white">{creditNote.reason}</p>
-                </div>
-                {creditNote.notes && (
-                  <div>
-                    <label className="text-sm text-muted-foreground dark:text-gray-400">{t('creditNotes.notes', 'Notes')}</label>
-                    <p className="mt-1 dark:text-gray-300">{creditNote.notes}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Line Items */}
-            <Card className="dark:bg-slate-800">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white">
-                  <Package className="h-5 w-5" />
-                  {t('creditNotes.lineItems', 'Line Items')}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow className="dark:hover:bg-slate-700">
-                      <TableHead className="dark:text-gray-300">{t('creditNotes.product', 'Product')}</TableHead>
-                      <TableHead className="text-right dark:text-gray-300">{t('creditNotes.quantity', 'Qty')}</TableHead>
-                      <TableHead className="text-right dark:text-gray-300">{t('creditNotes.unitPrice', 'Unit Price')}</TableHead>
-                      <TableHead className="text-right dark:text-gray-300">{t('creditNotes.taxRate', 'Tax Rate')}</TableHead>
-                      <TableHead className="text-right dark:text-gray-300">{t('creditNotes.lineTax', 'Tax Amount')}</TableHead>
-                      <TableHead className="text-right dark:text-gray-300">{t('creditNotes.lineTotal', 'Total')}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {creditNote.lines.map((line) => (
-                      <TableRow key={line._id} className="dark:hover:bg-slate-700">
-                        <TableCell>
-                          <div className="font-medium dark:text-white">{line.productName}</div>
-                          <div className="text-sm text-muted-foreground">{line.productCode}</div>
-                        </TableCell>
-                        <TableCell className="text-right dark:text-white">{toNumber(line.quantity)}</TableCell>
-                        <TableCell className="text-right dark:text-white">{formatCurrency(line.unitPrice, creditNote.currencyCode)}</TableCell>
-                        <TableCell className="text-right dark:text-white">{toNumber(line.taxRate)}%</TableCell>
-                        <TableCell className="text-right dark:text-white">{formatCurrency(line.lineTax, creditNote.currencyCode)}</TableCell>
-                        <TableCell className="text-right font-medium dark:text-white">{formatCurrency(line.lineTotal, creditNote.currencyCode)}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-
-            {/* Journal Entries */}
-            {(creditNote.revenueReversalEntry || creditNote.cogsReversalEntry) && (
-              <Card className="dark:bg-slate-800">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white">
-                    <Receipt className="h-5 w-5" />
-                    {t('creditNotes.journalEntries', 'Journal Entries')}
-                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {creditNote.revenueReversalEntry && (
-                    <div className="p-4 bg-muted dark:bg-slate-700 rounded-lg">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h4 className="font-medium dark:text-white">Revenue Reversal Entry</h4>
-                          <p className="text-sm text-muted-foreground">
-                            {creditNote.revenueReversalEntry.entryNumber} • {formatDate(creditNote.revenueReversalEntry.date)}
-                          </p>
-                          <p className="text-sm mt-1 dark:text-gray-300">{creditNote.revenueReversalEntry.description}</p>
-                        </div>
-                        <Badge variant="outline" className="dark:border-slate-500 dark:text-white">{formatCurrency(creditNote.revenueReversalEntry.totalDebit, creditNote.currencyCode)}</Badge>
-                      </div>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="space-y-1">
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Invoice</p>
+                      <p className="text-sm font-medium text-slate-900 dark:text-white">
+                        {creditNote.invoice?.referenceNo || '-'}
+                        {creditNote.invoice && (
+                          <Button variant="link" size="sm" className="h-auto px-1 py-0 text-blue-600 dark:text-blue-400" onClick={() => navigate(`/invoices/${creditNote.invoice?._id}`)}>View</Button>
+                        )}
+                      </p>
                     </div>
-                  )}
-                  {creditNote.cogsReversalEntry && (
-                    <div className="p-4 bg-muted dark:bg-slate-700 rounded-lg">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h4 className="font-medium dark:text-white">COGS Reversal Entry</h4>
-                          <p className="text-sm text-muted-foreground">
-                            {creditNote.cogsReversalEntry.entryNumber} • {formatDate(creditNote.cogsReversalEntry.date)}
-                          </p>
-                          <p className="text-sm mt-1 dark:text-gray-300">{creditNote.cogsReversalEntry.description}</p>
-                        </div>
-                        <Badge variant="outline" className="dark:border-slate-500 dark:text-white">{formatCurrency(creditNote.cogsReversalEntry.totalDebit, creditNote.currencyCode)}</Badge>
-                      </div>
+                    <div className="space-y-1">
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Client</p>
+                      <p className="text-sm font-medium text-slate-900 dark:text-white">{creditNote.client?.name || '-'}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Credit Date</p>
+                      <p className="text-sm font-medium text-slate-900 dark:text-white">{formatDate(creditNote.creditDate)}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Created</p>
+                      <p className="text-sm font-medium text-slate-900 dark:text-white">{formatDate(creditNote.createdAt)}</p>
+                    </div>
+                  </div>
+                  <Separator />
+                  <div className="space-y-1">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Reason</p>
+                    <p className="text-sm font-medium text-slate-900 dark:text-white">{creditNote.reason}</p>
+                  </div>
+                  {creditNote.notes && (
+                    <div className="space-y-1">
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Notes</p>
+                      <p className="text-sm text-slate-600 dark:text-slate-300">{creditNote.notes}</p>
                     </div>
                   )}
                 </CardContent>
               </Card>
-            )}
-          </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Summary */}
-            <Card className="dark:bg-slate-800">
-              <CardHeader>
-                <CardTitle className="dark:text-white">{t('creditNotes.summary', 'Summary')}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground dark:text-gray-400">{t('creditNotes.subtotal', 'Subtotal')}</span>
-                  <span className="font-medium dark:text-white">{formatCurrency(displaySubtotal, creditNote.currencyCode)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground dark:text-gray-400">{t('creditNotes.tax', 'Tax')}</span>
-                  <span className="font-medium dark:text-white">{formatCurrency(displayTax, creditNote.currencyCode)}</span>
-                </div>
-                <Separator />
-                <div className="flex justify-between">
-                  <span className="font-bold dark:text-white">{t('creditNotes.total', 'Total')}</span>
-                  <span className="font-bold text-lg dark:text-white">{formatCurrency(displayTotal, creditNote.currencyCode)}</span>
-                </div>
-              </CardContent>
-            </Card>
+              {/* Line Items */}
+              <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="rounded-lg bg-blue-50 p-1.5 text-blue-600 dark:bg-blue-950/40 dark:text-blue-300">
+                      <Package className="h-4 w-4" />
+                    </div>
+                    <CardTitle className="text-base text-slate-900 dark:text-white">Line Items</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="border-b-slate-200 hover:bg-transparent dark:border-b-slate-800">
+                          <TableHead className="text-xs font-semibold text-slate-500 dark:text-slate-400">Product</TableHead>
+                          <TableHead className="text-right text-xs font-semibold text-slate-500 dark:text-slate-400">Qty</TableHead>
+                          <TableHead className="text-right text-xs font-semibold text-slate-500 dark:text-slate-400">Unit Price</TableHead>
+                          <TableHead className="text-right text-xs font-semibold text-slate-500 dark:text-slate-400">Tax Rate</TableHead>
+                          <TableHead className="text-right text-xs font-semibold text-slate-500 dark:text-slate-400">Tax</TableHead>
+                          <TableHead className="text-right text-xs font-semibold text-slate-500 dark:text-slate-400">Total</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {creditNote.lines.map((line) => (
+                          <TableRow key={line._id} className="border-b-slate-100 transition-colors hover:bg-slate-50 dark:border-b-slate-800/60 dark:hover:bg-slate-800/50">
+                            <TableCell>
+                              <div className="text-sm font-medium text-slate-900 dark:text-white">{line.productName}</div>
+                              <div className="text-xs text-slate-500 dark:text-slate-400">{line.productCode}</div>
+                            </TableCell>
+                            <TableCell className="text-right text-sm text-slate-900 dark:text-white">{toNumber(line.quantity)}</TableCell>
+                            <TableCell className="text-right text-sm text-slate-900 dark:text-white">{formatCurrency(line.unitPrice, creditNote.currencyCode)}</TableCell>
+                            <TableCell className="text-right text-sm text-slate-900 dark:text-white">{toNumber(line.taxRate)}%</TableCell>
+                            <TableCell className="text-right text-sm text-slate-900 dark:text-white">{formatCurrency(line.lineTax, creditNote.currencyCode)}</TableCell>
+                            <TableCell className="text-right text-sm font-semibold text-slate-900 dark:text-white">{formatCurrency(line.lineTotal, creditNote.currencyCode)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
 
-            {/* Stock Status */}
-            {creditNote.type === 'goods_return' && (
-              <Card className="dark:bg-slate-800">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white">
-                    <ArrowRightLeft className="h-5 w-5" />
-                    {t('creditNotes.stockStatus', 'Stock Status')}
-                  </CardTitle>
+              {/* Journal Entries */}
+              {(creditNote.revenueReversalEntry || creditNote.cogsReversalEntry) && (
+                <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="rounded-lg bg-amber-50 p-1.5 text-amber-600 dark:bg-amber-950/40 dark:text-amber-300">
+                        <Receipt className="h-4 w-4" />
+                      </div>
+                      <CardTitle className="text-base text-slate-900 dark:text-white">Journal Entries</CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {creditNote.revenueReversalEntry && (
+                      <div className="rounded-lg border border-slate-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                          <div>
+                            <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Revenue Reversal Entry</h4>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">{creditNote.revenueReversalEntry.entryNumber} &middot; {formatDate(creditNote.revenueReversalEntry.date)}</p>
+                            <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">{creditNote.revenueReversalEntry.description}</p>
+                          </div>
+                          <Badge variant="outline" className="shrink-0 dark:border-slate-700 dark:text-slate-300">{formatCurrency(creditNote.revenueReversalEntry.totalDebit, creditNote.currencyCode)}</Badge>
+                        </div>
+                      </div>
+                    )}
+                    {creditNote.cogsReversalEntry && (
+                      <div className="rounded-lg border border-slate-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                          <div>
+                            <h4 className="text-sm font-semibold text-slate-900 dark:text-white">COGS Reversal Entry</h4>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">{creditNote.cogsReversalEntry.entryNumber} &middot; {formatDate(creditNote.cogsReversalEntry.date)}</p>
+                            <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">{creditNote.cogsReversalEntry.description}</p>
+                          </div>
+                          <Badge variant="outline" className="shrink-0 dark:border-slate-700 dark:text-slate-300">{formatCurrency(creditNote.cogsReversalEntry.totalDebit, creditNote.currencyCode)}</Badge>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            {/* Sidebar */}
+            <div className="space-y-6">
+              {/* Summary */}
+              <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="rounded-lg bg-emerald-50 p-1.5 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300">
+                      <Wallet className="h-4 w-4" />
+                    </div>
+                    <CardTitle className="text-base text-slate-900 dark:text-white">Summary</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-500 dark:text-slate-400">Subtotal</span>
+                    <span className="font-medium text-slate-900 dark:text-white">{formatCurrency(displaySubtotal, creditNote.currencyCode)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-500 dark:text-slate-400">Tax</span>
+                    <span className="font-medium text-slate-900 dark:text-white">{formatCurrency(displayTax, creditNote.currencyCode)}</span>
+                  </div>
+                  <Separator className="dark:bg-slate-800" />
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold text-slate-900 dark:text-white">Total</span>
+                    <span className="text-lg font-bold text-slate-900 dark:text-white">{formatCurrency(displayTotal, creditNote.currencyCode)}</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Stock Status */}
+              {creditNote.type === 'goods_return' && (
+                <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="rounded-lg bg-orange-50 p-1.5 text-orange-600 dark:bg-orange-950/40 dark:text-orange-300">
+                        <ArrowRightLeft className="h-4 w-4" />
+                      </div>
+                      <CardTitle className="text-base text-slate-900 dark:text-white">Stock Status</CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-slate-500 dark:text-slate-400">Stock Reversed</span>
+                      <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${creditNote.stockReversed ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/60' : 'bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'}`}>
+                        {creditNote.stockReversed ? 'Yes' : 'No'}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Confirmation */}
+              {creditNote.confirmedBy && (
+                <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="rounded-lg bg-blue-50 p-1.5 text-blue-600 dark:bg-blue-950/40 dark:text-blue-300">
+                        <Calendar className="h-4 w-4" />
+                      </div>
+                      <CardTitle className="text-base text-slate-900 dark:text-white">Confirmation</CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-slate-500 dark:text-slate-400">Confirmed By</span>
+                      <span className="font-medium text-slate-900 dark:text-white">{creditNote.confirmedBy?.name}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-slate-500 dark:text-slate-400">Confirmed At</span>
+                      <span className="font-medium text-slate-900 dark:text-white">{formatDate(creditNote.confirmedAt || '')}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Created By */}
+              <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="rounded-lg bg-slate-50 p-1.5 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                      <User className="h-4 w-4" />
+                    </div>
+                    <CardTitle className="text-base text-slate-900 dark:text-white">Created By</CardTitle>
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground dark:text-gray-400">Stock Reversed</span>
-                    <Badge variant={creditNote.stockReversed ? 'default' : 'secondary'}>
-                      {creditNote.stockReversed ? 'Yes' : 'No'}
-                    </Badge>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-500 dark:text-slate-400">User</span>
+                    <span className="font-medium text-slate-900 dark:text-white">{creditNote.createdBy?.name || '-'}</span>
                   </div>
                 </CardContent>
               </Card>
-            )}
-
-            {/* Confirmation Info */}
-            {creditNote.confirmedBy && (
-              <Card className="dark:bg-slate-800">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white">
-                    <Calendar className="h-5 w-5" />
-                    {t('creditNotes.confirmation', 'Confirmation')}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground dark:text-gray-400">Confirmed By</span>
-                    <span className="font-medium dark:text-white">{creditNote.confirmedBy?.name}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground dark:text-gray-400">Confirmed At</span>
-                    <span className="font-medium dark:text-white">{formatDate(creditNote.confirmedAt || '')}</span>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Created By */}
-            <Card className="dark:bg-slate-800">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white">
-                  <User className="h-5 w-5" />
-                  {t('creditNotes.createdBy', 'Created By')}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground dark:text-gray-400">User</span>
-                  <span className="font-medium dark:text-white">{creditNote.createdBy?.name || '-'}</span>
-                </div>
-              </CardContent>
-            </Card>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Confirm Dialog */}
-      <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('creditNotes.confirmTitle', 'Confirm Credit Note')}</DialogTitle>
-            <DialogDescription>
-              {t('creditNotes.confirmDescription', 'This will process the credit note, reverse the journal entries, and return stock to inventory (for goods returns). This action cannot be undone.')}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-              <div className="p-4 bg-muted rounded-lg">
-              <div className="flex justify-between mb-2">
-                <span>Total Amount:</span>
-                <span className="font-bold">{formatCurrency(displayTotal, creditNote.currencyCode)}</span>
+        {/* Confirm Dialog */}
+        <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
+          <DialogContent className="sm:max-w-md dark:border-slate-800 dark:bg-slate-950">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-slate-900 dark:text-white">
+                <div className="rounded-lg bg-emerald-50 p-1.5 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300">
+                  <CheckCircle className="h-4 w-4" />
+                </div>
+                Confirm Credit Note
+              </DialogTitle>
+              <DialogDescription className="text-slate-500 dark:text-slate-400">
+                This will process the credit note, reverse the journal entries, and return stock to inventory (for goods returns). This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3 rounded-lg border border-slate-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-500 dark:text-slate-400">Total Amount</span>
+                <span className="font-semibold text-slate-900 dark:text-white">{formatCurrency(displayTotal, creditNote.currencyCode)}</span>
               </div>
               {creditNote.type === 'goods_return' && (
-                <div className="flex justify-between text-sm">
-                  <span>Stock to Return:</span>
-                  <span>{creditNote.lines.reduce((sum, l) => sum + toNumber(l.quantity), 0)} items</span>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-slate-500 dark:text-slate-400">Stock to Return</span>
+                  <span className="text-slate-700 dark:text-slate-300">{creditNote.lines.reduce((sum, l) => sum + toNumber(l.quantity), 0)} items</span>
                 </div>
               )}
             </div>
-          </div>
-          <DialogFooter>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="sendEmailCN"
-                  checked={sendEmail}
-                  onChange={(e) => setSendEmail(e.target.checked)}
-                  className="w-4 h-4"
-                />
-                <label htmlFor="sendEmailCN" className="text-sm cursor-pointer">
-                  {t('common.sendEmail', 'Send Email to Customer')}
-                </label>
+            <DialogFooter>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+                <div className="flex items-center gap-2">
+                  <input type="checkbox" id="sendEmailCN" checked={sendEmail} onChange={(e) => setSendEmail(e.target.checked)} className="h-4 w-4" />
+                  <label htmlFor="sendEmailCN" className="text-sm text-slate-700 dark:text-slate-300 cursor-pointer">Send Email to Customer</label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setConfirmDialogOpen(false)} disabled={processing} className="dark:border-slate-700 dark:text-slate-200">
+                    <X className="mr-1.5 h-4 w-4" /> Cancel
+                  </Button>
+                  <Button size="sm" onClick={handleConfirm} disabled={processing} className="bg-emerald-600 hover:bg-emerald-700">
+                    {processing ? 'Processing...' : 'Confirm'}
+                  </Button>
+                </div>
               </div>
-              <Button variant="outline" onClick={() => setConfirmDialogOpen(false)} disabled={processing}>
-                <X className="mr-2 h-4 w-4" />
-                {t('common.cancel', 'Cancel')}
-              </Button>
-              <Button onClick={handleConfirm} disabled={processing}>
-                {processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                <CheckCircle className="mr-2 h-4 w-4" />
-                {t('creditNotes.confirm', 'Confirm')}
-              </Button>
-            </div>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
-      {/* Cancel/Delete Dialog */}
-      <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {creditNote.status === 'draft' 
-                ? t('creditNotes.deleteTitle', 'Delete Credit Note')
-                : t('creditNotes.cancelTitle', 'Cancel Credit Note')
-              }
-            </DialogTitle>
-            <DialogDescription>
-              {creditNote.status === 'draft'
-                ? t('creditNotes.deleteDescription', 'Are you sure you want to delete this draft credit note? This action cannot be undone.')
-                : t('creditNotes.cancelDescription', 'Are you sure you want to cancel this credit note? This will reverse all associated transactions.')
-              }
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setCancelDialogOpen(false)} disabled={processing}>
-              <X className="mr-2 h-4 w-4" />
-              {t('common.cancel', 'Cancel')}
-            </Button>
-            <Button variant="destructive" onClick={handleCancel} disabled={processing}>
-              {processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              <Trash2 className="mr-2 h-4 w-4" />
-              {creditNote.status === 'draft' ? t('common.delete', 'Delete') : t('common.cancel', 'Cancel')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        {/* Cancel/Delete Dialog */}
+        <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+          <DialogContent className="sm:max-w-md dark:border-slate-800 dark:bg-slate-950">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-slate-900 dark:text-white">
+                <div className="rounded-lg bg-rose-50 p-1.5 text-rose-600 dark:bg-rose-950/40 dark:text-rose-300">
+                  <Ban className="h-4 w-4" />
+                </div>
+                {creditNote.status === 'draft' ? 'Delete Credit Note' : 'Cancel Credit Note'}
+              </DialogTitle>
+              <DialogDescription className="text-slate-500 dark:text-slate-400">
+                {creditNote.status === 'draft'
+                  ? 'Are you sure you want to delete this draft credit note? This action cannot be undone.'
+                  : 'Are you sure you want to cancel this credit note? This will reverse all associated transactions.'}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" size="sm" onClick={() => setCancelDialogOpen(false)} disabled={processing} className="dark:border-slate-700 dark:text-slate-200">
+                <X className="mr-1.5 h-4 w-4" /> Cancel
+              </Button>
+              <Button variant="destructive" size="sm" onClick={handleCancel} disabled={processing}>
+                {processing ? 'Processing...' : creditNote.status === 'draft' ? 'Delete' : 'Cancel'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
     </Layout>
   );
 }

@@ -11,11 +11,18 @@ import {
   ArrowLeft,
   Save,
   Send,
-  Loader2,
   Calculator,
-  Plus,
-  Trash2,
+  Landmark,
+  Banknote,
+  Receipt,
+  ArrowUpRight,
+  ArrowDownRight,
+  User,
+  Building2,
+  Wallet,
+  RotateCcw,
 } from "lucide-react";
+import { Skeleton } from "@/app/components/ui/skeleton";
 import { toast } from "sonner";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
@@ -187,7 +194,7 @@ export default function ARReceiptCreatePage() {
         // Set allocations from response
         if (response.allocations && response.allocations.length > 0) {
           setAllocations(
-            response.allocations.map((a) => ({
+            response.allocations.map((a: any) => ({
               invoice: a.invoice._id,
               amount: parseFloat(a.amountAllocated),
             })),
@@ -311,8 +318,20 @@ export default function ARReceiptCreatePage() {
   if (loading) {
     return (
       <Layout>
-        <div className="flex items-center justify-center p-8">
-          <Loader2 className="h-8 w-8 animate-spin" />
+        <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-[1400px] space-y-6">
+            <Skeleton className="h-24 w-full rounded-xl" />
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+              <div className="lg:col-span-2 space-y-6">
+                <Skeleton className="h-96 w-full rounded-xl" />
+                <Skeleton className="h-64 w-full rounded-xl" />
+              </div>
+              <div className="space-y-6">
+                <Skeleton className="h-56 w-full rounded-xl" />
+                <Skeleton className="h-24 w-full rounded-xl" />
+              </div>
+            </div>
+          </div>
         </div>
       </Layout>
     );
@@ -321,379 +340,237 @@ export default function ARReceiptCreatePage() {
   return (
     <TooltipProvider>
       <Layout>
-        <div className="container mx-auto py-6 bg-gray-50 dark:bg-slate-900 min-h-screen p-6">
-          <div className="flex items-center gap-4 mb-6">
-            <Button variant="ghost" onClick={() => navigate("/ar-receipts")} className="dark:text-slate-200">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              {t("common.back", "Back")}
-            </Button>
-            <h1 className="text-2xl font-bold dark:text-white">
-              {isEdit
-                ? t("arReceipt.editTitle", "Edit Receipt")
-                : t("arReceipt.createTitle", "Create Receipt")}
-            </h1>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Main Form */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Receipt Details */}
-              <Card className="dark:bg-slate-800">
-                <CardHeader>
-                  <CardTitle className="dark:text-white">
-                    {t("arReceipt.details", "Receipt Details")}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="dark:text-slate-200">{t("arReceipt.client", "Client")} *</Label>
-                      <Select
-                        value={formData.client}
-                        onValueChange={(value) =>
-                          setFormData({ ...formData, client: value })
-                        }
-                        disabled={isEdit}
-                      >
-                        <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
-                          <SelectValue
-                            placeholder={t(
-                              "arReceipt.selectClient",
-                              "Select client",
-                            )}
-                          />
-                        </SelectTrigger>
-                        <SelectContent className="dark:bg-slate-800">
-                          {clients.map((client) => (
-                            <SelectItem key={client._id} value={client._id} className="dark:text-white">
-                              {client.name} ({client.code})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+        <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-[1400px] space-y-6">
+            {/* Hero Header */}
+            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+              <div className="p-5">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-lg bg-indigo-50 p-2.5 text-indigo-700 ring-1 ring-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-300 dark:ring-indigo-900/60">
+                      <Banknote className="h-5 w-5" />
                     </div>
                     <div>
-                      <Label className="dark:text-slate-200">
-                        {t("arReceipt.receiptDate", "Receipt Date")}
-                      </Label>
-                      <Input
-                        type="date"
-                        value={formData.receiptDate}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            receiptDate: e.target.value,
-                          })
-                        }
-                        className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
-                      />
-                    </div>
-                    <div>
-                      <Label className="dark:text-slate-200">
-                        {t("arReceipt.paymentMethod", "Payment Method")} *
-                      </Label>
-                      <Select
-                        value={formData.paymentMethod}
-                        onValueChange={(value) =>
-                          setFormData({ ...formData, paymentMethod: value })
-                        }
-                      >
-                        <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="dark:bg-slate-800">
-                          {PAYMENT_METHODS.map((method) => (
-                            <SelectItem key={method.value} value={method.value} className="dark:text-white">
-                              {method.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label className="dark:text-slate-200">
-                        {t("arReceipt.bankAccount", "Bank Account")}
-                      </Label>
-                      <Select
-                        value={formData.bankAccount}
-                        onValueChange={(value) =>
-                          setFormData({ ...formData, bankAccount: value })
-                        }
-                      >
-                        <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
-                          <SelectValue
-                            placeholder={t(
-                              "arReceipt.selectBank",
-                              "Select bank account",
-                            )}
-                          />
-                        </SelectTrigger>
-                        <SelectContent className="dark:bg-slate-800">
-                          {bankAccounts.map((account) => (
-                            <SelectItem key={account._id} value={account._id} className="dark:text-white">
-                              {account.name} (
-                              {account.accountNumber ||
-                                account.bankName ||
-                                account.accountType}
-                              )
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label className="dark:text-slate-200">
-                        {t("arReceipt.amount", "Amount Received")} *
-                      </Label>
-                      <Input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={formData.amountReceived}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            amountReceived: parseFloat(e.target.value) || 0,
-                          })
-                        }
-                        className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
-                      />
-                    </div>
-                    <div>
-                      <Label className="dark:text-slate-200">{t("arReceipt.currency", "Currency")}</Label>
-                      <Select
-                        value={formData.currencyCode}
-                        onValueChange={(value) =>
-                          setFormData({ ...formData, currencyCode: value })
-                        }
-                      >
-                        <SelectTrigger className="dark:bg-slate-700 dark:text-white dark:border-slate-600">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="dark:bg-slate-800">
-                          {CURRENCIES.map((currency) => (
-                            <SelectItem key={currency} value={currency} className="dark:text-white">
-                              {currency}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label className="dark:text-slate-200">{t("arReceipt.reference", "Reference")}</Label>
-                      <Input
-                        value={formData.reference}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            reference: e.target.value,
-                          })
-                        }
-                        placeholder={t(
-                          "arReceipt.referencePlaceholder",
-                          "Cheque number, bank ref...",
-                        )}
-                        className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
-                      />
+                      <h1 className="text-xl font-bold tracking-tight text-slate-950 dark:text-white sm:text-2xl">
+                        {isEdit ? t("arReceipt.editTitle", "Edit Receipt") : t("arReceipt.createTitle", "Create Receipt")}
+                      </h1>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">Record customer payment and allocate to invoices</p>
                     </div>
                   </div>
-                  <div>
-                    <Label className="dark:text-slate-200">{t("arReceipt.notes", "Notes")}</Label>
-                    <Textarea
-                      value={formData.notes}
-                      onChange={(e) =>
-                        setFormData({ ...formData, notes: e.target.value })
-                      }
-                      placeholder={t(
-                        "arReceipt.notesPlaceholder",
-                        "Add any notes...",
-                      )}
-                      rows={3}
-                      className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Invoice Allocation */}
-              {formData.client && invoices.length > 0 && (
-                <Card className="dark:bg-slate-800">
-                  <CardHeader>
-                    <CardTitle className="dark:text-white">
-                      {t("arReceipt.invoiceAllocation", "Invoice Allocation")}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="dark:bg-slate-700/50">
-                          <TableHead className="dark:text-slate-200">
-                            {t("arReceipt.invoice", "Invoice")}
-                          </TableHead>
-                          <TableHead className="dark:text-slate-200">
-                            {t("arReceipt.dueDate", "Due Date")}
-                          </TableHead>
-                          <TableHead className="text-right dark:text-slate-200">
-                            {t("arReceipt.balance", "Balance")}
-                          </TableHead>
-                          <TableHead className="text-right dark:text-slate-200">
-                            {t("arReceipt.allocate", "Allocate")}
-                          </TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {invoices.map((invoice) => {
-                          const balance = parseFloat(
-                            invoice.balance || invoice.amountOutstanding || "0",
-                          );
-                          const allocated =
-                            allocations.find((a) => a.invoice === invoice._id)
-                              ?.amount || 0;
-                          return (
-                            <TableRow key={invoice._id} className="dark:border-slate-600">
-                              <TableCell>
-                                <div className="font-medium dark:text-white">
-                                  {invoice.invoiceNumber}
-                                </div>
-                                <div className="text-sm text-muted-foreground dark:text-slate-500">
-                                  {invoice.referenceNo}
-                                </div>
-                              </TableCell>
-                              <TableCell className="dark:text-slate-300">
-                                {invoice.dueDate
-                                  ? new Date(
-                                      invoice.dueDate,
-                                    ).toLocaleDateString()
-                                  : "-"}
-                              </TableCell>
-                              <TableCell className="text-right dark:text-slate-300">
-                                {formatCurrency(balance)}
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <Input
-                                  type="number"
-                                  min="0"
-                                  max={balance}
-                                  className="w-28 text-right dark:bg-slate-700 dark:text-white dark:border-slate-600"
-                                  value={allocated || ""}
-                                  onChange={(e) =>
-                                    handleAllocationChange(
-                                      invoice._id,
-                                      parseFloat(e.target.value) || 0,
-                                    )
-                                  }
-                                />
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
-                  </CardContent>
-                </Card>
-              )}
-
-              {formData.client && invoices.length === 0 && (
-                <Card className="dark:bg-slate-800">
-                  <CardContent className="py-8 text-center text-muted-foreground dark:text-slate-400">
-                    <Calculator className="mx-auto h-8 w-8 mb-2" />
-                    <p>
-                      {t(
-                        "arReceipt.noInvoices",
-                        "No outstanding invoices for this client",
-                      )}
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
+                  <Button variant="outline" size="sm" onClick={() => navigate("/ar-receipts")} className="gap-1.5 dark:border-slate-700 dark:text-slate-200">
+                    <ArrowLeft className="h-4 w-4" /> {t("common.back", "Back")}
+                  </Button>
+                </div>
+              </div>
             </div>
 
-            {/* Summary Sidebar */}
-            <div className="space-y-6">
-              <Card className="dark:bg-slate-800">
-                <CardHeader>
-                  <CardTitle className="dark:text-white">{t("arReceipt.summary", "Summary")}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex justify-between">
-                    <span className="dark:text-slate-300">
-                      {t("arReceipt.amountReceived", "Amount Received")}
-                    </span>
-                    <span className="font-medium dark:text-white">
-                      {formatCurrency(formData.amountReceived)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="dark:text-slate-300">{t("arReceipt.allocated", "Allocated")}</span>
-                    <span className="font-medium dark:text-white">
-                      {formatCurrency(calculateAllocatedTotal())}
-                    </span>
-                  </div>
-                  <div className="flex justify-between pt-2 border-t dark:border-slate-600">
-                    <span className="dark:text-slate-300">{t("arReceipt.unallocated", "Unallocated")}</span>
-                    <span
-                      className={`font-bold ${calculateUnallocated() !== 0 ? "text-amber-600 dark:text-amber-400" : "text-green-600 dark:text-green-400"}`}
-                    >
-                      {formatCurrency(calculateUnallocated())}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+              {/* Main Form */}
+              <div className="lg:col-span-2 space-y-4">
+                {/* Receipt Details */}
+                <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="rounded-lg bg-indigo-50 p-1.5 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-300">
+                        <Receipt className="h-4 w-4" />
+                      </div>
+                      <CardTitle className="text-base text-slate-900 dark:text-white">{t("arReceipt.details", "Receipt Details")}</CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div>
+                        <Label className="text-xs text-slate-500 dark:text-slate-400">{t("arReceipt.client", "Client")} *</Label>
+                        <Select value={formData.client} onValueChange={(value) => setFormData({ ...formData, client: value })} disabled={isEdit}>
+                          <SelectTrigger className="mt-1 bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-white">
+                            <SelectValue placeholder={t("arReceipt.selectClient", "Select client")} />
+                          </SelectTrigger>
+                          <SelectContent className="dark:border-slate-800 dark:bg-slate-950">
+                            {clients.map((client) => (
+                              <SelectItem key={client._id} value={client._id} className="dark:text-slate-200">{client.name} ({client.code})</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-slate-500 dark:text-slate-400">{t("arReceipt.receiptDate", "Receipt Date")}</Label>
+                        <Input type="date" value={formData.receiptDate} onChange={(e) => setFormData({ ...formData, receiptDate: e.target.value })} className="mt-1 bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-white" />
+                      </div>
+                      <div>
+                        <Label className="text-xs text-slate-500 dark:text-slate-400">{t("arReceipt.paymentMethod", "Payment Method")} *</Label>
+                        <Select value={formData.paymentMethod} onValueChange={(value) => setFormData({ ...formData, paymentMethod: value })}>
+                          <SelectTrigger className="mt-1 bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-white"><SelectValue /></SelectTrigger>
+                          <SelectContent className="dark:border-slate-800 dark:bg-slate-950">
+                            {PAYMENT_METHODS.map((method) => (
+                              <SelectItem key={method.value} value={method.value} className="dark:text-slate-200">{method.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-slate-500 dark:text-slate-400">{t("arReceipt.bankAccount", "Bank Account")}</Label>
+                        <Select value={formData.bankAccount} onValueChange={(value) => setFormData({ ...formData, bankAccount: value })}>
+                          <SelectTrigger className="mt-1 bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-white">
+                            <SelectValue placeholder={t("arReceipt.selectBank", "Select bank account")} />
+                          </SelectTrigger>
+                          <SelectContent className="dark:border-slate-800 dark:bg-slate-950">
+                            {bankAccounts.map((account) => (
+                              <SelectItem key={account._id} value={account._id} className="dark:text-slate-200">
+                                {account.name} ({account.accountNumber || account.bankName || account.accountType})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-slate-500 dark:text-slate-400">{t("arReceipt.amount", "Amount Received")} *</Label>
+                        <Input type="number" min="0" step="0.01" value={formData.amountReceived} onChange={(e) => setFormData({ ...formData, amountReceived: parseFloat(e.target.value) || 0 })} className="mt-1 bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-white" />
+                      </div>
+                      <div>
+                        <Label className="text-xs text-slate-500 dark:text-slate-400">{t("arReceipt.currency", "Currency")}</Label>
+                        <Select value={formData.currencyCode} onValueChange={(value) => setFormData({ ...formData, currencyCode: value })}>
+                          <SelectTrigger className="mt-1 bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-white"><SelectValue /></SelectTrigger>
+                          <SelectContent className="dark:border-slate-800 dark:bg-slate-950">
+                            {CURRENCIES.map((currency) => (
+                              <SelectItem key={currency} value={currency} className="dark:text-slate-200">{currency}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="sm:col-span-2">
+                        <Label className="text-xs text-slate-500 dark:text-slate-400">{t("arReceipt.reference", "Reference")}</Label>
+                        <Input value={formData.reference} onChange={(e) => setFormData({ ...formData, reference: e.target.value })} placeholder={t("arReceipt.referencePlaceholder", "Cheque number, bank ref...")} className="mt-1 bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-white" />
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-slate-500 dark:text-slate-400">{t("arReceipt.notes", "Notes")}</Label>
+                      <Textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} placeholder={t("arReceipt.notesPlaceholder", "Add any notes...")} rows={3} className="mt-1 bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-white" />
+                    </div>
+                  </CardContent>
+                </Card>
 
-              {/* Actions */}
-              <div className="flex flex-col gap-2">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      onClick={() => handleSave(false)}
-                      disabled={
-                        saving || !formData.client || !formData.amountReceived
-                      }
-                      className="dark:border-slate-600 dark:text-slate-200"
-                    >
-                      {saving ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <Save className="mr-2 h-4 w-4" />
-                      )}
-                      {t("arReceipt.saveAsDraft", "Save as Draft")}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>
-                      {t(
-                        "arReceipt.saveAsDraftTooltip",
-                        "Save receipt as draft to edit later",
-                      )}
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="default"
-                      onClick={() => handleSave(true)}
-                      disabled={
-                        saving || !formData.client || !formData.amountReceived
-                      }
-                    >
-                      {saving ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <Send className="mr-2 h-4 w-4" />
-                      )}
-                      {t("arReceipt.saveAndPost", "Save & Record")}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>
-                      {t(
-                        "arReceipt.saveAndPostTooltip",
-                        "Save and record receipt as posted",
-                      )}
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
+                {/* Invoice Allocation */}
+                {formData.client && invoices.length > 0 && (
+                  <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="rounded-lg bg-emerald-50 p-1.5 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300">
+                          <ArrowDownRight className="h-4 w-4" />
+                        </div>
+                        <CardTitle className="text-base text-slate-900 dark:text-white">{t("arReceipt.invoiceAllocation", "Invoice Allocation")}</CardTitle>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="border-b-slate-200 hover:bg-transparent dark:border-b-slate-800">
+                              <TableHead className="text-xs font-semibold text-slate-500 dark:text-slate-400">{t("arReceipt.invoice", "Invoice")}</TableHead>
+                              <TableHead className="text-xs font-semibold text-slate-500 dark:text-slate-400">{t("arReceipt.dueDate", "Due Date")}</TableHead>
+                              <TableHead className="text-right text-xs font-semibold text-slate-500 dark:text-slate-400">{t("arReceipt.balance", "Balance")}</TableHead>
+                              <TableHead className="text-right text-xs font-semibold text-slate-500 dark:text-slate-400">{t("arReceipt.allocate", "Allocate")}</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {invoices.map((invoice) => {
+                              const balance = parseFloat(invoice.balance || invoice.amountOutstanding || "0");
+                              const allocated = allocations.find((a) => a.invoice === invoice._id)?.amount || 0;
+                              return (
+                                <TableRow key={invoice._id} className="border-b-slate-100 transition-colors hover:bg-slate-50 dark:border-b-slate-800/60 dark:hover:bg-slate-800/50">
+                                  <TableCell>
+                                    <div className="text-sm font-medium text-slate-900 dark:text-white">{invoice.invoiceNumber}</div>
+                                    <div className="text-xs text-slate-500 dark:text-slate-400">{invoice.referenceNo}</div>
+                                  </TableCell>
+                                  <TableCell className="text-sm text-slate-600 dark:text-slate-300">{invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : "-"}</TableCell>
+                                  <TableCell className="text-right text-sm font-medium text-slate-900 dark:text-white">{formatCurrency(balance)}</TableCell>
+                                  <TableCell className="text-right">
+                                    <Input type="number" min="0" max={balance} className="w-28 text-right bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-white" value={allocated || ""} onChange={(e) => handleAllocationChange(invoice._id, parseFloat(e.target.value) || 0)} />
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {formData.client && invoices.length === 0 && (
+                  <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                    <CardContent className="flex flex-col items-center justify-center py-10 text-slate-500 dark:text-slate-400">
+                      <Calculator className="mb-2 h-8 w-8 opacity-40" />
+                      <p className="text-sm">{t("arReceipt.noInvoices", "No outstanding invoices for this client")}</p>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+
+              {/* Summary Sidebar */}
+              <div className="space-y-4">
+                <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="rounded-lg bg-indigo-50 p-1.5 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-300">
+                        <Wallet className="h-4 w-4" />
+                      </div>
+                      <CardTitle className="text-base text-slate-900 dark:text-white">{t("arReceipt.summary", "Summary")}</CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-slate-500 dark:text-slate-400">{t("arReceipt.amountReceived", "Amount Received")}</span>
+                      <span className="text-sm font-semibold text-slate-900 dark:text-white">{formatCurrency(formData.amountReceived)}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-slate-500 dark:text-slate-400">{t("arReceipt.allocated", "Allocated")}</span>
+                      <span className="text-sm font-semibold text-slate-900 dark:text-white">{formatCurrency(calculateAllocatedTotal())}</span>
+                    </div>
+                    <div className="flex items-center justify-between border-t border-slate-200 pt-3 dark:border-slate-800">
+                      <span className="text-sm text-slate-500 dark:text-slate-400">{t("arReceipt.unallocated", "Unallocated")}</span>
+                      <span className={`text-sm font-bold ${calculateUnallocated() !== 0 ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"}`}>
+                        {formatCurrency(calculateUnallocated())}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Actions */}
+                <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardContent className="space-y-3 p-4">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="w-full gap-1.5 dark:border-slate-700 dark:text-slate-200"
+                          onClick={() => handleSave(false)}
+                          disabled={saving || !formData.client || !formData.amountReceived}
+                        >
+                          <Save className="h-4 w-4" />
+                          {t("arReceipt.saveAsDraft", "Save as Draft")}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{t("arReceipt.saveAsDraftTooltip", "Save receipt as draft to edit later")}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          className="w-full gap-1.5"
+                          onClick={() => handleSave(true)}
+                          disabled={saving || !formData.client || !formData.amountReceived}
+                        >
+                          <Send className="h-4 w-4" />
+                          {t("arReceipt.saveAndPost", "Save & Record")}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{t("arReceipt.saveAndPostTooltip", "Save and record receipt as posted")}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </CardContent>
+                </Card>
               </div>
             </div>
           </div>

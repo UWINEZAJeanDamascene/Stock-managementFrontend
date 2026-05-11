@@ -4,9 +4,13 @@ import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Textarea } from "@/app/components/ui/textarea";
 import { Badge } from "@/app/components/ui/badge";
+import { Skeleton } from "@/app/components/ui/skeleton";
 import {
   Card,
   CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
 } from "@/app/components/ui/card";
 import {
   Dialog,
@@ -42,6 +46,10 @@ import {
   AlertTriangle,
   FileText,
   Calendar,
+  Receipt,
+  ArrowDownToLine,
+  Activity,
+  TrendingUp,
 } from "lucide-react";
 
 interface BudgetEncumbrancePanelProps {
@@ -193,16 +201,16 @@ export function BudgetEncumbrancePanel({
 
   const getStatusBadge = (status: string) => {
     const config: Record<string, { className: string; label: string; icon: any }> = {
-      active: { className: "bg-amber-100 text-amber-700", label: "Active", icon: Lock },
-      partially_liquidated: { className: "bg-blue-100 text-blue-700", label: "Partially Liquidated", icon: Droplets },
-      fully_liquidated: { className: "bg-green-100 text-green-700", label: "Fully Liquidated", icon: Wallet },
-      released: { className: "bg-gray-100 text-gray-700", label: "Released", icon: Unlock },
-      cancelled: { className: "bg-red-100 text-red-700", label: "Cancelled", icon: AlertTriangle },
+      active: { className: "bg-amber-50 text-amber-700 ring-1 ring-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/40", label: "Active", icon: Lock },
+      partially_liquidated: { className: "bg-blue-50 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/40", label: "Partially Liquidated", icon: Droplets },
+      fully_liquidated: { className: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/40", label: "Fully Liquidated", icon: Wallet },
+      released: { className: "bg-slate-50 text-slate-700 ring-1 ring-slate-200 dark:bg-slate-900/60 dark:text-slate-300 dark:ring-slate-700", label: "Released", icon: Unlock },
+      cancelled: { className: "bg-red-50 text-red-700 ring-1 ring-red-100 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900/40", label: "Cancelled", icon: AlertTriangle },
     };
     const configItem = config[status] || config.active;
     const Icon = configItem.icon;
     return (
-      <Badge className={`${configItem.className} gap-1`}>
+      <Badge variant="outline" className={`border-0 gap-1 text-xs font-medium ${configItem.className}`}>
         <Icon className="h-3 w-3" />
         {configItem.label}
       </Badge>
@@ -282,13 +290,16 @@ export function BudgetEncumbrancePanel({
 
   if (loading) {
     return (
-      <Card>
-        <CardContent className="py-8">
-          <div className="flex items-center justify-center">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </div>
-        </CardContent>
-      </Card>
+      <div className="space-y-5">
+        <div className="grid gap-4 md:grid-cols-4">
+          <Skeleton className="h-24 rounded-xl" />
+          <Skeleton className="h-24 rounded-xl" />
+          <Skeleton className="h-24 rounded-xl" />
+          <Skeleton className="h-24 rounded-xl" />
+        </div>
+        <Skeleton className="h-10 w-full rounded-lg" />
+        <Skeleton className="h-64 w-full rounded-xl" />
+      </div>
     );
   }
 
@@ -296,36 +307,56 @@ export function BudgetEncumbrancePanel({
     <div className="space-y-4">
       {/* Summary Cards */}
       {(summary || encumbrances.length > 0) && (
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-sm text-muted-foreground">Original Encumbrances</div>
-              <div className="text-xl font-semibold text-amber-600">
-                {formatCurrency(summaryOriginalEncumbered)}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <CardContent className="p-5">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Original Encumbrances</p>
+                  <p className="mt-1 text-2xl font-bold tracking-tight text-slate-950 dark:text-white">{formatCurrency(summaryOriginalEncumbered)}</p>
+                </div>
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-50 dark:bg-amber-950/50">
+                  <Receipt className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                </div>
               </div>
             </CardContent>
           </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-sm text-muted-foreground">Open Commitments</div>
-              <div className="text-xl font-semibold text-blue-600">
-                {formatCurrency(summaryOpenCommitted)}
+          <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <CardContent className="p-5">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Open Commitments</p>
+                  <p className="mt-1 text-2xl font-bold tracking-tight text-blue-600 dark:text-blue-400">{formatCurrency(summaryOpenCommitted)}</p>
+                </div>
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-950/50">
+                  <Activity className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                </div>
               </div>
             </CardContent>
           </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-sm text-muted-foreground">Liquidated to Actual</div>
-              <div className="text-xl font-semibold text-red-500">
-                {formatCurrency(liquidatedAmount)}
+          <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <CardContent className="p-5">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Liquidated to Actual</p>
+                  <p className="mt-1 text-2xl font-bold tracking-tight text-red-600 dark:text-red-400">{formatCurrency(liquidatedAmount)}</p>
+                </div>
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-50 dark:bg-red-950/50">
+                  <ArrowDownToLine className="h-5 w-5 text-red-600 dark:text-red-400" />
+                </div>
               </div>
             </CardContent>
           </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-sm text-muted-foreground">Active Encumbrances</div>
-              <div className="text-xl font-semibold">
-                {summaryActiveCount}
+          <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <CardContent className="p-5">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Active Encumbrances</p>
+                  <p className="mt-1 text-2xl font-bold tracking-tight text-slate-950 dark:text-white">{summaryActiveCount}</p>
+                </div>
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-950/50">
+                  <TrendingUp className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -333,17 +364,19 @@ export function BudgetEncumbrancePanel({
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
-          <Lock className="h-5 w-5 text-amber-500" />
-          <h3 className="text-lg font-semibold">Budget Encumbrances</h3>
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 dark:bg-amber-950/50">
+            <Lock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+          </div>
+          <h3 className="text-base font-semibold text-slate-900 dark:text-white">Budget Encumbrances</h3>
           {encumbrances.length > 0 && (
-            <Badge variant="secondary">{encumbrances.length}</Badge>
+            <Badge variant="outline" className="border-slate-200 bg-slate-50 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">{encumbrances.length}</Badge>
           )}
         </div>
         {canCreateEncumbrance && (
-          <Button onClick={() => setShowCreateDialog(true)} size="sm">
-            <Lock className="mr-2 h-4 w-4" />
+          <Button onClick={() => setShowCreateDialog(true)} size="sm" className="shrink-0 gap-2">
+            <Lock className="h-4 w-4" />
             Reserve Budget
           </Button>
         )}
@@ -351,67 +384,69 @@ export function BudgetEncumbrancePanel({
 
       {/* Encumbrances List */}
       {encumbrances.length === 0 ? (
-        <Card>
-          <CardContent className="py-8 text-center text-muted-foreground">
-            <Lock className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-            <p>No budget encumbrances yet</p>
+        <Card className="border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
+          <CardContent className="py-10 text-center">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-slate-50 dark:bg-slate-900/50">
+              <Lock className="h-6 w-6 text-slate-400 dark:text-slate-500" />
+            </div>
+            <p className="mt-4 text-sm font-medium text-slate-900 dark:text-white">No budget encumbrances yet</p>
             {canCreateEncumbrance && (
-              <p className="text-sm mt-1">
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                 Click "Reserve Budget" to commit budget for upcoming expenses
               </p>
             )}
           </CardContent>
         </Card>
       ) : (
-        <Card>
+        <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
           <CardContent className="p-0">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Source</TableHead>
-                  <TableHead>Account</TableHead>
-                  <TableHead>Original</TableHead>
-                  <TableHead>Liquidated</TableHead>
-                  <TableHead>Open</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                <TableRow className="bg-slate-50/70 hover:bg-slate-50/70 dark:bg-slate-900/50 dark:hover:bg-slate-900/50">
+                  <TableHead className="text-xs font-medium text-slate-500 dark:text-slate-400">Source</TableHead>
+                  <TableHead className="text-xs font-medium text-slate-500 dark:text-slate-400">Account</TableHead>
+                  <TableHead className="text-xs font-medium text-slate-500 dark:text-slate-400 text-right">Original</TableHead>
+                  <TableHead className="text-xs font-medium text-slate-500 dark:text-slate-400 text-right">Liquidated</TableHead>
+                  <TableHead className="text-xs font-medium text-slate-500 dark:text-slate-400 text-right">Open</TableHead>
+                  <TableHead className="text-xs font-medium text-slate-500 dark:text-slate-400">Status</TableHead>
+                  <TableHead className="text-xs font-medium text-slate-500 dark:text-slate-400">Created</TableHead>
+                  <TableHead className="text-xs font-medium text-slate-500 dark:text-slate-400 text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {encumbrances.map((enc) => (
-                  <TableRow key={enc._id}>
+                  <TableRow key={enc._id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30">
                     <TableCell>
                       <div className="space-y-1">
-                        <div className="text-sm font-medium flex items-center gap-1">
-                          <FileText className="h-3 w-3" />
+                        <div className="text-sm font-medium text-slate-900 dark:text-white flex items-center gap-1">
+                          <FileText className="h-3 w-3 text-slate-400" />
                           {enc.source_number}
                         </div>
-                        <div className="text-xs text-muted-foreground capitalize">
+                        <div className="text-xs text-slate-500 dark:text-slate-400 capitalize">
                           {enc.source_type.replace("_", " ")}
                         </div>
-                        <div className="text-xs text-muted-foreground truncate max-w-[150px]">
+                        <div className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[150px]">
                           {enc.description}
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm">
+                    <TableCell className="text-sm text-slate-600 dark:text-slate-300">
                       {typeof enc.account_id === "object"
                         ? `${enc.account_id.code} - ${enc.account_id.name}`
                         : enc.account_id}
                     </TableCell>
-                    <TableCell className="font-medium">
+                    <TableCell className="text-sm font-medium text-right text-slate-900 dark:text-white">
                       {formatCurrency(enc.encumbered_amount)}
                     </TableCell>
-                    <TableCell className="text-sm">
+                    <TableCell className="text-sm text-right text-slate-600 dark:text-slate-300">
                       {formatCurrency(enc.liquidated_amount)}
                     </TableCell>
-                    <TableCell className="text-sm">
+                    <TableCell className="text-sm text-right text-slate-600 dark:text-slate-300">
                       {formatCurrency(enc.remaining_amount)}
                     </TableCell>
                     <TableCell>{getStatusBadge(enc.status)}</TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
                         <Calendar className="h-3 w-3" />
                         {formatDate(enc.encumbrance_date)}
                       </div>
@@ -429,12 +464,13 @@ export function BudgetEncumbrancePanel({
                             }}
                             disabled={submitting}
                             title="Release Encumbrance"
+                            className="h-8 w-8 text-amber-600 hover:bg-amber-50 hover:text-amber-700 dark:text-amber-400 dark:hover:bg-amber-950/50"
                           >
-                            <Unlock className="h-4 w-4 text-amber-600" />
+                            <Unlock className="h-4 w-4" />
                           </Button>
                         )}
                         {!["active", "partially_liquidated"].includes(enc.status) && (
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-xs text-slate-400 dark:text-slate-500">
                             No open commitment
                           </span>
                         )}

@@ -3,14 +3,17 @@ import { useNavigate, useParams } from 'react-router';
 import { creditNotesApi, invoicesApi, productsApi, warehousesApi } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
 import { useCompany } from '@/hooks/useCompany';
-import { 
-  ArrowLeft, 
-  Save, 
-  Loader2,
-  Plus,
-  Trash2,
-  CheckCircle
+import {
+  ArrowLeft,
+  Save,
+  CheckCircle,
+  Receipt,
+  FileText,
+  Package,
+  Wallet,
+  DollarSign,
 } from 'lucide-react';
+import { Skeleton } from '@/app/components/ui/skeleton';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
@@ -386,8 +389,20 @@ export default function CreditNoteCreatePage() {
   if (loading) {
     return (
       <Layout>
-        <div className="flex items-center justify-center p-8">
-          <Loader2 className="h-8 w-8 animate-spin" />
+        <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-[1400px] space-y-6">
+            <Skeleton className="h-32 w-full rounded-xl" />
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+              <div className="lg:col-span-2 space-y-6">
+                <Skeleton className="h-64 w-full rounded-xl" />
+                <Skeleton className="h-80 w-full rounded-xl" />
+              </div>
+              <div className="space-y-6">
+                <Skeleton className="h-48 w-full rounded-xl" />
+                <Skeleton className="h-24 w-full rounded-xl" />
+              </div>
+            </div>
+          </div>
         </div>
       </Layout>
     );
@@ -395,249 +410,244 @@ export default function CreditNoteCreatePage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-6">
-        {/* Page Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" onClick={() => navigate('/credit-notes')}>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold">
-                {isEdit ? t('creditNotes.editTitle', 'Edit Credit Note') : t('creditNotes.createTitle', 'Create Credit Note')}
-              </h1>
-              {creditNote && (
-                <p className="text-muted-foreground">{creditNote.referenceNo}</p>
+      <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1400px] space-y-6">
+          {/* Hero Header */}
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+            <div className="p-5">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-3">
+                  <Button variant="ghost" size="sm" onClick={() => navigate('/credit-notes')} className="h-8 w-8 p-0 dark:text-slate-300">
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                  <div className="rounded-lg bg-violet-50 p-2.5 text-violet-700 ring-1 ring-violet-100 dark:bg-violet-950/40 dark:text-violet-300 dark:ring-violet-900/60">
+                    <Receipt className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h1 className="text-xl font-bold tracking-tight text-slate-950 dark:text-white sm:text-2xl">
+                      {isEdit ? 'Edit Credit Note' : 'Create Credit Note'}
+                    </h1>
+                    {creditNote && <p className="text-sm text-slate-500 dark:text-slate-400">{creditNote.referenceNo}</p>}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={handleSave} disabled={saving || !selectedInvoice} className="gap-1.5 dark:border-slate-700 dark:text-slate-200">
+                    <Save className="h-4 w-4" />
+                    {saving ? 'Saving...' : 'Save Draft'}
+                  </Button>
+                  {isEdit && creditNote?.status === 'draft' && (
+                    <Button size="sm" onClick={handleConfirm} disabled={confirming || !reason || lines.every(l => l.quantity === 0)} className="gap-1.5 bg-emerald-600 hover:bg-emerald-700">
+                      <CheckCircle className="h-4 w-4" />
+                      {confirming ? 'Confirming...' : 'Confirm'}
+                    </Button>
+                  )}
+                </div>
+              </div>
+              {isEdit && creditNote?.status === 'draft' && (
+                <div className="mt-3 flex items-center gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
+                  <input type="checkbox" id="sendEmailConfirm" checked={sendEmail} onChange={(e) => setSendEmail(e.target.checked)} className="h-4 w-4" />
+                  <Label htmlFor="sendEmailConfirm" className="cursor-pointer text-sm text-slate-700 dark:text-slate-300">Send Email to Customer</Label>
+                </div>
               )}
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={handleSave} disabled={saving || !selectedInvoice}>
-              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              <Save className="mr-2 h-4 w-4" />
-              {t('creditNotes.saveDraft', 'Save Draft')}
-            </Button>
-            {isEdit && creditNote?.status === 'draft' && (
-              <>
-                <div className="flex items-center gap-2 mb-2">
-                  <input
-                    type="checkbox"
-                    id="sendEmailConfirm"
-                    checked={sendEmail}
-                    onChange={(e) => setSendEmail(e.target.checked)}
-                    className="w-4 h-4"
-                  />
-                  <Label htmlFor="sendEmailConfirm" className="text-sm dark:text-gray-200 cursor-pointer">
-                    {t('common.sendEmail', 'Send Email to Customer')}
-                  </Label>
-                </div>
-                <Button onClick={handleConfirm} disabled={confirming || !reason || lines.every(l => l.quantity === 0)}>
-                  {confirming && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  <CheckCircle className="mr-2 h-4 w-4" />
-                  {t('creditNotes.confirm', 'Confirm')}
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Form */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Basic Info */}
-            <Card className="dark:bg-slate-800">
-              <CardHeader>
-                <CardTitle className="dark:text-white">{t('creditNotes.basicInfo', 'Basic Information')}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label className="dark:text-gray-200">{t('creditNotes.invoice', 'Invoice')} *</Label>
-                    <Select value={selectedInvoice} onValueChange={handleInvoiceSelect} disabled={isEdit}>
-                      <SelectTrigger className="mt-2 dark:bg-slate-700 dark:border-slate-600 dark:text-white">
-                        <SelectValue placeholder={t('creditNotes.selectInvoice', 'Select Invoice')} />
-                      </SelectTrigger>
-                      <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
-                        {invoices.map(inv => (
-                          <SelectItem key={inv._id} value={inv._id} className="dark:text-white">
-                            {inv.referenceNo} - {inv.client?.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label className="dark:text-gray-200">{t('creditNotes.typeLabel', 'Type')} *</Label>
-                    <Select value={type} onValueChange={(v) => setType(v as any)}>
-                      <SelectTrigger className="mt-2 dark:bg-slate-700 dark:border-slate-600 dark:text-white">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
-                        {TYPE_OPTIONS.map(opt => (
-                          <SelectItem key={opt.value} value={opt.value} className="dark:text-white">
-                            {opt.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label className="dark:text-gray-200">{t('creditNotes.date', 'Credit Date')}</Label>
-                    <Input
-                      type="date"
-                      value={creditDate}
-                      onChange={(e) => setCreditDate(e.target.value)}
-                      className="mt-2 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
-                    />
-                  </div>
-                  <div>
-                    <Label className="dark:text-gray-200">{t('creditNotes.reason', 'Reason')} *</Label>
-                    <Input
-                      value={reason}
-                      onChange={(e) => setReason(e.target.value)}
-                      placeholder={t('creditNotes.reasonPlaceholder', 'Enter reason for credit note')}
-                      className="mt-2 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label className="dark:text-gray-200">{t('creditNotes.notes', 'Notes')}</Label>
-                  <Textarea
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder={t('creditNotes.notesPlaceholder', 'Additional notes')}
-                    className="mt-2 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Line Items */}
-            {type === 'goods_return' && (
-              <Card className="dark:bg-slate-800">
-                <CardHeader>
-                  <CardTitle className="dark:text-white">{t('creditNotes.lineItems', 'Line Items')}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {lines.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      {t('creditNotes.selectInvoiceForLines', 'Select an invoice to see line items')}
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            {/* Main Form */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Basic Info */}
+              <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="rounded-lg bg-slate-50 p-1.5 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                      <FileText className="h-4 w-4" />
                     </div>
-                  ) : (
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="dark:hover:bg-slate-700">
-                          <TableHead className="dark:text-gray-300">{t('creditNotes.product', 'Product')}</TableHead>
-                          <TableHead className="text-right dark:text-gray-300">{t('creditNotes.invoiceQty', 'Invoiced Qty')}</TableHead>
-                          <TableHead className="text-right dark:text-gray-300">{t('creditNotes.unitPrice', 'Unit Price')}</TableHead>
-                          <TableHead className="text-right dark:text-gray-300">{t('creditNotes.taxRate', 'Tax')}</TableHead>
-                          <TableHead className="text-right dark:text-gray-300">{t('creditNotes.qtyToCredit', 'Qty to Credit')}</TableHead>
-                          <TableHead className="dark:text-gray-300">{t('creditNotes.returnToWarehouse', 'Return To')}</TableHead>
-                          <TableHead className="text-right dark:text-gray-300">{t('creditNotes.lineTotal', 'Total')}</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {lines.map((line, index) => (
-                          <TableRow key={line.invoiceLineId} className="dark:hover:bg-slate-700">
-                            <TableCell>
-                              <div className="font-medium dark:text-white">{line.productName}</div>
-                              <div className="text-sm text-muted-foreground">{line.productCode}</div>
-                            </TableCell>
-                            <TableCell className="text-right font-medium text-muted-foreground dark:text-gray-400">
-                              {toNumber(line.originalQty)}
-                            </TableCell>
-                            <TableCell className="text-right dark:text-white">
-                              {formatCurrency(line.unitPrice)}
-                            </TableCell>
-                            <TableCell className="text-right dark:text-white">
-                              {toNumber(line.taxRate)}%
-                            </TableCell>
-                            <TableCell className="w-28">
-                              <Input
-                                type="number"
-                                min="0"
-                                max={toNumber(line.originalQty)}
-                                value={line.quantity}
-                                onChange={(e) => handleLineChange(index, 'quantity', e.target.value)}
-                                className="text-right dark:bg-slate-700 dark:border-slate-600 dark:text-white"
-                                placeholder={`Max: ${toNumber(line.originalQty)}`}
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <Select 
-                                value={line.returnToWarehouse || ''} 
-                                onValueChange={(v) => handleLineChange(index, 'returnToWarehouse', v)}
-                              >
-                                <SelectTrigger className="dark:bg-slate-700 dark:border-slate-600 dark:text-white">
-                                  <SelectValue placeholder={t('creditNotes.selectWarehouse', 'Select')} />
-                                </SelectTrigger>
-                                <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
-                                  {warehouses.map(wh => (
-                                    <SelectItem key={wh._id} value={wh._id} className="dark:text-white">
-                                      {wh.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </TableCell>
-                            <TableCell className="text-right font-medium dark:text-white">
-                              {formatCurrency(line.lineTotal)}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            {type === 'price_adjustment' && (
-              <Card className="dark:bg-slate-800">
-                <CardHeader>
-                  <CardTitle className="dark:text-white">{t('creditNotes.priceAdjustments', 'Price Adjustments')}</CardTitle>
+                    <CardTitle className="text-base text-slate-900 dark:text-white">Basic Information</CardTitle>
+                  </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="text-center py-8 text-muted-foreground">
-                    {t('creditNotes.priceAdjustmentInfo', 'Price adjustments can be added after selecting an invoice')}
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <Label className="text-sm text-slate-700 dark:text-slate-300">Invoice *</Label>
+                      <Select value={selectedInvoice} onValueChange={handleInvoiceSelect} disabled={isEdit}>
+                        <SelectTrigger className="bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-white">
+                          <SelectValue placeholder="Select Invoice" />
+                        </SelectTrigger>
+                        <SelectContent className="dark:border-slate-800 dark:bg-slate-950">
+                          {invoices.map(inv => (
+                            <SelectItem key={inv._id} value={inv._id} className="dark:text-slate-200">{inv.referenceNo} - {inv.client?.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-sm text-slate-700 dark:text-slate-300">Type *</Label>
+                      <Select value={type} onValueChange={(v) => setType(v as any)}>
+                        <SelectTrigger className="bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="dark:border-slate-800 dark:bg-slate-950">
+                          {TYPE_OPTIONS.map(opt => (
+                            <SelectItem key={opt.value} value={opt.value} className="dark:text-slate-200">{opt.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-sm text-slate-700 dark:text-slate-300">Credit Date</Label>
+                      <Input type="date" value={creditDate} onChange={(e) => setCreditDate(e.target.value)} className="bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-white" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-sm text-slate-700 dark:text-slate-300">Reason *</Label>
+                      <Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Enter reason for credit note" className="bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-white" />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-sm text-slate-700 dark:text-slate-300">Notes</Label>
+                    <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Additional notes" className="resize-none bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-white" />
                   </div>
                 </CardContent>
               </Card>
-            )}
-          </div>
 
-          {/* Summary */}
-          <div>
-            <Card className="dark:bg-slate-800">
-              <CardHeader>
-                <CardTitle className="dark:text-white">{t('creditNotes.summary', 'Summary')}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground dark:text-gray-400">{t('creditNotes.subtotal', 'Subtotal')}</span>
-                  <span className="font-medium dark:text-white">{formatCurrency(subtotal)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground dark:text-gray-400">{t('creditNotes.tax', 'Tax')}</span>
-                  <span className="font-medium dark:text-white">{formatCurrency(taxAmount)}</span>
-                </div>
-                <div className="border-t pt-4 flex justify-between">
-                  <span className="font-bold dark:text-white">{t('creditNotes.total', 'Total')}</span>
-                  <span className="font-bold text-lg dark:text-white">{formatCurrency(totalAmount)}</span>
-                </div>
-                
-                {creditNote && (
-                  <div className="mt-4 pt-4 border-t">
-                    <div className="flex justify-between mb-2">
-                      <span className="text-muted-foreground dark:text-gray-400">{t('creditNotes.statusLabel', 'Status')}</span>
-                      <Badge variant={creditNote.status === 'draft' ? 'secondary' : 'default'}>
+              {/* Line Items */}
+              {type === 'goods_return' && (
+                <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="rounded-lg bg-blue-50 p-1.5 text-blue-600 dark:bg-blue-950/40 dark:text-blue-300">
+                        <Package className="h-4 w-4" />
+                      </div>
+                      <CardTitle className="text-base text-slate-900 dark:text-white">Line Items</CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    {lines.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-10 text-slate-500 dark:text-slate-400">
+                        <Package className="mb-2 h-8 w-8 opacity-40" />
+                        <p className="text-sm">Select an invoice to see line items</p>
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="border-b-slate-200 hover:bg-transparent dark:border-b-slate-800">
+                              <TableHead className="text-xs font-semibold text-slate-500 dark:text-slate-400">Product</TableHead>
+                              <TableHead className="text-right text-xs font-semibold text-slate-500 dark:text-slate-400">Invoiced</TableHead>
+                              <TableHead className="text-right text-xs font-semibold text-slate-500 dark:text-slate-400">Price</TableHead>
+                              <TableHead className="text-right text-xs font-semibold text-slate-500 dark:text-slate-400">Tax</TableHead>
+                              <TableHead className="text-right text-xs font-semibold text-slate-500 dark:text-slate-400">Qty to Credit</TableHead>
+                              <TableHead className="text-xs font-semibold text-slate-500 dark:text-slate-400">Return To</TableHead>
+                              <TableHead className="text-right text-xs font-semibold text-slate-500 dark:text-slate-400">Total</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {lines.map((line, index) => (
+                              <TableRow key={line.invoiceLineId} className="border-b-slate-100 transition-colors hover:bg-slate-50 dark:border-b-slate-800/60 dark:hover:bg-slate-800/50">
+                                <TableCell>
+                                  <div className="text-sm font-medium text-slate-900 dark:text-white">{line.productName}</div>
+                                  <div className="text-xs text-slate-500 dark:text-slate-400">{line.productCode}</div>
+                                </TableCell>
+                                <TableCell className="text-right text-sm text-slate-500 dark:text-slate-400">{toNumber(line.originalQty)}</TableCell>
+                                <TableCell className="text-right text-sm text-slate-900 dark:text-white">{formatCurrency(line.unitPrice)}</TableCell>
+                                <TableCell className="text-right text-sm text-slate-900 dark:text-white">{toNumber(line.taxRate)}%</TableCell>
+                                <TableCell>
+                                  <Input type="number" min="0" max={toNumber(line.originalQty)} value={line.quantity} onChange={(e) => handleLineChange(index, 'quantity', e.target.value)} className="w-20 text-right bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-white" placeholder={`Max: ${toNumber(line.originalQty)}`} />
+                                </TableCell>
+                                <TableCell>
+                                  <Select value={line.returnToWarehouse || ''} onValueChange={(v) => handleLineChange(index, 'returnToWarehouse', v)}>
+                                    <SelectTrigger className="w-[130px] bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-white">
+                                      <SelectValue placeholder="Select" />
+                                    </SelectTrigger>
+                                    <SelectContent className="dark:border-slate-800 dark:bg-slate-950">
+                                      {warehouses.map(wh => (
+                                        <SelectItem key={wh._id} value={wh._id} className="dark:text-slate-200">{wh.name}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </TableCell>
+                                <TableCell className="text-right text-sm font-semibold text-slate-900 dark:text-white">{formatCurrency(line.lineTotal)}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {type === 'price_adjustment' && (
+                <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="rounded-lg bg-cyan-50 p-1.5 text-cyan-600 dark:bg-cyan-950/40 dark:text-cyan-300">
+                        <DollarSign className="h-4 w-4" />
+                      </div>
+                      <CardTitle className="text-base text-slate-900 dark:text-white">Price Adjustments</CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-col items-center justify-center py-10 text-slate-500 dark:text-slate-400">
+                      <DollarSign className="mb-2 h-8 w-8 opacity-40" />
+                      <p className="text-sm">Price adjustments can be added after selecting an invoice</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            {/* Sidebar */}
+            <div className="space-y-6">
+              {/* Summary */}
+              <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="rounded-lg bg-emerald-50 p-1.5 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300">
+                      <Wallet className="h-4 w-4" />
+                    </div>
+                    <CardTitle className="text-base text-slate-900 dark:text-white">Summary</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-500 dark:text-slate-400">Subtotal</span>
+                    <span className="font-medium text-slate-900 dark:text-white">{formatCurrency(subtotal)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-500 dark:text-slate-400">Tax</span>
+                    <span className="font-medium text-slate-900 dark:text-white">{formatCurrency(taxAmount)}</span>
+                  </div>
+                  <div className="flex items-center justify-between border-t border-slate-100 pt-3 dark:border-slate-800">
+                    <span className="text-sm font-semibold text-slate-900 dark:text-white">Total</span>
+                    <span className="text-lg font-bold text-slate-900 dark:text-white">{formatCurrency(totalAmount)}</span>
+                  </div>
+                  {creditNote && (
+                    <div className="flex items-center justify-between border-t border-slate-100 pt-3 dark:border-slate-800">
+                      <span className="text-sm text-slate-500 dark:text-slate-400">Status</span>
+                      <Badge variant={creditNote.status === 'draft' ? 'secondary' : 'default'} className="dark:border-slate-700">
                         {creditNote.status}
                       </Badge>
                     </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Actions */}
+              <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardContent className="space-y-3 p-4">
+                  <Button onClick={handleSave} disabled={saving || !selectedInvoice} variant="outline" className="w-full gap-1.5 dark:border-slate-700 dark:text-slate-200">
+                    <Save className="h-4 w-4" />
+                    {saving ? 'Saving...' : 'Save as Draft'}
+                  </Button>
+                  {isEdit && creditNote?.status === 'draft' && (
+                    <Button onClick={handleConfirm} disabled={confirming || !reason || lines.every(l => l.quantity === 0)} className="w-full gap-1.5 bg-emerald-600 hover:bg-emerald-700">
+                      <CheckCircle className="h-4 w-4" />
+                      {confirming ? 'Confirming...' : 'Confirm & Post'}
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
       </div>

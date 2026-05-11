@@ -1,39 +1,34 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 import { recurringInvoicesApi, clientsApi } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
-import { 
-  Plus, 
-  Search, 
-  Download, 
-  Loader2,
-  FileText,
+import {
+  Plus,
+  Search,
+  Download,
   Eye,
   Edit,
-  MoreHorizontal,
   Pause,
   Play,
   XCircle,
-  Zap
+  Zap,
+  TrendingUp,
+  CalendarDays,
+  Repeat,
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { Card, CardContent } from '@/app/components/ui/card';
 import { Badge } from '@/app/components/ui/badge';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/app/components/ui/table';
+import { Skeleton } from '@/app/components/ui/skeleton';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/app/components/ui/dropdown-menu';
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/app/components/ui/table';
 import {
   Select,
   SelectContent,
@@ -174,16 +169,25 @@ export default function RecurringInvoicesListPage() {
     setFrequencyFilter(value);
   };
 
+  const STATUS_COLORS: Record<string, string> = {
+    active: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800',
+    paused: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-800',
+    completed: 'bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-900 dark:text-slate-400 dark:border-slate-700',
+    cancelled: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800',
+  };
+
   const getStatusBadge = (status: string) => {
-    const statusConfig: Record<string, { variant: 'default' | 'secondary' | 'outline' | 'destructive'; label: string }> = {
-      active: { variant: 'default', label: t('recurringInvoices.status.active', 'Active') },
-      paused: { variant: 'secondary', label: t('recurringInvoices.status.paused', 'Paused') },
-      completed: { variant: 'outline', label: t('recurringInvoices.status.completed', 'Completed') },
-      cancelled: { variant: 'destructive', label: t('recurringInvoices.status.cancelled', 'Cancelled') },
+    const labels: Record<string, string> = {
+      active: 'Active',
+      paused: 'Paused',
+      completed: 'Completed',
+      cancelled: 'Cancelled',
     };
-    
-    const config = statusConfig[status] || { variant: 'outline', label: status };
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+    return (
+      <Badge variant="outline" className={`${STATUS_COLORS[status] || STATUS_COLORS.completed} capitalize text-xs`}>
+        {labels[status] || status}
+      </Badge>
+    );
   };
 
   const formatDate = (dateStr: string) => {
@@ -278,220 +282,282 @@ export default function RecurringInvoicesListPage() {
     alert(t('common.comingSoon', 'Coming soon'));
   };
 
+  const statusCounts = useMemo(() => {
+    const counts: Record<string, number> = { active: 0, paused: 0, completed: 0, cancelled: 0 };
+    filteredRecurringInvoices.forEach((inv) => {
+      counts[inv.status] = (counts[inv.status] || 0) + 1;
+    });
+    return counts;
+  }, [filteredRecurringInvoices]);
+
+  const totalValue = useMemo(() => {
+    return filteredRecurringInvoices.reduce((sum, inv) => sum + (inv.totalAmount || 0), 0);
+  }, [filteredRecurringInvoices]);
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+  };
+
   return (
     <Layout>
-      <div className="container mx-auto py-6">
-        {/* Page Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold dark:text-gray-100">{t('recurringInvoices.title', 'Recurring Invoices')}</h1>
-            <p className="text-sm text-muted-foreground dark:text-gray-400">{t('recurringInvoices.subtitle', 'Manage recurring invoice templates')}</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={handleExport} size="sm" className="sm:size-default">
-              <Download className="mr-1.5 sm:mr-2 h-4 w-4" />
-              <span className="hidden sm:inline">{t('common.export', 'Export')}</span>
-              <span className="sm:hidden">{t('common.export', 'Export')}</span>
-            </Button>
-            <Button onClick={() => navigate('/recurring-invoices/new')} size="sm" className="sm:size-default">
-              <Plus className="mr-1.5 sm:mr-2 h-4 w-4" />
-              <span className="hidden sm:inline">{t('recurringInvoices.newRecurring', 'New Recurring Invoice')}</span>
-              <span className="sm:hidden">{t('recurringInvoices.new', 'New')}</span>
-            </Button>
-          </div>
-        </div>
-
-        {/* Filters */}
-        <Card className="mb-6 dark:border-slate-700 dark:bg-slate-800">
-          <CardContent className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder={t('recurringInvoices.search', 'Search recurring invoices...')}
-                  value={search}
-                  onChange={(e) => handleSearch(e.target.value)}
-                  className="pl-9 dark:bg-slate-800 dark:border-slate-600 dark:text-gray-200"
-                />
+      <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1600px] space-y-6">
+          {/* Hero Header */}
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+            <div className="p-5">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <h1 className="text-2xl font-bold tracking-tight text-slate-950 dark:text-white sm:text-3xl">
+                    {t('recurringInvoices.title', 'Recurring Invoices')}
+                  </h1>
+                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+                    {t('recurringInvoices.subtitle', 'Manage recurring invoice templates and schedules')}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="outline" onClick={handleExport} className="gap-2 dark:border-slate-700 dark:text-slate-200">
+                    <Download className="h-4 w-4" />
+                    {t('common.export', 'Export')}
+                  </Button>
+                  <Button onClick={() => navigate('/recurring-invoices/new')} className="gap-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-500">
+                    <Plus className="h-4 w-4" />
+                    {t('recurringInvoices.newRecurring', 'New Recurring Invoice')}
+                  </Button>
+                </div>
               </div>
-              <Select value={statusFilter} onValueChange={handleStatusFilter}>
-                <SelectTrigger className="dark:bg-slate-800 dark:border-slate-600">
-                  <SelectValue placeholder={t('recurringInvoices.filterStatus', 'Status')} />
-                </SelectTrigger>
-                <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
-                  {STATUS_OPTIONS.map(option => (
-                    <SelectItem key={option.value} value={option.value} className="dark:text-gray-200">
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={frequencyFilter} onValueChange={handleFrequencyFilter}>
-                <SelectTrigger className="dark:bg-slate-800 dark:border-slate-600">
-                  <SelectValue placeholder={t('recurringInvoices.filterFrequency', 'Frequency')} />
-                </SelectTrigger>
-                <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
-                  {FREQUENCY_OPTIONS.map(option => (
-                    <SelectItem key={option.value} value={option.value} className="dark:text-gray-200">
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={clientFilter} onValueChange={handleClientFilter}>
-                <SelectTrigger className="dark:bg-slate-800 dark:border-slate-600">
-                  <SelectValue placeholder={t('recurringInvoices.filterClient', 'Client')} />
-                </SelectTrigger>
-                <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
-                  <SelectItem value="all" className="dark:text-gray-200">{t('common.all', 'All Clients')}</SelectItem>
-                  {clients.map(client => (
-                    <SelectItem key={client._id} value={client._id} className="dark:text-gray-200">
-                      {client.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
-            {(search || statusFilter !== 'all' || clientFilter !== 'all' || frequencyFilter !== 'all') && (
-              <div className="mt-4">
-                <Button variant="ghost" onClick={clearFilters}>
-                  {t('recurringInvoices.clearFilters', 'Clear Filters')}
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+          </div>
 
-        {/* Recurring Invoices Table */}
-        <Card className="dark:border-slate-700 dark:bg-slate-800">
-          <CardContent className="p-0">
-            {loading ? (
-              <div className="flex items-center justify-center p-8">
-                <Loader2 className="h-8 w-8 animate-spin" />
+          {/* Status Pipeline */}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-5">
+            {[
+              { key: 'active', label: 'Active', color: 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-400' },
+              { key: 'paused', label: 'Paused', color: 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-400' },
+              { key: 'completed', label: 'Completed', color: 'border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400' },
+              { key: 'cancelled', label: 'Cancelled', color: 'border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-400' },
+            ].map((status) => (
+              <button
+                key={status.key}
+                onClick={() => setStatusFilter(statusFilter === status.key ? 'all' : status.key)}
+                className={`flex items-center justify-between rounded-lg border px-4 py-3 text-left transition-all hover:shadow-sm ${status.color} ${statusFilter === status.key ? 'ring-2 ring-indigo-500 dark:ring-indigo-400' : ''}`}
+              >
+                <div>
+                  <p className="text-xs font-medium opacity-80">{status.label}</p>
+                  <p className="text-xl font-bold">{loading ? <Skeleton className="h-6 w-8" /> : statusCounts[status.key] || 0}</p>
+                </div>
+                <div className="h-8 w-8 rounded-full bg-white/50 dark:bg-white/10" />
+              </button>
+            ))}
+          </div>
+
+          {/* Metric Tiles */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/50">
+              <CardContent className="flex items-center gap-4 p-5">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-50 dark:bg-indigo-950/50">
+                  <Repeat className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Total Templates</p>
+                  <p className="text-xl font-bold text-slate-950 dark:text-white">
+                    {loading ? <Skeleton className="h-7 w-12" /> : filteredRecurringInvoices.length}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/50">
+              <CardContent className="flex items-center gap-4 p-5">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-950/50">
+                  <TrendingUp className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Total Value</p>
+                  <p className="text-xl font-bold text-slate-950 dark:text-white">
+                    {loading ? <Skeleton className="h-7 w-16" /> : formatCurrency(totalValue)}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/50">
+              <CardContent className="flex items-center gap-4 p-5">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-50 dark:bg-amber-950/50">
+                  <CalendarDays className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Next Run This Week</p>
+                  <p className="text-xl font-bold text-slate-950 dark:text-white">
+                    {loading ? <Skeleton className="h-7 w-8" /> : filteredRecurringInvoices.filter((i) => i.status === 'active' && i.nextRunDate && new Date(i.nextRunDate) <= new Date(Date.now() + 7 * 86400000)).length}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/50">
+              <CardContent className="flex items-center gap-4 p-5">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-950/50">
+                  <Zap className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Auto-Confirm</p>
+                  <p className="text-xl font-bold text-slate-950 dark:text-white">
+                    {loading ? <Skeleton className="h-7 w-8" /> : filteredRecurringInvoices.filter((i) => i.autoConfirm).length}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Filters */}
+          <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/50">
+            <CardContent className="p-5">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <Input
+                    placeholder={t('recurringInvoices.search', 'Search recurring invoices...')}
+                    value={search}
+                    onChange={(e) => handleSearch(e.target.value)}
+                    className="bg-slate-50 pl-9 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700 dark:text-white"
+                  />
+                </div>
+                <Select value={statusFilter} onValueChange={handleStatusFilter}>
+                  <SelectTrigger className="bg-slate-50 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700 dark:text-white">
+                    <SelectValue placeholder={t('recurringInvoices.filterStatus', 'Status')} />
+                  </SelectTrigger>
+                  <SelectContent className="dark:bg-slate-900 dark:border-slate-700">
+                    {STATUS_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value} className="dark:text-white">
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={frequencyFilter} onValueChange={handleFrequencyFilter}>
+                  <SelectTrigger className="bg-slate-50 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700 dark:text-white">
+                    <SelectValue placeholder={t('recurringInvoices.filterFrequency', 'Frequency')} />
+                  </SelectTrigger>
+                  <SelectContent className="dark:bg-slate-900 dark:border-slate-700">
+                    {FREQUENCY_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value} className="dark:text-white">
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={clientFilter} onValueChange={handleClientFilter}>
+                  <SelectTrigger className="bg-slate-50 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700 dark:text-white">
+                    <SelectValue placeholder={t('recurringInvoices.filterClient', 'Client')} />
+                  </SelectTrigger>
+                  <SelectContent className="dark:bg-slate-900 dark:border-slate-700">
+                    <SelectItem value="all" className="dark:text-white">{t('common.all', 'All Clients')}</SelectItem>
+                    {clients.map((client) => (
+                      <SelectItem key={client._id} value={client._id} className="dark:text-white">
+                        {client.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {(search || statusFilter !== 'all' || clientFilter !== 'all' || frequencyFilter !== 'all') && (
+                  <Button variant="ghost" onClick={clearFilters} className="text-slate-600 dark:text-slate-300">
+                    {t('recurringInvoices.clearFilters', 'Clear Filters')}
+                  </Button>
+                )}
               </div>
-            ) : filteredRecurringInvoices.length === 0 ? (
-              <div className="text-center py-12 dark:bg-slate-800">
-                <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4 dark:text-gray-400" />
-                <h3 className="text-lg font-medium dark:text-gray-200">{t('recurringInvoices.noRecurring', 'No recurring invoices found')}</h3>
-                <p className="text-muted-foreground mb-4 dark:text-gray-400">
-                  {t('recurringInvoices.noRecurringDescription', 'Create your first recurring invoice to get started')}
-                </p>
-                <Button onClick={() => navigate('/recurring-invoices/new')}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  {t('recurringInvoices.newRecurring', 'New Recurring Invoice')}
-                </Button>
-              </div>
-            ) : (
-              <Table>
-                <TableHeader className="dark:bg-slate-800">
-                  <TableRow className="dark:hover:bg-slate-700/50 dark:border-b dark:border-slate-700">
-                    <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('recurringInvoices.reference', 'Reference')}</TableHead>
-                    <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('recurringInvoices.client', 'Client')}</TableHead>
-                    <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('recurringInvoices.frequency', 'Frequency')}</TableHead>
-                    <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('recurringInvoices.nextRun', 'Next Run')}</TableHead>
-                    <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('recurringInvoices.filterStatus', 'Status')}</TableHead>
-                    <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('recurringInvoices.autoConfirm', 'Auto Confirm')}</TableHead>
-                    <TableHead className="dark:text-gray-300 dark:bg-slate-800 dark:border-b dark:border-slate-700">{t('recurringInvoices.lastRun', 'Last Run')}</TableHead>
-                    <TableHead className="dark:bg-slate-800 dark:border-b dark:border-slate-700"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody className="dark:bg-slate-800">
-                  {filteredRecurringInvoices.map((inv) => (
-                    <TableRow key={inv._id} className="dark:hover:bg-slate-700/50 dark:border-b dark:border-slate-700">
-                      <TableCell className="font-medium dark:text-gray-200 dark:bg-slate-800">
-                        {inv.referenceNo}
-                      </TableCell>
-                      <TableCell className="dark:text-gray-300 dark:bg-slate-800">{inv.client?.name || '-'}</TableCell>
-                      <TableCell className="dark:text-gray-300 dark:bg-slate-800">{formatFrequency(inv.schedule)}</TableCell>
-                      <TableCell className="dark:text-gray-300 dark:bg-slate-800">{formatDate(inv.nextRunDate)}</TableCell>
-                      <TableCell className="dark:bg-slate-800">{getStatusBadge(inv.status)}</TableCell>
-                      <TableCell className="dark:bg-slate-800">
-                        {inv.autoConfirm ? (
-                          <Badge variant="default" className="dark:bg-slate-700 dark:text-gray-200">{t('common.yes', 'Yes')}</Badge>
-                        ) : (
-                          <Badge variant="secondary" className="dark:bg-slate-700 dark:text-gray-200">{t('common.no', 'No')}</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="dark:text-gray-300 dark:bg-slate-800">{inv.lastRunAt ? formatDate(inv.lastRunAt) : '-'}</TableCell>
-                      <TableCell className="text-right dark:bg-slate-800">
-                        <div className="flex items-center justify-end gap-1">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => navigate(`/recurring-invoices/${inv._id}`)}
-                            title={t('common.view', 'View')}
-                            className="dark:hover:bg-slate-700"
-                          >
-                            <Eye className="h-4 w-4 dark:text-gray-300" />
-                          </Button>
-                          {(inv.status === 'active' || inv.status === 'paused') && (
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={() => navigate(`/recurring-invoices/${inv._id}/edit`)}
-                              title={t('common.edit', 'Edit')}
-                              className="dark:hover:bg-slate-700"
-                            >
-                              <Edit className="h-4 w-4 dark:text-gray-300" />
-                            </Button>
-                          )}
-                          {inv.status === 'active' && (
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={() => handlePause(inv._id)} 
-                              disabled={processing === inv._id}
-                              title={t('recurringInvoices.pause', 'Pause')}
-                              className="dark:hover:bg-slate-700"
-                            >
-                              <Pause className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                            </Button>
-                          )}
-                          {inv.status === 'paused' && (
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={() => handleResume(inv._id)} 
-                              disabled={processing === inv._id}
-                              title={t('recurringInvoices.resume', 'Resume')}
-                              className="dark:hover:bg-slate-700"
-                            >
-                              <Play className="h-4 w-4 text-green-600 dark:text-green-400" />
-                            </Button>
-                          )}
-                          {inv.status !== 'cancelled' && inv.status !== 'completed' && (
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={() => handleTrigger(inv._id)} 
-                              disabled={processing === inv._id}
-                              title={t('recurringInvoices.trigger', 'Trigger Now')}
-                              className="dark:hover:bg-slate-700"
-                            >
-                              <Zap className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                            </Button>
-                          )}
-                          {(inv.status === 'active' || inv.status === 'paused') && (
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={() => handleCancel(inv._id)} 
-                              disabled={processing === inv._id}
-                              title={t('recurringInvoices.cancel', 'Cancel')}
-                              className="text-red-600 dark:hover:bg-slate-700"
-                            >
-                              <XCircle className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
+            </CardContent>
+          </Card>
+
+          {/* Recurring Invoices Table */}
+          <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <CardContent className="p-0">
+              {loading ? (
+                <div className="space-y-2 p-5">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <Skeleton key={i} className="h-12 w-full rounded-lg" />
                   ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+                </div>
+              ) : filteredRecurringInvoices.length === 0 ? (
+                <div className="flex min-h-[240px] flex-col items-center justify-center p-8">
+                  <Repeat className="mb-3 h-12 w-12 text-slate-300 dark:text-slate-600" />
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{t('recurringInvoices.noRecurring', 'No recurring invoices found')}</h3>
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t('recurringInvoices.noRecurringDescription', 'Create your first recurring invoice to get started')}</p>
+                  <Button onClick={() => navigate('/recurring-invoices/new')} className="mt-4 gap-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-500">
+                    <Plus className="h-4 w-4" />
+                    {t('recurringInvoices.newRecurring', 'New Recurring Invoice')}
+                  </Button>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-slate-50/70 hover:bg-slate-50/70 dark:bg-slate-900/50 dark:hover:bg-slate-900/50">
+                        <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('recurringInvoices.reference', 'Reference')}</TableHead>
+                        <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('recurringInvoices.client', 'Client')}</TableHead>
+                        <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('recurringInvoices.frequency', 'Frequency')}</TableHead>
+                        <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('recurringInvoices.nextRun', 'Next Run')}</TableHead>
+                        <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('recurringInvoices.filterStatus', 'Status')}</TableHead>
+                        <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('recurringInvoices.autoConfirm', 'Auto Confirm')}</TableHead>
+                        <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('recurringInvoices.lastRun', 'Last Run')}</TableHead>
+                        <TableHead className="w-[140px]"></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredRecurringInvoices.map((inv) => (
+                        <TableRow key={inv._id} className="transition-colors hover:bg-slate-50/50 dark:border-slate-800 dark:hover:bg-slate-900/30">
+                          <TableCell>
+                            <div className="font-medium text-slate-900 dark:text-white">{inv.referenceNo}</div>
+                          </TableCell>
+                          <TableCell className="text-sm text-slate-700 dark:text-slate-300">{inv.client?.name || '-'}</TableCell>
+                          <TableCell className="text-sm text-slate-700 dark:text-slate-300">{formatFrequency(inv.schedule)}</TableCell>
+                          <TableCell className="text-sm text-slate-700 dark:text-slate-300">{formatDate(inv.nextRunDate)}</TableCell>
+                          <TableCell>{getStatusBadge(inv.status)}</TableCell>
+                          <TableCell>
+                            {inv.autoConfirm ? (
+                              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-800 text-xs">{t('common.yes', 'Yes')}</Badge>
+                            ) : (
+                              <Badge variant="outline" className="bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-900 dark:text-slate-400 dark:border-slate-700 text-xs">{t('common.no', 'No')}</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-sm text-slate-700 dark:text-slate-300">{inv.lastRunAt ? formatDate(inv.lastRunAt) : '-'}</TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <Button variant="ghost" size="sm" onClick={() => navigate(`/recurring-invoices/${inv._id}`)} title={t('common.view', 'View')} className="h-8 w-8 p-0 dark:text-slate-300 dark:hover:bg-slate-800">
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              {(inv.status === 'active' || inv.status === 'paused') && (
+                                <Button variant="ghost" size="sm" onClick={() => navigate(`/recurring-invoices/${inv._id}/edit`)} title={t('common.edit', 'Edit')} className="h-8 w-8 p-0 dark:text-slate-300 dark:hover:bg-slate-800">
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                              )}
+                              {inv.status === 'active' && (
+                                <Button variant="ghost" size="sm" onClick={() => handlePause(inv._id)} disabled={processing === inv._id} title={t('recurringInvoices.pause', 'Pause')} className="h-8 w-8 p-0 dark:text-amber-400 dark:hover:bg-slate-800">
+                                  <Pause className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                                </Button>
+                              )}
+                              {inv.status === 'paused' && (
+                                <Button variant="ghost" size="sm" onClick={() => handleResume(inv._id)} disabled={processing === inv._id} title={t('recurringInvoices.resume', 'Resume')} className="h-8 w-8 p-0 dark:text-emerald-400 dark:hover:bg-slate-800">
+                                  <Play className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                                </Button>
+                              )}
+                              {inv.status !== 'cancelled' && inv.status !== 'completed' && (
+                                <Button variant="ghost" size="sm" onClick={() => handleTrigger(inv._id)} disabled={processing === inv._id} title={t('recurringInvoices.trigger', 'Trigger Now')} className="h-8 w-8 p-0 dark:text-blue-400 dark:hover:bg-slate-800">
+                                  <Zap className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                </Button>
+                              )}
+                              {(inv.status === 'active' || inv.status === 'paused') && (
+                                <Button variant="ghost" size="sm" onClick={() => handleCancel(inv._id)} disabled={processing === inv._id} title={t('recurringInvoices.cancel', 'Cancel')} className="h-8 w-8 p-0 text-red-600 dark:text-red-400 dark:hover:bg-slate-800">
+                                  <XCircle className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </Layout>
   );

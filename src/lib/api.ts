@@ -9054,45 +9054,56 @@ export const bankHubApi = {
   },
 };
 
-// AR Receipts API - Step 57-59
-interface ARReceiptData {
-  _id: string;
-  referenceNo: string;
-  client: { _id: string; name: string; code: string };
-  receiptDate: string;
-  paymentMethod: string;
-  bankAccount?: { _id: string; name: string; accountNumber: string };
-  amountReceived: string;
-  currencyCode: string;
-  exchangeRate: string;
-  reference?: string;
-  status: "draft" | "posted" | "reversed";
-  notes?: string;
-  unallocatedAmount?: string;
-  postedBy?: { name: string };
-  createdBy?: { name: string };
-  createdAt: string;
-  updatedAt?: string;
-}
-
-interface ARReceiptAllocation {
-  _id: string;
-  receipt: string;
-  invoice: {
-    _id: string;
-    invoiceNumber: string;
-    referenceNo: string;
-    balance: string;
-  };
-  amountAllocated: string;
-}
-
 /**
  * AR Reports API - Read-Only
  * All AR entries originate from source documents (invoices, payments, credit notes).
  * No manual transaction entry through this API.
  */
 export const arReceiptsApi = {
+  // Get all receipts
+  getAll: (params?: Record<string, any>) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<any>(`/ar/receipts${query ? `?${query}` : ""}`);
+  },
+
+  // Get receipt by ID
+  getById: (id: string) =>
+    request<{ success: boolean; data: any; allocations?: any[] }>(`/ar/receipts/${id}`),
+
+  // Create receipt
+  create: (payload: Record<string, any>) =>
+    request<{ success: boolean; data: any }>("/ar/receipts", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
+  // Update receipt
+  update: (id: string, payload: Record<string, any>) =>
+    request<{ success: boolean; data: any }>(`/ar/receipts/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    }),
+
+  // Allocate receipt to invoice
+  allocate: (id: string, allocation: { invoiceId: string; amount: number }) =>
+    request<any>(`/ar/receipts/${id}/allocate`, {
+      method: "POST",
+      body: JSON.stringify(allocation),
+    }),
+
+  // Post receipt
+  post: (id: string) =>
+    request<any>(`/ar/receipts/${id}/post`, {
+      method: "POST",
+    }),
+
+  // Reverse receipt
+  reverse: (id: string, reason: string) =>
+    request<any>(`/ar/receipts/${id}/reverse`, {
+      method: "POST",
+      body: JSON.stringify({ reason }),
+    }),
+
   // Get aging report
   getAgingReport: (params?: { client_id?: string; as_of_date?: string }) => {
     const query = buildQuery(params as Record<string, any>);
