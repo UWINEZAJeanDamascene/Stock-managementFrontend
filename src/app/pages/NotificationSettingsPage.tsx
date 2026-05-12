@@ -210,7 +210,7 @@ export default function NotificationSettingsPage() {
     return (
       <Layout>
         <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-[1200px] w-full space-y-6">
+          <div className="mx-auto max-w-[1200px] 2xl:max-w-[2200px] w-full space-y-6">
             <Skeleton className="h-40 w-full rounded-2xl" />
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               <Skeleton className="h-28 rounded-xl" />
@@ -227,25 +227,25 @@ export default function NotificationSettingsPage() {
   return (
     <Layout>
       <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-[1200px] w-full space-y-6">
+        <div className="mx-auto max-w-[1200px] 2xl:max-w-[2200px] w-full space-y-6">
 
           {/* Hero Header */}
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 text-white shadow-sm dark:border-slate-800">
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-950 shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:text-white">
             <div className="p-6 lg:p-7">
               <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge className="bg-white/10 text-white hover:bg-white/10">
+                    <Badge className="bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-white/10 dark:text-white dark:hover:bg-white/10">
                       <Sparkles className="mr-1 h-3.5 w-3.5" />
                       Notification Center
                     </Badge>
                     {emailActive && (
-                      <Badge className="bg-blue-500/20 text-blue-200 hover:bg-blue-500/20">
+                      <Badge className="bg-blue-500/20 text-blue-700 hover:bg-blue-500/20 dark:text-blue-200">
                         <Mail className="mr-1 h-3 w-3" /> Email On
                       </Badge>
                     )}
                     {smsActive && (
-                      <Badge className="bg-emerald-500/20 text-emerald-200 hover:bg-emerald-500/20">
+                      <Badge className="bg-emerald-500/20 text-emerald-700 hover:bg-emerald-500/20 dark:text-emerald-200">
                         <MessageSquare className="mr-1 h-3 w-3" /> SMS On
                       </Badge>
                     )}
@@ -253,37 +253,37 @@ export default function NotificationSettingsPage() {
                   <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
                     Notification Settings
                   </h1>
-                  <p className="mt-2 max-w-2xl text-sm text-slate-300 sm:text-base">
+                  <p className="mt-2 max-w-2xl text-sm text-slate-500 dark:text-slate-300 sm:text-base">
                     Control how and when you receive alerts for stock, invoices, payments, and summaries.
                   </p>
                 </div>
               </div>
 
               <div className="mt-7 grid gap-4 sm:grid-cols-3">
-                <div className="rounded-xl border border-white/10 bg-white/[0.04] p-4">
-                  <p className="text-xs uppercase tracking-wide text-slate-400">Active Channels</p>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/[0.04]">
+                  <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Active Channels</p>
                   <div className="mt-3 flex items-end justify-between gap-3">
                     <p className="text-4xl font-bold">{[emailActive, smsActive].filter(Boolean).length}</p>
                     <div className="flex -space-x-1.5">
-                      {emailActive && <div className="rounded-full bg-blue-400/20 p-1.5 ring-1 ring-blue-400/30"><Mail className="h-4 w-4 text-blue-300" /></div>}
-                      {smsActive && <div className="rounded-full bg-emerald-400/20 p-1.5 ring-1 ring-emerald-400/30"><MessageSquare className="h-4 w-4 text-emerald-300" /></div>}
+                      {emailActive && <div className="rounded-full bg-blue-400/20 p-1.5 ring-1 ring-blue-400/30 text-blue-600 dark:text-blue-300" />}
+                      {smsActive && <div className="rounded-full bg-emerald-400/20 p-1.5 ring-1 ring-emerald-400/30 text-emerald-600 dark:text-emerald-300" />}
                     </div>
                   </div>
                 </div>
-                <div className="rounded-xl border border-white/10 bg-white/[0.04] p-4">
-                  <p className="text-xs uppercase tracking-wide text-slate-400">Active Rules</p>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/[0.04]">
+                  <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Active Rules</p>
                   <p className="mt-3 text-3xl font-bold">{activeCount}</p>
-                  <p className="mt-2 text-xs text-slate-400">
+                  <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
                     Out of 6 possible
                   </p>
                 </div>
-                <div className="rounded-xl border border-white/10 bg-white/[0.04] p-4">
-                  <p className="text-xs uppercase tracking-wide text-slate-400">Health</p>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/[0.04]">
+                  <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Total Rules</p>
                   <div className="mt-3 flex items-end justify-between gap-3">
                     <p className="text-4xl font-bold">{emailActive || smsActive ? 'Good' : 'Off'}</p>
-                    <ShieldCheck className="h-6 w-6 text-emerald-300" />
+                    <ShieldCheck className="h-6 w-6 text-emerald-600 dark:text-emerald-300" />
                   </div>
-                  <div className="mt-3 h-2 rounded-full bg-white/10">
+                  <div className="mt-3 h-2 rounded-full bg-slate-200 dark:bg-white/10">
                     <div
                       className="h-2 rounded-full bg-emerald-400"
                       style={{ width: `${emailActive || smsActive ? 100 : 0}%` }}

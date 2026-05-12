@@ -174,7 +174,7 @@ export default function CompanyProfilePage() {
             .comp-pulse { animation: comp-pulse 2.5s ease-in-out infinite; }
             @media (prefers-reduced-motion: reduce) { .comp-pulse { animation: none; } }
           `}</style>
-          <div className="mx-auto max-w-[1100px] space-y-6">
+          <div className="mx-auto max-w-[1100px] 2xl:max-w-[2200px] space-y-6">
             <div className="overflow-hidden rounded-xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-white/[0.04]">
               <div className="flex flex-wrap items-center gap-3">
                 <Skeleton className="h-10 w-10 rounded-lg" />
@@ -228,7 +228,7 @@ export default function CompanyProfilePage() {
         }
       `}</style>
       <div className="min-h-screen bg-[#f7f9fb] px-4 py-5 dark:bg-[#06080d] sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-[1100px] space-y-6">
+        <div className="mx-auto max-w-[1100px] 2xl:max-w-[2200px] space-y-6">
           {/* Hero Header */}
           <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(14,165,233,0.18),transparent_30%),radial-gradient(circle_at_82%_12%,rgba(16,185,129,0.14),transparent_24%),linear-gradient(135deg,#f8fbff_0%,#edf7f4_50%,#f8fafc_100%)] dark:bg-[radial-gradient(circle_at_18%_18%,rgba(34,211,238,0.12),transparent_30%),radial-gradient(circle_at_82%_12%,rgba(74,222,128,0.08),transparent_24%),linear-gradient(135deg,#05070c_0%,#08111a_50%,#07100d_100%)]" />

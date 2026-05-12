@@ -481,25 +481,25 @@ export default function BulkDataPage() {
   return (
     <Layout>
       <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-[1200px] w-full space-y-6">
+        <div className="mx-auto max-w-[1200px] 2xl:max-w-[2200px] w-full space-y-6">
 
           {/* Hero Header */}
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 text-white shadow-sm dark:border-slate-800">
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-950 shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:text-white">
             <div className="p-6 lg:p-7">
               <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge className="bg-white/10 text-white hover:bg-white/10">
+                    <Badge className="bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-white/10 dark:text-white dark:hover:bg-white/10">
                       <Database className="mr-1 h-3.5 w-3.5" />
                       Data Hub
                     </Badge>
                     {activeTab === 'import' && step !== 'result' && step !== 'select' && (
-                      <Badge className="bg-indigo-500/20 text-indigo-200 hover:bg-indigo-500/20">
+                      <Badge className="bg-indigo-500/20 text-indigo-700 hover:bg-indigo-500/20 dark:text-indigo-200">
                         <ArrowUpDown className="mr-1 h-3 w-3" /> Step {stepIndex + 1} of {steps.length}
                       </Badge>
                     )}
                     {activeTab === 'import' && step === 'result' && importResult && (
-                      <Badge className="bg-emerald-500/20 text-emerald-200 hover:bg-emerald-500/20">
+                      <Badge className="bg-emerald-500/20 text-emerald-700 hover:bg-emerald-500/20 dark:text-emerald-200">
                         <CheckCircle className="mr-1 h-3 w-3" /> Complete
                       </Badge>
                     )}
@@ -507,7 +507,7 @@ export default function BulkDataPage() {
                   <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
                     {t('bulkData.title')}
                   </h1>
-                  <p className="mt-2 max-w-2xl text-sm text-slate-300 sm:text-base">
+                  <p className="mt-2 max-w-2xl text-sm text-slate-500 dark:text-slate-300 sm:text-base">
                     {t('bulkData.subtitle')}
                   </p>
                 </div>
@@ -517,11 +517,11 @@ export default function BulkDataPage() {
                   if (tab === 'import') { setActiveTab('import'); resetWizard(); }
                   else { setActiveTab('export'); setError(null); setSuccess(null); }
                 }}>
-                  <TabsList className="bg-white/10 border border-white/10">
-                    <TabsTrigger value="import" className="data-[state=active]:bg-white/20 data-[state=active]:text-white text-slate-300">
+                  <TabsList className="bg-slate-100 border border-slate-200 dark:bg-white/10 dark:border-white/10">
+                    <TabsTrigger value="import" className="data-[state=active]:bg-slate-200 data-[state=active]:text-slate-950 text-slate-500 dark:data-[state=active]:bg-white/20 dark:data-[state=active]:text-white dark:text-slate-300">
                       <Upload className="mr-1.5 h-4 w-4" /> {t('bulkData.importData')}
                     </TabsTrigger>
-                    <TabsTrigger value="export" className="data-[state=active]:bg-white/20 data-[state=active]:text-white text-slate-300">
+                    <TabsTrigger value="export" className="data-[state=active]:bg-slate-200 data-[state=active]:text-slate-950 text-slate-500 dark:data-[state=active]:bg-white/20 dark:data-[state=active]:text-white dark:text-slate-300">
                       <Download className="mr-1.5 h-4 w-4" /> {t('bulkData.exportData')}
                     </TabsTrigger>
                   </TabsList>
@@ -530,20 +530,20 @@ export default function BulkDataPage() {
 
               {activeTab === 'import' && step !== 'result' && step !== 'select' && (
                 <div className="mt-7 grid gap-4 sm:grid-cols-3">
-                  <div className="rounded-xl border border-white/10 bg-white/[0.04] p-4">
-                    <p className="text-xs uppercase tracking-wide text-slate-400">Rows Detected</p>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/[0.04]">
+                    <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Rows Detected</p>
                     <p className="mt-3 text-3xl font-bold">{totalRows.toLocaleString()}</p>
-                    <p className="mt-2 text-xs text-slate-400">{parsedHeaders.length} columns</p>
+                    <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{parsedHeaders.length} columns</p>
                   </div>
-                  <div className="rounded-xl border border-white/10 bg-white/[0.04] p-4">
-                    <p className="text-xs uppercase tracking-wide text-slate-400">Mapped Columns</p>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/[0.04]">
+                    <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Mapped Columns</p>
                     <p className="mt-3 text-3xl font-bold">{mappedColsCount}</p>
-                    <p className="mt-2 text-xs text-slate-400">{mappedRequiredCount}/{requiredFields.length} required</p>
+                    <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{mappedRequiredCount}/{requiredFields.length} required</p>
                   </div>
-                  <div className="rounded-xl border border-white/10 bg-white/[0.04] p-4">
-                    <p className="text-xs uppercase tracking-wide text-slate-400">Target</p>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/[0.04]">
+                    <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Target</p>
                     <p className="mt-3 text-2xl font-bold capitalize">{selectedType}</p>
-                    <p className="mt-2 text-xs text-slate-400">{targetFields.length} fields available</p>
+                    <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{targetFields.length} fields available</p>
                   </div>
                 </div>
               )}
@@ -574,12 +574,12 @@ export default function BulkDataPage() {
                         <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold transition-colors ${
                           i < stepIndex ? 'bg-emerald-500 text-white' :
                           i === stepIndex ? 'bg-indigo-600 text-white ring-2 ring-indigo-600/30' :
-                          'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500'
+                          'bg-slate-100 text-slate-500 dark:text-slate-400 dark:bg-slate-800 dark:text-slate-500'
                         }`}>
                           {i < stepIndex ? <CircleCheck className="h-4 w-4" /> : i + 1}
                         </div>
                         <span className={`text-xs font-medium truncate hidden sm:block ${
-                          i === stepIndex ? 'text-indigo-600 dark:text-indigo-400' : i < stepIndex ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'
+                          i === stepIndex ? 'text-indigo-600 dark:text-indigo-400' : i < stepIndex ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400 dark:text-slate-500'
                         }`}>{s.label}</span>
                       </div>
                       {i < steps.length - 1 && (
@@ -660,7 +660,7 @@ export default function BulkDataPage() {
                         </div>
                         <div className="text-center">
                           <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('bulkData.dropOrClick')}</p>
-                          <p className="text-xs text-slate-400 mt-1">{t('bulkData.csvOnly')}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{t('bulkData.csvOnly')}</p>
                         </div>
                       </label>
 
@@ -698,7 +698,7 @@ export default function BulkDataPage() {
                   </div>
 
                   <div className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/50 p-3 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900/20 dark:text-slate-300">
-                    <FileSpreadsheet className="h-4 w-4 text-slate-400" />
+                    <FileSpreadsheet className="h-4 w-4 text-slate-500 dark:text-slate-400" />
                     <span>{parsedHeaders.length} {t('bulkData.columnsDetected')} · {parsedRows.length} {t('bulkData.rowsDetected')}</span>
                   </div>
 
@@ -716,7 +716,7 @@ export default function BulkDataPage() {
                             <div className="flex items-center gap-2 min-w-0">
                               <span className="text-sm font-medium text-slate-800 dark:text-white truncate">{header}</span>
                               {parsedRows[0]?.[header] && (
-                                <span className="text-xs text-slate-400 truncate max-w-[120px]" title={parsedRows[0][header]}>
+                                <span className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[120px]" title={parsedRows[0][header]}>
                                   ({parsedRows[0][header]})
                                 </span>
                               )}
@@ -741,7 +741,7 @@ export default function BulkDataPage() {
                                   </option>
                                 ))}
                               </select>
-                              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 dark:text-slate-400 pointer-events-none" />
                             </div>
                           </div>
                         );
@@ -799,8 +799,8 @@ export default function BulkDataPage() {
                   )}
 
                   <div className="flex flex-wrap gap-4 rounded-xl border border-slate-100 bg-slate-50/50 p-3 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900/20 dark:text-slate-300">
-                    <span className="flex items-center gap-1"><TrendingUp className="h-3.5 w-3.5 text-slate-400" /> {parsedRows.length} {t('bulkData.totalRows')}</span>
-                    <span className="flex items-center gap-1"><Columns3 className="h-3.5 w-3.5 text-slate-400" /> {mappedTargetCols.length} {t('bulkData.mappedColumns')}</span>
+                    <span className="flex items-center gap-1"><TrendingUp className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" /> {parsedRows.length} {t('bulkData.totalRows')}</span>
+                    <span className="flex items-center gap-1"><Columns3 className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" /> {mappedTargetCols.length} {t('bulkData.mappedColumns')}</span>
                     <span className="flex items-center gap-1 font-medium text-indigo-600 dark:text-indigo-400"><ArrowRight className="h-3.5 w-3.5" /> {selectedType}</span>
                   </div>
 
@@ -829,7 +829,7 @@ export default function BulkDataPage() {
                             const rowErrors = rowWarnings.filter(e => e.row === i + 2);
                             return (
                               <tr key={i} className={rowErrors.length > 0 ? 'bg-amber-50/40 dark:bg-amber-900/10' : ''}>
-                                <td className="px-3 py-2 text-xs text-slate-400">{i + 1}</td>
+                                <td className="px-3 py-2 text-xs text-slate-500 dark:text-slate-400">{i + 1}</td>
                                 {mappedTargetCols.map(col => {
                                   const val = row[col] || '';
                                   const hasError = rowErrors.some(e => e.column === col);
@@ -848,7 +848,7 @@ export default function BulkDataPage() {
                       </table>
                     </div>
                     {parsedRows.length > 5 && (
-                      <div className="border-t border-slate-100 px-4 py-2 text-xs text-slate-400 dark:border-slate-800 dark:text-slate-500">
+                      <div className="border-t border-slate-100 px-4 py-2 text-xs text-slate-500 dark:text-slate-400 dark:border-slate-800 dark:text-slate-500">
                         ...{t('bulkData.andMoreRows', { count: parsedRows.length - 5 })}
                       </div>
                     )}
@@ -867,7 +867,7 @@ export default function BulkDataPage() {
                           </p>
                         ))}
                         {rowWarnings.length > 50 && (
-                          <p className="text-xs text-slate-400 italic">...{rowWarnings.length - 50} more</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 italic">...{rowWarnings.length - 50} more</p>
                         )}
                       </div>
                     </details>

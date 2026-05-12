@@ -409,15 +409,15 @@ export default function AuditTrailPage() {
   return (
     <Layout>
       <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-[1700px] w-full space-y-6">
+        <div className="mx-auto max-w-[1700px] 2xl:max-w-[2200px] w-full space-y-6">
 
           {/* Hero Header */}
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 text-white shadow-sm dark:border-slate-800">
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-950 shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:text-white">
             <div className="p-6 lg:p-7">
               <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge className="bg-white/10 text-white hover:bg-white/10">
+                    <Badge className="bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-white/10 dark:text-white dark:hover:bg-white/10">
                       <Sparkles className="mr-1 h-3.5 w-3.5" />
                       System Activity Center
                     </Badge>
@@ -425,8 +425,8 @@ export default function AuditTrailPage() {
                       <Badge
                         variant="secondary"
                         className={successCount >= failedCount
-                          ? 'bg-emerald-500/20 text-emerald-200 hover:bg-emerald-500/20'
-                          : 'bg-amber-500/20 text-amber-200 hover:bg-amber-500/20'}
+                          ? 'bg-emerald-500/20 text-emerald-700 hover:bg-emerald-500/20 dark:text-emerald-200'
+                          : 'bg-amber-500/20 text-amber-700 hover:bg-amber-500/20 dark:text-amber-200'}
                       >
                         {successCount >= failedCount ? 'Healthy' : 'Caution'}
                       </Badge>
@@ -435,7 +435,7 @@ export default function AuditTrailPage() {
                   <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
                     Audit Trail
                   </h1>
-                  <p className="mt-2 max-w-2xl text-sm text-slate-300 sm:text-base">
+                  <p className="mt-2 max-w-2xl text-sm text-slate-500 dark:text-slate-300 sm:text-base">
                     A comprehensive view of all user actions, system changes, and security events across every module.
                   </p>
                 </div>
@@ -444,7 +444,7 @@ export default function AuditTrailPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="border-white/15 bg-white/5 text-white hover:bg-white/10 hover:text-white"
+                    className="border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-950 dark:border-white/15 dark:bg-white/5 dark:text-white dark:hover:bg-white/10 dark:hover:text-white"
                     onClick={() => { fetchLogs(); fetchStats(); }}
                   >
                     <RefreshCw className="h-4 w-4" />

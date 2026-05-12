@@ -215,7 +215,7 @@ function PanelTitle({
 function EmptyState({ icon, message }: { icon: ReactNode; message: string }) {
   return (
     <div className="flex min-h-[160px] flex-col items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50/70 text-slate-500 dark:border-slate-800 dark:bg-slate-900/30 dark:text-slate-400">
-      <div className="mb-2 text-slate-400 dark:text-slate-500">{icon}</div>
+      <div className="mb-2 text-slate-500 dark:text-slate-400">{icon}</div>
       <p className="text-sm">{message}</p>
     </div>
   );
@@ -340,13 +340,13 @@ export default function DashboardPage() {
     <Layout>
       <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-[1700px] w-full space-y-6 2xl:max-w-[2200px]">
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 text-white shadow-sm dark:border-slate-800">
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-950 shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:text-white">
             <div className="grid gap-0 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] 2xl:grid-cols-[1fr_0.75fr]">
               <div className="p-6 lg:p-7">
                 <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <Badge className="bg-white/10 text-white hover:bg-white/10">
+                      <Badge className="bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-white/10 dark:text-white dark:hover:bg-white/10">
                         <Sparkles className="mr-1 h-3.5 w-3.5" />
                         Executive Command Center
                       </Badge>
@@ -355,9 +355,9 @@ export default function DashboardPage() {
                           variant={scoreLabel === "Critical" ? "destructive" : "secondary"}
                           className={
                             scoreLabel === "Strong"
-                              ? "bg-emerald-500/20 text-emerald-200 hover:bg-emerald-500/20"
+                              ? "bg-emerald-500/20 text-emerald-700 hover:bg-emerald-500/20 dark:text-emerald-200"
                               : scoreLabel === "Watch"
-                                ? "bg-amber-500/20 text-amber-200 hover:bg-amber-500/20"
+                                ? "bg-amber-500/20 text-amber-700 hover:bg-amber-500/20 dark:text-amber-200"
                                 : ""
                           }
                         >
@@ -368,7 +368,7 @@ export default function DashboardPage() {
                     <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
                       Executive Dashboard
                     </h1>
-                    <p className="mt-2 max-w-2xl text-sm text-slate-300 sm:text-base">
+                    <p className="mt-2 max-w-2xl text-sm text-slate-500 dark:text-slate-300 sm:text-base">
                       A board-level view of revenue momentum, profitability,
                       cash resilience, receivables risk, and financial activity.
                     </p>
@@ -376,7 +376,7 @@ export default function DashboardPage() {
 
                   <div className="flex flex-wrap items-center gap-2">
                     {lastUpdated && (
-                      <div className="flex h-9 items-center gap-2 rounded-lg border border-white/10 px-3 text-xs text-slate-300">
+                      <div className="flex h-9 items-center gap-2 rounded-lg border border-slate-200 px-3 text-xs text-slate-500 dark:border-white/10 dark:text-slate-300">
                         <Clock className="h-3.5 w-3.5" />
                         {lastUpdated.toLocaleTimeString([], {
                           hour: "2-digit",
@@ -397,7 +397,7 @@ export default function DashboardPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="border-white/15 bg-white/5 text-white hover:bg-white/10 hover:text-white"
+                      className="border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-950 dark:border-white/15 dark:bg-white/5 dark:text-white dark:hover:bg-white/10 dark:hover:text-white"
                       onClick={() => {
                         window.location.href = "/dashboard/finance";
                       }}
@@ -408,7 +408,7 @@ export default function DashboardPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="border-white/15 bg-white/5 text-white hover:bg-white/10 hover:text-white"
+                      className="border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-950 dark:border-white/15 dark:bg-white/5 dark:text-white dark:hover:bg-white/10 dark:hover:text-white"
                       onClick={handleRefresh}
                       disabled={refreshing || loading}
                     >
@@ -421,8 +421,8 @@ export default function DashboardPage() {
                 </div>
 
                 <div className="mt-7 grid gap-4 sm:grid-cols-3">
-                  <div className="rounded-xl border border-white/10 bg-white/[0.04] p-4">
-                    <p className="text-xs uppercase tracking-wide text-slate-400">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/[0.04]">
+                    <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
                       Executive score
                     </p>
                     <div className="mt-3 flex items-end justify-between gap-3">
@@ -436,21 +436,21 @@ export default function DashboardPage() {
                       />
                     </div>
                   </div>
-                  <div className="rounded-xl border border-white/10 bg-white/[0.04] p-4">
-                    <p className="text-xs uppercase tracking-wide text-slate-400">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/[0.04]">
+                    <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
                       Profit margin
                     </p>
                     <p className="mt-3 text-3xl font-bold">{margin.toFixed(1)}%</p>
-                    <p className="mt-2 text-xs text-slate-400">
+                    <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
                       {formatCurrency(profit)} profit on {formatCurrency(revenue)} revenue
                     </p>
                   </div>
-                  <div className="rounded-xl border border-white/10 bg-white/[0.04] p-4">
-                    <p className="text-xs uppercase tracking-wide text-slate-400">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/[0.04]">
+                    <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
                       Cash to revenue
                     </p>
                     <p className="mt-3 text-3xl font-bold">{cashToRevenue.toFixed(0)}%</p>
-                    <p className="mt-2 text-xs text-slate-400">
+                    <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
                       {formatCurrency(cashBalance)} available liquidity
                     </p>
                   </div>

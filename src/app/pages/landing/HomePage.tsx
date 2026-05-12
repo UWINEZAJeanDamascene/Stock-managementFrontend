@@ -407,28 +407,28 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section id="operations" className="bg-slate-950 px-4 py-20 text-white sm:px-6 lg:px-8 lg:py-28">
+        <section id="operations" className="bg-slate-100 px-4 py-20 text-slate-950 dark:bg-slate-950 dark:text-white sm:px-6 lg:px-8 lg:py-28">
           <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-emerald-300">How it works</p>
+              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-emerald-700 dark:text-emerald-300">How it works</p>
               <h2 className="mt-3 text-4xl font-semibold tracking-tight sm:text-5xl">From daily transactions to clear decisions.</h2>
-              <p className="mt-5 text-lg leading-8 text-slate-300">
+              <p className="mt-5 text-lg leading-8 text-slate-600 dark:text-slate-300">
                 Record a sale once. Stock updates automatically. Invoices generate instantly. Reports are ready whenever you need them — daily, monthly, or at year-end.
               </p>
               <div className="mt-8 grid gap-4">
                 {timeline.map((item, index) => (
                   <div key={item.title} className="grid grid-cols-[44px_1fr] gap-4">
-                    <div className="grid h-11 w-11 place-items-center rounded-lg border border-white/10 bg-white/8 text-sm font-bold text-emerald-300">{index + 1}</div>
+                    <div className="grid h-11 w-11 place-items-center rounded-lg border border-slate-200 bg-slate-200 text-sm font-bold text-emerald-700 dark:border-white/10 dark:bg-white/8 dark:text-emerald-300">{index + 1}</div>
                     <div>
                       <h3 className="text-lg font-semibold">{item.title}</h3>
-                      <p className="mt-1 text-sm leading-6 text-slate-400">{item.copy}</p>
+                      <p className="mt-1 text-sm leading-6 text-slate-500 dark:text-slate-400">{item.copy}</p>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="rounded-lg border border-white/10 bg-white/[0.04] p-4 shadow-2xl shadow-black/20">
+            <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-2xl shadow-slate-900/10 dark:border-white/10 dark:bg-white/[0.04] dark:shadow-black/20">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="rounded-lg bg-white p-5 text-slate-950">
                   <div className="flex items-center justify-between">
@@ -450,12 +450,12 @@ export default function HomePage() {
                   </div>
                 </div>
                 <div className="grid gap-4">
-                  <div className="rounded-lg border border-white/10 bg-cyan-300 p-5 text-slate-950">
+                  <div className="rounded-lg border border-slate-200 bg-cyan-300 p-5 text-slate-950 dark:border-white/10">
                     <LineChart className="h-5 w-5" />
                     <p className="mt-8 text-3xl font-semibold">RWF 850K</p>
                     <p className="mt-2 text-sm font-medium">Cash unlocked by faster collections</p>
                   </div>
-                  <div className="rounded-lg border border-white/10 bg-emerald-300 p-5 text-slate-950">
+                  <div className="rounded-lg border border-slate-200 bg-emerald-300 p-5 text-slate-950 dark:border-white/10">
                     <PackageCheck className="h-5 w-5" />
                     <p className="mt-8 text-3xl font-semibold">37%</p>
                     <p className="mt-2 text-sm font-medium">Fewer stockouts with smart reorder alerts</p>

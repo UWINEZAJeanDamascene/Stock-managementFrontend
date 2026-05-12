@@ -378,7 +378,7 @@ export default function SecurityPage() {
 
   return (
     <Layout>
-      <div className="p-4 md:p-6 max-w-5xl mx-auto">
+      <div className="p-4 md:p-6 max-w-5xl 2xl:max-w-[2200px] mx-auto">
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
           <div className="p-2 rounded-xl bg-indigo-50 ring-1 ring-indigo-100 dark:bg-indigo-950/40 dark:ring-indigo-900/40">

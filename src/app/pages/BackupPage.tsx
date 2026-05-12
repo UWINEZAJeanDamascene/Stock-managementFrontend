@@ -343,25 +343,25 @@ export default function BackupPage() {
   return (
     <Layout>
       <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-[1700px] w-full space-y-6">
+        <div className="mx-auto max-w-[1700px] 2xl:max-w-[2200px] w-full space-y-6">
 
           {/* Hero Header */}
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 text-white shadow-sm dark:border-slate-800">
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-950 shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:text-white">
             <div className="p-6 lg:p-7">
               <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge className="bg-white/10 text-white hover:bg-white/10">
+                    <Badge className="bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-white/10 dark:text-white dark:hover:bg-white/10">
                       <Sparkles className="mr-1 h-3.5 w-3.5" />
                       Data Protection Center
                     </Badge>
                     {stats?.failedBackups && stats.failedBackups > 0 && (
-                      <Badge className="bg-red-500/20 text-red-200 hover:bg-red-500/20">
+                      <Badge className="bg-red-500/20 text-red-700 hover:bg-red-500/20 dark:text-red-200">
                         {stats.failedBackups} Failed
                       </Badge>
                     )}
                     {settings.enabled && (
-                      <Badge className="bg-emerald-500/20 text-emerald-200 hover:bg-emerald-500/20">
+                      <Badge className="bg-emerald-500/20 text-emerald-700 hover:bg-emerald-500/20 dark:text-emerald-200">
                         Auto ({settings.frequency})
                       </Badge>
                     )}
@@ -369,7 +369,7 @@ export default function BackupPage() {
                   <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
                     Backup & Restore
                   </h1>
-                  <p className="mt-2 max-w-2xl text-sm text-slate-300 sm:text-base">
+                  <p className="mt-2 max-w-2xl text-sm text-slate-500 dark:text-slate-300 sm:text-base">
                     Manage automated and manual backups, verify integrity, and restore to any point in time.
                   </p>
                 </div>
@@ -378,7 +378,7 @@ export default function BackupPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="border-white/15 bg-white/5 text-white hover:bg-white/10 hover:text-white"
+                    className="border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-950 dark:border-white/15 dark:bg-white/5 dark:text-white dark:hover:bg-white/10 dark:hover:text-white"
                     onClick={() => setShowSettings(true)}
                   >
                     <Shield className="h-4 w-4" />
@@ -392,14 +392,14 @@ export default function BackupPage() {
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="overflow-hidden border-slate-200 bg-white p-0 dark:border-slate-800 dark:bg-slate-950 sm:max-w-md">
-                      <div className="bg-slate-950 p-6 text-white">
+                      <div className="bg-slate-50 p-6 text-slate-950 dark:bg-slate-950 dark:text-white">
                         <div className="flex items-center gap-3">
                           <div className="rounded-lg bg-violet-500/20 p-2.5 ring-1 ring-violet-500/30">
-                            <Database className="h-5 w-5 text-violet-300" />
+                            <Database className="h-5 w-5 text-violet-600 dark:text-violet-300" />
                           </div>
                           <div>
-                            <DialogTitle className="text-lg text-white">Create New Backup</DialogTitle>
-                            <DialogDescription className="mt-0.5 text-slate-400">
+                            <DialogTitle className="text-lg text-slate-950 dark:text-white">Create New Backup</DialogTitle>
+                            <DialogDescription className="mt-0.5 text-slate-500 dark:text-slate-400">
                               Save a snapshot of your data
                             </DialogDescription>
                           </div>
@@ -862,14 +862,14 @@ export default function BackupPage() {
       {/* Settings Dialog */}
       <Dialog open={showSettings} onOpenChange={setShowSettings}>
         <DialogContent className="overflow-hidden border-slate-200 bg-white p-0 dark:border-slate-800 dark:bg-slate-950 sm:max-w-lg">
-          <div className="bg-slate-950 p-6 text-white">
+          <div className="bg-slate-50 p-6 text-slate-950 dark:bg-slate-950 dark:text-white">
             <div className="flex items-center gap-3">
               <div className="rounded-lg bg-indigo-500/20 p-2.5 ring-1 ring-indigo-500/30">
-                <Shield className="h-5 w-5 text-indigo-300" />
+                <Shield className="h-5 w-5 text-indigo-600 dark:text-indigo-300" />
               </div>
               <div>
-                <DialogTitle className="text-lg text-white">Backup Settings</DialogTitle>
-                <DialogDescription className="mt-0.5 text-slate-400">
+                <DialogTitle className="text-lg text-slate-950 dark:text-white">Backup Settings</DialogTitle>
+                <DialogDescription className="mt-0.5 text-slate-500 dark:text-slate-400">
                   Configure schedule, retention, and cloud storage
                 </DialogDescription>
               </div>

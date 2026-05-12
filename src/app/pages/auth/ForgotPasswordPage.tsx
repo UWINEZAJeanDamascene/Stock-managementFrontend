@@ -62,17 +62,17 @@ export default function ForgotPasswordPage() {
 
         <main className="relative flex items-center justify-center overflow-hidden px-4 py-10 sm:px-6 lg:px-10">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_14%_16%,rgba(34,211,238,.22),transparent_28%),radial-gradient(circle_at_88%_18%,rgba(52,211,153,.2),transparent_24%)] dark:bg-[radial-gradient(circle_at_14%_16%,rgba(34,211,238,.12),transparent_28%),radial-gradient(circle_at_88%_18%,rgba(52,211,153,.1),transparent_24%)]" />
-          <div className="relative w-full max-w-xl">
+          <div className="relative w-full max-w-xl 2xl:max-w-[1100px]">
             <Link to={PUBLIC_ROUTES.LOGIN} className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white">
               <ArrowLeft className="h-4 w-4" />
               Login
             </Link>
 
             <div className="overflow-hidden rounded-lg border border-white/80 bg-white/90 shadow-2xl shadow-slate-900/10 backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.06]">
-              <div className="border-b border-slate-200 bg-slate-950 p-6 text-white dark:border-white/10">
-                <p className="text-sm font-semibold uppercase tracking-[0.22em] text-cyan-300">Recovery console</p>
+              <div className="border-b border-slate-200 bg-slate-50 p-6 text-slate-950 dark:border-white/10 dark:bg-slate-950 dark:text-white">
+                <p className="text-sm font-semibold uppercase tracking-[0.22em] text-cyan-700 dark:text-cyan-300">Recovery console</p>
                 <h2 className="mt-3 text-4xl font-semibold tracking-tight">{success ? 'Reset request received' : 'Request secure reset'}</h2>
-                <p className="mt-3 text-sm leading-6 text-slate-300">
+                <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">
                   {success ? 'If an account exists, reset instructions are on the way.' : 'Enter your workspace email to receive password reset instructions.'}
                 </p>
               </div>

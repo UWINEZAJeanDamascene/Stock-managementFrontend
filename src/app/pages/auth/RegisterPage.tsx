@@ -123,17 +123,17 @@ export default function RegisterPage() {
 
         <main className="relative flex items-center justify-center overflow-hidden px-4 py-10 sm:px-6 lg:px-10">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_12%_12%,rgba(34,211,238,.22),transparent_28%),radial-gradient(circle_at_90%_20%,rgba(52,211,153,.22),transparent_22%)] dark:bg-[radial-gradient(circle_at_12%_12%,rgba(34,211,238,.12),transparent_28%),radial-gradient(circle_at_90%_20%,rgba(52,211,153,.12),transparent_22%)]" />
-          <div className="relative w-full max-w-2xl">
+          <div className="relative w-full max-w-2xl 2xl:max-w-[1100px]">
             <Link to={PUBLIC_ROUTES.HOME} className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white">
               <ArrowLeft className="h-4 w-4" />
               Home
             </Link>
 
             <div className="overflow-hidden rounded-lg border border-white/80 bg-white/90 shadow-2xl shadow-slate-900/10 backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.06]">
-              <div className="border-b border-slate-200 bg-slate-950 p-6 text-white dark:border-white/10">
-                <p className="text-sm font-semibold uppercase tracking-[0.22em] text-cyan-300">New workspace</p>
+              <div className="border-b border-slate-200 bg-slate-50 p-6 text-slate-950 dark:border-white/10 dark:bg-slate-950 dark:text-white">
+                <p className="text-sm font-semibold uppercase tracking-[0.22em] text-cyan-700 dark:text-cyan-300">New workspace</p>
                 <h2 className="mt-3 text-4xl font-semibold tracking-tight">{step === 1 ? 'Company setup console' : 'Admin owner console'}</h2>
-                <p className="mt-3 text-sm leading-6 text-slate-300">
+                <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">
                   {step === 1 ? 'Capture the company record before approval.' : 'Create the first secure administrator for this workspace.'}
                 </p>
               </div>

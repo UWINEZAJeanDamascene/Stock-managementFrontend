@@ -29,7 +29,7 @@ export function AuthFrame({
         <div className="absolute bottom-[-12rem] right-[-10rem] h-[30rem] w-[30rem] rounded-full bg-emerald-300/30 blur-3xl dark:bg-emerald-400/10" />
         <div className="absolute inset-0 bg-[linear-gradient(rgba(15,23,42,.045)_1px,transparent_1px),linear-gradient(90deg,rgba(15,23,42,.045)_1px,transparent_1px)] bg-[size:48px_48px] dark:bg-[linear-gradient(rgba(255,255,255,.045)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.045)_1px,transparent_1px)]" />
 
-        <header className="relative z-10 mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        <header className="relative z-10 mx-auto flex h-20 max-w-7xl 2xl:max-w-[2200px] items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link to="/" className="inline-flex items-center gap-3">
             <span className="grid h-10 w-10 place-items-center rounded-lg bg-slate-950 text-white shadow-lg shadow-cyan-900/10 dark:bg-white dark:text-slate-950">
               <Layers3 className="h-5 w-5" />
@@ -45,7 +45,7 @@ export function AuthFrame({
           </Link>
         </header>
 
-        <main className="relative z-10 mx-auto grid max-w-7xl gap-8 px-4 pb-12 pt-4 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8 lg:pb-16 lg:pt-10">
+        <main className="relative z-10 mx-auto grid max-w-7xl 2xl:max-w-[2200px] gap-8 px-4 pb-12 pt-4 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8 lg:pb-16 lg:pt-10">
           <section className="hidden min-h-[680px] flex-col justify-between overflow-hidden rounded-lg bg-slate-950 p-8 text-white shadow-2xl shadow-slate-900/20 dark:bg-white dark:text-slate-950 lg:flex">
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/8 px-3 py-1.5 text-sm font-semibold text-cyan-200 dark:border-slate-200 dark:bg-slate-50 dark:text-cyan-800">
