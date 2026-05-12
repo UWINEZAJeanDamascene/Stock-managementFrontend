@@ -19,6 +19,9 @@ const queryClient = new QueryClient({
 });
 import HomePage from './pages/landing/HomePage';
 import PricingPage from './pages/landing/PricingPage';
+import SecurityLandingPage from './pages/landing/SecurityLandingPage';
+import OperationsLandingPage from './pages/landing/OperationsLandingPage';
+import PlatformLandingPage from './pages/landing/PlatformLandingPage';
 import AIChatBot from './components/AIChatBot';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
@@ -310,6 +313,9 @@ function AppRoutes() {
         {/* Public routes - landing page and auth */}
         <Route path="/" element={<HomePage />} />
         <Route path="/pricing" element={<PricingPage />} />
+        <Route path="/trust" element={<SecurityLandingPage />} />
+        <Route path="/operations" element={<OperationsLandingPage />} />
+        <Route path="/platform" element={<PlatformLandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />

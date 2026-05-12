@@ -83,9 +83,15 @@ export default function PricingPage() {
               </span>
               <span className="text-sm font-semibold tracking-[0.18em]">STOCKMANAGER</span>
             </Link>
+            <nav className="hidden items-center gap-5 lg:flex">
+              <Link to="/" className="text-sm font-medium text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white">Home</Link>
+              <Link to="/platform" className="text-sm font-medium text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white">Platform</Link>
+              <Link to="/operations" className="text-sm font-medium text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white">Operations</Link>
+              <Link to="/trust" className="text-sm font-medium text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white">Security</Link>
+            </nav>
             <div className="flex items-center gap-2">
-              <Link to="/">
-                <Button variant="ghost" className="hidden gap-2 sm:inline-flex">
+              <Link to="/" className="lg:hidden">
+                <Button variant="ghost" className="gap-2">
                   <ArrowLeft className="h-4 w-4" />
                   Home
                 </Button>
