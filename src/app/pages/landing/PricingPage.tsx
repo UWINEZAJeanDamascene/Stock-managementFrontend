@@ -28,20 +28,20 @@ const planGroups = [
     name: 'Core Operations',
     price: '10k',
     accent: 'from-cyan-400 to-emerald-300',
-    badge: 'Starter control layer',
-    summary: 'For teams that need clean product, stock, sales and purchasing control without finance-suite complexity.',
+    badge: 'Entry tier',
+    summary: 'Product records, stock tracking, sales documents and purchase orders. No finance modules included.',
     modules: ['Dashboards', 'Products and categories', 'Warehouses', 'Stock levels and movements', 'Suppliers', 'Purchase orders', 'GRN', 'Clients', 'Quotations', 'Invoices'],
-    outcomes: ['Live operational dashboard', 'Inventory and warehouse discipline', 'Supplier and customer workflows', 'Basic activity controls'],
+    outcomes: ['Track stock across warehouses', 'Manage suppliers and customers', 'Create quotes and invoices', 'View operational metrics'],
     icon: Boxes,
   },
   {
     name: 'Business Command',
     price: '15k',
     accent: 'from-amber-300 to-cyan-300',
-    badge: 'Most balanced',
-    summary: 'For growing companies that need stock, sales, purchasing and finance moving together in one operating rhythm.',
+    badge: 'Mid-tier',
+    summary: 'Everything in Core plus banking, accounts receivable, accounts payable, expenses and reporting.',
     modules: ['Everything in Core', 'Sales orders', 'Pick and pack', 'Delivery notes', 'Credit notes', 'Recurring invoices', 'AR and AP', 'Bank accounts', 'Petty cash', 'Expenses', 'Reports hub'],
-    outcomes: ['Revenue and procurement command', 'Cash visibility and payment tracking', 'Recurring billing and fulfillment', 'Daily management reports'],
+    outcomes: ['Track cash and bank balances', 'Manage what you owe and are owed', 'Recurring billing setup', 'Standard business reports'],
     icon: BarChart3,
     featured: true,
   },
@@ -49,10 +49,10 @@ const planGroups = [
     name: 'Enterprise Control',
     price: '30k',
     accent: 'from-emerald-300 to-white',
-    badge: 'Full operating OS',
-    summary: 'For multi-branch, finance-led and audit-conscious teams that want the complete system surface.',
+    badge: 'Full access',
+    summary: 'All modules including accounting, payroll, budgets, projects and system administration.',
     modules: ['Everything in Business', 'Chart of accounts', 'Journal entries', 'Fixed assets', 'Liabilities', 'Budgets', 'Projects', 'Employees', 'Payroll runs', 'Financial reports', 'Security, roles and audit trail', 'Backups and bulk data'],
-    outcomes: ['Board-level finance cockpit', 'Payroll and workforce control', 'Budget governance and project tracking', 'Audit, security and system administration'],
+    outcomes: ['Full general ledger and journals', 'Run payroll and manage staff', 'Project and budget tracking', 'Role-based access and audit logs'],
     icon: ShieldCheck,
   },
 ];
@@ -91,17 +91,21 @@ export default function PricingPage() {
             </nav>
             <div className="flex items-center gap-2">
               <Link to="/" className="lg:hidden">
-                <Button variant="ghost" className="gap-2">
+                <Button variant="ghost" size="sm" className="gap-1 px-2">
                   <ArrowLeft className="h-4 w-4" />
-                  Home
+                  <span className="hidden sm:inline">Home</span>
                 </Button>
               </Link>
               <Link to="/login">
-                <Button variant="outline" className="bg-white/70 dark:bg-white/8">Log in</Button>
+                <Button variant="outline" size="sm" className="bg-white/70 dark:bg-white/8 hidden sm:inline-flex">Log in</Button>
+                <Button variant="outline" size="icon" className="bg-white/70 dark:bg-white/8 sm:hidden h-9 w-9">
+                  <span className="text-xs font-semibold">In</span>
+                </Button>
               </Link>
               <Link to="/register">
-                <Button className="bg-slate-950 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-950">
-                  Start
+                <Button size="sm" className="bg-slate-950 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-950">
+                  <span className="hidden sm:inline">Start free</span>
+                  <span className="sm:hidden">Start</span>
                 </Button>
               </Link>
             </div>
@@ -111,13 +115,13 @@ export default function PricingPage() {
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/25 bg-white/70 px-3 py-1.5 text-sm font-semibold text-cyan-800 shadow-sm backdrop-blur dark:bg-white/8 dark:text-cyan-200">
                 <Sparkles className="h-4 w-4" />
-                Module-based pricing from the real sidebar
+                Pricing tied to available modules
               </div>
               <h1 className="mt-6 text-5xl font-semibold leading-[1.02] tracking-tight sm:text-6xl">
-                Three plans. One serious operating system.
+                Three tiers. Same platform.
               </h1>
               <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600 dark:text-slate-300">
-                Pricing is split by product depth: 10k for core operations, 15k for business command, and 30k for the complete enterprise control plane.
+                Each tier unlocks more modules. Core Operations covers inventory, sales and purchasing. Business Command adds banking, AR/AP and reporting. Enterprise Control brings in accounting, payroll, budgets and audit tools.
               </p>
             </div>
             <div className="rounded-lg border border-slate-200 bg-white/86 p-4 shadow-xl shadow-slate-900/5 backdrop-blur dark:border-white/10 dark:bg-white/[0.05]">
@@ -236,16 +240,16 @@ export default function PricingPage() {
         <section className="mx-auto mt-10 grid max-w-7xl gap-5 lg:grid-cols-[1fr_0.62fr]">
           <div className="rounded-lg bg-slate-950 p-8 text-white dark:bg-white dark:text-slate-950">
             <Zap className="h-7 w-7 text-cyan-300 dark:text-cyan-700" />
-            <h2 className="mt-5 text-3xl font-semibold tracking-tight">Need a custom split by branch, user role or module?</h2>
+            <h2 className="mt-5 text-3xl font-semibold tracking-tight">Custom access by branch, role or module?</h2>
             <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300 dark:text-slate-600">
-              The plan boundaries are built from the current sidebar modules, so they can become permission packages later without redesigning the commercial model.
+              Tiers map directly to module groups in the system. If you need a different combination, the structure supports custom permission sets without changing the underlying setup.
             </p>
           </div>
           <div className="rounded-lg border border-slate-200 bg-white p-8 dark:border-white/10 dark:bg-white/[0.04]">
             <Building2 className="h-7 w-7 text-emerald-600 dark:text-emerald-300" />
-            <h3 className="mt-5 text-2xl font-semibold">Implementation-ready</h3>
+            <h3 className="mt-5 text-2xl font-semibold">No hidden fees</h3>
             <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">
-              Clear upgrade ladder, serious enterprise framing, and direct calls into registration and login.
+              The price covers the modules listed. No per-user charges, no transaction fees. You can move between tiers or cancel at any time.
             </p>
           </div>
         </section>

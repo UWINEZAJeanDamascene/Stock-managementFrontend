@@ -16,16 +16,10 @@ import {
   Briefcase,
   Landmark,
   DollarSign,
+  Settings2,
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from '@/app/components/ui/card';
 import { Label } from '@/app/components/ui/label';
 import { Skeleton } from '@/app/components/ui/skeleton';
 import { Badge } from '@/app/components/ui/badge';
@@ -174,41 +168,41 @@ export default function CompanyProfilePage() {
   if (loading) {
     return (
       <Layout>
-        <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-[1000px] space-y-6">
-            {/* Hero skeleton */}
-            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900/70">
+        <div className="min-h-screen bg-[#f7f9fb] px-4 py-5 dark:bg-[#06080d] sm:px-6 lg:px-8">
+          <style>{`
+            @keyframes comp-pulse { 0%, 100% { opacity: .35; } 50% { opacity: .9; } }
+            .comp-pulse { animation: comp-pulse 2.5s ease-in-out infinite; }
+            @media (prefers-reduced-motion: reduce) { .comp-pulse { animation: none; } }
+          `}</style>
+          <div className="mx-auto max-w-[1100px] space-y-6">
+            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-white/[0.04]">
               <div className="flex flex-wrap items-center gap-3">
                 <Skeleton className="h-10 w-10 rounded-lg" />
                 <Skeleton className="h-8 w-48" />
               </div>
               <Skeleton className="mt-3 h-4 w-72" />
             </div>
-            {/* Tab skeleton */}
-            <div className="flex gap-2 border-b border-slate-200 dark:border-slate-800 pb-1">
+            <div className="flex gap-2 border-b border-slate-200 dark:border-white/10 pb-1">
               <Skeleton className="h-9 w-36 rounded-md" />
               <Skeleton className="h-9 w-36 rounded-md" />
             </div>
-            {/* Card skeletons */}
             {Array.from({ length: 3 }).map((_, i) => (
-              <Card key={i} className="border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
-                <CardHeader className="space-y-1">
+              <div key={i} className="rounded-lg border border-slate-200 bg-white p-5 dark:border-white/10 dark:bg-white/[0.04]">
+                <div className="space-y-1">
                   <Skeleton className="h-5 w-40" />
                   <Skeleton className="h-3 w-64" />
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Skeleton className="h-3 w-24" />
-                      <Skeleton className="h-10 w-full rounded-md" />
-                    </div>
-                    <div className="space-y-2">
-                      <Skeleton className="h-3 w-24" />
-                      <Skeleton className="h-10 w-full rounded-md" />
-                    </div>
+                </div>
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Skeleton className="h-3 w-24" />
+                    <Skeleton className="h-10 w-full rounded-md" />
                   </div>
-                </CardContent>
-              </Card>
+                  <div className="space-y-2">
+                    <Skeleton className="h-3 w-24" />
+                    <Skeleton className="h-10 w-full rounded-md" />
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
         </div>
@@ -218,26 +212,43 @@ export default function CompanyProfilePage() {
 
   return (
     <Layout>
-      <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-[1000px] space-y-6">
+      <style>{`
+        @keyframes comp-scan { 0% { transform: translateX(-115%); } 100% { transform: translateX(115%); } }
+        @keyframes comp-pulse { 0%, 100% { opacity: .35; transform: scale(.94); } 50% { opacity: .95; transform: scale(1.06); } }
+        @keyframes comp-float { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-12px) rotate(3deg); } }
+        @keyframes comp-float-delay { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-10px) rotate(-2deg); } }
+        @keyframes comp-rotate { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .comp-scan { animation: comp-scan 5.5s linear infinite; }
+        .comp-pulse { animation: comp-pulse 3.8s ease-in-out infinite; }
+        .comp-float { animation: comp-float 8s ease-in-out infinite; }
+        .comp-float-delay { animation: comp-float-delay 10s ease-in-out infinite; }
+        .comp-rotate { animation: comp-rotate 20s linear infinite; }
+        @media (prefers-reduced-motion: reduce) {
+          .comp-scan, .comp-pulse, .comp-float, .comp-float-delay, .comp-rotate { animation: none; }
+        }
+      `}</style>
+      <div className="min-h-screen bg-[#f7f9fb] px-4 py-5 dark:bg-[#06080d] sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1100px] space-y-6">
           {/* Hero Header */}
-          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-            <div className="grid gap-5 p-5 xl:grid-cols-[1fr_320px] xl:items-stretch">
+          <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(14,165,233,0.18),transparent_30%),radial-gradient(circle_at_82%_12%,rgba(16,185,129,0.14),transparent_24%),linear-gradient(135deg,#f8fbff_0%,#edf7f4_50%,#f8fafc_100%)] dark:bg-[radial-gradient(circle_at_18%_18%,rgba(34,211,238,0.12),transparent_30%),radial-gradient(circle_at_82%_12%,rgba(74,222,128,0.08),transparent_24%),linear-gradient(135deg,#05070c_0%,#08111a_50%,#07100d_100%)]" />
+            <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/40 to-transparent comp-scan" />
+            <div className="relative grid gap-5 p-6 xl:grid-cols-[1fr_340px] xl:items-stretch">
               <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <div className="rounded-lg bg-blue-50 p-2.5 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60">
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="grid h-10 w-10 place-items-center rounded-lg bg-slate-950 text-white shadow-lg shadow-cyan-500/10 dark:bg-white dark:text-slate-950">
                     <Building2 className="h-5 w-5" />
                   </div>
-                  <h1 className="text-2xl font-bold tracking-tight text-slate-950 dark:text-white sm:text-3xl">
+                  <h1 className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-white sm:text-3xl">
                     Company Settings
                   </h1>
                   {profile && (
-                    <Badge variant="secondary" className="h-6">
+                    <Badge variant="secondary" className="h-6 bg-cyan-50 text-cyan-800 dark:bg-cyan-950/30 dark:text-cyan-200">
                       {profile.code}
                     </Badge>
                   )}
                 </div>
-                <p className="mt-2 max-w-3xl text-sm text-slate-500 dark:text-slate-400">
+                <p className="mt-2 max-w-3xl text-sm text-slate-600 dark:text-slate-300">
                   Manage company profile and system settings
                 </p>
                 <div className="mt-5 flex flex-wrap gap-2">
@@ -246,7 +257,7 @@ export default function CompanyProfilePage() {
                     size="sm"
                     onClick={fetchData}
                     disabled={saving}
-                    className="h-10 gap-2 dark:border-slate-700 dark:text-slate-200"
+                    className="h-10 gap-2 border-slate-300 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/10"
                   >
                     <RefreshCw className={`h-4 w-4 ${saving ? 'animate-spin' : ''}`} />
                     Refresh
@@ -255,16 +266,16 @@ export default function CompanyProfilePage() {
               </div>
 
               {profile && (
-                <div className="grid grid-cols-2 gap-3 rounded-lg border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-950/40">
-                  <div className="rounded-lg bg-white p-3 shadow-sm dark:bg-slate-900">
+                <div className="grid grid-cols-2 gap-3 rounded-lg border border-slate-200 bg-white/70 p-3 backdrop-blur dark:border-white/10 dark:bg-white/[0.06]">
+                  <div className="rounded-lg border border-slate-100 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/[0.06]">
                     <p className="text-xs text-slate-500 dark:text-slate-400">Company</p>
-                    <p className="mt-1 text-sm font-bold text-slate-900 dark:text-white truncate" title={profile.name}>
+                    <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white truncate" title={profile.name}>
                       {profile.name}
                     </p>
                   </div>
-                  <div className="rounded-lg bg-white p-3 shadow-sm dark:bg-slate-900">
+                  <div className="rounded-lg border border-slate-100 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/[0.06]">
                     <p className="text-xs text-slate-500 dark:text-slate-400">Currency</p>
-                    <p className="mt-1 text-sm font-bold text-slate-900 dark:text-white">
+                    <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">
                       {profile.base_currency}
                     </p>
                   </div>
@@ -274,13 +285,13 @@ export default function CompanyProfilePage() {
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-1 border-b border-slate-200 pb-1 dark:border-slate-800">
+          <div className="flex gap-2 rounded-lg border border-slate-200 bg-white/70 p-1.5 backdrop-blur dark:border-white/10 dark:bg-white/[0.04]">
             <button
               onClick={() => setActiveTab('profile')}
-              className={`flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-colors ${
+              className={`flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all ${
                 activeTab === 'profile'
-                  ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300'
-                  : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'
+                  ? 'bg-slate-950 text-white shadow-sm dark:bg-white dark:text-slate-950'
+                  : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/10'
               }`}
             >
               <Building2 className="h-4 w-4" />
@@ -288,13 +299,13 @@ export default function CompanyProfilePage() {
             </button>
             <button
               onClick={() => setActiveTab('settings')}
-              className={`flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-colors ${
+              className={`flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all ${
                 activeTab === 'settings'
-                  ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300'
-                  : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'
+                  ? 'bg-slate-950 text-white shadow-sm dark:bg-white dark:text-slate-950'
+                  : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/10'
               }`}
             >
-              <FileText className="h-4 w-4" />
+              <Settings2 className="h-4 w-4" />
               System Settings
             </button>
           </div>
@@ -303,28 +314,29 @@ export default function CompanyProfilePage() {
         {activeTab === 'profile' && profile && (
           <div className="space-y-6">
             {/* Basic Info */}
-            <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-              <CardHeader className="space-y-1">
+            <div className="group relative overflow-hidden rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-xl dark:border-white/10 dark:bg-white/[0.04]">
+              <div className="absolute inset-0 rounded-lg opacity-0 transition-opacity duration-500 group-hover:opacity-100" style={{ background: 'radial-gradient(circle at 50% 0%, rgba(34,211,238,0.08), transparent 70%)' }} />
+              <div className="relative z-10">
                 <div className="flex items-center gap-2">
-                  <div className="rounded-lg bg-blue-50 p-1.5 text-blue-600 dark:bg-blue-950/40 dark:text-blue-300">
+                  <div className="grid h-9 w-9 place-items-center rounded-lg bg-gradient-to-br from-cyan-400 to-emerald-300 text-white shadow-lg">
                     <Briefcase className="h-4 w-4" />
                   </div>
-                  <CardTitle className="text-base font-semibold text-slate-900 dark:text-white">
-                    Basic Information
-                  </CardTitle>
+                  <div>
+                    <h3 className="text-base font-semibold text-slate-900 dark:text-white">
+                      Basic Information
+                    </h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      Company name, legal name, and registration details
+                    </p>
+                  </div>
                 </div>
-                <CardDescription className="text-sm text-slate-500 dark:text-slate-400">
-                  Company name, legal name, and registration details
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">Company Name *</Label>
                     <Input
                       value={profile.name}
                       onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-                      className="bg-white dark:bg-slate-900 dark:text-white dark:border-slate-800"
+                      className="border-slate-200 bg-white dark:border-white/10 dark:bg-white/[0.06] dark:text-white"
                     />
                   </div>
                   <div className="space-y-2">
@@ -333,7 +345,7 @@ export default function CompanyProfilePage() {
                       value={profile.legal_name || ''}
                       onChange={(e) => setProfile({ ...profile, legal_name: e.target.value })}
                       placeholder="Full registered legal name"
-                      className="bg-white dark:bg-slate-900 dark:text-white dark:border-slate-800"
+                      className="border-slate-200 bg-white dark:border-white/10 dark:bg-white/[0.06] dark:text-white"
                     />
                   </div>
                   <div className="space-y-2">
@@ -341,7 +353,7 @@ export default function CompanyProfilePage() {
                     <Input
                       value={profile.registration_number || ''}
                       onChange={(e) => setProfile({ ...profile, registration_number: e.target.value })}
-                      className="bg-white dark:bg-slate-900 dark:text-white dark:border-slate-800"
+                      className="border-slate-200 bg-white dark:border-white/10 dark:bg-white/[0.06] dark:text-white"
                     />
                   </div>
                   <div className="space-y-2">
@@ -349,7 +361,7 @@ export default function CompanyProfilePage() {
                     <Input
                       value={profile.tax_identification_number || ''}
                       onChange={(e) => setProfile({ ...profile, tax_identification_number: e.target.value })}
-                      className="bg-white dark:bg-slate-900 dark:text-white dark:border-slate-800"
+                      className="border-slate-200 bg-white dark:border-white/10 dark:bg-white/[0.06] dark:text-white"
                     />
                   </div>
                   <div className="space-y-2">
@@ -357,80 +369,78 @@ export default function CompanyProfilePage() {
                     <Input
                       value={profile.industry || ''}
                       onChange={(e) => setProfile({ ...profile, industry: e.target.value })}
-                      className="bg-white dark:bg-slate-900 dark:text-white dark:border-slate-800"
+                      className="border-slate-200 bg-white dark:border-white/10 dark:bg-white/[0.06] dark:text-white"
                     />
                   </div>
                   <div className="space-y-2">
                     <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">Company Code</Label>
-                    <Input value={profile.code} disabled className="bg-slate-50 text-slate-500 dark:bg-slate-900 dark:text-slate-400 dark:border-slate-800" />
+                    <Input value={profile.code} disabled className="bg-slate-50 text-slate-500 dark:bg-white/[0.06] dark:text-slate-400 dark:border-white/10" />
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
             {/* Contact */}
-            <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-              <CardHeader className="space-y-1">
+            <div className="group relative overflow-hidden rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-xl dark:border-white/10 dark:bg-white/[0.04]">
+              <div className="absolute inset-0 rounded-lg opacity-0 transition-opacity duration-500 group-hover:opacity-100" style={{ background: 'radial-gradient(circle at 50% 0%, rgba(34,211,238,0.08), transparent 70%)' }} />
+              <div className="relative z-10">
                 <div className="flex items-center gap-2">
-                  <div className="rounded-lg bg-emerald-50 p-1.5 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300">
+                  <div className="grid h-9 w-9 place-items-center rounded-lg bg-gradient-to-br from-emerald-300 to-cyan-400 text-white shadow-lg">
                     <Mail className="h-4 w-4" />
                   </div>
-                  <CardTitle className="text-base font-semibold text-slate-900 dark:text-white">
+                  <h3 className="text-base font-semibold text-slate-900 dark:text-white">
                     Contact Information
-                  </CardTitle>
+                  </h3>
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="flex items-center gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-300">
-                      <Mail className="h-3.5 w-3.5 text-slate-400" /> Email
+                      <Mail className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-300" /> Email
                     </Label>
                     <Input
                       type="email"
                       value={profile.email || ''}
                       onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-                      className="bg-white dark:bg-slate-900 dark:text-white dark:border-slate-800"
+                      className="border-slate-200 bg-white dark:border-white/10 dark:bg-white/[0.06] dark:text-white"
                     />
                   </div>
                   <div className="space-y-2">
                     <Label className="flex items-center gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-300">
-                      <Phone className="h-3.5 w-3.5 text-slate-400" /> Phone
+                      <Phone className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-300" /> Phone
                     </Label>
                     <Input
                       value={profile.phone || ''}
                       onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
-                      className="bg-white dark:bg-slate-900 dark:text-white dark:border-slate-800"
+                      className="border-slate-200 bg-white dark:border-white/10 dark:bg-white/[0.06] dark:text-white"
                     />
                   </div>
                   <div className="space-y-2 md:col-span-2">
                     <Label className="flex items-center gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-300">
-                      <Globe className="h-3.5 w-3.5 text-slate-400" /> Website
+                      <Globe className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-300" /> Website
                     </Label>
                     <Input
                       value={profile.website || ''}
                       onChange={(e) => setProfile({ ...profile, website: e.target.value })}
-                      className="bg-white dark:bg-slate-900 dark:text-white dark:border-slate-800"
+                      className="border-slate-200 bg-white dark:border-white/10 dark:bg-white/[0.06] dark:text-white"
                     />
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
             {/* Address */}
-            <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-              <CardHeader className="space-y-1">
+            <div className="group relative overflow-hidden rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-xl dark:border-white/10 dark:bg-white/[0.04]">
+              <div className="absolute inset-0 rounded-lg opacity-0 transition-opacity duration-500 group-hover:opacity-100" style={{ background: 'radial-gradient(circle at 50% 0%, rgba(34,211,238,0.08), transparent 70%)' }} />
+              <div className="relative z-10">
                 <div className="flex items-center gap-2">
-                  <div className="rounded-lg bg-violet-50 p-1.5 text-violet-600 dark:bg-violet-950/40 dark:text-violet-300">
+                  <div className="grid h-9 w-9 place-items-center rounded-lg bg-gradient-to-br from-cyan-300 to-emerald-300 text-white shadow-lg">
                     <MapPin className="h-4 w-4" />
                   </div>
-                  <CardTitle className="text-base font-semibold text-slate-900 dark:text-white">
+                  <h3 className="text-base font-semibold text-slate-900 dark:text-white">
                     Address
-                  </CardTitle>
+                  </h3>
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2 md:col-span-2">
                     <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">Street Address</Label>
                     <Input
@@ -438,7 +448,7 @@ export default function CompanyProfilePage() {
                       onChange={(e) =>
                         setProfile({ ...profile, address: { ...profile.address, street: e.target.value } })
                       }
-                      className="bg-white dark:bg-slate-900 dark:text-white dark:border-slate-800"
+                      className="border-slate-200 bg-white dark:border-white/10 dark:bg-white/[0.06] dark:text-white"
                     />
                   </div>
                   <div className="space-y-2">
@@ -448,7 +458,7 @@ export default function CompanyProfilePage() {
                       onChange={(e) =>
                         setProfile({ ...profile, address: { ...profile.address, city: e.target.value } })
                       }
-                      className="bg-white dark:bg-slate-900 dark:text-white dark:border-slate-800"
+                      className="border-slate-200 bg-white dark:border-white/10 dark:bg-white/[0.06] dark:text-white"
                     />
                   </div>
                   <div className="space-y-2">
@@ -458,7 +468,7 @@ export default function CompanyProfilePage() {
                       onChange={(e) =>
                         setProfile({ ...profile, address: { ...profile.address, state: e.target.value } })
                       }
-                      className="bg-white dark:bg-slate-900 dark:text-white dark:border-slate-800"
+                      className="border-slate-200 bg-white dark:border-white/10 dark:bg-white/[0.06] dark:text-white"
                     />
                   </div>
                   <div className="space-y-2">
@@ -468,7 +478,7 @@ export default function CompanyProfilePage() {
                       onChange={(e) =>
                         setProfile({ ...profile, address: { ...profile.address, country: e.target.value } })
                       }
-                      className="bg-white dark:bg-slate-900 dark:text-white dark:border-slate-800"
+                      className="border-slate-200 bg-white dark:border-white/10 dark:bg-white/[0.06] dark:text-white"
                     />
                   </div>
                   <div className="space-y-2">
@@ -478,36 +488,37 @@ export default function CompanyProfilePage() {
                       onChange={(e) =>
                         setProfile({ ...profile, address: { ...profile.address, postcode: e.target.value } })
                       }
-                      className="bg-white dark:bg-slate-900 dark:text-white dark:border-slate-800"
+                      className="border-slate-200 bg-white dark:border-white/10 dark:bg-white/[0.06] dark:text-white"
                     />
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
             {/* Financial Settings */}
-            <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-              <CardHeader className="space-y-1">
+            <div className="group relative overflow-hidden rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-xl dark:border-white/10 dark:bg-white/[0.04]">
+              <div className="absolute inset-0 rounded-lg opacity-0 transition-opacity duration-500 group-hover:opacity-100" style={{ background: 'radial-gradient(circle at 50% 0%, rgba(34,211,238,0.08), transparent 70%)' }} />
+              <div className="relative z-10">
                 <div className="flex items-center gap-2">
-                  <div className="rounded-lg bg-amber-50 p-1.5 text-amber-600 dark:bg-amber-950/40 dark:text-amber-300">
+                  <div className="grid h-9 w-9 place-items-center rounded-lg bg-gradient-to-br from-emerald-400 to-cyan-300 text-white shadow-lg">
                     <DollarSign className="h-4 w-4" />
                   </div>
-                  <CardTitle className="text-base font-semibold text-slate-900 dark:text-white">
-                    Financial Settings
-                  </CardTitle>
+                  <div>
+                    <h3 className="text-base font-semibold text-slate-900 dark:text-white">
+                      Financial Settings
+                    </h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      These settings affect how transactions are recorded and reported
+                    </p>
+                  </div>
                 </div>
-                <CardDescription className="text-sm text-slate-500 dark:text-slate-400">
-                  These settings affect how transactions are recorded and reported
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">Base Currency</Label>
                     <Input
                       value={profile.base_currency}
                       disabled
-                      className="bg-slate-50 text-slate-500 dark:bg-slate-900 dark:text-slate-400 dark:border-slate-800"
+                      className="bg-slate-50 text-slate-500 dark:bg-white/[0.06] dark:text-slate-400 dark:border-white/10"
                     />
                     <p className="text-xs text-slate-500 dark:text-slate-400">Cannot be changed once transactions exist</p>
                   </div>
@@ -519,7 +530,7 @@ export default function CompanyProfilePage() {
                         setProfile({ ...profile, fiscal_year_start_month: parseInt(v) })
                       }
                     >
-                      <SelectTrigger className="bg-white dark:bg-slate-900 dark:text-white dark:border-slate-800">
+                      <SelectTrigger className="border-slate-200 bg-white dark:border-white/10 dark:bg-white/[0.06] dark:text-white">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -541,12 +552,12 @@ export default function CompanyProfilePage() {
                       onChange={(e) =>
                         setProfile({ ...profile, default_payment_terms_days: parseInt(e.target.value) || 30 })
                       }
-                      className="bg-white dark:bg-slate-900 dark:text-white dark:border-slate-800"
+                      className="border-slate-200 bg-white dark:border-white/10 dark:bg-white/[0.06] dark:text-white"
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-900/50">
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50/70 p-3 dark:border-white/10 dark:bg-white/[0.06]">
                     <Checkbox
                       id="vat-registered"
                       checked={profile.is_vat_registered}
@@ -565,7 +576,7 @@ export default function CompanyProfilePage() {
                   </div>
                   <div className="space-y-2">
                     <Label className="flex items-center gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-300">
-                      <Percent className="h-3.5 w-3.5 text-slate-400" /> VAT Rate (%)
+                      <Percent className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-300" /> VAT Rate (%)
                     </Label>
                     <Input
                       type="number"
@@ -574,17 +585,17 @@ export default function CompanyProfilePage() {
                         setProfile({ ...profile, vat_rate_pct: parseFloat(e.target.value) || 0 })
                       }
                       disabled={!profile.is_vat_registered}
-                      className="bg-white dark:bg-slate-900 dark:text-white dark:border-slate-800 disabled:opacity-60"
+                      className="border-slate-200 bg-white dark:border-white/10 dark:bg-white/[0.06] dark:text-white disabled:opacity-60"
                     />
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
             <Button
               onClick={handleSaveProfile}
               disabled={saving}
-              className="w-full gap-2 bg-blue-600 hover:bg-blue-700"
+              className="w-full gap-2 bg-slate-950 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-cyan-100"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               Save Company Profile
@@ -596,25 +607,24 @@ export default function CompanyProfilePage() {
         {activeTab === 'settings' && settings && (
           <div className="space-y-6">
             {/* Invoice Settings */}
-            <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-              <CardHeader className="space-y-1">
+            <div className="group relative overflow-hidden rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-xl dark:border-white/10 dark:bg-white/[0.04]">
+              <div className="absolute inset-0 rounded-lg opacity-0 transition-opacity duration-500 group-hover:opacity-100" style={{ background: 'radial-gradient(circle at 50% 0%, rgba(34,211,238,0.08), transparent 70%)' }} />
+              <div className="relative z-10">
                 <div className="flex items-center gap-2">
-                  <div className="rounded-lg bg-blue-50 p-1.5 text-blue-600 dark:bg-blue-950/40 dark:text-blue-300">
+                  <div className="grid h-9 w-9 place-items-center rounded-lg bg-gradient-to-br from-cyan-400 to-emerald-300 text-white shadow-lg">
                     <FileText className="h-4 w-4" />
                   </div>
-                  <CardTitle className="text-base font-semibold text-slate-900 dark:text-white">
+                  <h3 className="text-base font-semibold text-slate-900 dark:text-white">
                     Invoice & Document Settings
-                  </CardTitle>
+                  </h3>
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">Invoice Prefix</Label>
                     <Input
                       value={settings.invoice_prefix}
                       onChange={(e) => setSettings({ ...settings, invoice_prefix: e.target.value })}
-                      className="bg-white dark:bg-slate-900 dark:text-white dark:border-slate-800"
+                      className="border-slate-200 bg-white dark:border-white/10 dark:bg-white/[0.06] dark:text-white"
                     />
                   </div>
                   <div className="space-y-2">
@@ -627,7 +637,7 @@ export default function CompanyProfilePage() {
                       onChange={(e) =>
                         setSettings({ ...settings, default_invoice_due_days: parseInt(e.target.value) || 30 })
                       }
-                      className="bg-white dark:bg-slate-900 dark:text-white dark:border-slate-800"
+                      className="border-slate-200 bg-white dark:border-white/10 dark:bg-white/[0.06] dark:text-white"
                     />
                   </div>
                   <div className="space-y-2">
@@ -640,7 +650,7 @@ export default function CompanyProfilePage() {
                       onChange={(e) =>
                         setSettings({ ...settings, default_quote_expiry_days: parseInt(e.target.value) || 30 })
                       }
-                      className="bg-white dark:bg-slate-900 dark:text-white dark:border-slate-800"
+                      className="border-slate-200 bg-white dark:border-white/10 dark:bg-white/[0.06] dark:text-white"
                     />
                   </div>
                   <div className="space-y-2">
@@ -652,51 +662,50 @@ export default function CompanyProfilePage() {
                         onChange={(e) =>
                           setSettings({ ...settings, document_theme_color: e.target.value })
                         }
-                        className="w-14 h-10 p-1 rounded-md border border-slate-200 dark:border-slate-800"
+                        className="w-14 h-10 p-1 rounded-md border border-slate-200 dark:border-white/10"
                       />
                       <Input
                         value={settings.document_theme_color}
                         onChange={(e) =>
                           setSettings({ ...settings, document_theme_color: e.target.value })
                         }
-                        className="font-mono bg-white dark:bg-slate-900 dark:text-white dark:border-slate-800"
+                        className="font-mono border-slate-200 bg-white dark:border-white/10 dark:bg-white/[0.06] dark:text-white"
                       />
                     </div>
                   </div>
                 </div>
-                <div className="space-y-2">
+                <div className="mt-4 space-y-2">
                   <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">Invoice Footer Text</Label>
                   <textarea
                     value={settings.invoice_footer_text}
                     onChange={(e) => setSettings({ ...settings, invoice_footer_text: e.target.value })}
-                    className="w-full min-h-[80px] rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-800 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500"
+                    className="w-full min-h-[80px] rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 dark:border-white/10 dark:bg-white/[0.06] dark:text-white dark:placeholder:text-slate-500"
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="mt-4 space-y-2">
                   <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">Payment Instructions</Label>
                   <textarea
                     value={settings.invoice_payment_instructions}
                     onChange={(e) => setSettings({ ...settings, invoice_payment_instructions: e.target.value })}
-                    className="w-full min-h-[80px] rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-800 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500"
+                    className="w-full min-h-[80px] rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 dark:border-white/10 dark:bg-white/[0.06] dark:text-white dark:placeholder:text-slate-500"
                   />
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
             {/* Stock & Inventory */}
-            <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-              <CardHeader className="space-y-1">
+            <div className="group relative overflow-hidden rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-xl dark:border-white/10 dark:bg-white/[0.04]">
+              <div className="absolute inset-0 rounded-lg opacity-0 transition-opacity duration-500 group-hover:opacity-100" style={{ background: 'radial-gradient(circle at 50% 0%, rgba(34,211,238,0.08), transparent 70%)' }} />
+              <div className="relative z-10">
                 <div className="flex items-center gap-2">
-                  <div className="rounded-lg bg-emerald-50 p-1.5 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300">
+                  <div className="grid h-9 w-9 place-items-center rounded-lg bg-gradient-to-br from-emerald-300 to-cyan-400 text-white shadow-lg">
                     <Landmark className="h-4 w-4" />
                   </div>
-                  <CardTitle className="text-base font-semibold text-slate-900 dark:text-white">
+                  <h3 className="text-base font-semibold text-slate-900 dark:text-white">
                     Stock & Inventory
-                  </CardTitle>
+                  </h3>
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">Default Costing Method</Label>
                     <Select
@@ -705,7 +714,7 @@ export default function CompanyProfilePage() {
                         setSettings({ ...settings, default_costing_method: v as 'fifo' | 'wac' })
                       }
                     >
-                      <SelectTrigger className="bg-white dark:bg-slate-900 dark:text-white dark:border-slate-800">
+                      <SelectTrigger className="border-slate-200 bg-white dark:border-white/10 dark:bg-white/[0.06] dark:text-white">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -714,7 +723,7 @@ export default function CompanyProfilePage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-900/50">
+                  <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50/70 p-3 dark:border-white/10 dark:bg-white/[0.06]">
                     <Checkbox
                       id="allow-negative-stock"
                       checked={settings.allow_negative_stock}
@@ -729,7 +738,7 @@ export default function CompanyProfilePage() {
                       <p className="text-xs text-slate-500 dark:text-slate-400">Allow stock levels to go below zero</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-900/50">
+                  <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50/70 p-3 dark:border-white/10 dark:bg-white/[0.06]">
                     <Checkbox
                       id="low-stock-alerts"
                       checked={settings.low_stock_alert_enabled}
@@ -745,44 +754,45 @@ export default function CompanyProfilePage() {
                     </div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
             {/* VAT */}
-            <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-              <CardHeader className="space-y-1">
+            <div className="group relative overflow-hidden rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-xl dark:border-white/10 dark:bg-white/[0.04]">
+              <div className="absolute inset-0 rounded-lg opacity-0 transition-opacity duration-500 group-hover:opacity-100" style={{ background: 'radial-gradient(circle at 50% 0%, rgba(34,211,238,0.08), transparent 70%)' }} />
+              <div className="relative z-10">
                 <div className="flex items-center gap-2">
-                  <div className="rounded-lg bg-amber-50 p-1.5 text-amber-600 dark:bg-amber-950/40 dark:text-amber-300">
+                  <div className="grid h-9 w-9 place-items-center rounded-lg bg-gradient-to-br from-amber-300 to-cyan-300 text-white shadow-lg">
                     <BadgeCheck className="h-4 w-4" />
                   </div>
-                  <CardTitle className="text-base font-semibold text-slate-900 dark:text-white">
+                  <h3 className="text-base font-semibold text-slate-900 dark:text-white">
                     VAT & Tax
-                  </CardTitle>
+                  </h3>
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-900/50">
-                  <Checkbox
-                    id="auto-apply-vat"
-                    checked={settings.auto_apply_vat}
-                    onCheckedChange={(checked) =>
-                      setSettings({ ...settings, auto_apply_vat: Boolean(checked) })
-                    }
-                  />
-                  <div>
-                    <Label htmlFor="auto-apply-vat" className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                      Auto-Apply VAT
-                    </Label>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Automatically add VAT to invoices</p>
+                <div className="mt-5">
+                  <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50/70 p-3 dark:border-white/10 dark:bg-white/[0.06]">
+                    <Checkbox
+                      id="auto-apply-vat"
+                      checked={settings.auto_apply_vat}
+                      onCheckedChange={(checked) =>
+                        setSettings({ ...settings, auto_apply_vat: Boolean(checked) })
+                      }
+                    />
+                    <div>
+                      <Label htmlFor="auto-apply-vat" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                        Auto-Apply VAT
+                      </Label>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Automatically add VAT to invoices</p>
+                    </div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
             <Button
               onClick={handleSaveSettings}
               disabled={saving}
-              className="w-full gap-2 bg-blue-600 hover:bg-blue-700"
+              className="w-full gap-2 bg-slate-950 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-cyan-100"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               Save System Settings
