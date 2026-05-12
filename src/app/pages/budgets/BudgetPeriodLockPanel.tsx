@@ -2,13 +2,14 @@ import { useState, useEffect } from "react";
 import { budgetsApi } from "@/lib/api";
 import { Button } from "@/app/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card";
+import { Skeleton } from "@/app/components/ui/skeleton";
 import { Label } from "@/app/components/ui/label";
 import { Input } from "@/app/components/ui/input";
 import { Switch } from "@/app/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/app/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
 import { toast } from "sonner";
-import { Loader2, Lock, Unlock, Clock, User } from "lucide-react";
+import { Loader2, Lock, Unlock, Clock, User, Settings, Shield, CalendarDays } from "lucide-react";
 
 interface BudgetPeriodLockPanelProps {
   budgetId: string;
@@ -130,40 +131,48 @@ export function BudgetPeriodLockPanel({ budgetId }: BudgetPeriodLockPanelProps) 
 
   if (loading) {
     return (
-      <Card>
-        <CardContent className="py-8">
-          <div className="flex items-center justify-center">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </div>
-        </CardContent>
-      </Card>
+      <div className="space-y-5">
+        <Skeleton className="h-10 w-full rounded-lg" />
+        <Skeleton className="h-40 w-full rounded-xl" />
+        <Skeleton className="h-48 w-full rounded-xl" />
+      </div>
     );
   }
 
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
-          <Lock className="h-5 w-5" />
-          <h3 className="text-lg font-semibold">Period Locking</h3>
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 dark:bg-amber-950/50">
+            <Lock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+          </div>
+          <h3 className="text-base font-semibold text-slate-900 dark:text-white">Period Locking</h3>
         </div>
-        <Button onClick={() => setShowLockDialog(true)} size="sm">
-          <Lock className="mr-2 h-4 w-4" />
+        <Button onClick={() => setShowLockDialog(true)} size="sm" className="shrink-0 gap-2">
+          <Lock className="h-4 w-4" />
           Lock Period
         </Button>
       </div>
 
       {/* Auto-lock Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Auto-Lock Settings</CardTitle>
+      <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base text-slate-900 dark:text-white flex items-center gap-2">
+            <Settings className="h-4 w-4 text-slate-500" />
+            Auto-Lock Settings
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <Label className="font-medium">Enable Auto-Lock</Label>
-              <p className="text-sm text-muted-foreground">Automatically lock periods after they end</p>
+          <div className="flex items-center justify-between p-3 rounded-lg border border-slate-100 dark:border-slate-800">
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-amber-50 dark:bg-amber-950/50">
+                <Shield className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-slate-900 dark:text-white">Enable Auto-Lock</Label>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Automatically lock periods after they end</p>
+              </div>
             </div>
             <Switch
               checked={lockData?.settings?.auto_lock?.enabled || false}
@@ -181,7 +190,7 @@ export function BudgetPeriodLockPanel({ budgetId }: BudgetPeriodLockPanelProps) 
             />
           </div>
           <div className="space-y-2">
-            <Label>Days After Period End</Label>
+            <Label className="text-xs font-medium text-slate-600 dark:text-slate-400">Days After Period End</Label>
             <Input
               type="number"
               value={lockData?.settings?.auto_lock?.days_after_period_end || 30}
@@ -198,8 +207,9 @@ export function BudgetPeriodLockPanel({ budgetId }: BudgetPeriodLockPanelProps) 
               }}
               min={1}
               max={365}
+              className="dark:bg-slate-900 dark:border-slate-700"
             />
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               Automatically lock periods this many days after the period ends
             </p>
           </div>
@@ -207,36 +217,43 @@ export function BudgetPeriodLockPanel({ budgetId }: BudgetPeriodLockPanelProps) 
       </Card>
 
       {/* Locked Periods List */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Locked Periods</CardTitle>
+      <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base text-slate-900 dark:text-white flex items-center gap-2">
+            <CalendarDays className="h-4 w-4 text-slate-500" />
+            Locked Periods
+          </CardTitle>
         </CardHeader>
         <CardContent>
           {lockData?.locked_periods?.length === 0 ? (
-            <div className="text-center py-8">
-              <Unlock className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-muted-foreground">No periods are currently locked</p>
+            <div className="py-10 text-center">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-slate-50 dark:bg-slate-900/50">
+                <Unlock className="h-6 w-6 text-slate-400 dark:text-slate-500" />
+              </div>
+              <p className="mt-4 text-sm font-medium text-slate-900 dark:text-white">No periods are currently locked</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {lockData?.locked_periods?.map((period, idx) => (
-                <div key={idx} className="flex items-center justify-between p-3 border rounded-lg">
+                <div key={idx} className="flex items-center justify-between p-3 border border-slate-200 rounded-lg bg-slate-50/30 dark:bg-slate-900/30 dark:border-slate-800">
                   <div className="flex items-center gap-3">
-                    <Lock className="h-4 w-4 text-amber-500" />
+                    <div className="flex h-8 w-8 items-center justify-center rounded-md bg-amber-50 dark:bg-amber-950/50">
+                      <Lock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                    </div>
                     <div>
-                      <p className="font-medium">
+                      <p className="text-sm font-medium text-slate-900 dark:text-white">
                         {MONTHS[period.month - 1]} {period.year}
                       </p>
-                      <p className="text-xs text-muted-foreground">{period.reason}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">{period.reason || "No reason provided"}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="text-right text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
+                    <div className="text-right text-xs text-slate-500 dark:text-slate-400">
+                      <div className="flex items-center justify-end gap-1">
                         <User className="h-3 w-3" />
                         {typeof period.locked_by === "object" ? period.locked_by?.name : "System"}
                       </div>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center justify-end gap-1">
                         <Clock className="h-3 w-3" />
                         {formatDate(period.locked_at)}
                       </div>
@@ -248,6 +265,7 @@ export function BudgetPeriodLockPanel({ budgetId }: BudgetPeriodLockPanelProps) 
                         setSelectedPeriod({ year: period.year, month: period.month });
                         setShowUnlockDialog(true);
                       }}
+                      className="h-8 text-amber-600 hover:bg-amber-50 hover:text-amber-700 dark:text-amber-400 dark:hover:bg-amber-950/50"
                     >
                       <Unlock className="h-4 w-4" />
                     </Button>

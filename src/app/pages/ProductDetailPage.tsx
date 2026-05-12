@@ -414,6 +414,9 @@ export default function ProductDetailPage() {
   const stockCoverage = Math.min(100, Math.round((stock / Math.max(threshold, 1)) * 100));
   const marginPct = sellingPrice > 0 ? ((sellingPrice - averageCost) / sellingPrice) * 100 : 0;
   const reorderGap = Math.max(threshold - stock, 0);
+  const barcodeType = (product.barcodeType || 'CODE128').toUpperCase();
+  const barcodeCanRenderAsLinear = Boolean(product.barcode && barcodeType !== 'QR' && barcodeType !== 'NONE');
+  const scanValue = product.barcode || product.sku || product._id;
 
   return (
     <Layout>
@@ -590,21 +593,32 @@ export default function ProductDetailPage() {
               {/* Barcode and QR Code */}
               <DetailCard title={tr('products.barcodeAndQR', 'Barcode & QR Code')} description="Scan references for receiving, dispatch, and physical stock checks." className="lg:col-span-2">
                   <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_minmax(220px,0.8fr)]">
-                    {product.barcode && (
+                    {barcodeCanRenderAsLinear && (
                       <div className={productMutedPanelClass}>
                         <span className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{tr('products.barcode', 'Barcode')}</span>
                         <div className="mt-3 flex items-center gap-4">
                         <BarcodeDisplay 
                           productId={product._id} 
                           type="barcode"
-                          barcodeParams={{ type: product.barcodeType || 'CODE128', height: 80 }}
+                          barcodeParams={{ type: barcodeType, height: 80 }}
                           className="h-20"
                         />
                           <div>
-                            <p className="text-sm font-semibold text-slate-900 dark:text-white">{product.barcodeType || 'CODE128'}</p>
+                            <p className="text-sm font-semibold text-slate-900 dark:text-white">{barcodeType}</p>
                             <code className="mt-2 inline-flex rounded bg-white px-2 py-1 text-xs dark:bg-slate-900">{product.barcode}</code>
                           </div>
                         </div>
+                      </div>
+                    )}
+                    {!barcodeCanRenderAsLinear && (
+                      <div className={productMutedPanelClass}>
+                        <span className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{tr('products.scanValue', 'Scan Value')}</span>
+                        <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
+                          {barcodeType === 'QR'
+                            ? 'This product is configured for QR scanning.'
+                            : 'No printable linear barcode is configured.'}
+                        </p>
+                        <code className="mt-3 inline-flex max-w-full break-all rounded bg-white px-2 py-1 text-xs dark:bg-slate-900">{scanValue}</code>
                       </div>
                     )}
                     <div className={productMutedPanelClass}>
@@ -617,12 +631,10 @@ export default function ProductDetailPage() {
                         className="h-[150px] w-[150px]"
                       />
                       </div>
-                    </div>
-                    {!product.barcode && (
-                      <p className="text-sm text-slate-500 dark:text-slate-400">
-                        {tr('products.noBarcode', 'No barcode set for this product')}
+                      <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+                        QR payload resolves in POS by {product.barcode ? 'barcode' : 'SKU'}.
                       </p>
-                    )}
+                    </div>
                   </div>
               </DetailCard>
 

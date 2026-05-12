@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
 import { budgetsApi, type BudgetApproval, type BudgetWorkflowConfig } from "@/lib/api";
 import { Button } from "@/app/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/app/components/ui/card";
 import { Badge } from "@/app/components/ui/badge";
+import { Skeleton } from "@/app/components/ui/skeleton";
+import { Progress } from "@/app/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/app/components/ui/dialog";
 import { Textarea } from "@/app/components/ui/textarea";
 import { toast } from "sonner";
-import { Loader2, CheckCircle, XCircle, Clock, User } from "lucide-react";
+import { Loader2, CheckCircle, XCircle, Clock, User, FileCheck, AlertCircle, GitPullRequest, CheckCircle2, History } from "lucide-react";
 
 interface BudgetApprovalPanelProps {
   budgetId: string;
@@ -143,16 +145,22 @@ export function BudgetApprovalPanel({ budgetId, budgetStatus, budgetAmount, depa
   };
 
   const getStatusBadge = (status: string) => {
-    const config: Record<string, { className: string; label: string }> = {
-      pending: { className: "bg-yellow-100 text-yellow-700", label: "Pending" },
-      in_progress: { className: "bg-blue-100 text-blue-700", label: "In Progress" },
-      approved: { className: "bg-green-100 text-green-700", label: "Approved" },
-      rejected: { className: "bg-red-100 text-red-700", label: "Rejected" },
-      changes_requested: { className: "bg-orange-100 text-orange-700", label: "Changes Requested" },
-      cancelled: { className: "bg-gray-100 text-gray-700", label: "Cancelled" },
+    const config: Record<string, { className: string; label: string; icon: any }> = {
+      pending: { className: "bg-amber-50 text-amber-700 ring-1 ring-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/40", label: "Pending", icon: Clock },
+      in_progress: { className: "bg-blue-50 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/40", label: "In Progress", icon: GitPullRequest },
+      approved: { className: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/40", label: "Approved", icon: CheckCircle2 },
+      rejected: { className: "bg-red-50 text-red-700 ring-1 ring-red-100 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900/40", label: "Rejected", icon: XCircle },
+      changes_requested: { className: "bg-orange-50 text-orange-700 ring-1 ring-orange-100 dark:bg-orange-950/40 dark:text-orange-300 dark:ring-orange-900/40", label: "Changes Requested", icon: AlertCircle },
+      cancelled: { className: "bg-slate-50 text-slate-700 ring-1 ring-slate-200 dark:bg-slate-900/60 dark:text-slate-300 dark:ring-slate-700", label: "Cancelled", icon: XCircle },
     };
     const configItem = config[status] || config.pending;
-    return <Badge className={configItem.className}>{configItem.label}</Badge>;
+    const Icon = configItem.icon;
+    return (
+      <Badge variant="outline" className={`border-0 gap-1 text-xs font-medium ${configItem.className}`}>
+        <Icon className="h-3 w-3" />
+        {configItem.label}
+      </Badge>
+    );
   };
 
   const formatDate = (date: string | Date | null | undefined) => {
@@ -173,48 +181,57 @@ export function BudgetApprovalPanel({ budgetId, budgetStatus, budgetAmount, depa
 
   if (loading) {
     return (
-      <Card>
-        <CardContent className="py-8">
-          <div className="flex items-center justify-center">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </div>
-        </CardContent>
-      </Card>
+      <div className="space-y-5">
+        <Skeleton className="h-10 w-full rounded-lg" />
+        <Skeleton className="h-48 w-full rounded-xl" />
+        <Skeleton className="h-48 w-full rounded-xl" />
+      </div>
     );
   }
 
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Approval Workflow</h3>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-950/50">
+            <FileCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+          </div>
+          <h3 className="text-base font-semibold text-slate-900 dark:text-white">Approval Workflow</h3>
+        </div>
         {canSubmit && (
-          <Button onClick={() => setShowSubmitDialog(true)} size="sm">
-            <Clock className="mr-2 h-4 w-4" />
+          <Button onClick={() => setShowSubmitDialog(true)} size="sm" className="shrink-0 gap-2">
+            <Clock className="h-4 w-4" />
             Submit for Approval
           </Button>
         )}
       </div>
 
       {budgetStatus === "draft" && (
-        <Card>
+        <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
           <CardContent className="py-4">
             {!workflowChecked ? (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 Checking matching workflow...
               </div>
             ) : workflowMatch ? (
               <div className="space-y-1">
-                <div className="text-sm font-medium">Matched workflow: {workflowMatch.name}</div>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-sm font-medium text-slate-900 dark:text-white flex items-center gap-2">
+                  <GitPullRequest className="h-4 w-4 text-blue-500" />
+                  Matched workflow: {workflowMatch.name}
+                </div>
+                <div className="text-xs text-slate-500 dark:text-slate-400">
                   {workflowMatch.steps.length} approval step{workflowMatch.steps.length !== 1 ? "s" : ""} will be copied when this budget is submitted.
                 </div>
               </div>
             ) : (
               <div className="space-y-1">
-                <div className="text-sm font-medium text-amber-600">No configured workflow matches this budget</div>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-sm font-medium text-amber-600 dark:text-amber-400 flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4" />
+                  No configured workflow matches this budget
+                </div>
+                <div className="text-xs text-slate-500 dark:text-slate-400">
                   Submitting will use the system fallback approval steps. Create a matching workflow in Budget Workflow Settings for controlled routing.
                 </div>
               </div>
@@ -225,50 +242,59 @@ export function BudgetApprovalPanel({ budgetId, budgetStatus, budgetAmount, depa
 
       {/* Current Approval Status */}
       {pendingApproval ? (
-        <Card className="border-yellow-200 bg-yellow-50/50">
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
+        <Card className="overflow-hidden border-amber-200 bg-amber-50/30 shadow-sm dark:border-amber-900/40 dark:bg-amber-950/20">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2 text-slate-900 dark:text-white">
+              <Clock className="h-4 w-4 text-amber-500" />
               Current Approval Status
               {getStatusBadge(pendingApproval.status)}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Step</span>
-                <span className="font-medium">
-                  {pendingApproval.current_step} of {pendingApproval.total_steps}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Current Step</span>
-                <span className="font-medium">
-                  {pendingApproval.steps[pendingApproval.current_step - 1]?.step_name || "Unknown"}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Requested By</span>
-                <span>{typeof pendingApproval.requested_by === "object" ? pendingApproval.requested_by.name : "-"}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Requested At</span>
-                <span>{formatDate(pendingApproval.requested_at)}</span>
-              </div>
-              {pendingApproval.request_comments && (
-                <div className="pt-2 border-t">
-                  <span className="text-sm text-muted-foreground">Comments</span>
-                  <p className="text-sm mt-1">{pendingApproval.request_comments}</p>
+            <div className="space-y-4">
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Progress</span>
+                  <span className="text-xs font-medium text-slate-900 dark:text-white">
+                    Step {pendingApproval.current_step} of {pendingApproval.total_steps}
+                  </span>
                 </div>
-              )}
-              <div className="flex gap-2 pt-2">
+                <Progress value={(pendingApproval.current_step / pendingApproval.total_steps) * 100} className="h-2" />
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-lg bg-white p-3 border border-slate-100 dark:bg-slate-900 dark:border-slate-800">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Current Step</p>
+                  <p className="text-sm font-medium text-slate-900 dark:text-white mt-0.5">
+                    {pendingApproval.steps[pendingApproval.current_step - 1]?.step_name || "Unknown"}
+                  </p>
+                </div>
+                <div className="rounded-lg bg-white p-3 border border-slate-100 dark:bg-slate-900 dark:border-slate-800">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Requested By</p>
+                  <p className="text-sm font-medium text-slate-900 dark:text-white mt-0.5">
+                    {typeof pendingApproval.requested_by === "object" ? pendingApproval.requested_by.name : "-"}
+                  </p>
+                </div>
+                <div className="rounded-lg bg-white p-3 border border-slate-100 dark:bg-slate-900 dark:border-slate-800">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Requested At</p>
+                  <p className="text-sm font-medium text-slate-900 dark:text-white mt-0.5">{formatDate(pendingApproval.requested_at)}</p>
+                </div>
+                {pendingApproval.request_comments && (
+                  <div className="rounded-lg bg-white p-3 border border-slate-100 dark:bg-slate-900 dark:border-slate-800 sm:col-span-2">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Comments</p>
+                    <p className="text-sm text-slate-700 dark:text-slate-300 mt-0.5">{pendingApproval.request_comments}</p>
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-2 pt-1">
                 <Button
                   size="sm"
                   onClick={() => {
                     setSelectedApproval(pendingApproval);
                     setShowApproveDialog(true);
                   }}
+                  className="gap-2"
                 >
-                  <CheckCircle className="mr-2 h-4 w-4" />
+                  <CheckCircle className="h-4 w-4" />
                   Approve
                 </Button>
                 <Button
@@ -278,8 +304,9 @@ export function BudgetApprovalPanel({ budgetId, budgetStatus, budgetAmount, depa
                     setSelectedApproval(pendingApproval);
                     setShowRejectDialog(true);
                   }}
+                  className="gap-2"
                 >
-                  <XCircle className="mr-2 h-4 w-4" />
+                  <XCircle className="h-4 w-4" />
                   Reject
                 </Button>
               </div>
@@ -287,12 +314,14 @@ export function BudgetApprovalPanel({ budgetId, budgetStatus, budgetAmount, depa
           </CardContent>
         </Card>
       ) : (
-        <Card>
-          <CardContent className="py-8 text-center">
-            <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-500" />
-            <p className="text-muted-foreground">No pending approvals</p>
+        <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+          <CardContent className="py-10 text-center">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-950/50">
+              <CheckCircle2 className="h-6 w-6 text-emerald-500 dark:text-emerald-400" />
+            </div>
+            <p className="mt-4 text-sm font-medium text-slate-900 dark:text-white">No pending approvals</p>
             {budgetStatus === "approved" && (
-              <p className="text-sm text-green-600 mt-1">This budget has been approved</p>
+              <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">This budget has been approved</p>
             )}
           </CardContent>
         </Card>
@@ -300,22 +329,25 @@ export function BudgetApprovalPanel({ budgetId, budgetStatus, budgetAmount, depa
 
       {/* Approval History */}
       {approvals.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Approval History</CardTitle>
+        <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base text-slate-900 dark:text-white flex items-center gap-2">
+              <History className="h-4 w-4 text-slate-500" />
+              Approval History
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div className="space-y-3">
               {approvals.map((approval) => (
-                <div key={approval._id} className="border rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
+                <div key={approval._id} className="border border-slate-200 rounded-lg p-4 bg-slate-50/30 dark:bg-slate-900/30 dark:border-slate-800">
+                  <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
                       {getStatusBadge(approval.status)}
-                      <span className="text-sm text-muted-foreground">
+                      <span className="text-sm text-slate-500 dark:text-slate-400">
                         {approval.workflow_name}
                       </span>
                     </div>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs text-slate-400 dark:text-slate-500">
                       {formatDate(approval.requested_at)}
                     </span>
                   </div>
@@ -323,17 +355,17 @@ export function BudgetApprovalPanel({ budgetId, budgetStatus, budgetAmount, depa
                     <div className="space-y-2 mt-3">
                       {approval.actions.map((action, idx) => (
                         <div key={idx} className="flex items-start gap-2 text-sm">
-                          <User className="h-4 w-4 text-muted-foreground mt-0.5" />
-                          <div>
-                            <span className="font-medium">
+                          <User className="h-4 w-4 text-slate-400 mt-0.5 dark:text-slate-500" />
+                          <div className="text-slate-700 dark:text-slate-300">
+                            <span className="font-medium text-slate-900 dark:text-white">
                               {typeof action.action_by === "object" ? action.action_by.name : "-"}
                             </span>
-                            <span className="text-muted-foreground"> {action.action} </span>
-                            <span className="text-muted-foreground">
+                            <span className="text-slate-500 dark:text-slate-400"> {action.action} </span>
+                            <span className="text-slate-500 dark:text-slate-400">
                               step {action.step_number}
                             </span>
                             {action.comments && (
-                              <p className="text-xs text-muted-foreground mt-1">
+                              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 italic">
                                 &quot;{action.comments}&quot;
                               </p>
                             )}

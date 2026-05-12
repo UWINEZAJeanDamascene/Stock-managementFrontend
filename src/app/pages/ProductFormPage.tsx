@@ -110,6 +110,29 @@ const COSTING_METHOD_VALUES = ['fifo', 'weighted', 'wac', 'avg'];
 const TRACKING_TYPE_VALUES = ['none', 'batch', 'serial'];
 const BARCODE_TYPE_VALUES = ['CODE128', 'EAN13', 'EAN8', 'UPC', 'CODE39', 'ITF14', 'QR', 'NONE'];
 
+const validateBarcodeValue = (value: string, type: string): string | null => {
+  const barcode = value.trim();
+  if (!barcode || type === 'NONE' || type === 'QR') return null;
+
+  if (type === 'EAN13' && !/^\d{13}$/.test(barcode)) {
+    return 'EAN-13 barcodes must be exactly 13 digits so scanner output matches the product barcode.';
+  }
+  if (type === 'EAN8' && !/^\d{8}$/.test(barcode)) {
+    return 'EAN-8 barcodes must be exactly 8 digits so scanner output matches the product barcode.';
+  }
+  if (type === 'UPC' && !/^\d{12}$/.test(barcode)) {
+    return 'UPC-A barcodes must be exactly 12 digits so scanner output matches the product barcode.';
+  }
+  if (type === 'ITF14' && !/^\d{14}$/.test(barcode)) {
+    return 'ITF-14 barcodes must be exactly 14 digits so scanner output matches the product barcode.';
+  }
+  if (type === 'CODE39' && !/^[0-9A-Z .$/+%-]+$/.test(barcode.toUpperCase())) {
+    return 'CODE39 supports uppercase letters, numbers, spaces, and . $ / + % - only.';
+  }
+
+  return null;
+};
+
 const getBarcodeTypeLabel = (t: Function, value: string) => {
   if (!value) return '';
   // Try exact key, then lowercase key, then fallback to raw value
@@ -328,6 +351,11 @@ export default function ProductFormPage() {
       toast.error(t('products.categoryRequired') || 'Category is required');
       return;
     }
+    const barcodeError = validateBarcodeValue(formData.barcode, formData.barcodeType);
+    if (barcodeError) {
+      toast.error(barcodeError);
+      return;
+    }
 
     // Validate accounting fields are required by backend
     if (!formData.inventory_account_id) {
@@ -490,10 +518,20 @@ export default function ProductFormPage() {
                   <Input
                     id="barcode"
                     value={formData.barcode}
-                    onChange={(e) => handleChange('barcode', e.target.value)}
+                    onChange={(e) => handleChange('barcode', e.target.value.trim())}
                     placeholder={t('products.barcodePlaceholder') || 'Scan or enter barcode'}
                     className="h-10 rounded-md px-3"
                   />
+                  {validateBarcodeValue(formData.barcode, formData.barcodeType) && (
+                    <p className="text-xs text-amber-600 dark:text-amber-400">
+                      {validateBarcodeValue(formData.barcode, formData.barcodeType)}
+                    </p>
+                  )}
+                  {formData.barcodeType === 'QR' && (
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      The product QR code is generated automatically and will carry this barcode when set, otherwise the SKU.
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">

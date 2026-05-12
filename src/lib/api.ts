@@ -1477,6 +1477,7 @@ export interface SalesLegacyRequest {
   notes?: string;
   dueDate?: string;
   terms?: string;
+  bankAccountId?: string;
 }
 
 export interface PosProduct {
@@ -8047,6 +8048,7 @@ export const bankAccountsApi = {
           amount: number;
           isDebit: boolean;
           reconciled: boolean;
+          matchIds?: string[];
           matchedStatementLineIds?: string[];
           sourceType: string;
           isLocked: boolean;
@@ -8073,6 +8075,7 @@ export const bankAccountsApi = {
           reconciled: boolean;
           status: string;
           matchedAmount: number;
+          matchIds?: string[];
         }>;
         bankSummary: {
           totalLines: number;

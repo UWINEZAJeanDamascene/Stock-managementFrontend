@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { productsApi } from '@/lib/api';
 
 interface Props {
@@ -14,6 +14,7 @@ export default function BarcodeDisplay({ productId, type = 'barcode', barcodePar
   const [src, setSrc] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const objectUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -26,6 +27,8 @@ export default function BarcodeDisplay({ productId, type = 'barcode', barcodePar
           : await productsApi.getBarcodeImage(productId, barcodeParams as any);
         if (cancelled) return;
         const url = URL.createObjectURL(blob);
+        if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+        objectUrlRef.current = url;
         setSrc(url);
       } catch (err: any) {
         setError(err?.message || 'Failed to load image');
@@ -36,7 +39,10 @@ export default function BarcodeDisplay({ productId, type = 'barcode', barcodePar
 
     return () => {
       cancelled = true;
-      if (src) URL.revokeObjectURL(src);
+      if (objectUrlRef.current) {
+        URL.revokeObjectURL(objectUrlRef.current);
+        objectUrlRef.current = null;
+      }
     };
   }, [productId, type, JSON.stringify(barcodeParams || {}), JSON.stringify(qrParams || {})]);
 

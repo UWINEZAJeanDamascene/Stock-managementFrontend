@@ -12,13 +12,23 @@ import { useCurrency } from '@/contexts/CurrencyContext';
  * Uses the global displayCurrency from CurrencyContext
  */
 export function useFormatCurrency() {
-  const { formatCurrency, displayCurrency } = useCurrency();
-  
-  return (amount: number | any, overrideCurrency?: string): string => {
-    const num = typeof amount === 'number' ? amount : Number(amount) || 0;
-    const currency = overrideCurrency || displayCurrency || 'FRW';
-    return formatCurrency(num, currency);
-  };
+  try {
+    const { formatCurrency, displayCurrency } = useCurrency();
+
+    return (amount: number | any, overrideCurrency?: string): string => {
+      const num = typeof amount === 'number' ? amount : Number(amount) || 0;
+      const currency = overrideCurrency || displayCurrency || 'FRW';
+      return formatCurrency(num, currency);
+    };
+  } catch (err) {
+    // If there's no CurrencyProvider in the tree, provide a safe fallback
+    // so pages (like POS) can still render in isolation.
+    return (amount: number | any, overrideCurrency?: string): string => {
+      const num = typeof amount === 'number' ? amount : Number(amount) || 0;
+      const currency = overrideCurrency || 'FRW';
+      return formatWithSymbol(num, currency);
+    };
+  }
 }
 
 /**

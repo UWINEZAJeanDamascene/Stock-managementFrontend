@@ -64,6 +64,7 @@ import * as XLSX from "xlsx";
 import Papa from "papaparse";
 import { Badge } from "@/app/components/ui/badge";
 import { useTranslation } from "react-i18next";
+import BankReconciliationPage from "./BankReconciliationPage";
 
 interface StatementLine {
   _id: string;
@@ -985,197 +986,16 @@ export default function BankAccountDetailPage() {
                       <Calculator className="h-4 w-4 text-blue-500" />
                       {t("bankAccount.bankReconciliation", "Bank Reconciliation")}
                     </CardTitle>
-                    <Button
-                      onClick={() => navigate(`/bank-accounts/${id}/reconcile`)}
-                      className="h-9 gap-2 bg-blue-600 hover:bg-blue-700"
-                    >
-                      <Calculator className="h-4 w-4" />
-                      {t("bankAccount.professionalReconciliation", "Professional Reconciliation")}
-                    </Button>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {/* Reconciliation Summary Cards */}
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                    <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-                      <CardContent className="p-5">
-                        <div className="flex items-start justify-between gap-4">
-                          <div>
-                            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                              Statement Balance
-                            </p>
-                            <p className="mt-3 text-2xl font-bold text-slate-950 dark:text-white">
-                              {formatCurrency(computedStatementBalance, currencyCode)}
-                            </p>
-                          </div>
-                          <div className="rounded-lg bg-blue-50 p-2.5 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60">
-                            <FileUp className="h-5 w-5" />
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-                      <CardContent className="p-5">
-                        <div className="flex items-start justify-between gap-4">
-                          <div>
-                            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                              Book Balance
-                            </p>
-                            <p className="mt-3 text-2xl font-bold text-slate-950 dark:text-white">
-                              {formatCurrency(computedBookBalance, currencyCode)}
-                            </p>
-                          </div>
-                          <div className="rounded-lg bg-emerald-50 p-2.5 text-emerald-700 ring-1 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60">
-                            <PiggyBank className="h-5 w-5" />
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-                      <CardContent className="p-5">
-                        <div className="flex items-start justify-between gap-4">
-                          <div>
-                            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                              Difference
-                            </p>
-                            <p className={`mt-3 text-2xl font-bold ${computedDifference === 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
-                              {formatCurrency(computedDifference, currencyCode)}
-                            </p>
-                          </div>
-                          <div className={`rounded-lg p-2.5 ring-1 ${computedDifference === 0 ? "bg-emerald-50 text-emerald-700 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60" : "bg-red-50 text-red-700 ring-red-100 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900/60"}`}>
-                            {computedDifference === 0 ? <BadgeCheck className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-
-                  {/* Statement Details Input */}
-                  <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-4 space-y-4 dark:border-slate-800 dark:bg-slate-900/50">
-                    <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">
-                      <Calendar className="h-4 w-4" />
-                      {t("bankAccount.reconcileInputs", "Statement Details")}
-                    </h3>
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="reconcileBalance" className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                          {t("bankAccount.statementBalance", "Statement Closing Balance")}
-                        </Label>
-                        <Input
-                          id="reconcileBalance"
-                          type="number"
-                          step="0.01"
-                          placeholder="0.00"
-                          value={reconcileBalance}
-                          onChange={(e) => setReconcileBalance(e.target.value)}
-                          className="dark:bg-slate-900 dark:text-white dark:border-slate-700 dark:placeholder:text-slate-500"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="reconcileDate" className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                          {t("bankAccount.statementDate", "Statement Date")}
-                        </Label>
-                        <Input
-                          id="reconcileDate"
-                          type="date"
-                          value={reconcileDate}
-                          onChange={(e) => setReconcileDate(e.target.value)}
-                          className="dark:bg-slate-900 dark:text-white dark:border-slate-700"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Import Statement Button */}
-                  <div>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setImportFile(null);
-                        setImportData([]);
-                        setImportMessage(null);
-                        setShowImportDialog(true);
-                      }}
-                      className="h-10 gap-2 dark:border-slate-700 dark:text-slate-200"
-                    >
-                      <Upload className="h-4 w-4" />
-                      {t("bankAccount.importStatement", "Import Statement")}
-                    </Button>
-                  </div>
-
-                  {/* Statement Lines Table */}
-                  <div className="rounded-lg border border-slate-200 overflow-hidden dark:border-slate-800">
-                    <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-900/50">
-                      <FileUp className="h-4 w-4 text-slate-500 dark:text-slate-400" />
-                      <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                        {t("bankAccount.importedStatementLines", "Imported Statement Lines")}
-                      </h3>
-                      <Badge variant="secondary" className="h-6">
-                        {statementLines.length}
-                      </Badge>
-                    </div>
-                    {statementLines.length === 0 ? (
-                      <div className="flex min-h-[160px] flex-col items-center justify-center p-8 text-slate-500 dark:text-slate-400">
-                        <FileUp className="mb-2 h-8 w-8 text-slate-300 dark:text-slate-600" />
-                        <p className="text-sm font-medium">
-                          {t("bankAccount.noImportedLines", "No statement lines imported yet")}
-                        </p>
-                        <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
-                          Click "Import Statement" to upload a CSV or Excel file
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="overflow-x-auto">
-                        <Table>
-                          <TableHeader>
-                            <TableRow className="bg-slate-50 hover:bg-slate-50 dark:bg-slate-900/50 dark:hover:bg-slate-900/50">
-                              <TableHead className="text-xs font-semibold text-slate-600 dark:text-slate-400">Date</TableHead>
-                              <TableHead className="text-xs font-semibold text-slate-600 dark:text-slate-400">Description</TableHead>
-                              <TableHead className="text-xs font-semibold text-slate-600 dark:text-slate-400">Reference</TableHead>
-                              <TableHead className="text-xs font-semibold text-slate-600 dark:text-slate-400">Debit</TableHead>
-                              <TableHead className="text-xs font-semibold text-slate-600 dark:text-slate-400">Credit</TableHead>
-                              <TableHead className="text-xs font-semibold text-slate-600 dark:text-slate-400">Balance</TableHead>
-                              <TableHead className="text-xs font-semibold text-slate-600 dark:text-slate-400">Status</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {statementLines.map((line) => (
-                              <TableRow key={line._id} className="dark:border-slate-800 dark:hover:bg-slate-900/50">
-                                <TableCell className="text-sm text-slate-700 dark:text-slate-300">
-                                  {formatDate(line.transactionDate)}
-                                </TableCell>
-                                <TableCell className="text-sm text-slate-700 dark:text-slate-300">{line.description}</TableCell>
-                                <TableCell className="font-mono text-xs text-slate-600 dark:text-slate-400">{line.reference || "-"}</TableCell>
-                                <TableCell className="text-sm font-medium text-red-600 dark:text-red-400">
-                                  {line.debit ? formatCurrency(line.debit, currencyCode) : "-"}
-                                </TableCell>
-                                <TableCell className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
-                                  {line.credit ? formatCurrency(line.credit, currencyCode) : "-"}
-                                </TableCell>
-                                <TableCell className="text-sm font-mono font-semibold text-slate-700 dark:text-slate-300">
-                                  {formatCurrency(line.balance, currencyCode)}
-                                </TableCell>
-                                <TableCell>
-                                  <Badge
-                                    variant="outline"
-                                    className={
-                                      line.isReconciled
-                                        ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-400"
-                                        : "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-950/30 dark:text-slate-400"
-                                    }
-                                  >
-                                    {line.isReconciled
-                                      ? t("bankAccount.reconciled", "Reconciled")
-                                      : t("bankAccount.unreconciled", "Unreconciled")}
-                                  </Badge>
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    )}
-                  </div>
+                  {id && (
+                    <BankReconciliationPage
+                      embedded
+                      accountId={id}
+                      accountData={account}
+                    />
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>

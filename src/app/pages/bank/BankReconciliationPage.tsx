@@ -134,6 +134,7 @@ interface JournalLine {
   amount: number;
   isDebit: boolean;
   reconciled: boolean;
+  matchIds?: string[];
   matchedStatementLineIds?: string[];
   sourceType: string;
   isLocked: boolean;
@@ -153,6 +154,7 @@ interface BankLine {
   reconciled: boolean;
   status: string;
   matchedAmount: number;
+  matchIds?: string[];
 }
 
 interface ReconciliationData {
@@ -203,15 +205,26 @@ interface MatchSuggestion {
   };
 }
 
-export default function BankReconciliationPage() {
-  const { id } = useParams<{ id: string }>();
+interface BankReconciliationPageProps {
+  embedded?: boolean;
+  accountId?: string;
+  accountData?: any;
+}
+
+export default function BankReconciliationPage({
+  embedded = false,
+  accountId,
+  accountData,
+}: BankReconciliationPageProps = {}) {
+  const params = useParams<{ id: string }>();
+  const id = accountId || params.id;
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useTranslation();
 
   // State
   const [loading, setLoading] = useState(false);
-  const [account, setAccount] = useState<{ _id: string; name: string; ledgerAccountId?: string } | null>(null);
+  const [account, setAccount] = useState<{ _id: string; name: string; ledgerAccountId?: string; currency?: string } | null>(accountData || null);
   const [reconciliation, setReconciliation] = useState<ReconciliationData | null>(null);
   const [suggestions, setSuggestions] = useState<MatchSuggestion[]>([]);
   const [selectedJournalLine, setSelectedJournalLine] = useState<string | null>(null);
@@ -252,6 +265,10 @@ export default function BankReconciliationPage() {
   // Fetch account details
   const fetchAccount = useCallback(async () => {
     if (!id) return;
+    if (accountData) {
+      setAccount(accountData);
+      return;
+    }
     try {
       const response = await bankAccountsApi.getById(id);
       if (response.success) {
@@ -264,7 +281,7 @@ export default function BankReconciliationPage() {
         variant: "destructive",
       });
     }
-  }, [id, toast, t]);
+  }, [id, accountData, toast, t]);
 
   // Fetch reconciliation data
   const fetchReconciliationData = useCallback(async () => {
@@ -412,8 +429,16 @@ export default function BankReconciliationPage() {
   };
 
   // Unmatch items
-  const handleUnmatch = async (matchId: string) => {
+  const handleUnmatch = async (matchId?: string) => {
     if (!id) return;
+    if (!matchId) {
+      toast({
+        title: t("common.error", "Error"),
+        description: t("bankReconciliation.unmatchMissing", "This matched item is missing its match reference. Refresh and try again."),
+        variant: "destructive",
+      });
+      return;
+    }
     setProcessing(true);
     try {
       const response = await bankAccountsApi.unmatchItemsNew(id, { matchId });
@@ -558,9 +583,20 @@ export default function BankReconciliationPage() {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "USD",
+      currency: account?.currency || "RWF",
     }).format(amount);
   };
+
+  const Frame = ({ children }: { children: ReactNode }) =>
+    embedded ? <>{children}</> : <Layout>{children}</Layout>;
+
+  const pageClassName = embedded
+    ? "space-y-6"
+    : "min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8";
+
+  const contentClassName = embedded
+    ? "space-y-6"
+    : "mx-auto max-w-[1600px] space-y-6";
 
   // Filter lines based on tab
   const filteredJournalLines = reconciliation?.journalLines.filter(line => {
@@ -578,9 +614,9 @@ export default function BankReconciliationPage() {
 
   if (loading) {
     return (
-      <Layout>
-        <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-[1600px] space-y-6">
+      <Frame>
+        <div className={pageClassName}>
+          <div className={contentClassName}>
             <Skeleton className="h-32 w-full rounded-xl" />
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {[...Array(4)].map((_, i) => (
@@ -593,28 +629,30 @@ export default function BankReconciliationPage() {
             </div>
           </div>
         </div>
-      </Layout>
+      </Frame>
     );
   }
 
   // No active reconciliation - show start screen
   if (!reconciliation || reconciliation.status !== "in_progress") {
     return (
-      <Layout>
-        <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-[900px] space-y-6">
+      <Frame>
+        <div className={pageClassName}>
+          <div className={embedded ? "space-y-6" : "mx-auto max-w-[900px] space-y-6"}>
             {/* Hero Header */}
             <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
               <div className="p-5">
                 <div className="flex flex-wrap items-center gap-3">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => navigate("/bank-accounts")}
-                    className="h-10 w-10 dark:border-slate-700 dark:text-slate-200"
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                  </Button>
+                  {!embedded && (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => navigate("/bank-accounts")}
+                      className="h-10 w-10 dark:border-slate-700 dark:text-slate-200"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                    </Button>
+                  )}
                   <div className="rounded-lg bg-blue-50 p-2.5 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60">
                     <Calculator className="h-5 w-5" />
                   </div>
@@ -709,27 +747,29 @@ export default function BankReconciliationPage() {
             </Card>
           </div>
         </div>
-      </Layout>
+      </Frame>
     );
   }
 
   return (
-    <Layout>
-      <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-[1600px] space-y-6">
+    <Frame>
+      <div className={pageClassName}>
+        <div className={contentClassName}>
           {/* Hero Header */}
           <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
             <div className="grid gap-5 p-5 xl:grid-cols-[1fr_auto] xl:items-center">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-3">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => navigate("/bank-accounts")}
-                    className="h-10 w-10 dark:border-slate-700 dark:text-slate-200"
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                  </Button>
+                  {!embedded && (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => navigate("/bank-accounts")}
+                      className="h-10 w-10 dark:border-slate-700 dark:text-slate-200"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                    </Button>
+                  )}
                   <div className="rounded-lg bg-blue-50 p-2.5 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60">
                     <Calculator className="h-5 w-5" />
                   </div>
@@ -1067,10 +1107,7 @@ export default function BankReconciliationPage() {
                                     className="h-8 w-8 dark:text-slate-300 dark:hover:bg-slate-800"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      const suggestion = suggestions.find(s => s.statementLineId === line.id);
-                                      if (suggestion) {
-                                        handleUnmatch(suggestion.journalLineId);
-                                      }
+                                      handleUnmatch(line.matchIds?.[0]);
                                     }}
                                     disabled={processing}
                                   >
@@ -1297,6 +1334,6 @@ export default function BankReconciliationPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-    </Layout>
+    </Frame>
   );
 }

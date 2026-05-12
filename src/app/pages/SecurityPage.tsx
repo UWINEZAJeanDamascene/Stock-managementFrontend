@@ -6,7 +6,8 @@ import { useTranslation } from 'react-i18next';
 import { 
   Shield, Lock, Globe, Smartphone, Plus, Trash2, CheckCircle,
   AlertTriangle, Key, Clock, Monitor, Eye, EyeOff, History,
-  Loader2, RefreshCw, XCircle, ChevronDown, ChevronUp, Info
+  Loader2, RefreshCw, XCircle, ChevronDown, ChevronUp, Info,
+  Fingerprint, Server, FileText, Activity, Ban
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
@@ -16,6 +17,7 @@ import {
 } from '@/app/components/ui/dialog';
 import { Switch } from '@/app/components/ui/switch';
 import { Badge } from '@/app/components/ui/badge';
+import { Skeleton } from '@/app/components/ui/skeleton';
 import { toast } from 'sonner';
 
 interface IPEntry {
@@ -355,15 +357,15 @@ export default function SecurityPage() {
     return (
       <button
         onClick={() => toggleSection(section)}
-        className="w-full flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors rounded-t-lg"
+        className="w-full flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors rounded-t-lg"
       >
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-indigo-100 dark:bg-indigo-900/50">
+          <div className="p-2 rounded-lg bg-indigo-50 ring-1 ring-indigo-100 dark:bg-indigo-950/40 dark:ring-indigo-900/40">
             <Icon className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
           </div>
           <div className="text-left">
             <div className="flex items-center gap-2">
-              <h3 className="font-semibold text-slate-800 dark:text-white">{title}</h3>
+              <h3 className="font-semibold text-slate-800 dark:text-slate-100">{title}</h3>
               {badge}
             </div>
             <p className="text-sm text-slate-500 dark:text-slate-400">{desc}</p>
@@ -379,7 +381,9 @@ export default function SecurityPage() {
       <div className="p-4 md:p-6 max-w-5xl mx-auto">
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
-          <Shield className="h-7 w-7 text-indigo-600" />
+          <div className="p-2 rounded-xl bg-indigo-50 ring-1 ring-indigo-100 dark:bg-indigo-950/40 dark:ring-indigo-900/40">
+            <Shield className="h-7 w-7 text-indigo-600 dark:text-indigo-400" />
+          </div>
           <div>
             <h1 className="text-2xl font-bold text-slate-800 dark:text-white">{t('security.title')}</h1>
             <p className="text-sm text-slate-500 dark:text-slate-400">{t('security.subtitle')}</p>
@@ -387,11 +391,24 @@ export default function SecurityPage() {
         </div>
 
         {/* Security Score */}
-        {!loadingOverview && overview && (
+        {loadingOverview ? (
           <div className="mb-6 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5">
             <div className="flex items-center justify-between mb-3">
+              <Skeleton className="h-5 w-32" />
+              <Skeleton className="h-8 w-16" />
+            </div>
+            <Skeleton className="h-3 w-full rounded-full" />
+            <div className="flex gap-4 mt-4">
+              <Skeleton className="h-4 w-16" />
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-4 w-20" />
+            </div>
+          </div>
+        ) : overview && (
+          <div className="mb-6 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <Shield className="h-5 w-5 text-indigo-600" />
+                <Shield className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
                 <span className="font-semibold text-slate-800 dark:text-white">{t('security.securityScore')}</span>
               </div>
               <span className={`text-2xl font-bold ${getScoreColor(securityScore)}`}>{securityScore}%</span>
@@ -402,18 +419,30 @@ export default function SecurityPage() {
                 style={{ width: `${securityScore}%` }}
               />
             </div>
-            <div className="flex items-center gap-4 mt-3 text-sm text-slate-500 dark:text-slate-400">
-              <div className="flex items-center gap-1">
-                {overview.twoFAEnabled ? <CheckCircle className="h-4 w-4 text-green-500" /> : <XCircle className="h-4 w-4 text-red-400" />}
-                <span>2FA</span>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
+              <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-900/60">
+                {overview.twoFAEnabled ? (
+                  <CheckCircle className="h-4 w-4 text-emerald-500" />
+                ) : (
+                  <XCircle className="h-4 w-4 text-red-400" />
+                )}
+                <span className="text-sm text-slate-600 dark:text-slate-400">2FA</span>
               </div>
-              <div className="flex items-center gap-1">
-                {overview.isLocked ? <AlertTriangle className="h-4 w-4 text-red-400" /> : <CheckCircle className="h-4 w-4 text-green-500" />}
-                <span>{overview.isLocked ? t('security.accountLocked') : t('security.accountActive')}</span>
+              <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-900/60">
+                {overview.isLocked ? (
+                  <AlertTriangle className="h-4 w-4 text-red-400" />
+                ) : (
+                  <CheckCircle className="h-4 w-4 text-emerald-500" />
+                )}
+                <span className="text-sm text-slate-600 dark:text-slate-400">{overview.isLocked ? t('security.accountLocked') : t('security.accountActive')}</span>
               </div>
-              <div className="flex items-center gap-1">
-                {ipList.length > 0 ? <CheckCircle className="h-4 w-4 text-green-500" /> : <Info className="h-4 w-4 text-slate-400" />}
-                <span>IP Whitelist ({ipList.length})</span>
+              <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-900/60">
+                {ipList.length > 0 ? (
+                  <CheckCircle className="h-4 w-4 text-emerald-500" />
+                ) : (
+                  <Info className="h-4 w-4 text-slate-400" />
+                )}
+                <span className="text-sm text-slate-600 dark:text-slate-400">IP Whitelist ({ipList.length})</span>
               </div>
             </div>
           </div>
@@ -426,14 +455,24 @@ export default function SecurityPage() {
             {expandedSections.password && (
               <div className="p-4 border-t border-slate-200 dark:border-slate-700">
                 {loadingOverview ? (
-                  <div className="flex items-center justify-center py-6 text-slate-500">
-                    <Loader2 className="h-5 w-5 animate-spin mr-2" /> {t('security.loading')}
+                  <div className="space-y-4 py-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Skeleton className="h-3 w-24" />
+                        <Skeleton className="h-5 w-16" />
+                      </div>
+                      <div className="space-y-2">
+                        <Skeleton className="h-3 w-24" />
+                        <Skeleton className="h-5 w-28" />
+                      </div>
+                    </div>
+                    <Skeleton className="h-24 w-full rounded-lg" />
                   </div>
                 ) : overview && (
                   <div className="space-y-4">
                     {/* Password info */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-lg">
+                      <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-lg border border-slate-100 dark:border-slate-700/50">
                         <p className="text-xs text-slate-500 mb-1">{t('security.passwordAge')}</p>
                         <p className="font-medium text-slate-800 dark:text-white">
                           {overview.passwordChangedAt
@@ -442,27 +481,29 @@ export default function SecurityPage() {
                           }
                         </p>
                       </div>
-                      <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-lg">
+                      <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-lg border border-slate-100 dark:border-slate-700/50">
                         <p className="text-xs text-slate-500 mb-1">{t('security.accountLockStatus')}</p>
                         <div className="flex items-center gap-2">
                           {overview.isLocked ? (
-                            <Badge className="bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300">
-                              <AlertTriangle className="h-3 w-3 mr-1" /> {t('security.accountLocked')}
+                            <Badge variant="outline" className="border-0 gap-1 text-xs font-medium bg-red-50 text-red-700 ring-1 ring-red-100 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900/40">
+                              <AlertTriangle className="h-3 w-3" /> {t('security.accountLocked')}
                             </Badge>
                           ) : (
-                            <Badge className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
-                              <CheckCircle className="h-3 w-3 mr-1" /> {t('security.accountActive')}
+                            <Badge variant="outline" className="border-0 gap-1 text-xs font-medium bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/40">
+                              <CheckCircle className="h-3 w-3" /> {t('security.accountActive')}
                             </Badge>
                           )}
                         </div>
                         {overview.failedLoginAttempts > 0 && (
-                          <p className="text-xs text-red-500 mt-1">{t('security.failedAttempts')}: {overview.failedLoginAttempts}</p>
+                          <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                            <Ban className="h-3 w-3" /> {t('security.failedAttempts')}: {overview.failedLoginAttempts}
+                          </p>
                         )}
                       </div>
                     </div>
 
                     {/* Password policy */}
-                    <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-lg">
+                    <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-lg border border-slate-100 dark:border-slate-700/50">
                       <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{t('security.passwordPolicy')}</p>
                       <ul className="space-y-1 text-sm text-slate-600 dark:text-slate-400">
                         <li className="flex items-center gap-2">
@@ -490,7 +531,7 @@ export default function SecurityPage() {
                         <Lock className="h-4 w-4" /> {t('security.changePassword')}
                       </Button>
                     ) : (
-                      <div className="space-y-3 p-4 bg-slate-50 dark:bg-slate-900 rounded-lg">
+                      <div className="space-y-3 p-4 bg-slate-50 dark:bg-slate-900/60 rounded-lg border border-slate-100 dark:border-slate-700/50">
                         <div className="flex items-center justify-between">
                           <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('security.changePassword')}</p>
                           <Button variant="ghost" size="sm" onClick={() => setShowPasswordForm(false)}>
@@ -572,11 +613,11 @@ export default function SecurityPage() {
               t('security.twoFactorDesc'),
               'twoFactor',
               overview?.twoFAEnabled ? (
-                <Badge className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
-                  <CheckCircle className="h-3 w-3 mr-1" /> {t('security.twoFactorEnabled')}
+                <Badge variant="outline" className="border-0 gap-1 text-xs font-medium bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/40">
+                  <CheckCircle className="h-3 w-3" /> {t('security.twoFactorEnabled')}
                 </Badge>
               ) : (
-                <Badge variant="outline" className="text-slate-500">
+                <Badge variant="outline" className="border-0 gap-1 text-xs font-medium bg-slate-50 text-slate-600 ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:ring-slate-700">
                   {t('security.twoFactorDisabled')}
                 </Badge>
               )
@@ -585,9 +626,9 @@ export default function SecurityPage() {
               <div className="p-4 border-t border-slate-200 dark:border-slate-700">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-full ${overview?.twoFAEnabled ? 'bg-green-100 dark:bg-green-900/50' : 'bg-slate-100 dark:bg-slate-700'}`}>
+                    <div className={`p-2 rounded-full ring-1 ${overview?.twoFAEnabled ? 'bg-emerald-50 ring-emerald-100 dark:bg-emerald-950/40 dark:ring-emerald-900/40' : 'bg-slate-50 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700'}`}>
                       {overview?.twoFAEnabled ? (
-                        <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                        <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                       ) : (
                         <Lock className="h-5 w-5 text-slate-400" />
                       )}
@@ -608,7 +649,7 @@ export default function SecurityPage() {
                     </div>
                   </div>
                   {overview?.twoFAEnabled ? (
-                    <Button variant="outline" size="sm" onClick={handleDisable2FA} className="text-red-600 border-red-200 hover:bg-red-50">
+                    <Button variant="outline" size="sm" onClick={handleDisable2FA} className="text-red-600 border-red-200 hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-950/40">
                       {t('security.disable2FA')}
                     </Button>
                   ) : (
@@ -627,25 +668,38 @@ export default function SecurityPage() {
             {expandedSections.sessions && (
               <div className="p-4 border-t border-slate-200 dark:border-slate-700">
                 {loadingSessions ? (
-                  <div className="flex items-center justify-center py-6 text-slate-500">
-                    <Loader2 className="h-5 w-5 animate-spin mr-2" /> {t('security.loading')}
+                  <div className="space-y-3 py-2">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <div key={i} className="flex items-center gap-3 p-3">
+                        <Skeleton className="h-9 w-9 rounded-full" />
+                        <div className="space-y-2 flex-1">
+                          <Skeleton className="h-4 w-40" />
+                          <Skeleton className="h-3 w-56" />
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 ) : sessions.length === 0 ? (
-                  <p className="text-center py-6 text-slate-500">{t('security.noActiveSessions')}</p>
+                  <div className="text-center py-8">
+                    <div className="inline-flex p-3 rounded-full bg-slate-100 dark:bg-slate-800 mb-2">
+                      <Monitor className="h-6 w-6 text-slate-400" />
+                    </div>
+                    <p className="text-sm text-slate-500">{t('security.noActiveSessions')}</p>
+                  </div>
                 ) : (
                   <div className="space-y-3">
                     {sessions.map(session => (
-                      <div key={session.id} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900 rounded-lg">
+                      <div key={session.id} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900/60 rounded-lg border border-slate-100 dark:border-slate-700/50">
                         <div className="flex items-center gap-3">
-                          <div className="p-2 bg-green-100 dark:bg-green-900/50 rounded-full">
-                            <Monitor className="h-4 w-4 text-green-600 dark:text-green-400" />
+                          <div className="p-2 bg-emerald-50 ring-1 ring-emerald-100 dark:bg-emerald-950/40 dark:ring-emerald-900/40 rounded-full">
+                            <Monitor className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
                               <p className="text-sm font-medium text-slate-800 dark:text-white">
                                 {session.type === 'current' ? t('security.currentSession') : 'Session'}
                               </p>
-                              <Badge variant="outline" className="text-xs">{session.role}</Badge>
+                              <Badge variant="outline" className="text-xs ring-1 ring-slate-200 dark:ring-slate-700">{session.role}</Badge>
                             </div>
                             <div className="flex items-center gap-3 text-xs text-slate-500 mt-0.5">
                               <span className="flex items-center gap-1">
@@ -659,7 +713,7 @@ export default function SecurityPage() {
                           </div>
                         </div>
                         {session.type === 'current' && (
-                          <Badge className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">Active</Badge>
+                          <Badge variant="outline" className="border-0 gap-1 text-xs font-medium bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/40">Active</Badge>
                         )}
                       </div>
                     ))}
@@ -668,7 +722,7 @@ export default function SecurityPage() {
                         variant="outline"
                         size="sm"
                         onClick={handleTerminateSessions}
-                        className="gap-2 text-red-600 border-red-200 hover:bg-red-50"
+                        className="gap-2 text-red-600 border-red-200 hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-950/40"
                       >
                         <XCircle className="h-4 w-4" /> {t('security.terminateOthers')}
                       </Button>
@@ -685,11 +739,23 @@ export default function SecurityPage() {
             {expandedSections.loginHistory && (
               <div className="p-4 border-t border-slate-200 dark:border-slate-700">
                 {loadingHistory ? (
-                  <div className="flex items-center justify-center py-6 text-slate-500">
-                    <Loader2 className="h-5 w-5 animate-spin mr-2" /> {t('security.loading')}
+                  <div className="space-y-3 py-2">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <div key={i} className="grid grid-cols-4 gap-2 px-3 py-2.5">
+                        <Skeleton className="h-4 w-28" />
+                        <Skeleton className="h-4 w-16" />
+                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-4 w-32" />
+                      </div>
+                    ))}
                   </div>
                 ) : loginHistory.length === 0 ? (
-                  <p className="text-center py-6 text-slate-500">{t('security.noLoginHistory')}</p>
+                  <div className="text-center py-8">
+                    <div className="inline-flex p-3 rounded-full bg-slate-100 dark:bg-slate-800 mb-2">
+                      <History className="h-6 w-6 text-slate-400" />
+                    </div>
+                    <p className="text-sm text-slate-500">{t('security.noLoginHistory')}</p>
+                  </div>
                 ) : (
                   <div className="space-y-2">
                     {/* Table header */}
@@ -703,19 +769,19 @@ export default function SecurityPage() {
                     {loginHistory.map(entry => (
                       <div
                         key={entry._id}
-                        className="grid grid-cols-4 gap-2 px-3 py-2.5 bg-slate-50 dark:bg-slate-900 rounded-lg text-sm"
+                        className="grid grid-cols-4 gap-2 px-3 py-2.5 bg-slate-50 dark:bg-slate-900/60 rounded-lg border border-slate-100 dark:border-slate-700/50 text-sm hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors"
                       >
-                        <span className="font-medium text-slate-700 dark:text-slate-300">
+                        <span className="font-medium text-slate-700 dark:text-slate-300 self-center">
                           {getActionLabel(entry.action)}
                         </span>
-                        <span>
+                        <span className="self-center">
                           {entry.status === 'success' ? (
-                            <Badge className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 text-xs">
-                              Success
+                            <Badge variant="outline" className="border-0 gap-1 text-xs font-medium bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/40">
+                              <CheckCircle className="h-3 w-3" /> Success
                             </Badge>
                           ) : (
-                            <Badge className="bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300 text-xs">
-                              Failed
+                            <Badge variant="outline" className="border-0 gap-1 text-xs font-medium bg-red-50 text-red-700 ring-1 ring-red-100 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900/40">
+                              <XCircle className="h-3 w-3" /> Failed
                             </Badge>
                           )}
                         </span>
@@ -786,12 +852,26 @@ export default function SecurityPage() {
                   </div>
 
                   {loadingIPs ? (
-                    <div className="flex items-center justify-center py-6 text-slate-500">
-                      <Loader2 className="h-5 w-5 animate-spin mr-2" /> {t('security.loading')}
+                    <div className="space-y-3 py-2">
+                      {Array.from({ length: 3 }).map((_, i) => (
+                        <div key={i} className="flex items-center justify-between p-3">
+                          <div className="flex items-center gap-3">
+                            <Skeleton className="h-2 w-2 rounded-full" />
+                            <Skeleton className="h-4 w-28" />
+                            <Skeleton className="h-4 w-32" />
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Skeleton className="h-5 w-10 rounded-full" />
+                            <Skeleton className="h-8 w-8 rounded-full" />
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   ) : ipList.length === 0 ? (
-                    <div className="text-center py-6">
-                      <Globe className="h-10 w-10 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+                    <div className="text-center py-8">
+                      <div className="inline-flex p-3 rounded-full bg-slate-100 dark:bg-slate-800 mb-2">
+                        <Globe className="h-6 w-6 text-slate-400" />
+                      </div>
                       <p className="text-sm text-slate-500">{t('security.noIPs')}</p>
                     </div>
                   ) : (
@@ -799,13 +879,18 @@ export default function SecurityPage() {
                       {ipList.map(entry => (
                         <div
                           key={entry._id}
-                          className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900 rounded-lg"
+                          className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900/60 rounded-lg border border-slate-100 dark:border-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors"
                         >
                           <div className="flex items-center gap-3">
-                            <div className={`w-2 h-2 rounded-full ${entry.enabled ? 'bg-green-500' : 'bg-slate-300'}`} />
+                            <div className={`w-2 h-2 rounded-full ${entry.enabled ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+                            <div className="p-1.5 rounded-md bg-slate-100 dark:bg-slate-800">
+                              <Server className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                            </div>
                             <code className="text-sm font-mono text-slate-700 dark:text-slate-300">{entry.ip}</code>
                             {entry.description && (
-                              <span className="text-sm text-slate-500">- {entry.description}</span>
+                              <Badge variant="outline" className="text-xs border-slate-200 dark:border-slate-700 text-slate-500">
+                                {entry.description}
+                              </Badge>
                             )}
                           </div>
                           <div className="flex items-center gap-2">
