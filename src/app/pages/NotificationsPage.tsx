@@ -1,24 +1,46 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, type ReactNode } from 'react';
 import { Layout } from '../layout/Layout';
 import { notificationsApi, Notification } from '../../lib/api';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
+import { Skeleton } from '../components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { 
-  Bell, 
-  Package, 
-  FileText, 
-  AlertTriangle, 
-  Clock, 
-  Check, 
-  Trash2, 
+import {
+  Bell,
+  Package,
+  FileText,
+  AlertTriangle,
+  Clock,
+  Check,
+  Trash2,
   CheckCheck,
   RefreshCw,
   AlertCircle,
-  AlertOctagon
+  AlertOctagon,
+  Sparkles,
+  ShieldCheck,
+  Zap,
+  Inbox,
 } from 'lucide-react';
 import { cn } from '../components/ui/utils';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as ReTooltip,
+  ResponsiveContainer,
+  Cell,
+  PieChart,
+  Pie,
+} from 'recharts';
 
 const typeConfig: Record<string, { icon: React.ElementType; color: string; label: string }> = {
   out_of_stock: { icon: AlertOctagon, color: 'text-red-500 dark:text-red-400', label: 'Out of Stock' },
@@ -48,6 +70,93 @@ const severityColors: Record<string, string> = {
   warning: 'bg-amber-100 text-amber-600 dark:bg-amber-900 dark:text-amber-300',
   critical: 'bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-300'
 };
+
+const SEVERITY_RINGS: Record<string, string> = {
+  info: 'bg-blue-50 text-blue-600 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60',
+  warning: 'bg-amber-50 text-amber-600 ring-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/60',
+  critical: 'bg-red-50 text-red-600 ring-red-100 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900/60',
+};
+
+const TYPE_BAR_COLORS: Record<string, string> = {
+  out_of_stock: '#ef4444',
+  low_stock: '#f59e0b',
+  stock_received: '#10b981',
+  invoice_created: '#3b82f6',
+  payment_received: '#10b981',
+  payment_overdue: '#ef4444',
+  invoice_sent: '#a855f7',
+  quotation_created: '#3b82f6',
+  quotation_approved: '#10b981',
+  quotation_expired: '#f59e0b',
+  user_created: '#3b82f6',
+  company_approved: '#10b981',
+  password_changed: '#10b981',
+  failed_login: '#ef4444',
+  backup_success: '#10b981',
+  backup_failed: '#ef4444',
+  invoice_generated: '#3b82f6',
+  recurring_paused: '#f59e0b',
+  system: '#64748b',
+  alert: '#ef4444',
+};
+
+interface MetricTileProps {
+  title: string;
+  value: number;
+  icon: ReactNode;
+  tone: 'blue' | 'emerald' | 'red' | 'amber' | 'violet';
+  subtitle?: string;
+  loading?: boolean;
+}
+
+const toneClass = {
+  blue: 'bg-blue-50 text-blue-600 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60',
+  emerald: 'bg-emerald-50 text-emerald-600 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60',
+  red: 'bg-red-50 text-red-600 ring-red-100 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900/60',
+  amber: 'bg-amber-50 text-amber-600 ring-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/60',
+  violet: 'bg-violet-50 text-violet-600 ring-violet-100 dark:bg-violet-950/40 dark:text-violet-300 dark:ring-violet-900/60',
+};
+
+function MetricTile({ title, value, icon, tone, subtitle, loading }: MetricTileProps) {
+  if (loading) {
+    return (
+      <Card className="border-slate-200/80 dark:border-slate-800">
+        <CardContent className="p-5">
+          <div className="flex items-center justify-between">
+            <Skeleton className="h-4 w-28" />
+            <Skeleton className="h-9 w-9 rounded-lg" />
+          </div>
+          <Skeleton className="mt-5 h-8 w-24" />
+          <Skeleton className="mt-3 h-3 w-36" />
+        </CardContent>
+      </Card>
+    );
+  }
+  return (
+    <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <CardContent className="p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              {title}
+            </p>
+            <p className="mt-3 text-2xl font-bold tracking-tight text-slate-950 dark:text-white">
+              {value.toLocaleString()}
+            </p>
+          </div>
+          <div className={`rounded-lg p-2.5 ring-1 ${toneClass[tone]}`}>
+            {icon}
+          </div>
+        </div>
+        {subtitle && (
+          <div className="mt-3 flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
+            {subtitle}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -152,166 +261,401 @@ export default function NotificationsPage() {
     return date.toLocaleDateString();
   };
 
+  const typeChartData = useMemo(() => {
+    const counts: Record<string, number> = {};
+    notifications.forEach(n => {
+      counts[n.type] = (counts[n.type] || 0) + 1;
+    });
+    return Object.entries(counts)
+      .map(([name, count]) => ({
+        name: (typeConfig[name]?.label || name).slice(0, 18),
+        count,
+        fill: TYPE_BAR_COLORS[name] || '#64748b',
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 8);
+  }, [notifications]);
+
+  const severityChartData = useMemo(() => {
+    const counts: Record<string, number> = {};
+    notifications.forEach(n => {
+      if (n.severity) counts[n.severity] = (counts[n.severity] || 0) + 1;
+    });
+    return Object.entries(counts).map(([name, value]) => ({
+      name: name.charAt(0).toUpperCase() + name.slice(1),
+      value,
+      fill: name === 'critical' ? '#ef4444' : name === 'warning' ? '#f59e0b' : '#3b82f6',
+    }));
+  }, [notifications]);
+
+  const unreadPct = stats.total > 0 ? Math.round((stats.unread / stats.total) * 100) : 0;
+
   return (
     <Layout>
-      <div className="p-3 md:p-6 space-y-6 bg-gray-50 dark:bg-slate-900 min-h-screen">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground dark:text-white">Notifications</h1>
-            <p className="text-muted-foreground dark:text-slate-400">View and manage your system notifications</p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={fetchNotifications} disabled={loading} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
-              <RefreshCw className={cn("w-4 h-4 mr-2", loading && "animate-spin")} />
-              Refresh
-            </Button>
-            {stats.unread > 0 && (
-              <Button variant="outline" onClick={handleMarkAllAsRead} className="dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">
-                <CheckCheck className="w-4 h-4 mr-2" />
-                Mark all read
-              </Button>
-            )}
-          </div>
-        </div>
+      <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1700px] w-full space-y-6">
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="dark:bg-slate-800">
-            <CardHeader className="pb-2">
-              <CardDescription className="dark:text-slate-400">Total</CardDescription>
-              <CardTitle className="text-3xl dark:text-white">{stats.total}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Bell className="w-4 h-4 text-muted-foreground dark:text-slate-400" />
-            </CardContent>
-          </Card>
-          <Card className="dark:bg-slate-800">
-            <CardHeader className="pb-2">
-              <CardDescription className="dark:text-slate-400">Unread</CardDescription>
-              <CardTitle className="text-3xl text-blue-500 dark:text-blue-400">{stats.unread}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <AlertCircle className="w-4 h-4 text-blue-500 dark:text-blue-400" />
-            </CardContent>
-          </Card>
-          <Card className="dark:bg-slate-800">
-            <CardHeader className="pb-2">
-              <CardDescription className="dark:text-slate-400">Critical</CardDescription>
-              <CardTitle className="text-3xl text-red-500 dark:text-red-400">{stats.critical}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <AlertOctagon className="w-4 h-4 text-red-500 dark:text-red-400" />
-            </CardContent>
-          </Card>
-          <Card className="dark:bg-slate-800">
-            <CardHeader className="pb-2">
-              <CardDescription className="dark:text-slate-400">Warnings</CardDescription>
-              <CardTitle className="text-3xl text-amber-500 dark:text-amber-400">{stats.warning}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <AlertTriangle className="w-4 h-4 text-amber-500 dark:text-amber-400" />
-            </CardContent>
-          </Card>
-        </div>
+          {/* Hero Header */}
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 text-white shadow-sm dark:border-slate-800">
+            <div className="p-6 lg:p-7">
+              <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge className="bg-white/10 text-white hover:bg-white/10">
+                      <Sparkles className="mr-1 h-3.5 w-3.5" />
+                      Notification Center
+                    </Badge>
+                    {stats.critical > 0 && (
+                      <Badge className="bg-red-500/20 text-red-200 hover:bg-red-500/20">
+                        {stats.critical} Critical
+                      </Badge>
+                    )}
+                    {stats.unread > 0 && (
+                      <Badge className="bg-blue-500/20 text-blue-200 hover:bg-blue-500/20">
+                        {stats.unread} Unread
+                      </Badge>
+                    )}
+                  </div>
+                  <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
+                    Notifications
+                  </h1>
+                  <p className="mt-2 max-w-2xl text-sm text-slate-300 sm:text-base">
+                    Stay on top of stock alerts, invoice events, user activity, and system updates.
+                  </p>
+                </div>
 
-        {/* Filter Tabs */}
-        <Tabs value={filter} onValueChange={(v) => setFilter(v as 'all' | 'unread')}>
-          <TabsList className="dark:bg-slate-800">
-            <TabsTrigger value="all" className="dark:text-slate-200 dark:data-[state=active]:bg-slate-700">All Notifications</TabsTrigger>
-            <TabsTrigger value="unread" className="relative dark:text-slate-200 dark:data-[state=active]:bg-slate-700">
-              Unread
-              {stats.unread > 0 && (
-                <span className="ml-2 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">
-                  {stats.unread}
-                </span>
-              )}
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-
-        {/* Notifications List */}
-        <Card className="dark:bg-slate-800">
-          <CardContent className="p-0">
-            {loading ? (
-              <div className="p-8 text-center text-muted-foreground dark:text-slate-400">
-                <RefreshCw className="w-6 h-6 mx-auto animate-spin" />
-                <p className="mt-2">Loading notifications...</p>
-              </div>
-            ) : notifications.length === 0 ? (
-              <div className="p-8 text-center text-muted-foreground dark:text-slate-400">
-                <Bell className="w-8 h-8 mx-auto opacity-50" />
-                <p className="mt-2">No notifications yet</p>
-              </div>
-            ) : (
-              <div className="divide-y dark:divide-slate-600">
-                {notifications.map((notification) => {
-                  const config = typeConfig[notification.type] || { icon: Bell, color: 'text-gray-500 dark:text-gray-400', label: notification.type };
-                  const Icon = config.icon;
-                  
-                  return (
-                    <div
-                      key={notification._id}
-                      className={cn(
-                        "flex items-start gap-4 p-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors",
-                        !notification.isRead && "bg-blue-50/50 dark:bg-blue-900/20"
-                      )}
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-white/15 bg-white/5 text-white hover:bg-white/10 hover:text-white"
+                    onClick={fetchNotifications}
+                    disabled={loading}
+                  >
+                    <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
+                    <span className="ml-1.5 hidden sm:inline">Refresh</span>
+                  </Button>
+                  {stats.unread > 0 && (
+                    <Button
+                      size="sm"
+                      className="bg-violet-600 text-white hover:bg-violet-700"
+                      onClick={handleMarkAllAsRead}
                     >
-                      <div className={cn("p-2 rounded-full bg-slate-100 dark:bg-slate-700", config.color)}>
-                        <Icon className="w-5 h-5" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className={cn("font-medium dark:text-slate-200", !notification.isRead && "text-foreground dark:text-white")}>
-                            {notification.title}
+                      <CheckCheck className="h-4 w-4" />
+                      <span className="ml-1.5 hidden sm:inline">Mark all read</span>
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              {/* Mini stats in header */}
+              <div className="mt-7 grid gap-4 sm:grid-cols-3">
+                <div className="rounded-xl border border-white/10 bg-white/[0.04] p-4">
+                  <p className="text-xs uppercase tracking-wide text-slate-400">Readiness</p>
+                  <div className="mt-3 flex items-end justify-between gap-3">
+                    <p className="text-4xl font-bold">{100 - unreadPct}%</p>
+                    <ShieldCheck className="h-6 w-6 text-emerald-300" />
+                  </div>
+                  <div className="mt-3 h-2 rounded-full bg-white/10">
+                    <div
+                      className="h-2 rounded-full bg-emerald-400"
+                      style={{ width: `${100 - unreadPct}%` }}
+                    />
+                  </div>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-white/[0.04] p-4">
+                  <p className="text-xs uppercase tracking-wide text-slate-400">Unread</p>
+                  <p className="mt-3 text-3xl font-bold">{stats.unread}</p>
+                  <p className="mt-2 text-xs text-slate-400">
+                    {stats.total > 0 ? `${unreadPct}% of total notifications` : 'No notifications'}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-white/[0.04] p-4">
+                  <p className="text-xs uppercase tracking-wide text-slate-400">Attention Needed</p>
+                  <p className="mt-3 text-3xl font-bold">{stats.critical + stats.warning}</p>
+                  <p className="mt-2 text-xs text-slate-400">
+                    {stats.critical} critical, {stats.warning} warnings
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Metric Tiles */}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <MetricTile
+              title="Total"
+              value={stats.total}
+              icon={<Inbox className="h-5 w-5" />}
+              tone="blue"
+              subtitle="All notifications"
+              loading={loading}
+            />
+            <MetricTile
+              title="Unread"
+              value={stats.unread}
+              icon={<Bell className="h-5 w-5" />}
+              tone="violet"
+              subtitle="Awaiting attention"
+              loading={loading}
+            />
+            <MetricTile
+              title="Critical"
+              value={stats.critical}
+              icon={<AlertOctagon className="h-5 w-5" />}
+              tone="red"
+              subtitle="Immediate action required"
+              loading={loading}
+            />
+            <MetricTile
+              title="Warnings"
+              value={stats.warning}
+              icon={<AlertTriangle className="h-5 w-5" />}
+              tone="amber"
+              subtitle="Review recommended"
+              loading={loading}
+            />
+          </div>
+
+          {/* Charts Row */}
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            {/* Notification Types Chart */}
+            <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-950 dark:text-white">
+                  <Zap className="h-4 w-4 text-amber-500" />
+                  Notification Types
+                </CardTitle>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Distribution by event category
+                </p>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <Skeleton className="h-[200px] w-full" />
+                ) : typeChartData.length === 0 ? (
+                  <div className="flex min-h-[160px] flex-col items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50/70 text-slate-500 dark:border-slate-800 dark:bg-slate-900/30 dark:text-slate-400">
+                    <BarChart className="h-8 w-8 mb-2 text-slate-400 dark:text-slate-500" />
+                    <p className="text-sm">No type data</p>
+                  </div>
+                ) : (
+                  <div className="h-[200px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={typeChartData} layout="vertical" margin={{ left: 16, right: 16, top: 8, bottom: 8 }}>
+                        <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="rgba(148,163,184,0.2)" />
+                        <XAxis type="number" hide />
+                        <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                        <ReTooltip
+                          contentStyle={{
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            border: '1px solid rgba(51, 65, 85, 0.5)',
+                            borderRadius: '8px',
+                            color: '#fff',
+                            fontSize: '12px',
+                          }}
+                        />
+                        <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={18}>
+                          {typeChartData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.fill} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Severity Donut */}
+            <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-950 dark:text-white">
+                  <AlertCircle className="h-4 w-4 text-red-500" />
+                  Severity Breakdown
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <Skeleton className="h-[180px] w-full" />
+                ) : severityChartData.length === 0 ? (
+                  <div className="flex min-h-[160px] flex-col items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50/70 text-slate-500 dark:border-slate-800 dark:bg-slate-900/30 dark:text-slate-400">
+                    <AlertTriangle className="h-8 w-8 mb-2 text-slate-400 dark:text-slate-500" />
+                    <p className="text-sm">No severity data</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-[1fr_140px] items-center gap-4">
+                    <div className="h-[180px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <ReTooltip
+                            contentStyle={{
+                              backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                              border: '1px solid rgba(51, 65, 85, 0.5)',
+                              borderRadius: '8px',
+                              color: '#fff',
+                              fontSize: '12px',
+                            }}
+                          />
+                          <Pie
+                            data={severityChartData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={45}
+                            outerRadius={75}
+                            paddingAngle={4}
+                            dataKey="value"
+                            nameKey="name"
+                          >
+                            {severityChartData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.fill} />
+                            ))}
+                          </Pie>
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div className="space-y-2">
+                      {severityChartData.map((entry) => (
+                        <div key={entry.name} className="flex items-center gap-2 text-sm">
+                          <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: entry.fill }} />
+                          <span className="text-slate-600 dark:text-slate-300 truncate">{entry.name}</span>
+                          <span className="ml-auto font-bold text-slate-900 dark:text-white">{entry.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Tabs */}
+          <Tabs value={filter} onValueChange={(v) => setFilter(v as 'all' | 'unread')}>
+            <TabsList className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+              <TabsTrigger
+                value="all"
+                className="data-[state=active]:bg-slate-100 dark:data-[state=active]:bg-slate-800"
+              >
+                All Notifications
+              </TabsTrigger>
+              <TabsTrigger
+                value="unread"
+                className="relative data-[state=active]:bg-slate-100 dark:data-[state=active]:bg-slate-800"
+              >
+                Unread
+                {stats.unread > 0 && (
+                  <Badge variant="destructive" className="ml-2 h-5 px-1.5 text-[10px]">
+                    {stats.unread}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+
+          {/* Notifications List */}
+          {loading ? (
+            <Card className="border-slate-200 dark:border-slate-800">
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <RefreshCw className="h-8 w-8 animate-spin text-indigo-600" />
+                <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">Loading notifications...</p>
+              </CardContent>
+            </Card>
+          ) : notifications.length === 0 ? (
+            <Card className="border-slate-200 dark:border-slate-800">
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <Bell className="h-12 w-12 text-slate-300 dark:text-slate-600 mb-3" />
+                <p className="text-slate-500 dark:text-slate-400 font-medium">No notifications yet</p>
+                <p className="text-sm text-slate-400 dark:text-slate-500 mt-1">
+                  New alerts and events will appear here
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-0">
+                <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {notifications.map((notification) => {
+                    const config = typeConfig[notification.type] || { icon: Bell, color: 'text-gray-500 dark:text-gray-400', label: notification.type };
+                    const Icon = config.icon;
+
+                    return (
+                      <div
+                        key={notification._id}
+                        className={cn(
+                          "group flex items-start gap-4 p-4 transition-colors",
+                          !notification.isRead
+                            ? "bg-blue-50/40 dark:bg-blue-900/10 hover:bg-blue-50/70 dark:hover:bg-blue-900/20"
+                            : "hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                        )}
+                      >
+                        {/* Module color bar */}
+                        <div
+                          className="mt-2 h-8 w-1 rounded-full shrink-0"
+                          style={{ backgroundColor: TYPE_BAR_COLORS[notification.type] || 'transparent' }}
+                        />
+                        <div className={cn("p-2 rounded-lg shrink-0", SEVERITY_RINGS[notification.severity || 'info'])}>
+                          <Icon className="h-5 w-5" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className={cn(
+                              "font-medium text-sm",
+                              !notification.isRead
+                                ? "text-slate-900 dark:text-white"
+                                : "text-slate-700 dark:text-slate-300"
+                            )}>
+                              {notification.title}
+                            </p>
+                            {notification.severity && (
+                              <Badge className={severityColors[notification.severity]} variant="secondary">
+                                {notification.severity}
+                              </Badge>
+                            )}
+                            {!notification.isRead && (
+                              <span className="h-2 w-2 rounded-full bg-blue-500 shrink-0" />
+                            )}
+                          </div>
+                          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                            {notification.message}
                           </p>
-                          {notification.severity && (
-                            <Badge className={severityColors[notification.severity]} variant="secondary">
-                              {notification.severity}
+                          <div className="flex items-center gap-3 mt-2">
+                            <span className="text-xs text-slate-400 dark:text-slate-500">
+                              {formatDate(notification.createdAt)}
+                            </span>
+                            <Badge variant="outline" className="text-xs border-slate-200 text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                              {config.label}
                             </Badge>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {!notification.isRead && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                              onClick={() => handleMarkAsRead(notification._id)}
+                              title="Mark as read"
+                            >
+                              <Check className="h-4 w-4" />
+                            </Button>
                           )}
-                        </div>
-                        <p className="text-sm text-muted-foreground dark:text-slate-400 mt-1">
-                          {notification.message}
-                        </p>
-                        <div className="flex items-center gap-4 mt-2">
-                          <span className="text-xs text-muted-foreground dark:text-slate-400">
-                            {formatDate(notification.createdAt)}
-                          </span>
-                          <Badge variant="outline" className="text-xs dark:border-slate-500 dark:text-slate-300">
-                            {config.label}
-                          </Badge>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        {!notification.isRead && (
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 dark:text-slate-300 dark:hover:bg-slate-700"
-                            onClick={() => handleMarkAsRead(notification._id)}
-                            title="Mark as read"
+                            className="h-8 w-8 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                            onClick={() => handleDelete(notification._id)}
+                            title="Delete"
                           >
-                            <Check className="h-4 w-4" />
+                            <Trash2 className="h-4 w-4" />
                           </Button>
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
-                          onClick={() => handleDelete(notification._id)}
-                          title="Delete"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
     </Layout>
   );

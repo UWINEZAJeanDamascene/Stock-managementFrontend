@@ -1,7 +1,48 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo, type ReactNode } from 'react';
 import { Layout } from '../layout/Layout';
 import { auditTrailApi } from '@/lib/api';
 import { useTranslation } from 'react-i18next';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/app/components/ui/card';
+import { Button } from '@/app/components/ui/button';
+import { Input } from '@/app/components/ui/input';
+import { Badge } from '@/app/components/ui/badge';
+import { Skeleton } from '@/app/components/ui/skeleton';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/app/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/app/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/app/components/ui/select';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as ReTooltip,
+  ResponsiveContainer,
+  Cell,
+} from 'recharts';
 import {
   History,
   Search,
@@ -21,6 +62,11 @@ import {
   Activity,
   BarChart3,
   RefreshCw,
+  ShieldCheck,
+  TrendingUp,
+  Users,
+  Zap,
+  Sparkles,
 } from 'lucide-react';
 
 // ─── Types ──────────────────────────────────────────
@@ -58,18 +104,39 @@ const MODULES = [
 ];
 
 const MODULE_COLORS: Record<string, string> = {
-  product: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-  stock: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
-  supplier: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
-  client: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-  quotation: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
-  invoice: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400',
-  user: 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400',
-  category: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
-  report: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400',
-  purchase: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-  company: 'bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-400',
+  product: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800',
+  stock: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800',
+  supplier: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 border-orange-200 dark:border-orange-800',
+  client: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800',
+  quotation: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-purple-200 dark:border-purple-800',
+  invoice: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800',
+  user: 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400 border-pink-200 dark:border-pink-800',
+  category: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
+  report: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400 border-cyan-200 dark:border-cyan-800',
+  purchase: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800',
+  company: 'bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-400 border-slate-200 dark:border-slate-700',
 };
+
+const MODULE_BAR_COLORS: Record<string, string> = {
+  product: '#3b82f6',
+  stock: '#10b981',
+  supplier: '#f97316',
+  client: '#22c55e',
+  quotation: '#a855f7',
+  invoice: '#6366f1',
+  user: '#ec4899',
+  category: '#eab308',
+  report: '#06b6d4',
+  purchase: '#ef4444',
+  company: '#64748b',
+};
+
+function getInitials(name?: string): string {
+  if (!name) return '?';
+  const parts = name.split(' ').filter(Boolean);
+  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+}
 
 function formatAction(action: string): string {
   // "POST /api/products" → "Created Product"
@@ -121,6 +188,111 @@ function timeAgo(dateStr: string): string {
   const days = Math.floor(hrs / 24);
   if (days < 7) return `${days}d ago`;
   return formatDate(dateStr);
+}
+
+// ═══════════════════════════════════════════════════
+// Sub-components
+// ═══════════════════════════════════════════════════
+
+interface MetricTileProps {
+  title: string;
+  value: number | string;
+  icon: ReactNode;
+  tone: 'blue' | 'emerald' | 'red' | 'violet' | 'amber';
+  subtitle?: string;
+  loading?: boolean;
+}
+
+const toneClass = {
+  blue: 'bg-blue-50 text-blue-600 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60',
+  emerald: 'bg-emerald-50 text-emerald-600 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60',
+  red: 'bg-red-50 text-red-600 ring-red-100 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900/60',
+  violet: 'bg-violet-50 text-violet-600 ring-violet-100 dark:bg-violet-950/40 dark:text-violet-300 dark:ring-violet-900/60',
+  amber: 'bg-amber-50 text-amber-600 ring-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/60',
+};
+
+function MetricTile({ title, value, icon, tone, subtitle, loading }: MetricTileProps) {
+  if (loading) {
+    return (
+      <Card className="border-slate-200/80 dark:border-slate-800">
+        <CardContent className="p-5">
+          <div className="flex items-center justify-between">
+            <Skeleton className="h-4 w-28" />
+            <Skeleton className="h-9 w-9 rounded-lg" />
+          </div>
+          <Skeleton className="mt-5 h-8 w-24" />
+          <Skeleton className="mt-3 h-3 w-36" />
+        </CardContent>
+      </Card>
+    );
+  }
+  return (
+    <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <CardContent className="p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              {title}
+            </p>
+            <p className="mt-3 text-2xl font-bold tracking-tight text-slate-950 dark:text-white">
+              {typeof value === 'number' ? value.toLocaleString() : value}
+            </p>
+          </div>
+          <div className={`rounded-lg p-2.5 ring-1 ${toneClass[tone]}`}>
+            {icon}
+          </div>
+        </div>
+        {subtitle && (
+          <div className="mt-3 flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
+            {subtitle}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function StatusBadge({ status }: { status: 'success' | 'failed' }) {
+  if (status === 'success') {
+    return (
+      <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400">
+        <CheckCircle className="mr-1 h-3 w-3" /> Success
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="outline" className="border-red-200 bg-red-50 text-red-700 hover:bg-red-50 dark:border-red-800 dark:bg-red-950/30 dark:text-red-400">
+      <XCircle className="mr-1 h-3 w-3" /> Failed
+    </Badge>
+  );
+}
+
+function ModuleBadge({ module }: { module: string }) {
+  return (
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${MODULE_COLORS[module] || 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700'}`}>
+      {module}
+    </span>
+  );
+}
+
+function DetailRow({ icon, label, value, mono, truncate }: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  mono?: boolean;
+  truncate?: boolean;
+}) {
+  return (
+    <div className="flex items-start gap-3">
+      <div className="text-slate-400 dark:text-slate-500 mt-0.5 shrink-0">{icon}</div>
+      <div className="min-w-0">
+        <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{label}</p>
+        <p className={`text-sm text-slate-800 dark:text-white mt-0.5 ${mono ? 'font-mono text-xs' : ''} ${truncate ? 'truncate' : 'break-words'}`}>
+          {value}
+        </p>
+      </div>
+    </div>
+  );
 }
 
 // ═══════════════════════════════════════════════════
@@ -219,442 +391,628 @@ export default function AuditTrailPage() {
 
   const hasActiveFilters = filterModule || filterStatus || startDate || endDate || searchTerm;
 
+  const successCount = stats?.byStatus.find(s => s._id === 'success')?.count || 0;
+  const failedCount = stats?.byStatus.find(s => s._id === 'failed')?.count || 0;
+  const totalCount = stats?.total || 0;
+
+  const moduleChartData = useMemo(() => {
+    return (stats?.byModule || []).map(m => ({
+      name: m._id.charAt(0).toUpperCase() + m._id.slice(1),
+      count: m.count,
+      fill: MODULE_BAR_COLORS[m._id] || '#64748b',
+    }));
+  }, [stats]);
+
+  const topUsersData = useMemo(() => (stats?.topUsers || []).slice(0, 5), [stats]);
+  const maxUserCount = useMemo(() => Math.max(...topUsersData.map(u => u.count), 1), [topUsersData]);
+
   return (
     <Layout>
-      <div className="p-3 md:p-6 max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-          <div>
-            <h1 className="text-xl md:text-2xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
-              <History className="h-6 w-6 text-indigo-600" />
-              {t('auditTrail.title', 'Audit Trail')}
-            </h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-              {t('auditTrail.subtitle', 'Track all user actions and changes across the system')}
-            </p>
-          </div>
-          <button
-            onClick={() => { fetchLogs(); fetchStats(); }}
-            className="flex items-center gap-2 px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
-          >
-            <RefreshCw className="h-4 w-4" /> {t('common.refresh', 'Refresh')}
-          </button>
-        </div>
+      <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1700px] w-full space-y-6">
 
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg flex items-center gap-2">
-            <XCircle className="h-4 w-4 shrink-0" /> {error}
-          </div>
-        )}
+          {/* Hero Header */}
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 text-white shadow-sm dark:border-slate-800">
+            <div className="p-6 lg:p-7">
+              <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge className="bg-white/10 text-white hover:bg-white/10">
+                      <Sparkles className="mr-1 h-3.5 w-3.5" />
+                      System Activity Center
+                    </Badge>
+                    {stats && (
+                      <Badge
+                        variant="secondary"
+                        className={successCount >= failedCount
+                          ? 'bg-emerald-500/20 text-emerald-200 hover:bg-emerald-500/20'
+                          : 'bg-amber-500/20 text-amber-200 hover:bg-amber-500/20'}
+                      >
+                        {successCount >= failedCount ? 'Healthy' : 'Caution'}
+                      </Badge>
+                    )}
+                  </div>
+                  <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
+                    Audit Trail
+                  </h1>
+                  <p className="mt-2 max-w-2xl text-sm text-slate-300 sm:text-base">
+                    A comprehensive view of all user actions, system changes, and security events across every module.
+                  </p>
+                </div>
 
-        {/* Stats Summary */}
-        {stats && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <Activity className="h-4 w-4 text-indigo-600" />
-                <span className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                  {t('auditTrail.totalActions', 'Total Actions')}
-                </span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-white/15 bg-white/5 text-white hover:bg-white/10 hover:text-white"
+                    onClick={() => { fetchLogs(); fetchStats(); }}
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                    <span className="ml-1.5 hidden sm:inline">Refresh</span>
+                  </Button>
+                </div>
               </div>
-              <p className="text-2xl font-bold text-slate-800 dark:text-white">{stats.total.toLocaleString()}</p>
-            </div>
-            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <span className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                  {t('auditTrail.successful', 'Successful')}
-                </span>
-              </div>
-              <p className="text-2xl font-bold text-green-600">
-                {(stats.byStatus.find(s => s._id === 'success')?.count || 0).toLocaleString()}
-              </p>
-            </div>
-            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <XCircle className="h-4 w-4 text-red-600" />
-                <span className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                  {t('auditTrail.failed', 'Failed')}
-                </span>
-              </div>
-              <p className="text-2xl font-bold text-red-600">
-                {(stats.byStatus.find(s => s._id === 'failed')?.count || 0).toLocaleString()}
-              </p>
-            </div>
-            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <BarChart3 className="h-4 w-4 text-purple-600" />
-                <span className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                  {t('auditTrail.modules', 'Modules')}
-                </span>
-              </div>
-              <p className="text-2xl font-bold text-slate-800 dark:text-white">{stats.byModule.length}</p>
-            </div>
-          </div>
-        )}
 
-        {/* Search & Filters */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 mb-4">
-          <div className="flex flex-col sm:flex-row gap-3">
-            {/* Search */}
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                placeholder={t('auditTrail.searchPlaceholder', 'Search actions...')}
-                className="w-full pl-10 pr-4 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
+              {/* Mini stats in header */}
+              <div className="mt-7 grid gap-4 sm:grid-cols-3">
+                <div className="rounded-xl border border-white/10 bg-white/[0.04] p-4">
+                  <p className="text-xs uppercase tracking-wide text-slate-400">Activity Health</p>
+                  <div className="mt-3 flex items-end justify-between gap-3">
+                    <p className="text-4xl font-bold">
+                      {totalCount > 0 ? Math.round((successCount / totalCount) * 100) : 0}%
+                    </p>
+                    <ShieldCheck className="h-6 w-6 text-emerald-300" />
+                  </div>
+                  <div className="mt-3 h-2 rounded-full bg-white/10">
+                    <div
+                      className="h-2 rounded-full bg-emerald-400"
+                      style={{ width: `${totalCount > 0 ? (successCount / totalCount) * 100 : 0}%` }}
+                    />
+                  </div>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-white/[0.04] p-4">
+                  <p className="text-xs uppercase tracking-wide text-slate-400">Total Actions</p>
+                  <p className="mt-3 text-3xl font-bold">{totalCount.toLocaleString()}</p>
+                  <p className="mt-2 text-xs text-slate-400">
+                    {successCount.toLocaleString()} successful, {failedCount.toLocaleString()} failed
+                  </p>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-white/[0.04] p-4">
+                  <p className="text-xs uppercase tracking-wide text-slate-400">Active Modules</p>
+                  <p className="mt-3 text-3xl font-bold">{stats?.byModule.length || 0}</p>
+                  <p className="mt-2 text-xs text-slate-400">
+                    {stats?.byModule.slice(0, 3).map(m => m._id).join(', ')} top activity
+                  </p>
+                </div>
+              </div>
             </div>
-
-            {/* Module filter */}
-            <select
-              value={filterModule}
-              onChange={(e) => { setFilterModule(e.target.value); setPage(1); }}
-              className="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white text-sm min-w-[150px]"
-            >
-              <option value="">{t('auditTrail.allModules', 'All Modules')}</option>
-              {MODULES.map(m => (
-                <option key={m} value={m}>{m.charAt(0).toUpperCase() + m.slice(1)}</option>
-              ))}
-            </select>
-
-            {/* Toggle advanced filters */}
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-2 px-3 py-2 text-sm rounded-lg border transition-colors ${
-                hasActiveFilters
-                  ? 'border-indigo-300 bg-indigo-50 text-indigo-700 dark:border-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400'
-                  : 'border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
-              }`}
-            >
-              <Filter className="h-4 w-4" />
-              {t('auditTrail.filters', 'Filters')}
-              {hasActiveFilters && (
-                <span className="w-2 h-2 rounded-full bg-indigo-600" />
-              )}
-            </button>
           </div>
 
-          {/* Advanced filters row */}
-          {showFilters && (
-            <div className="flex flex-col sm:flex-row gap-3 mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
-              <select
-                value={filterStatus}
-                onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}
-                className="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white text-sm"
-              >
-                <option value="">{t('auditTrail.allStatuses', 'All Statuses')}</option>
-                <option value="success">{t('auditTrail.success', 'Success')}</option>
-                <option value="failed">{t('auditTrail.failedStatus', 'Failed')}</option>
-              </select>
-
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-slate-400 shrink-0" />
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => { setStartDate(e.target.value); setPage(1); }}
-                  className="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white text-sm"
-                  placeholder="From"
-                />
-                <span className="text-slate-400 text-sm">→</span>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => { setEndDate(e.target.value); setPage(1); }}
-                  className="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white text-sm"
-                  placeholder="To"
-                />
-              </div>
-
-              {hasActiveFilters && (
-                <button
-                  onClick={clearFilters}
-                  className="flex items-center gap-1 px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
+          {/* Error alert */}
+          {error && (
+            <Card className="border-red-200 bg-red-50 dark:border-red-900/70 dark:bg-red-950/30">
+              <CardContent className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center">
+                <XCircle className="h-5 w-5 flex-shrink-0 text-red-600 dark:text-red-400" />
+                <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSearch}
+                  className="sm:ml-auto"
                 >
-                  <X className="h-3.5 w-3.5" /> {t('auditTrail.clearFilters', 'Clear')}
-                </button>
-              )}
-            </div>
+                  Retry
+                </Button>
+              </CardContent>
+            </Card>
           )}
-        </div>
 
-        {/* Results info */}
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-sm text-slate-500 dark:text-slate-400">
-            {total > 0
-              ? `${t('auditTrail.showing', 'Showing')} ${(page - 1) * limit + 1}–${Math.min(page * limit, total)} ${t('auditTrail.of', 'of')} ${total.toLocaleString()}`
-              : ''}
-          </span>
-        </div>
+          {/* Metric Tiles */}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <MetricTile
+              title="Total Actions"
+              value={stats?.total ?? 0}
+              icon={<Activity className="h-5 w-5" />}
+              tone="blue"
+              subtitle="All recorded events"
+              loading={loading && !stats}
+            />
+            <MetricTile
+              title="Successful"
+              value={successCount}
+              icon={<CheckCircle className="h-5 w-5" />}
+              tone="emerald"
+              subtitle="Completed without errors"
+              loading={loading && !stats}
+            />
+            <MetricTile
+              title="Failed"
+              value={failedCount}
+              icon={<XCircle className="h-5 w-5" />}
+              tone="red"
+              subtitle="Errors or rejections"
+              loading={loading && !stats}
+            />
+            <MetricTile
+              title="Modules Used"
+              value={stats?.byModule.length ?? 0}
+              icon={<BarChart3 className="h-5 w-5" />}
+              tone="violet"
+              subtitle="Active system areas"
+              loading={loading && !stats}
+            />
+          </div>
 
-        {/* Logs Table */}
-        {loading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
-          </div>
-        ) : logs.length === 0 ? (
-          <div className="text-center py-12 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
-            <History className="h-12 w-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
-            <p className="text-slate-500 dark:text-slate-400 font-medium">
-              {t('auditTrail.noLogs', 'No activity logs found')}
-            </p>
-            <p className="text-sm text-slate-400 dark:text-slate-500 mt-1">
-              {hasActiveFilters
-                ? t('auditTrail.tryDifferentFilters', 'Try different filters')
-                : t('auditTrail.noActivityYet', 'User actions will appear here')}
-            </p>
-          </div>
-        ) : (
-          <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[800px] whitespace-nowrap">
-                <thead className="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700">
-                  <tr>
-                    <th className="text-left p-3 md:p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                      {t('auditTrail.when', 'When')}
-                    </th>
-                    <th className="text-left p-3 md:p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                      {t('auditTrail.user', 'User')}
-                    </th>
-                    <th className="text-left p-3 md:p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                      {t('auditTrail.action', 'Action')}
-                    </th>
-                    <th className="text-left p-3 md:p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                      {t('auditTrail.module', 'Module')}
-                    </th>
-                    <th className="text-left p-3 md:p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                      {t('auditTrail.status', 'Status')}
-                    </th>
-                    <th className="text-right p-3 md:p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                      {t('auditTrail.details', 'Details')}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
-                  {logs.map((log) => (
-                    <tr key={log._id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
-                      <td className="p-3 md:p-4">
-                        <div className="text-sm font-medium text-slate-800 dark:text-white">
-                          {timeAgo(log.createdAt)}
-                        </div>
-                        <div className="text-xs text-slate-400 dark:text-slate-500">
-                          {formatDate(log.createdAt)} {formatTime(log.createdAt)}
-                        </div>
-                      </td>
-                      <td className="p-3 md:p-4">
+          {/* Charts Row - Top */}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            {/* Module Activity Chart */}
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardHeader className="border-b border-slate-100 bg-slate-50/50 pb-3 dark:border-slate-800 dark:bg-slate-900/20">
+                <CardTitle className="flex items-center gap-2 text-sm font-semibold text-slate-950 dark:text-white">
+                  <Zap className="h-4 w-4 text-amber-500" />
+                  Module Activity
+                </CardTitle>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Actions distributed by module
+                </p>
+              </CardHeader>
+              <CardContent className="p-4">
+                {loading && !stats ? (
+                  <Skeleton className="h-[180px] w-full" />
+                ) : moduleChartData.length === 0 ? (
+                  <div className="flex min-h-[140px] flex-col items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50/70 text-slate-500 dark:border-slate-800 dark:bg-slate-900/30 dark:text-slate-400">
+                    <BarChart3 className="h-8 w-8 mb-2 text-slate-400 dark:text-slate-500" />
+                    <p className="text-sm">No module data</p>
+                  </div>
+                ) : (
+                  <div className="h-[180px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={moduleChartData} layout="vertical" margin={{ left: 16, right: 16, top: 8, bottom: 8 }}>
+                        <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="rgba(148,163,184,0.2)" />
+                        <XAxis type="number" hide />
+                        <YAxis dataKey="name" type="category" width={80} tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                        <ReTooltip
+                          contentStyle={{
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            border: '1px solid rgba(51, 65, 85, 0.5)',
+                            borderRadius: '8px',
+                            color: '#fff',
+                            fontSize: '12px',
+                          }}
+                        />
+                        <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={18}>
+                          {moduleChartData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.fill} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Top Users */}
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardHeader className="border-b border-slate-100 bg-slate-50/50 pb-3 dark:border-slate-800 dark:bg-slate-900/20">
+                <CardTitle className="flex items-center gap-2 text-sm font-semibold text-slate-950 dark:text-white">
+                  <Users className="h-4 w-4 text-blue-500" />
+                  Top Contributors
+                </CardTitle>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Most active users in selected period
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-3 p-4">
+                {loading && !stats ? (
+                  <>
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                  </>
+                ) : topUsersData.length === 0 ? (
+                  <div className="flex min-h-[100px] flex-col items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50/70 text-slate-500 dark:border-slate-800 dark:bg-slate-900/30 dark:text-slate-400">
+                    <User className="h-8 w-8 mb-2 text-slate-400 dark:text-slate-500" />
+                    <p className="text-sm">No user activity</p>
+                  </div>
+                ) : (
+                  topUsersData.map((user, idx) => (
+                    <div key={user._id} className="space-y-1.5">
+                      <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 text-xs font-bold uppercase">
-                            {log.user?.name?.charAt(0) || '?'}
+                          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold">
+                            {idx + 1}
                           </div>
                           <div className="min-w-0">
                             <p className="text-sm font-medium text-slate-800 dark:text-white truncate">
-                              {log.user?.name || 'Unknown'}
+                              {user.name}
                             </p>
                             <p className="text-xs text-slate-400 dark:text-slate-500 truncate">
-                              {log.user?.email || ''}
+                              {user.email}
                             </p>
                           </div>
                         </div>
-                      </td>
-                      <td className="p-3 md:p-4">
-                        <p className="text-sm text-slate-700 dark:text-slate-300">
-                          {formatAction(log.action)}
-                        </p>
-                        <p className="text-xs text-slate-400 dark:text-slate-500 font-mono truncate max-w-[250px]" title={log.action}>
-                          {log.action}
-                        </p>
-                      </td>
-                      <td className="p-3 md:p-4">
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                          MODULE_COLORS[log.module] || 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300'
-                        }`}>
-                          {log.module}
+                        <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                          {user.count}
                         </span>
-                      </td>
-                      <td className="p-3 md:p-4">
-                        {log.status === 'success' ? (
-                          <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700 dark:text-green-400">
-                            <CheckCircle className="h-3.5 w-3.5" /> {t('auditTrail.success', 'Success')}
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-xs font-medium text-red-700 dark:text-red-400">
-                            <XCircle className="h-3.5 w-3.5" /> {t('auditTrail.failedStatus', 'Failed')}
-                          </span>
-                        )}
-                      </td>
-                      <td className="p-3 md:p-4 text-right">
-                        <button
-                          onClick={() => setSelectedLog(log)}
-                          className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"
-                          title={t('auditTrail.viewDetails', 'View details')}
+                      </div>
+                      <div className="h-1.5 rounded-full bg-slate-100 dark:bg-slate-800">
+                        <div
+                          className="h-1.5 rounded-full bg-indigo-500"
+                          style={{ width: `${(user.count / maxUserCount) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Status Breakdown */}
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardHeader className="border-b border-slate-100 bg-slate-50/50 pb-3 dark:border-slate-800 dark:bg-slate-900/20">
+                <CardTitle className="flex items-center gap-2 text-sm font-semibold text-slate-950 dark:text-white">
+                  <TrendingUp className="h-4 w-4 text-emerald-500" />
+                  Status Breakdown
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4 p-4">
+                {loading && !stats ? (
+                  <>
+                    <Skeleton className="h-8 w-full" />
+                    <Skeleton className="h-8 w-full" />
+                  </>
+                ) : totalCount === 0 ? (
+                  <div className="flex min-h-[80px] flex-col items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50/70 text-slate-500 dark:border-slate-800 dark:bg-slate-900/30 dark:text-slate-400">
+                    <Activity className="h-6 w-6 mb-1 text-slate-400" />
+                    <p className="text-sm">No data</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
+                          <CheckCircle className="h-3.5 w-3.5 text-emerald-500" /> Success
+                        </span>
+                        <span className="font-semibold text-slate-900 dark:text-white">{Math.round((successCount / totalCount) * 100)}%</span>
+                      </div>
+                      <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800">
+                        <div className="h-2 rounded-full bg-emerald-500" style={{ width: `${(successCount / totalCount) * 100}%` }} />
+                      </div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 text-right">{successCount.toLocaleString()} actions</p>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
+                          <XCircle className="h-3.5 w-3.5 text-red-500" /> Failed
+                        </span>
+                        <span className="font-semibold text-slate-900 dark:text-white">{Math.round((failedCount / totalCount) * 100)}%</span>
+                      </div>
+                      <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800">
+                        <div className="h-2 rounded-full bg-red-500" style={{ width: `${(failedCount / totalCount) * 100}%` }} />
+                      </div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 text-right">{failedCount.toLocaleString()} actions</p>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Logs Section */}
+          <div className="space-y-4">
+              {/* Filters */}
+              <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardContent className="p-4">
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                      <Input
+                        type="text"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                        placeholder={t('auditTrail.searchPlaceholder', 'Search actions...')}
+                        className="pl-10"
+                      />
+                    </div>
+                    <Select
+                      value={filterModule || 'all'}
+                      onValueChange={(value) => { setFilterModule(value === 'all' ? '' : value); setPage(1); }}
+                    >
+                      <SelectTrigger className="w-[160px]">
+                        <SelectValue placeholder={t('auditTrail.allModules', 'All Modules')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">{t('auditTrail.allModules', 'All Modules')}</SelectItem>
+                        {MODULES.map(m => (
+                          <SelectItem key={m} value={m}>{m.charAt(0).toUpperCase() + m.slice(1)}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      variant={hasActiveFilters ? 'secondary' : 'outline'}
+                      size="sm"
+                      onClick={() => setShowFilters(!showFilters)}
+                      className="gap-2"
+                    >
+                      <Filter className="h-4 w-4" />
+                      Filters
+                      {hasActiveFilters && (
+                        <span className="ml-1 h-2 w-2 rounded-full bg-indigo-600 dark:bg-indigo-400" />
+                      )}
+                    </Button>
+                  </div>
+
+                  {showFilters && (
+                    <div className="flex flex-col sm:flex-row gap-3 mt-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+                      <Select
+                        value={filterStatus || 'all'}
+                        onValueChange={(value) => { setFilterStatus(value === 'all' ? '' : value); setPage(1); }}
+                      >
+                        <SelectTrigger className="w-[160px]">
+                          <SelectValue placeholder={t('auditTrail.allStatuses', 'All Statuses')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">{t('auditTrail.allStatuses', 'All Statuses')}</SelectItem>
+                          <SelectItem value="success">{t('auditTrail.success', 'Success')}</SelectItem>
+                          <SelectItem value="failed">{t('auditTrail.failedStatus', 'Failed')}</SelectItem>
+                        </SelectContent>
+                      </Select>
+
+                      <div className="flex items-center gap-2 flex-1">
+                        <Calendar className="h-4 w-4 text-slate-400 shrink-0" />
+                        <Input
+                          type="date"
+                          value={startDate}
+                          onChange={(e) => { setStartDate(e.target.value); setPage(1); }}
+                          className="flex-1"
+                        />
+                        <span className="text-slate-400 text-sm">→</span>
+                        <Input
+                          type="date"
+                          value={endDate}
+                          onChange={(e) => { setEndDate(e.target.value); setPage(1); }}
+                          className="flex-1"
+                        />
+                      </div>
+
+                      {hasActiveFilters && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={clearFilters}
+                          className="text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
                         >
-                          <Eye className="h-4 w-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
+                          <X className="h-3.5 w-3.5 mr-1" /> Clear
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between mt-4">
-            <span className="text-sm text-slate-500 dark:text-slate-400">
-              {t('auditTrail.page', 'Page')} {page} / {totalPages}
-            </span>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="flex items-center gap-1 px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed text-slate-600 dark:text-slate-300"
-              >
-                <ChevronLeft className="h-4 w-4" /> {t('common.back', 'Back')}
-              </button>
-              <button
-                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-                className="flex items-center gap-1 px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed text-slate-600 dark:text-slate-300"
-              >
-                {t('common.next', 'Next')} <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Detail Modal */}
-        {selectedLog && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-3" onClick={() => setSelectedLog(null)}>
-            <div
-              className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-lg max-h-[85vh] overflow-hidden"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Modal header */}
-              <div className="flex items-center justify-between p-4 md:p-5 border-b border-slate-200 dark:border-slate-700">
-                <h2 className="text-lg font-semibold text-slate-800 dark:text-white flex items-center gap-2">
-                  <Eye className="h-5 w-5 text-indigo-600" />
-                  {t('auditTrail.actionDetails', 'Action Details')}
-                </h2>
-                <button
-                  onClick={() => setSelectedLog(null)}
-                  className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg"
-                >
-                  <X className="h-5 w-5 text-slate-500 dark:text-slate-400" />
-                </button>
+              {/* Results count */}
+              <div className="flex items-center justify-between px-1">
+                <span className="text-sm text-slate-500 dark:text-slate-400">
+                  {total > 0
+                    ? `${t('auditTrail.showing', 'Showing')} ${(page - 1) * limit + 1}–${Math.min(page * limit, total)} ${t('auditTrail.of', 'of')} ${total.toLocaleString()}`
+                    : ''}
+                </span>
               </div>
 
-              {/* Modal body */}
-              <div className="p-4 md:p-5 overflow-y-auto max-h-[calc(85vh-65px)] space-y-4">
-                {/* Status & timestamp */}
-                <div className="flex items-center justify-between">
+              {/* Logs Table */}
+              {loading ? (
+                <Card className="border-slate-200 dark:border-slate-800">
+                  <CardContent className="p-0">
+                    <div className="flex justify-center py-12">
+                      <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : logs.length === 0 ? (
+                <Card className="border-slate-200 dark:border-slate-800">
+                  <CardContent className="flex flex-col items-center justify-center py-12">
+                    <History className="h-12 w-12 text-slate-300 dark:text-slate-600 mb-3" />
+                    <p className="text-slate-500 dark:text-slate-400 font-medium">
+                      {t('auditTrail.noLogs', 'No activity logs found')}
+                    </p>
+                    <p className="text-sm text-slate-400 dark:text-slate-500 mt-1">
+                      {hasActiveFilters
+                        ? t('auditTrail.tryDifferentFilters', 'Try different filters')
+                        : t('auditTrail.noActivityYet', 'User actions will appear here')}
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardContent className="p-0">
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-slate-50/80 dark:bg-slate-800/80 hover:bg-slate-50/80 dark:hover:bg-slate-800/80">
+                            <TableHead className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">When</TableHead>
+                            <TableHead className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">User</TableHead>
+                            <TableHead className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Action</TableHead>
+                            <TableHead className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Module</TableHead>
+                            <TableHead className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Status</TableHead>
+                            <TableHead className="text-right text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Details</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {logs.map((log) => (
+                            <TableRow
+                              key={log._id}
+                              className="group hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors"
+                            >
+                              <TableCell>
+                                <div className="flex items-center gap-3">
+                                  <div
+                                    className="h-8 w-1 rounded-full shrink-0"
+                                    style={{ backgroundColor: MODULE_BAR_COLORS[log.module] || 'transparent' }}
+                                  />
+                                  <div>
+                                    <div className="text-sm font-medium text-slate-800 dark:text-white">
+                                      {timeAgo(log.createdAt)}
+                                    </div>
+                                    <div className="text-xs text-slate-400 dark:text-slate-500">
+                                      {formatDate(log.createdAt)} {formatTime(log.createdAt)}
+                                    </div>
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 text-xs font-bold uppercase">
+                                    {getInitials(log.user?.name)}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className="text-sm font-medium text-slate-800 dark:text-white truncate">
+                                      {log.user?.name || 'Unknown'}
+                                    </p>
+                                    <p className="text-xs text-slate-400 dark:text-slate-500 truncate">
+                                      {log.user?.email || ''}
+                                    </p>
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <p className="text-sm text-slate-700 dark:text-slate-300">
+                                  {formatAction(log.action)}
+                                </p>
+                                <p className="text-xs text-slate-400 dark:text-slate-500 font-mono truncate max-w-[200px]" title={log.action}>
+                                  {log.action}
+                                </p>
+                              </TableCell>
+                              <TableCell>
+                                <ModuleBadge module={log.module} />
+                              </TableCell>
+                              <TableCell>
+                                <StatusBadge status={log.status} />
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setSelectedLog(log)}
+                                  className="text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between pt-2">
+                  <span className="text-sm text-slate-500 dark:text-slate-400">
+                    {t('auditTrail.page', 'Page')} {page} / {totalPages}
+                  </span>
                   <div className="flex items-center gap-2">
-                    {selectedLog.status === 'success' ? (
-                      <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium">
-                        <CheckCircle className="h-3.5 w-3.5" /> Success
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs font-medium">
-                        <XCircle className="h-3.5 w-3.5" /> Failed
-                      </span>
-                    )}
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
-                      MODULE_COLORS[selectedLog.module] || 'bg-slate-100 text-slate-700'
-                    }`}>
-                      {selectedLog.module}
-                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage(p => Math.max(1, p - 1))}
+                      disabled={page === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4 mr-1" /> {t('common.back', 'Back')}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                      disabled={page === totalPages}
+                    >
+                      {t('common.next', 'Next')} <ChevronRight className="h-4 w-4 ml-1" />
+                    </Button>
                   </div>
                 </div>
+              )}
+            </div>
+        </div>
+      </div>
 
-                {/* Info rows */}
-                <div className="space-y-3">
+      {/* Detail Dialog */}
+      <Dialog open={!!selectedLog} onOpenChange={(open) => !open && setSelectedLog(null)}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-lg font-semibold text-slate-800 dark:text-white">
+              <Eye className="h-5 w-5 text-indigo-600" />
+              {t('auditTrail.actionDetails', 'Action Details')}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedLog && (
+            <div className="space-y-4 mt-2">
+              <div className="flex items-center gap-2">
+                <StatusBadge status={selectedLog.status} />
+                <ModuleBadge module={selectedLog.module} />
+              </div>
+
+              <div className="space-y-3">
+                <DetailRow
+                  icon={<Clock className="h-4 w-4" />}
+                  label={t('auditTrail.timestamp', 'Timestamp')}
+                  value={`${formatDate(selectedLog.createdAt)} ${formatTime(selectedLog.createdAt)}`}
+                />
+                <DetailRow
+                  icon={<User className="h-4 w-4" />}
+                  label={t('auditTrail.user', 'User')}
+                  value={selectedLog.user ? `${selectedLog.user.name} (${selectedLog.user.email})` : 'Unknown'}
+                />
+                <DetailRow
+                  icon={<Activity className="h-4 w-4" />}
+                  label={t('auditTrail.rawAction', 'Raw Action')}
+                  value={selectedLog.action}
+                  mono
+                />
+                {selectedLog.targetId && (
                   <DetailRow
-                    icon={<Clock className="h-4 w-4" />}
-                    label={t('auditTrail.timestamp', 'Timestamp')}
-                    value={`${formatDate(selectedLog.createdAt)} ${formatTime(selectedLog.createdAt)}`}
-                  />
-                  <DetailRow
-                    icon={<User className="h-4 w-4" />}
-                    label={t('auditTrail.user', 'User')}
-                    value={selectedLog.user ? `${selectedLog.user.name} (${selectedLog.user.email})` : 'Unknown'}
-                  />
-                  <DetailRow
-                    icon={<Activity className="h-4 w-4" />}
-                    label={t('auditTrail.rawAction', 'Raw Action')}
-                    value={selectedLog.action}
+                    icon={<Monitor className="h-4 w-4" />}
+                    label={t('auditTrail.targetId', 'Target ID')}
+                    value={selectedLog.targetId}
                     mono
                   />
-                  {selectedLog.targetId && (
-                    <DetailRow
-                      icon={<Monitor className="h-4 w-4" />}
-                      label={t('auditTrail.targetId', 'Target ID')}
-                      value={selectedLog.targetId}
-                      mono
-                    />
-                  )}
-                  {selectedLog.ipAddress && (
-                    <DetailRow
-                      icon={<Globe className="h-4 w-4" />}
-                      label={t('auditTrail.ipAddress', 'IP Address')}
-                      value={selectedLog.ipAddress}
-                      mono
-                    />
-                  )}
-                  {selectedLog.userAgent && (
-                    <DetailRow
-                      icon={<Monitor className="h-4 w-4" />}
-                      label={t('auditTrail.userAgent', 'User Agent')}
-                      value={selectedLog.userAgent}
-                      truncate
-                    />
-                  )}
-                </div>
-
-                {/* Request details */}
-                {selectedLog.details && (
-                  <div>
-                    <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                      {t('auditTrail.requestDetails', 'Request Details')}
-                    </h3>
-                    <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-3 text-xs font-mono text-slate-600 dark:text-slate-400 overflow-x-auto max-h-48 overflow-y-auto">
-                      <pre className="whitespace-pre-wrap break-words">
-                        {JSON.stringify(selectedLog.details, null, 2)}
-                      </pre>
-                    </div>
-                  </div>
+                )}
+                {selectedLog.ipAddress && (
+                  <DetailRow
+                    icon={<Globe className="h-4 w-4" />}
+                    label={t('auditTrail.ipAddress', 'IP Address')}
+                    value={selectedLog.ipAddress}
+                    mono
+                  />
+                )}
+                {selectedLog.userAgent && (
+                  <DetailRow
+                    icon={<Monitor className="h-4 w-4" />}
+                    label={t('auditTrail.userAgent', 'User Agent')}
+                    value={selectedLog.userAgent}
+                    truncate
+                  />
                 )}
               </div>
+
+              {selectedLog.details && (
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                    {t('auditTrail.requestDetails', 'Request Details')}
+                  </h3>
+                  <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-3 text-xs font-mono text-slate-600 dark:text-slate-400 overflow-x-auto max-h-48 overflow-y-auto">
+                    <pre className="whitespace-pre-wrap break-words">
+                      {JSON.stringify(selectedLog.details, null, 2)}
+                    </pre>
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Layout>
-  );
-}
-
-// ─── Sub-component ──────────────────────────────────
-
-function DetailRow({ icon, label, value, mono, truncate }: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  mono?: boolean;
-  truncate?: boolean;
-}) {
-  return (
-    <div className="flex items-start gap-3">
-      <div className="text-slate-400 dark:text-slate-500 mt-0.5 shrink-0">{icon}</div>
-      <div className="min-w-0">
-        <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{label}</p>
-        <p className={`text-sm text-slate-800 dark:text-white mt-0.5 ${mono ? 'font-mono text-xs' : ''} ${truncate ? 'truncate' : 'break-words'}`}>
-          {value}
-        </p>
-      </div>
-    </div>
   );
 }

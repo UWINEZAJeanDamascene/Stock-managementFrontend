@@ -6,32 +6,39 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/ca
 import { Input } from '@/app/components/ui/input';
 import { Label } from '@/app/components/ui/label';
 import { Textarea } from '@/app/components/ui/textarea';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
+import { Skeleton } from '@/app/components/ui/skeleton';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
   DialogTrigger,
   DialogFooter,
 } from '@/app/components/ui/dialog';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from '@/app/components/ui/table';
 import { Badge } from '@/app/components/ui/badge';
-import { 
-  Plus, 
-  Pencil, 
-  Trash2, 
-  Star, 
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Star,
   GripVertical,
   MessageSquare,
   ToggleLeft,
   ToggleRight,
+  Quote,
+  Users,
+  Sparkles,
+  TrendingUp,
+  Heart,
+  ShieldCheck,
 } from 'lucide-react';
 import { testimonialsApi, Testimonial } from '@/lib/api';
 import { toast } from 'sonner';
@@ -143,219 +150,303 @@ export default function TestimonialsPage() {
     setDialogOpen(true);
   };
 
+  const activeCount = testimonials.filter(t => t.isActive).length;
+  const avgRating = testimonials.length > 0
+    ? (testimonials.reduce((sum, t) => sum + t.rating, 0) / testimonials.length).toFixed(1)
+    : '0.0';
+
   return (
     <Layout>
-      <div className="container mx-auto py-6">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-800 dark:text-white">{t('nav.testimonials') || 'Testimonials'}</h1>
-            <p className="text-slate-500 dark:text-slate-400">
-              {t('testimonials.description') || 'Manage customer testimonials for your landing page'}
-            </p>
-          </div>
-          <Dialog open={dialogOpen} onOpenChange={(open) => {
-            setDialogOpen(open);
-            if (!open) resetForm();
-          }}>
-            <DialogTrigger asChild>
-              <Button onClick={openNewDialog}>
-                <Plus className="mr-2 h-4 w-4" />
-                {t('common.add') || 'Add New'}
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-md bg-white dark:bg-slate-800">
-              <DialogHeader>
-                <DialogTitle className="text-slate-800 dark:text-white">
-                  {editingTestimonial 
-                    ? (t('common.edit') || 'Edit Testimonial')
-                    : (t('common.add') || 'Add Testimonial')}
-                </DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name" className="text-slate-700 dark:text-slate-300">{t('testimonials.name') || 'Name'}</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-300 dark:border-slate-600"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="role" className="text-slate-700 dark:text-slate-300">{t('testimonials.role') || 'Role'}</Label>
-                  <Input
-                    id="role"
-                    value={formData.role}
-                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                    placeholder="e.g., Store Manager"
-                    className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-300 dark:border-slate-600"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="company" className="text-slate-700 dark:text-slate-300">{t('testimonials.company') || 'Company'}</Label>
-                  <Input
-                    id="company"
-                    value={formData.company}
-                    onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                    className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-300 dark:border-slate-600"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="content" className="text-slate-700 dark:text-slate-300">{t('testimonials.content') || 'Testimonial Content'}</Label>
-                  <Textarea
-                    id="content"
-                    value={formData.content}
-                    onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                    rows={4}
-                    className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-300 dark:border-slate-600"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="rating" className="text-slate-700 dark:text-slate-300">{t('testimonials.rating') || 'Rating'}</Label>
-                  <div className="flex gap-1">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button
-                        key={star}
-                        type="button"
-                        onClick={() => setFormData({ ...formData, rating: star })}
-                        className="p-1"
-                      >
-                        <Star
-                          className={`h-6 w-6 ${
-                            star <= formData.rating 
-                              ? 'fill-yellow-400 text-yellow-400' 
-                              : 'text-gray-300 dark:text-gray-600'
-                          }`}
-                        />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="order" className="text-slate-700 dark:text-slate-300">{t('testimonials.order') || 'Display Order'}</Label>
-                  <Input
-                    id="order"
-                    type="number"
-                    min="0"
-                    value={formData.order}
-                    onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) || 0 })}
-                    className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-300 dark:border-slate-600"
-                  />
-                </div>
-                <DialogFooter>
-                  <Button type="submit">
-                    {editingTestimonial ? (t('common.update') || 'Update') : (t('common.save') || 'Save')}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
-        </div>
+      <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1200px] w-full space-y-6">
 
-        <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-slate-800 dark:text-white">
-              <MessageSquare className="h-5 w-5" />
-              {t('testimonials.manage') || 'Manage Testimonials'}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="text-center py-8 text-slate-500 dark:text-slate-400">{t('common.loading') || 'Loading...'}</div>
-            ) : testimonials.length === 0 ? (
-              <div className="text-center py-8 text-slate-500 dark:text-slate-400">
-                {t('testimonials.noTestimonials') || 'No testimonials yet. Add your first testimonial!'}
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow className="border-slate-200 dark:border-slate-700">
-                    <TableHead className="w-8"></TableHead>
-                    <TableHead className="text-slate-700 dark:text-slate-300">{t('testimonials.name') || 'Name'}</TableHead>
-                    <TableHead className="text-slate-700 dark:text-slate-300">{t('testimonials.company') || 'Company'}</TableHead>
-                    <TableHead className="text-slate-700 dark:text-slate-300">{t('testimonials.content') || 'Content'}</TableHead>
-                    <TableHead className="text-slate-700 dark:text-slate-300">{t('testimonials.rating') || 'Rating'}</TableHead>
-                    <TableHead className="text-slate-700 dark:text-slate-300">{t('testimonials.status') || 'Status'}</TableHead>
-                    <TableHead className="text-right text-slate-700 dark:text-slate-300">{t('common.actions') || 'Actions'}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {testimonials.map((testimonial) => (
-                    <TableRow key={testimonial._id} className="border-slate-200 dark:border-slate-700">
-                      <TableCell>
-                        <GripVertical className="h-4 w-4 text-slate-400 dark:text-slate-500 cursor-grab" />
-                      </TableCell>
-                      <TableCell className="font-medium text-slate-800 dark:text-white">
-                        <div>{testimonial.name}</div>
-                        <div className="text-sm text-slate-500 dark:text-slate-400">{testimonial.role}</div>
-                      </TableCell>
-                      <TableCell className="text-slate-600 dark:text-slate-300">{testimonial.company}</TableCell>
-                      <TableCell className="max-w-xs text-slate-600 dark:text-slate-300">
-                        <div className="truncate">{testimonial.content}</div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-0.5">
-                          {[...Array(5)].map((_, i) => (
-                            <Star
-                              key={i}
-                              className={`h-4 w-4 ${
-                                i < testimonial.rating 
-                                  ? 'fill-yellow-400 text-yellow-400' 
-                                  : 'text-gray-300 dark:text-gray-600'
-                              }`}
-                            />
+          {/* Hero Header */}
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 text-white shadow-sm dark:border-slate-800">
+            <div className="p-6 lg:p-7">
+              <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge className="bg-white/10 text-white hover:bg-white/10">
+                      <Quote className="mr-1 h-3.5 w-3.5" />
+                      Testimonials
+                    </Badge>
+                    <Badge className="bg-emerald-500/20 text-emerald-200 hover:bg-emerald-500/20">
+                      <ShieldCheck className="mr-1 h-3 w-3" /> {activeCount} active
+                    </Badge>
+                  </div>
+                  <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
+                    {t('nav.testimonials') || 'Testimonials'}
+                  </h1>
+                  <p className="mt-2 max-w-2xl text-sm text-slate-300 sm:text-base">
+                    {t('testimonials.description') || 'Manage customer testimonials for your landing page'}
+                  </p>
+                </div>
+
+                <Dialog open={dialogOpen} onOpenChange={(open) => {
+                  setDialogOpen(open);
+                  if (!open) resetForm();
+                }}>
+                  <DialogTrigger asChild>
+                    <Button onClick={openNewDialog} className="bg-white text-slate-950 hover:bg-slate-100">
+                      <Plus className="mr-1.5 h-4 w-4" />
+                      {t('common.add') || 'Add New'}
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-md overflow-hidden border-slate-200 bg-white p-0 dark:border-slate-800 dark:bg-slate-950">
+                    {/* Dark header */}
+                    <div className="bg-slate-950 px-6 pb-6 pt-6">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/20 ring-1 ring-indigo-500/30">
+                          <Sparkles className="h-5 w-5 text-indigo-300" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium uppercase tracking-wider text-slate-400">
+                            {editingTestimonial ? 'Edit' : 'Create'}
+                          </p>
+                          <h3 className="text-lg font-bold text-white">
+                            {editingTestimonial
+                              ? (t('common.edit') || 'Edit Testimonial')
+                              : (t('common.add') || 'Add Testimonial')}
+                          </h3>
+                        </div>
+                      </div>
+                    </div>
+                    <form onSubmit={handleSubmit} className="space-y-4 p-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="name" className="text-slate-700 dark:text-slate-300 text-sm font-medium">{t('testimonials.name') || 'Name'}</Label>
+                        <Input
+                          id="name"
+                          value={formData.name}
+                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                          className="border-slate-200 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                          required
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label htmlFor="role" className="text-slate-700 dark:text-slate-300 text-sm font-medium">{t('testimonials.role') || 'Role'}</Label>
+                          <Input
+                            id="role"
+                            value={formData.role}
+                            onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                            placeholder="e.g. Manager"
+                            className="border-slate-200 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="company" className="text-slate-700 dark:text-slate-300 text-sm font-medium">{t('testimonials.company') || 'Company'}</Label>
+                          <Input
+                            id="company"
+                            value={formData.company}
+                            onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                            className="border-slate-200 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="content" className="text-slate-700 dark:text-slate-300 text-sm font-medium">{t('testimonials.content') || 'Testimonial Content'}</Label>
+                        <Textarea
+                          id="content"
+                          value={formData.content}
+                          onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                          rows={4}
+                          className="border-slate-200 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-slate-700 dark:text-slate-300 text-sm font-medium">{t('testimonials.rating') || 'Rating'}</Label>
+                        <div className="flex gap-1">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <button
+                              key={star}
+                              type="button"
+                              onClick={() => setFormData({ ...formData, rating: star })}
+                              className="p-1 transition-transform hover:scale-110"
+                            >
+                              <Star
+                                className={`h-7 w-7 ${
+                                  star <= formData.rating
+                                    ? 'fill-yellow-400 text-yellow-400'
+                                    : 'text-slate-300 dark:text-slate-600'
+                                }`}
+                              />
+                            </button>
                           ))}
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={testimonial.isActive ? 'default' : 'secondary'} className={testimonial.isActive ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'}>
-                          {testimonial.isActive ? 'Active' : 'Inactive'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleToggle(testimonial)}
-                            title={testimonial.isActive ? 'Deactivate' : 'Activate'}
-                            className="text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
-                          >
-                            {testimonial.isActive ? (
-                              <ToggleRight className="h-4 w-4 text-green-500" />
-                            ) : (
-                              <ToggleLeft className="h-4 w-4 text-gray-400" />
-                            )}
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleEdit(testimonial)}
-                            className="text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDelete(testimonial._id)}
-                            className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="order" className="text-slate-700 dark:text-slate-300 text-sm font-medium">{t('testimonials.order') || 'Display Order'}</Label>
+                        <Input
+                          id="order"
+                          type="number"
+                          min="0"
+                          value={formData.order}
+                          onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) || 0 })}
+                          className="border-slate-200 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                        />
+                      </div>
+                      <DialogFooter className="pt-2">
+                        <Button type="submit" className="bg-indigo-600 text-white hover:bg-indigo-700">
+                          {editingTestimonial ? (t('common.update') || 'Update') : (t('common.save') || 'Save')}
+                        </Button>
+                      </DialogFooter>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              </div>
+
+              {/* Metric tiles */}
+              <div className="mt-7 grid gap-4 sm:grid-cols-3">
+                <div className="rounded-xl border border-white/10 bg-white/[0.04] p-4">
+                  <p className="text-xs uppercase tracking-wide text-slate-400">Total Testimonials</p>
+                  <p className="mt-3 text-3xl font-bold">{testimonials.length}</p>
+                  <p className="mt-2 text-xs text-slate-400">{activeCount} active</p>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-white/[0.04] p-4">
+                  <p className="text-xs uppercase tracking-wide text-slate-400">Average Rating</p>
+                  <div className="mt-3 flex items-center gap-2">
+                    <p className="text-3xl font-bold">{avgRating}</p>
+                    <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                  </div>
+                  <p className="mt-2 text-xs text-slate-400">out of 5 stars</p>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-white/[0.04] p-4">
+                  <p className="text-xs uppercase tracking-wide text-slate-400">Active Rate</p>
+                  <p className="mt-3 text-3xl font-bold">
+                    {testimonials.length > 0 ? Math.round((activeCount / testimonials.length) * 100) : 0}%
+                  </p>
+                  <p className="mt-2 text-xs text-slate-400">visible on landing page</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Table Card */}
+          <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <CardHeader className="border-b border-slate-100 bg-slate-50/50 pb-4 dark:border-slate-800 dark:bg-slate-900/20">
+              <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-950 dark:text-white">
+                <MessageSquare className="h-5 w-5 text-indigo-500" />
+                {t('testimonials.manage') || 'Manage Testimonials'}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {loading ? (
+                <div className="space-y-3 p-5">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Skeleton key={i} className="h-12 w-full" />
                   ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+                </div>
+              ) : testimonials.length === 0 ? (
+                <div className="flex flex-col items-center gap-3 py-12 text-center">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700">
+                    <Users className="h-7 w-7 text-slate-400" />
+                  </div>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                    {t('testimonials.noTestimonials') || 'No testimonials yet. Add your first testimonial!'}
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-slate-100 dark:border-slate-800 hover:bg-transparent">
+                        <TableHead className="w-8"></TableHead>
+                        <TableHead className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{t('testimonials.name') || 'Name'}</TableHead>
+                        <TableHead className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{t('testimonials.company') || 'Company'}</TableHead>
+                        <TableHead className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{t('testimonials.content') || 'Content'}</TableHead>
+                        <TableHead className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{t('testimonials.rating') || 'Rating'}</TableHead>
+                        <TableHead className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{t('testimonials.status') || 'Status'}</TableHead>
+                        <TableHead className="text-right text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{t('common.actions') || 'Actions'}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {testimonials.map((testimonial) => (
+                        <TableRow key={testimonial._id} className="border-slate-100 dark:border-slate-800">
+                          <TableCell>
+                            <GripVertical className="h-4 w-4 text-slate-300 dark:text-slate-600 cursor-grab" />
+                          </TableCell>
+                          <TableCell className="font-medium text-slate-800 dark:text-white">
+                            <div className="flex items-center gap-2">
+                              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 text-xs font-bold dark:bg-indigo-950/30 dark:text-indigo-400">
+                                {testimonial.name.charAt(0).toUpperCase()}
+                              </div>
+                              <div>
+                                <div className="text-sm font-semibold">{testimonial.name}</div>
+                                <div className="text-xs text-slate-500 dark:text-slate-400">{testimonial.role}</div>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-sm text-slate-600 dark:text-slate-300">{testimonial.company}</TableCell>
+                          <TableCell className="max-w-xs text-sm text-slate-600 dark:text-slate-300">
+                            <div className="truncate" title={testimonial.content}>{testimonial.content}</div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-0.5">
+                              {[...Array(5)].map((_, i) => (
+                                <Star
+                                  key={i}
+                                  className={`h-4 w-4 ${
+                                    i < testimonial.rating
+                                      ? 'fill-yellow-400 text-yellow-400'
+                                      : 'text-slate-200 dark:text-slate-700'
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className={testimonial.isActive
+                              ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400'
+                              : 'border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400'
+                            }>
+                              {testimonial.isActive ? 'Active' : 'Inactive'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleToggle(testimonial)}
+                                title={testimonial.isActive ? 'Deactivate' : 'Activate'}
+                                className="h-8 w-8 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+                              >
+                                {testimonial.isActive ? (
+                                  <ToggleRight className="h-4 w-4 text-emerald-500" />
+                                ) : (
+                                  <ToggleLeft className="h-4 w-4 text-slate-400" />
+                                )}
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleEdit(testimonial)}
+                                className="h-8 w-8 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDelete(testimonial._id)}
+                                className="h-8 w-8 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </Layout>
   );

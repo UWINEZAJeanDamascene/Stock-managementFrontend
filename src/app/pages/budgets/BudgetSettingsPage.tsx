@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Layout } from '../../layout/Layout';
 import {
   Settings,
@@ -19,8 +20,16 @@ import {
   Building2,
   DollarSign,
   X,
+  Info,
+  Lightbulb,
+  Users,
+  BarChart3,
+  Zap,
+  ShieldCheck,
+  Layers,
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
+import { Skeleton } from '@/app/components/ui/skeleton';
 import { Input } from '@/app/components/ui/input';
 import { Textarea } from '@/app/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/app/components/ui/card';
@@ -138,6 +147,7 @@ const defaultSettings = (): WorkflowSettings => ({
 });
 
 export default function BudgetSettingsPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [configs, setConfigs] = useState<WorkflowConfig[]>([]);
   const [loading, setLoading] = useState(true);
@@ -406,621 +416,851 @@ export default function BudgetSettingsPage() {
     return APPROVER_TYPES.find(t => t.value === type)?.label || type;
   };
 
+  // Metrics
+  const totalConfigs = configs.length;
+  const activeConfigs = configs.filter(c => c.is_active).length;
+  const defaultConfigs = configs.filter(c => c.is_default).length;
+  const totalSteps = configs.reduce((sum, c) => sum + c.steps.length, 0);
+
   return (
     <Layout>
-      <div className="space-y-6 max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <div className="flex items-center gap-4">
-            <Button variant="outline" size="sm" onClick={() => navigate('/budgets')}>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold flex items-center gap-2">
-                <Settings className="h-6 w-6" />
-                Budget Workflow Settings
-              </h1>
-              <p className="text-muted-foreground">Configure multi-level approval workflows for budgets</p>
+      <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1600px] space-y-6">
+          {/* ── Hero Header ── */}
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+            <div className="grid gap-5 p-5 xl:grid-cols-[1fr_420px] xl:items-stretch">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="rounded-lg bg-violet-50 p-2.5 text-violet-700 ring-1 ring-violet-100 dark:bg-violet-950/40 dark:text-violet-300 dark:ring-violet-900/60">
+                    <Settings className="h-5 w-5" />
+                  </div>
+                  <h1 className="text-2xl font-bold tracking-tight text-slate-950 dark:text-white sm:text-3xl">
+                    Budget Workflow Settings
+                  </h1>
+                </div>
+                <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+                  Configure multi-level approval workflows for budgets, transfers, and expenses.
+                </p>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <Badge variant="secondary" className="dark:bg-slate-800 dark:text-slate-300">
+                    <BarChart3 className="mr-1 h-3 w-3" />
+                    {totalConfigs} workflows
+                  </Badge>
+                  <Badge variant="secondary" className="dark:bg-slate-800 dark:text-slate-300">
+                    <Zap className="mr-1 h-3 w-3" />
+                    {activeConfigs} active
+                  </Badge>
+                </div>
+                <div className="mt-5 flex flex-wrap gap-2">
+                  <Button
+                    onClick={openCreate}
+                    className="h-10 gap-2 bg-violet-600 hover:bg-violet-700 dark:bg-violet-600 dark:hover:bg-violet-500"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Create Workflow
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={openTest}
+                    className="h-10 gap-2 dark:border-slate-700 dark:text-slate-200"
+                  >
+                    <Play className="h-4 w-4" />
+                    Test Match
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate('/budgets')}
+                    className="h-10 gap-2 dark:border-slate-700 dark:text-slate-200"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    Back
+                  </Button>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3 rounded-lg border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-950/40">
+                <div className="rounded-lg bg-white p-3 shadow-sm dark:bg-slate-900">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Total Workflows</p>
+                  <p className="mt-1 text-lg font-bold text-slate-950 dark:text-white">{totalConfigs}</p>
+                </div>
+                <div className="rounded-lg bg-white p-3 shadow-sm dark:bg-slate-900">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Active</p>
+                  <p className="mt-1 text-lg font-bold text-emerald-600 dark:text-emerald-400">{activeConfigs}</p>
+                </div>
+                <div className="rounded-lg bg-white p-3 shadow-sm dark:bg-slate-900">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Default Set</p>
+                  <p className="mt-1 text-lg font-bold text-amber-600 dark:text-amber-400">{defaultConfigs}</p>
+                </div>
+                <div className="rounded-lg bg-white p-3 shadow-sm dark:bg-slate-900">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Total Steps</p>
+                  <p className="mt-1 text-lg font-bold text-violet-600 dark:text-violet-400">{totalSteps}</p>
+                </div>
+              </div>
             </div>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={openTest} className="gap-2">
-              <Play className="h-4 w-4" />
-              Test Match
-            </Button>
-            <Button onClick={openCreate} className="gap-2">
-              <Plus className="h-4 w-4" />
-              Create Workflow
-            </Button>
-          </div>
-        </div>
 
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search workflows..."
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-
-        {/* Configs Grid */}
-        {loading ? (
-          <div className="flex items-center justify-center py-16">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
-        ) : filteredConfigs.length === 0 ? (
-          <div className="text-center py-16">
-            <GitBranch className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium mb-2">No workflow configurations</h3>
-            <p className="text-muted-foreground mb-4">Create your first approval workflow to get started</p>
-            <Button onClick={openCreate} className="gap-2">
-              <Plus className="h-4 w-4" />
-              Create Workflow
-            </Button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {filteredConfigs.map(config => (
-              <Card key={config._id} className={config.is_default ? 'border-primary/50 bg-primary/5' : ''}>
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-2">
-                      <CardTitle className="text-base">{config.name}</CardTitle>
-                      {config.is_default && (
-                        <Badge className="text-xs bg-primary text-primary-foreground">
-                          <Star className="h-3 w-3 mr-1" />
-                          Default
-                        </Badge>
-                      )}
+          {/* ── Metric Tiles ── */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {loading ? (
+              <>
+                {[...Array(4)].map((_, i) => (
+                  <Card key={i} className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                    <CardContent className="p-5">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0 space-y-2">
+                          <Skeleton className="h-3 w-28" />
+                          <Skeleton className="h-8 w-32" />
+                        </div>
+                        <Skeleton className="h-10 w-10 rounded-lg" />
+                      </div>
+                      <Skeleton className="mt-3 h-3 w-36" />
+                    </CardContent>
+                  </Card>
+                ))}
+              </>
+            ) : (
+              <>
+                <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardContent className="p-5">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Total Workflows</p>
+                        <p className="mt-3 text-2xl font-bold text-slate-950 dark:text-white">{totalConfigs}</p>
+                      </div>
+                      <div className="rounded-lg bg-violet-50 p-2.5 text-violet-700 ring-1 ring-violet-100 dark:bg-violet-950/40 dark:text-violet-300 dark:ring-violet-900/60">
+                        <Layers className="h-5 w-5" />
+                      </div>
                     </div>
-                    <div className="flex gap-1">
-                      {!config.is_default && (
+                    <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">Configured approval flows</p>
+                  </CardContent>
+                </Card>
+                <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardContent className="p-5">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Active</p>
+                        <p className="mt-3 text-2xl font-bold text-emerald-600 dark:text-emerald-400">{activeConfigs}</p>
+                      </div>
+                      <div className="rounded-lg bg-emerald-50 p-2.5 text-emerald-700 ring-1 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60">
+                        <Zap className="h-5 w-5" />
+                      </div>
+                    </div>
+                    <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">Currently in use</p>
+                  </CardContent>
+                </Card>
+                <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardContent className="p-5">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Default</p>
+                        <p className="mt-3 text-2xl font-bold text-amber-600 dark:text-amber-400">{defaultConfigs}</p>
+                      </div>
+                      <div className="rounded-lg bg-amber-50 p-2.5 text-amber-700 ring-1 ring-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/60">
+                        <Star className="h-5 w-5" />
+                      </div>
+                    </div>
+                    <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">Auto-assigned workflows</p>
+                  </CardContent>
+                </Card>
+                <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardContent className="p-5">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Total Steps</p>
+                        <p className="mt-3 text-2xl font-bold text-blue-600 dark:text-blue-400">{totalSteps}</p>
+                      </div>
+                      <div className="rounded-lg bg-blue-50 p-2.5 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60">
+                        <Users className="h-5 w-5" />
+                      </div>
+                    </div>
+                    <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">Approval steps across all flows</p>
+                  </CardContent>
+                </Card>
+              </>
+            )}
+          </div>
+
+          {/* ── Search ── */}
+          <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <CardContent className="p-5">
+              <div className="relative max-w-md">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Input
+                  placeholder="Search workflows..."
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                  className="h-10 pl-10 bg-white text-slate-900 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-white dark:ring-slate-700"
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* ── Configs Grid ── */}
+          {loading ? (
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
+            </div>
+          ) : filteredConfigs.length === 0 ? (
+            <div className="text-center py-16 rounded-xl border border-dashed border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900/50">
+              <GitBranch className="h-12 w-12 text-slate-300 mx-auto mb-4 dark:text-slate-600" />
+              <h3 className="text-lg font-medium mb-2 text-slate-900 dark:text-white">No workflow configurations</h3>
+              <p className="text-slate-500 mb-4 dark:text-slate-400">Create your first approval workflow to get started</p>
+              <Button onClick={openCreate} className="gap-2 bg-violet-600 hover:bg-violet-700">
+                <Plus className="h-4 w-4" />
+                Create Workflow
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {filteredConfigs.map(config => (
+                <Card
+                  key={config._id}
+                  className={`overflow-hidden border-slate-200 bg-white shadow-sm transition-all hover:shadow-md dark:border-slate-800 dark:bg-slate-950 ${
+                    config.is_default ? 'ring-1 ring-violet-500/30 dark:ring-violet-500/20' : ''
+                  }`}
+                >
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
+                          config.is_default
+                            ? 'bg-violet-50 text-violet-700 ring-1 ring-violet-100 dark:bg-violet-950/40 dark:text-violet-300 dark:ring-violet-900/60'
+                            : 'bg-slate-50 text-slate-700 ring-1 ring-slate-100 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-700'
+                        }`}>
+                          <GitBranch className="h-4 w-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <CardTitle className="text-base truncate">{config.name}</CardTitle>
+                        </div>
+                        {config.is_default && (
+                          <Badge className="text-xs bg-violet-600 text-white shrink-0">
+                            <Star className="h-3 w-3 mr-1" />
+                            Default
+                          </Badge>
+                        )}
+                        {!config.is_active && (
+                          <Badge variant="destructive" className="text-xs shrink-0">Inactive</Badge>
+                        )}
+                      </div>
+                      <div className="flex gap-1 shrink-0">
+                        {!config.is_default && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={() => handleSetDefault(config)}
+                            disabled={actionLoading === `default-${config._id}`}
+                            title="Set as default"
+                          >
+                            {actionLoading === `default-${config._id}` ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Star className="h-4 w-4 text-amber-500" />
+                            )}
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-7 px-2"
-                          onClick={() => handleSetDefault(config)}
-                          disabled={actionLoading === `default-${config._id}`}
+                          className="h-8 w-8 p-0"
+                          onClick={() => openEdit(config)}
+                          title="Edit"
                         >
-                          {actionLoading === `default-${config._id}` ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                          ) : (
-                            <Star className="h-3 w-3" />
-                          )}
+                          <Edit2 className="h-4 w-4 text-slate-600 dark:text-slate-300" />
                         </Button>
-                      )}
-                      <Button variant="ghost" size="sm" className="h-7 px-2" onClick={() => openEdit(config)}>
-                        <Edit2 className="h-3 w-3" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 px-2 text-destructive hover:text-destructive"
-                        onClick={() => openDeleteDialog(config)}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                  <CardDescription className="text-xs">{config.description}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Workflow Info */}
-                  <div className="flex flex-wrap gap-2">
-                    <Badge variant="secondary" className="text-xs">
-                      {getWorkflowTypeLabel(config.workflow_type)}
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      <DollarSign className="h-3 w-3 mr-1" />
-                      {formatCurrency(config.min_amount)} - {formatCurrency(config.max_amount)}
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      <Building2 className="h-3 w-3 mr-1" />
-                      {config.department_scope === 'all' ? 'All Departments' : 'Specific Departments'}
-                    </Badge>
-                  </div>
-
-                  {/* Steps Preview */}
-                  <div className="space-y-1">
-                    <div className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
-                      {config.steps.length} approval step{config.steps.length !== 1 ? 's' : ''}
-                    </div>
-                    <div className="space-y-1">
-                      {config.steps.slice(0, 3).map((step, i) => (
-                        <div key={i} className="flex items-center gap-2 text-sm">
-                          <div className="h-5 w-5 rounded-full bg-primary/10 text-primary text-xs flex items-center justify-center font-medium">
-                            {step.step_number}
-                          </div>
-                          <span className="truncate">{step.step_name}</span>
-                          <span className="text-xs text-muted-foreground">({getApproverTypeLabel(step.approver_type)})</span>
-                        </div>
-                      ))}
-                      {config.steps.length > 3 && (
-                        <div className="text-xs text-muted-foreground pl-7">
-                          +{config.steps.length - 3} more steps
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Usage Stats */}
-                  <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t">
-                    <span>Used {config.usage_count} times</span>
-                    {!config.is_active && (
-                      <Badge variant="destructive" className="text-xs">Inactive</Badge>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-
-        {/* ── Drawer ──────────────────────────────────────────────── */}
-        {drawerMode && (
-          <>
-            <div className="fixed inset-0 bg-black/50 z-40" onClick={closeDrawer} />
-            <div className="fixed right-0 top-0 bottom-0 w-full max-w-3xl bg-background border-l z-50 shadow-xl flex flex-col">
-
-              {/* Create / Edit */}
-              {(drawerMode === 'create' || drawerMode === 'edit') && (
-                <>
-                  <div className="flex items-center justify-between p-6 border-b">
-                    <div>
-                      <h2 className="text-lg font-semibold flex items-center gap-2">
-                        {drawerMode === 'create' ? <Plus className="h-5 w-5" /> : <Edit2 className="h-5 w-5" />}
-                        {drawerMode === 'create' ? 'Create Workflow' : 'Edit Workflow'}
-                      </h2>
-                      <p className="text-sm text-muted-foreground">
-                        {drawerMode === 'create'
-                          ? 'Define a new multi-level approval workflow'
-                          : `Editing: ${selectedConfig?.name}`}
-                      </p>
-                    </div>
-                    <Button variant="ghost" size="sm" onClick={closeDrawer}><X className="h-4 w-4" /></Button>
-                  </div>
-
-                  <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                    {/* Basic Info */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2 md:col-span-2">
-                        <Label>Workflow Name *</Label>
-                        <Input
-                          value={formName}
-                          onChange={e => setFormName(e.target.value)}
-                          placeholder="e.g., Standard Budget Approval"
-                        />
-                      </div>
-                      <div className="space-y-2 md:col-span-2">
-                        <Label>Description</Label>
-                        <Textarea
-                          value={formDescription}
-                          onChange={e => setFormDescription(e.target.value)}
-                          placeholder="What this workflow is used for..."
-                          rows={2}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Workflow Type</Label>
-                        <Select value={formWorkflowType} onValueChange={v => setFormWorkflowType(v as any)}>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {WORKFLOW_TYPES.map(t => (
-                              <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Priority</Label>
-                        <Input
-                          type="number"
-                          value={formPriority}
-                          onChange={e => setFormPriority(e.target.value)}
-                          placeholder="Higher = preferred"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Amount Range */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Minimum Amount</Label>
-                        <Input
-                          type="number"
-                          value={formMinAmount}
-                          onChange={e => setFormMinAmount(e.target.value)}
-                          placeholder="0"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Maximum Amount (empty = no limit)</Label>
-                        <Input
-                          type="number"
-                          value={formMaxAmount}
-                          onChange={e => setFormMaxAmount(e.target.value)}
-                          placeholder="No limit"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Department Scope & Default */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Department Scope</Label>
-                        <Select value={formDepartmentScope} onValueChange={v => setFormDepartmentScope(v as any)}>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All Departments</SelectItem>
-                            <SelectItem value="specific">Specific Departments</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="flex items-center space-x-2 pt-6">
-                        <Switch
-                          id="is-default"
-                          checked={formIsDefault}
-                          onCheckedChange={setFormIsDefault}
-                        />
-                        <Label htmlFor="is-default" className="cursor-pointer">
-                          Set as default workflow for this type
-                        </Label>
-                      </div>
-                    </div>
-
-                    {/* Steps */}
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <Label className="text-base">Approval Steps</Label>
-                        <Button variant="outline" size="sm" onClick={handleAddStep} className="gap-2">
-                          <Plus className="h-4 w-4" />
-                          Add Step
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700 dark:text-red-400"
+                          onClick={() => openDeleteDialog(config)}
+                          title="Delete"
+                        >
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
+                    </div>
+                    <CardDescription className="text-xs mt-1 line-clamp-1">{config.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4 pt-0">
+                    {/* Workflow Info */}
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant="secondary" className="text-xs dark:bg-slate-800 dark:text-slate-300">
+                        {getWorkflowTypeLabel(config.workflow_type)}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs dark:border-slate-700 dark:text-slate-300">
+                        <DollarSign className="h-3 w-3 mr-1" />
+                        {formatCurrency(config.min_amount)} - {formatCurrency(config.max_amount)}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs dark:border-slate-700 dark:text-slate-300">
+                        <Building2 className="h-3 w-3 mr-1" />
+                        {config.department_scope === 'all' ? 'All Departments' : 'Specific'}
+                      </Badge>
+                    </div>
 
-                      <div className="space-y-3">
-                        {formSteps.map((step, index) => (
-                          <Collapsible
-                            key={index}
-                            open={expandedSteps.includes(index)}
-                            onOpenChange={() => toggleStepExpanded(index)}
-                          >
-                            <div className="border rounded-lg overflow-hidden">
-                              <CollapsibleTrigger asChild>
-                                <div className="flex items-center justify-between p-3 bg-muted/50 cursor-pointer">
-                                  <div className="flex items-center gap-3">
-                                    <div className="h-6 w-6 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center font-medium">
-                                      {step.step_number}
-                                    </div>
-                                    <span className="font-medium">
-                                      {step.step_name || `Step ${step.step_number}`}
-                                    </span>
-                                    <span className="text-xs text-muted-foreground">
-                                      ({getApproverTypeLabel(step.approver_type)})
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    {formSteps.length > 1 && (
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-7 px-2 text-destructive hover:text-destructive"
-                                        onClick={(e) => { e.stopPropagation(); handleRemoveStep(index); }}
-                                      >
-                                        <Trash2 className="h-4 w-4" />
-                                      </Button>
-                                    )}
-                                    {expandedSteps.includes(index) ? (
-                                      <ChevronUp className="h-4 w-4 text-muted-foreground" />
-                                    ) : (
-                                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                                    )}
-                                  </div>
-                                </div>
-                              </CollapsibleTrigger>
-                              <CollapsibleContent>
-                                <div className="p-4 space-y-4">
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                      <Label>Step Name *</Label>
-                                      <Input
-                                        value={step.step_name}
-                                        onChange={e => handleStepChange(index, 'step_name', e.target.value)}
-                                        placeholder="e.g., Department Manager Approval"
-                                      />
-                                    </div>
-                                    <div className="space-y-2">
-                                      <Label>Approver Type</Label>
-                                      <Select
-                                        value={step.approver_type}
-                                        onValueChange={v => handleStepChange(index, 'approver_type', v)}
-                                      >
-                                        <SelectTrigger>
-                                          <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          {APPROVER_TYPES.map(t => (
-                                            <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                                          ))}
-                                        </SelectContent>
-                                      </Select>
-                                    </div>
-                                  </div>
-
-                                  {step.approver_type === 'role' && (
-                                    <div className="space-y-2">
-                                      <Label>Approver Role</Label>
-                                      <Select
-                                        value={step.approver_role || ''}
-                                        onValueChange={v => handleStepChange(index, 'approver_role', v)}
-                                      >
-                                        <SelectTrigger>
-                                          <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          {APPROVER_ROLES.map(r => (
-                                            <SelectItem key={r} value={r}>{r.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</SelectItem>
-                                          ))}
-                                        </SelectContent>
-                                      </Select>
-                                    </div>
-                                  )}
-
-                                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div className="space-y-2">
-                                      <Label>Required Approvals</Label>
-                                      <Input
-                                        type="number"
-                                        min={1}
-                                        value={step.required_approvals}
-                                        onChange={e => handleStepChange(index, 'required_approvals', parseInt(e.target.value) || 1)}
-                                      />
-                                    </div>
-                                    <div className="space-y-2">
-                                      <Label>Auto-approve (hours)</Label>
-                                      <Input
-                                        type="number"
-                                        placeholder="No auto-approve"
-                                        value={step.auto_approve_hours || ''}
-                                        onChange={e => handleStepChange(index, 'auto_approve_hours', e.target.value ? parseInt(e.target.value) : null)}
-                                      />
-                                    </div>
-                                  </div>
-
-                                  <div className="flex flex-wrap gap-4 pt-2">
-                                    <div className="flex items-center space-x-2">
-                                      <Switch
-                                        id={`can-reject-${index}`}
-                                        checked={step.can_reject}
-                                        onCheckedChange={v => handleStepChange(index, 'can_reject', v)}
-                                      />
-                                      <Label htmlFor={`can-reject-${index}`} className="cursor-pointer text-sm">Can Reject</Label>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                      <Switch
-                                        id={`can-request-${index}`}
-                                        checked={step.can_request_changes}
-                                        onCheckedChange={v => handleStepChange(index, 'can_request_changes', v)}
-                                      />
-                                      <Label htmlFor={`can-request-${index}`} className="cursor-pointer text-sm">Can Request Changes</Label>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                      <Switch
-                                        id={`can-delegate-${index}`}
-                                        checked={step.can_delegate}
-                                        onCheckedChange={v => handleStepChange(index, 'can_delegate', v)}
-                                      />
-                                      <Label htmlFor={`can-delegate-${index}`} className="cursor-pointer text-sm">Can Delegate</Label>
-                                    </div>
-                                  </div>
-                                </div>
-                              </CollapsibleContent>
+                    {/* Steps Preview */}
+                    <div className="space-y-2 rounded-lg border border-slate-100 bg-slate-50/50 p-3 dark:border-slate-800 dark:bg-slate-900/50">
+                      <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                        {config.steps.length} approval step{config.steps.length !== 1 ? 's' : ''}
+                      </div>
+                      <div className="space-y-2">
+                        {config.steps.slice(0, 3).map((step, i) => (
+                          <div key={i} className="flex items-center gap-2 text-sm">
+                            <div className="h-5 w-5 rounded-full bg-violet-100 text-violet-700 text-[10px] flex items-center justify-center font-bold dark:bg-violet-950/40 dark:text-violet-300">
+                              {step.step_number}
                             </div>
-                          </Collapsible>
+                            <span className="truncate text-slate-700 dark:text-slate-300">{step.step_name}</span>
+                            <span className="text-[10px] text-slate-400 dark:text-slate-500">({getApproverTypeLabel(step.approver_type)})</span>
+                          </div>
                         ))}
+                        {config.steps.length > 3 && (
+                          <div className="text-[10px] text-slate-400 pl-7 dark:text-slate-500">
+                            +{config.steps.length - 3} more steps
+                          </div>
+                        )}
                       </div>
                     </div>
 
-                    {/* Settings */}
-                    <div className="space-y-4 border-t pt-4">
-                      <Label className="text-base">Workflow Settings</Label>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="flex items-center space-x-2">
-                          <Switch
-                            id="notify-approval"
-                            checked={formSettings.notify_requester_on_approval}
-                            onCheckedChange={v => setFormSettings({ ...formSettings, notify_requester_on_approval: v })}
-                          />
-                          <Label htmlFor="notify-approval" className="cursor-pointer">Notify requester on approval</Label>
+                    {/* Usage Stats */}
+                    <div className="flex items-center justify-between text-[10px] font-medium uppercase tracking-wider text-slate-400 pt-2 border-t border-slate-100 dark:border-slate-800 dark:text-slate-500">
+                      <span>Used {config.usage_count} times</span>
+                      <span className="text-slate-300 dark:text-slate-600">{new Date(config.updatedAt).toLocaleDateString()}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          {/* ── Bottom Explanatory Cards ── */}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-5">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/60">
+                    <Info className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-950 dark:text-white">How It Works</h3>
+                    <p className="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                      Budget workflows define multi-step approval chains for budget creation, transfers, adjustments, and expenses.
+                      When a user submits a budget request, the system automatically routes it through the configured approvers.
+                      Each step can require a specific role (e.g., Finance Manager, CFO) or department head.
+                      Set amount ranges and department scope so the right workflow matches each request.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-5">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-700 ring-1 ring-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/60">
+                    <Lightbulb className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-950 dark:text-white">Configuration Tips</h3>
+                    <p className="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                      1. Create one workflow per budget type (creation, transfer, expense). 2. Use priority to control which
+                      workflow is picked when multiple match. 3. Set a default workflow so requests always have a fallback.
+                      4. Use amount ranges to escalate large budgets to higher approvers. 5. Enable notifications so requesters
+                      get updates at each step. Use Test Match to verify your setup before going live.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* ── Drawer ── */}
+          {drawerMode && (
+            <>
+              <div className="fixed inset-0 bg-black/50 z-40" onClick={closeDrawer} />
+              <div className="fixed right-0 top-0 bottom-0 w-full max-w-3xl bg-white border-l border-slate-200 z-50 shadow-xl flex flex-col dark:bg-slate-950 dark:border-slate-800">
+
+                {/* Create / Edit */}
+                {(drawerMode === 'create' || drawerMode === 'edit') && (
+                  <>
+                    <div className="flex items-center justify-between p-6 border-b border-slate-200 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/50">
+                      <div>
+                        <h2 className="text-lg font-bold flex items-center gap-2 text-slate-950 dark:text-white">
+                          {drawerMode === 'create' ? <Plus className="h-5 w-5 text-violet-600" /> : <Edit2 className="h-5 w-5 text-violet-600" />}
+                          {drawerMode === 'create' ? 'Create Workflow' : 'Edit Workflow'}
+                        </h2>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">
+                          {drawerMode === 'create'
+                            ? 'Define a new multi-level approval workflow'
+                            : `Editing: ${selectedConfig?.name}`}
+                        </p>
+                      </div>
+                      <Button variant="ghost" size="sm" onClick={closeDrawer} className="dark:text-slate-300"><X className="h-4 w-4" /></Button>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                      {/* Basic Info */}
+                      <div className="space-y-4">
+                        <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Basic Info</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2 md:col-span-2">
+                            <Label className="text-slate-700 dark:text-slate-300">Workflow Name *</Label>
+                            <Input
+                              value={formName}
+                              onChange={e => setFormName(e.target.value)}
+                              placeholder="e.g., Standard Budget Approval"
+                              className="dark:bg-slate-900 dark:text-white dark:border-slate-700"
+                            />
+                          </div>
+                          <div className="space-y-2 md:col-span-2">
+                            <Label className="text-slate-700 dark:text-slate-300">Description</Label>
+                            <Textarea
+                              value={formDescription}
+                              onChange={e => setFormDescription(e.target.value)}
+                              placeholder="What this workflow is used for..."
+                              rows={2}
+                              className="dark:bg-slate-900 dark:text-white dark:border-slate-700"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-slate-700 dark:text-slate-300">Workflow Type</Label>
+                            <Select value={formWorkflowType} onValueChange={v => setFormWorkflowType(v as any)}>
+                              <SelectTrigger className="dark:bg-slate-900 dark:text-white dark:border-slate-700">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="dark:bg-slate-900 dark:border-slate-700">
+                                {WORKFLOW_TYPES.map(t => (
+                                  <SelectItem key={t.value} value={t.value} className="dark:text-slate-300 dark:focus:bg-slate-800">{t.label}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-slate-700 dark:text-slate-300">Priority</Label>
+                            <Input
+                              type="number"
+                              value={formPriority}
+                              onChange={e => setFormPriority(e.target.value)}
+                              placeholder="Higher = preferred"
+                              className="dark:bg-slate-900 dark:text-white dark:border-slate-700"
+                            />
+                          </div>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <Switch
-                            id="notify-rejection"
-                            checked={formSettings.notify_requester_on_rejection}
-                            onCheckedChange={v => setFormSettings({ ...formSettings, notify_requester_on_rejection: v })}
-                          />
-                          <Label htmlFor="notify-rejection" className="cursor-pointer">Notify requester on rejection</Label>
+                      </div>
+
+                      {/* Amount Range */}
+                      <div className="space-y-4">
+                        <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Amount Range</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label className="text-slate-700 dark:text-slate-300">Minimum Amount</Label>
+                            <Input
+                              type="number"
+                              value={formMinAmount}
+                              onChange={e => setFormMinAmount(e.target.value)}
+                              placeholder="0"
+                              className="dark:bg-slate-900 dark:text-white dark:border-slate-700"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-slate-700 dark:text-slate-300">Maximum Amount (empty = no limit)</Label>
+                            <Input
+                              type="number"
+                              value={formMaxAmount}
+                              onChange={e => setFormMaxAmount(e.target.value)}
+                              placeholder="No limit"
+                              className="dark:bg-slate-900 dark:text-white dark:border-slate-700"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Department Scope & Default */}
+                      <div className="space-y-4">
+                        <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Scope & Defaults</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label className="text-slate-700 dark:text-slate-300">Department Scope</Label>
+                            <Select value={formDepartmentScope} onValueChange={v => setFormDepartmentScope(v as any)}>
+                              <SelectTrigger className="dark:bg-slate-900 dark:text-white dark:border-slate-700">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="dark:bg-slate-900 dark:border-slate-700">
+                                <SelectItem value="all" className="dark:text-slate-300 dark:focus:bg-slate-800">All Departments</SelectItem>
+                                <SelectItem value="specific" className="dark:text-slate-300 dark:focus:bg-slate-800">Specific Departments</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="flex items-center space-x-2 pt-6">
+                            <Switch
+                              id="is-default"
+                              checked={formIsDefault}
+                              onCheckedChange={setFormIsDefault}
+                            />
+                            <Label htmlFor="is-default" className="cursor-pointer text-slate-700 dark:text-slate-300">
+                              Set as default workflow for this type
+                            </Label>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Steps */}
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Approval Steps</h3>
+                          <Button variant="outline" size="sm" onClick={handleAddStep} className="gap-2 dark:border-slate-700 dark:text-slate-200">
+                            <Plus className="h-4 w-4" />
+                            Add Step
+                          </Button>
+                        </div>
+
+                        <div className="space-y-3">
+                          {formSteps.map((step, index) => (
+                            <Collapsible
+                              key={index}
+                              open={expandedSteps.includes(index)}
+                              onOpenChange={() => toggleStepExpanded(index)}
+                            >
+                              <div className="border border-slate-200 rounded-lg overflow-hidden dark:border-slate-700">
+                                <CollapsibleTrigger asChild>
+                                  <div className="flex items-center justify-between p-3 bg-slate-50/70 cursor-pointer dark:bg-slate-900/50">
+                                    <div className="flex items-center gap-3">
+                                      <div className="h-6 w-6 rounded-full bg-violet-600 text-white text-xs flex items-center justify-center font-bold">
+                                        {step.step_number}
+                                      </div>
+                                      <span className="font-medium text-slate-900 dark:text-white">
+                                        {step.step_name || `Step ${step.step_number}`}
+                                      </span>
+                                      <span className="text-xs text-slate-400 dark:text-slate-500">
+                                        ({getApproverTypeLabel(step.approver_type)})
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      {formSteps.length > 1 && (
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-7 px-2 text-red-600 hover:text-red-700 dark:text-red-400"
+                                          onClick={(e) => { e.stopPropagation(); handleRemoveStep(index); }}
+                                        >
+                                          <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                      )}
+                                      {expandedSteps.includes(index) ? (
+                                        <ChevronUp className="h-4 w-4 text-slate-400" />
+                                      ) : (
+                                        <ChevronDown className="h-4 w-4 text-slate-400" />
+                                      )}
+                                    </div>
+                                  </div>
+                                </CollapsibleTrigger>
+                                <CollapsibleContent>
+                                  <div className="p-4 space-y-4 bg-white dark:bg-slate-950">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                      <div className="space-y-2">
+                                        <Label className="text-slate-700 dark:text-slate-300">Step Name *</Label>
+                                        <Input
+                                          value={step.step_name}
+                                          onChange={e => handleStepChange(index, 'step_name', e.target.value)}
+                                          placeholder="e.g., Department Manager Approval"
+                                          className="dark:bg-slate-900 dark:text-white dark:border-slate-700"
+                                        />
+                                      </div>
+                                      <div className="space-y-2">
+                                        <Label className="text-slate-700 dark:text-slate-300">Approver Type</Label>
+                                        <Select
+                                          value={step.approver_type}
+                                          onValueChange={v => handleStepChange(index, 'approver_type', v)}
+                                        >
+                                          <SelectTrigger className="dark:bg-slate-900 dark:text-white dark:border-slate-700">
+                                            <SelectValue />
+                                          </SelectTrigger>
+                                          <SelectContent className="dark:bg-slate-900 dark:border-slate-700">
+                                            {APPROVER_TYPES.map(t => (
+                                              <SelectItem key={t.value} value={t.value} className="dark:text-slate-300 dark:focus:bg-slate-800">{t.label}</SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                    </div>
+
+                                    {step.approver_type === 'role' && (
+                                      <div className="space-y-2">
+                                        <Label className="text-slate-700 dark:text-slate-300">Approver Role</Label>
+                                        <Select
+                                          value={step.approver_role || ''}
+                                          onValueChange={v => handleStepChange(index, 'approver_role', v)}
+                                        >
+                                          <SelectTrigger className="dark:bg-slate-900 dark:text-white dark:border-slate-700">
+                                            <SelectValue />
+                                          </SelectTrigger>
+                                          <SelectContent className="dark:bg-slate-900 dark:border-slate-700">
+                                            {APPROVER_ROLES.map(r => (
+                                              <SelectItem key={r} value={r} className="dark:text-slate-300 dark:focus:bg-slate-800">{r.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                    )}
+
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                      <div className="space-y-2">
+                                        <Label className="text-slate-700 dark:text-slate-300">Required Approvals</Label>
+                                        <Input
+                                          type="number"
+                                          min={1}
+                                          value={step.required_approvals}
+                                          onChange={e => handleStepChange(index, 'required_approvals', parseInt(e.target.value) || 1)}
+                                          className="dark:bg-slate-900 dark:text-white dark:border-slate-700"
+                                        />
+                                      </div>
+                                      <div className="space-y-2">
+                                        <Label className="text-slate-700 dark:text-slate-300">Auto-approve (hours)</Label>
+                                        <Input
+                                          type="number"
+                                          placeholder="No auto-approve"
+                                          value={step.auto_approve_hours || ''}
+                                          onChange={e => handleStepChange(index, 'auto_approve_hours', e.target.value ? parseInt(e.target.value) : null)}
+                                          className="dark:bg-slate-900 dark:text-white dark:border-slate-700"
+                                        />
+                                      </div>
+                                    </div>
+
+                                    <div className="flex flex-wrap gap-4 pt-2">
+                                      <div className="flex items-center space-x-2">
+                                        <Switch
+                                          id={`can-reject-${index}`}
+                                          checked={step.can_reject}
+                                          onCheckedChange={v => handleStepChange(index, 'can_reject', v)}
+                                        />
+                                        <Label htmlFor={`can-reject-${index}`} className="cursor-pointer text-sm text-slate-700 dark:text-slate-300">Can Reject</Label>
+                                      </div>
+                                      <div className="flex items-center space-x-2">
+                                        <Switch
+                                          id={`can-request-${index}`}
+                                          checked={step.can_request_changes}
+                                          onCheckedChange={v => handleStepChange(index, 'can_request_changes', v)}
+                                        />
+                                        <Label htmlFor={`can-request-${index}`} className="cursor-pointer text-sm text-slate-700 dark:text-slate-300">Can Request Changes</Label>
+                                      </div>
+                                      <div className="flex items-center space-x-2">
+                                        <Switch
+                                          id={`can-delegate-${index}`}
+                                          checked={step.can_delegate}
+                                          onCheckedChange={v => handleStepChange(index, 'can_delegate', v)}
+                                        />
+                                        <Label htmlFor={`can-delegate-${index}`} className="cursor-pointer text-sm text-slate-700 dark:text-slate-300">Can Delegate</Label>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </CollapsibleContent>
+                              </div>
+                            </Collapsible>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Settings */}
+                      <div className="space-y-4 border-t border-slate-200 pt-4 dark:border-slate-800">
+                        <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Workflow Settings</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="flex items-center space-x-2">
+                            <Switch
+                              id="notify-approval"
+                              checked={formSettings.notify_requester_on_approval}
+                              onCheckedChange={v => setFormSettings({ ...formSettings, notify_requester_on_approval: v })}
+                            />
+                            <Label htmlFor="notify-approval" className="cursor-pointer text-slate-700 dark:text-slate-300">Notify requester on approval</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Switch
+                              id="notify-rejection"
+                              checked={formSettings.notify_requester_on_rejection}
+                              onCheckedChange={v => setFormSettings({ ...formSettings, notify_requester_on_rejection: v })}
+                            />
+                            <Label htmlFor="notify-rejection" className="cursor-pointer text-slate-700 dark:text-slate-300">Notify requester on rejection</Label>
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-slate-700 dark:text-slate-300">Escalation Hours</Label>
+                            <Input
+                              type="number"
+                              value={formSettings.escalation_hours}
+                              onChange={e => setFormSettings({ ...formSettings, escalation_hours: parseInt(e.target.value) || 48 })}
+                              className="dark:bg-slate-900 dark:text-white dark:border-slate-700"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-6 border-t border-slate-200 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/50">
+                      <Button
+                        onClick={drawerMode === 'create' ? handleCreate : handleUpdate}
+                        className="w-full gap-2 bg-violet-600 hover:bg-violet-700 dark:bg-violet-600 dark:hover:bg-violet-500"
+                        disabled={actionLoading === 'create' || actionLoading === 'update'}
+                      >
+                        {(actionLoading === 'create' || actionLoading === 'update') ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Save className="h-4 w-4" />
+                        )}
+                        {drawerMode === 'create' ? 'Create Workflow' : 'Save Changes'}
+                      </Button>
+                    </div>
+                  </>
+                )}
+
+                {/* Test Workflow */}
+                {drawerMode === 'test' && (
+                  <>
+                    <div className="flex items-center justify-between p-6 border-b border-slate-200 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/50">
+                      <div>
+                        <h2 className="text-lg font-bold flex items-center gap-2 text-slate-950 dark:text-white">
+                          <Play className="h-5 w-5 text-violet-600" />
+                          Test Workflow Match
+                        </h2>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">
+                          Find which workflow would match given criteria
+                        </p>
+                      </div>
+                      <Button variant="ghost" size="sm" onClick={closeDrawer} className="dark:text-slate-300"><X className="h-4 w-4" /></Button>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                      <div className="grid grid-cols-1 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-slate-700 dark:text-slate-300">Workflow Type</Label>
+                          <Select value={testWorkflowType} onValueChange={setTestWorkflowType}>
+                            <SelectTrigger className="dark:bg-slate-900 dark:text-white dark:border-slate-700">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="dark:bg-slate-900 dark:border-slate-700">
+                              {WORKFLOW_TYPES.map(t => (
+                                <SelectItem key={t.value} value={t.value} className="dark:text-slate-300 dark:focus:bg-slate-800">{t.label}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
                         <div className="space-y-2">
-                          <Label>Escalation Hours</Label>
+                          <Label className="text-slate-700 dark:text-slate-300">Amount</Label>
                           <Input
                             type="number"
-                            value={formSettings.escalation_hours}
-                            onChange={e => setFormSettings({ ...formSettings, escalation_hours: parseInt(e.target.value) || 48 })}
+                            value={testAmount}
+                            onChange={e => setTestAmount(e.target.value)}
+                            placeholder="Enter amount..."
+                            className="dark:bg-slate-900 dark:text-white dark:border-slate-700"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-slate-700 dark:text-slate-300">Department ID (optional)</Label>
+                          <Input
+                            value={testDepartmentId}
+                            onChange={e => setTestDepartmentId(e.target.value)}
+                            placeholder="Enter department ID..."
+                            className="dark:bg-slate-900 dark:text-white dark:border-slate-700"
                           />
                         </div>
                       </div>
-                    </div>
-                  </div>
 
-                  <div className="p-6 border-t">
-                    <Button
-                      onClick={drawerMode === 'create' ? handleCreate : handleUpdate}
-                      className="w-full gap-2"
-                      disabled={actionLoading === 'create' || actionLoading === 'update'}
-                    >
-                      {(actionLoading === 'create' || actionLoading === 'update') ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Save className="h-4 w-4" />
+                      <Button
+                        onClick={handleTestWorkflow}
+                        className="w-full gap-2 bg-violet-600 hover:bg-violet-700 dark:bg-violet-600 dark:hover:bg-violet-500"
+                        disabled={testLoading}
+                      >
+                        {testLoading ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Play className="h-4 w-4" />
+                        )}
+                        Test Match
+                      </Button>
+
+                      {testResult && (
+                        <Card className="border-violet-200 dark:border-violet-900/40">
+                          <CardHeader className="pb-3">
+                            <CardTitle className="text-base flex items-center gap-2">
+                              <CheckCircle className="h-5 w-5 text-emerald-500" />
+                              <span className="text-slate-950 dark:text-white">Matching Workflow Found</span>
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-3 pt-0">
+                            <div>
+                              <div className="font-semibold text-slate-900 dark:text-white">{testResult.name}</div>
+                              <div className="text-sm text-slate-500 dark:text-slate-400">{testResult.description}</div>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              <Badge variant="secondary" className="dark:bg-slate-800 dark:text-slate-300">{getWorkflowTypeLabel(testResult.workflow_type)}</Badge>
+                              <Badge variant="outline" className="dark:border-slate-700 dark:text-slate-300">
+                                {formatCurrency(testResult.min_amount)} - {formatCurrency(testResult.max_amount)}
+                              </Badge>
+                            </div>
+                            <div className="text-sm text-slate-700 dark:text-slate-300">
+                              <span className="font-semibold">{testResult.steps.length} steps:</span>
+                              <ul className="mt-1 space-y-1">
+                                {testResult.steps.map((step, i) => (
+                                  <li key={i} className="flex items-center gap-2">
+                                    <span className="h-4 w-4 rounded-full bg-violet-100 text-violet-700 text-[10px] flex items-center justify-center font-bold dark:bg-violet-950/40 dark:text-violet-300">
+                                      {step.step_number}
+                                    </span>
+                                    {step.step_name}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          </CardContent>
+                        </Card>
                       )}
-                      {drawerMode === 'create' ? 'Create Workflow' : 'Save Changes'}
-                    </Button>
-                  </div>
-                </>
-              )}
 
-              {/* Test Workflow */}
-              {drawerMode === 'test' && (
-                <>
-                  <div className="flex items-center justify-between p-6 border-b">
-                    <div>
-                      <h2 className="text-lg font-semibold flex items-center gap-2">
-                        <Play className="h-5 w-5" />
-                        Test Workflow Match
-                      </h2>
-                      <p className="text-sm text-muted-foreground">
-                        Find which workflow would match given criteria
-                      </p>
-                    </div>
-                    <Button variant="ghost" size="sm" onClick={closeDrawer}><X className="h-4 w-4" /></Button>
-                  </div>
-
-                  <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                    <div className="grid grid-cols-1 gap-4">
-                      <div className="space-y-2">
-                        <Label>Workflow Type</Label>
-                        <Select value={testWorkflowType} onValueChange={setTestWorkflowType}>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {WORKFLOW_TYPES.map(t => (
-                              <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Amount</Label>
-                        <Input
-                          type="number"
-                          value={testAmount}
-                          onChange={e => setTestAmount(e.target.value)}
-                          placeholder="Enter amount..."
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Department ID (optional)</Label>
-                        <Input
-                          value={testDepartmentId}
-                          onChange={e => setTestDepartmentId(e.target.value)}
-                          placeholder="Enter department ID..."
-                        />
-                      </div>
-                    </div>
-
-                    <Button
-                      onClick={handleTestWorkflow}
-                      className="w-full gap-2"
-                      disabled={testLoading}
-                    >
-                      {testLoading ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Play className="h-4 w-4" />
+                      {testHasRun && testResult === null && !testLoading && (
+                        <div className="text-center py-8 rounded-lg border border-dashed border-slate-200 dark:border-slate-700">
+                          <AlertTriangle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
+                          <h3 className="text-lg font-semibold mb-2 text-slate-900 dark:text-white">No Matching Workflow</h3>
+                          <p className="text-slate-500 dark:text-slate-400">No workflow configuration matches the given criteria</p>
+                        </div>
                       )}
-                      Test Match
-                    </Button>
-
-                    {testResult && (
-                      <Card className="border-primary">
-                        <CardHeader>
-                          <CardTitle className="text-base flex items-center gap-2">
-                            <CheckCircle className="h-5 w-5 text-green-500" />
-                            Matching Workflow Found
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-3">
-                          <div>
-                            <div className="font-medium">{testResult.name}</div>
-                            <div className="text-sm text-muted-foreground">{testResult.description}</div>
-                          </div>
-                          <div className="flex flex-wrap gap-2">
-                            <Badge variant="secondary">{getWorkflowTypeLabel(testResult.workflow_type)}</Badge>
-                            <Badge variant="outline">
-                              {formatCurrency(testResult.min_amount)} - {formatCurrency(testResult.max_amount)}
-                            </Badge>
-                          </div>
-                          <div className="text-sm">
-                            <span className="font-medium">{testResult.steps.length} steps:</span>
-                            <ul className="mt-1 space-y-1">
-                              {testResult.steps.map((step, i) => (
-                                <li key={i} className="flex items-center gap-2">
-                                  <span className="h-4 w-4 rounded-full bg-primary/10 text-primary text-xs flex items-center justify-center">
-                                    {step.step_number}
-                                  </span>
-                                  {step.step_name}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    )}
-
-                    {testHasRun && testResult === null && !testLoading && (
-                      <div className="text-center py-8">
-                        <AlertTriangle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
-                        <h3 className="text-lg font-medium mb-2">No Matching Workflow</h3>
-                        <p className="text-muted-foreground">No workflow configuration matches the given criteria</p>
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
-          </>
-        )}
-
-        {/* Delete Confirmation Dialog */}
-        <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-destructive" />
-                Delete Workflow
-              </DialogTitle>
-              <DialogDescription>
-                Are you sure you want to delete "{configToDelete?.name}"? This action cannot be undone.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleDelete}
-                disabled={!!actionLoading}
-              >
-                {actionLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <Trash2 className="h-4 w-4 mr-2" />
+                    </div>
+                  </>
                 )}
-                Delete
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+              </div>
+            </>
+          )}
+
+          {/* ── Delete Confirmation Dialog ── */}
+          <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+            <DialogContent className="overflow-hidden border-slate-200 bg-white p-0 dark:border-slate-800 dark:bg-slate-950">
+              <div className="bg-slate-950 px-6 pb-6 pt-6">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-500/20 ring-1 ring-red-500/30">
+                    <AlertTriangle className="h-5 w-5 text-red-300" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Action</p>
+                    <h3 className="text-lg font-bold text-white">Delete Workflow</h3>
+                  </div>
+                </div>
+              </div>
+              <div className="px-6 py-4">
+                <p className="text-sm text-slate-600 dark:text-slate-300">
+                  Are you sure you want to delete "{configToDelete?.name}"? This action cannot be undone.
+                </p>
+              </div>
+              <DialogFooter className="px-6 pb-6">
+                <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} className="dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800">
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleDelete}
+                  disabled={!!actionLoading}
+                >
+                  {actionLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <Trash2 className="h-4 w-4 mr-2" />
+                  )}
+                  Delete
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
     </Layout>
   );

@@ -18,6 +18,7 @@ import {
   LogOut,
   Settings,
   X,
+  AlertTriangle,
   PanelLeftClose,
   PanelLeftOpen,
   Package,
@@ -953,30 +954,43 @@ export function Sidebar({
                     <LogOut className="h-3.5 w-3.5" />
                   </button>
                 </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>
-                      {t("nav.logoutConfirmTitle", "Sign out")}
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
+                <AlertDialogContent className="overflow-hidden border-slate-200 bg-white p-0 dark:border-slate-800 dark:bg-slate-950">
+                  {/* Dark header */}
+                  <div className="bg-slate-950 px-6 pb-6 pt-6">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-500/20 ring-1 ring-red-500/30">
+                        <AlertTriangle className="h-5 w-5 text-red-300" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium uppercase tracking-wider text-slate-400">
+                          Session
+                        </p>
+                        <h3 className="text-lg font-bold text-white">
+                          {t("nav.logoutConfirmTitle", "Sign out")}
+                        </h3>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="px-6 py-4">
+                    <p className="text-sm text-slate-600 dark:text-slate-300">
                       {t(
                         "nav.logoutConfirmDesc",
                         "Are you sure you want to sign out? Any unsaved changes will be lost.",
                       )}
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>
+                    </p>
+                  </div>
+                  <AlertDialogFooter className="px-6 pb-6">
+                    <AlertDialogCancel className="border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800">
                       {t("common.cancel", "Cancel")}
                     </AlertDialogCancel>
                     <AlertDialogAction
                       onClick={handleLogout}
                       disabled={loggingOut}
-                      className="bg-red-600 hover:bg-red-700 text-white"
+                      className="bg-red-600 text-white hover:bg-red-700"
                     >
                       {loggingOut
                         ? t("nav.signingOut", "Signing out...")
-                        : t("nav.logout", "Sign out")}
+                        : t("nav.logout", "Logout")}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -1024,30 +1038,43 @@ export function Sidebar({
                     <LogOut className="h-4 w-4" />
                   </button>
                 </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>
-                      {t("nav.logoutConfirmTitle", "Sign out")}
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
+                <AlertDialogContent className="overflow-hidden border-slate-200 bg-white p-0 dark:border-slate-800 dark:bg-slate-950">
+                  {/* Dark header */}
+                  <div className="bg-slate-950 px-6 pb-6 pt-6">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-500/20 ring-1 ring-red-500/30">
+                        <AlertTriangle className="h-5 w-5 text-red-300" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium uppercase tracking-wider text-slate-400">
+                          Session
+                        </p>
+                        <h3 className="text-lg font-bold text-white">
+                          {t("nav.logoutConfirmTitle", "Sign out")}
+                        </h3>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="px-6 py-4">
+                    <p className="text-sm text-slate-600 dark:text-slate-300">
                       {t(
                         "nav.logoutConfirmDesc",
                         "Are you sure you want to sign out? Any unsaved changes will be lost.",
                       )}
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>
+                    </p>
+                  </div>
+                  <AlertDialogFooter className="px-6 pb-6">
+                    <AlertDialogCancel className="border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800">
                       {t("common.cancel", "Cancel")}
                     </AlertDialogCancel>
                     <AlertDialogAction
                       onClick={handleLogout}
                       disabled={loggingOut}
-                      className="bg-red-600 hover:bg-red-700 text-white"
+                      className="bg-red-600 text-white hover:bg-red-700"
                     >
                       {loggingOut
                         ? t("nav.signingOut", "Signing out...")
-                        : t("nav.logout", "Sign out")}
+                        : t("nav.logout", "Logout")}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
