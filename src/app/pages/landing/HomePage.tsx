@@ -38,35 +38,35 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 
 const operatingMetrics = [
-  { value: '99.98%', label: 'Close-ready accuracy', detail: 'Inventory, AR, AP, payroll and GL reconciled in one operating graph.' },
-  { value: '18', label: 'Control domains', detail: 'Stock, sales, purchasing, finance, HR, tax, assets and approvals.' },
-  { value: '< 4 min', label: 'Executive readout', detail: 'Daily signal for cash, margin, stock risk and payables pressure.' },
-  { value: '24/7', label: 'Multi-tenant command', detail: 'Designed for distributed teams, branches and regulated operations.' },
+  { value: '18+', label: 'Business modules', detail: 'Inventory, sales, purchasing, finance, payroll, reports and more — all connected.' },
+  { value: 'One', label: 'Unified platform', detail: 'No more switching between spreadsheets and different apps.' },
+  { value: 'Daily', label: 'Reports ready', detail: 'From daily cash position to year-end financial statements and RRA tax returns.' },
+  { value: 'Multi', label: 'Company ready', detail: 'Run multiple branches or businesses from a single account.' },
 ];
 
 const commandModules = [
-  { icon: Boxes, name: 'Inventory intelligence', copy: 'Live stock, batches, serials, transfers and reorder risk across every warehouse.' },
-  { icon: ReceiptText, name: 'Revenue operations', copy: 'Quotations, invoices, delivery notes, credit notes and customer aging in one lane.' },
-  { icon: ClipboardCheck, name: 'Procurement control', copy: 'Purchase orders, GRN, returns, supplier performance and committed spend visibility.' },
-  { icon: Banknote, name: 'Finance cockpit', copy: 'Banking, AR, AP, journals, trial balance, P&L, cash flow and balance sheet reporting.' },
-  { icon: Users2, name: 'People and payroll', copy: 'Employee master data, payroll runs, preview reports and HR cost intelligence.' },
-  { icon: ShieldCheck, name: 'Governance layer', copy: 'Roles, permissions, audit trails, backups and approval-aware business workflows.' },
+  { icon: Boxes, name: 'Inventory & Stock Control', copy: 'Track live stock, batches, serial numbers, transfers and reorder alerts across every warehouse.' },
+  { icon: ReceiptText, name: 'Sales & Invoicing', copy: 'Create quotations, invoices, delivery notes, credit notes and track customer payments in one place.' },
+  { icon: ClipboardCheck, name: 'Purchasing & Suppliers', copy: 'Manage purchase orders, GRN, returns, supplier performance and committed spending.' },
+  { icon: Banknote, name: 'Finance & Accounting', copy: 'Handle banking, accounts receivable, accounts payable, journals, trial balance, P&L and balance sheet reporting.' },
+  { icon: Users2, name: 'HR & Payroll', copy: 'Maintain employee records, run payroll, generate payslips and manage workforce costs.' },
+  { icon: ShieldCheck, name: 'Admin & Security', copy: 'Set roles and permissions, review audit trails, manage backups and control approval workflows.' },
 ];
 
 const timeline = [
-  { title: 'Capture', copy: 'Every movement, sale, purchase, expense and payroll event lands with tenant context.' },
-  { title: 'Reconcile', copy: 'Operational records flow into finance dashboards, ledgers, budgets and aging views.' },
-  { title: 'Decide', copy: 'Leadership sees the next risk, next cash move and next control action before month-end.' },
+  { title: 'Record', copy: 'Log stock movements, sales, purchases, expenses and payroll entries in one place.' },
+  { title: 'Connect', copy: 'Watch your operational data flow into ledgers, budgets, and financial reports automatically.' },
+  { title: 'Decide', copy: 'Know your cash position, stock levels, and tax obligations before month-end closes.' },
 ];
 
 const signalRows = [
   { label: 'Cash runway', value: '148 days', status: 'Healthy', width: '86%' },
-  { label: 'Stock exposure', value: '$1.84M', status: 'Watched', width: '62%' },
-  { label: 'Supplier pressure', value: '12.7%', status: 'Improving', width: '74%' },
+  { label: 'Stock value', value: 'RWF 1.84M', status: 'Watched', width: '62%' },
+  { label: 'Paid to suppliers', value: '12.7%', status: 'On track', width: '74%' },
   { label: 'Payroll variance', value: '1.3%', status: 'Controlled', width: '91%' },
 ];
 
-const worldNodes = ['Kigali', 'Dubai', 'London', 'Toronto', 'Singapore', 'Nairobi'];
+const worldNodes = ['Kigali', 'Musanze', 'Rubavu', 'Huye', 'Nyagatare', 'Muhanga'];
 
 export default function HomePage() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -222,7 +222,7 @@ export default function HomePage() {
               {[...worldNodes, ...worldNodes, ...worldNodes, ...worldNodes].map((node, index) => (
                 <span key={`${node}-${index}`} className="flex items-center gap-2">
                   <span className="h-1.5 w-1.5 rounded-full bg-cyan-500" />
-                  {node} control node online
+                  {node} branch online
                 </span>
               ))}
             </div>
@@ -232,13 +232,13 @@ export default function HomePage() {
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/25 bg-white/70 px-3 py-1.5 text-sm font-semibold text-cyan-800 shadow-sm backdrop-blur dark:bg-white/8 dark:text-cyan-200">
                 <Sparkles className="h-4 w-4" />
-                International command center for inventory, finance and payroll
+                Inventory, finance and payroll — built for Rwandan businesses
               </div>
               <h1 className="mt-6 max-w-4xl text-5xl font-semibold leading-[1.02] tracking-tight text-slate-950 dark:text-white sm:text-6xl lg:text-7xl">
-                Run the company from one living operating graph.
+                Run your entire business from one system.
               </h1>
               <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600 dark:text-slate-300">
-                StockManager turns stock, sales, purchasing, accounting, banking, payroll and governance into a real-time SaaS cockpit built for serious multi-branch teams.
+                StockManager handles stock, sales, purchasing, accounting, payroll and reporting in one place. Designed for teams with multiple branches, warehouses or companies.
               </p>
               {isAuthenticated && (
                 <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1.5 text-sm font-semibold text-emerald-700 dark:text-emerald-300">
@@ -249,21 +249,21 @@ export default function HomePage() {
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Link to={isAuthenticated ? systemHref : '/register'}>
                   <Button className="h-12 bg-slate-950 px-6 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-cyan-100">
-                    {isAuthenticated ? 'Return to Dashboard' : 'Build your workspace'}
+                    {isAuthenticated ? 'Return to Dashboard' : 'Start free trial'}
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </Link>
                 {!isAuthenticated && (
                   <Link to="/login">
                     <Button variant="outline" className="h-12 border-slate-300 bg-white/70 px-6 text-slate-900 hover:bg-white dark:border-white/15 dark:bg-white/8 dark:text-white dark:hover:bg-white/12">
-                      Enter dashboard
+                      Sign in
                       <ChevronRight className="ml-2 h-4 w-4" />
                     </Button>
                   </Link>
                 )}
               </div>
               <div className="mt-8 flex flex-wrap gap-3 text-sm text-slate-600 dark:text-slate-300">
-                {['Multi-tenant', 'Audit-ready', 'Finance-grade', 'Built for scale'].map((item) => (
+                {['Multi-branch', 'RRA-ready reports', 'Payroll included', 'Works offline'].map((item) => (
                   <span key={item} className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/70 px-3 py-1.5 dark:border-white/10 dark:bg-white/6">
                     <Check className="h-3.5 w-3.5 text-emerald-500" />
                     {item}
@@ -279,8 +279,8 @@ export default function HomePage() {
                 <div className="rounded-lg border border-white/10 bg-[#071018] p-4">
                   <div className="flex items-center justify-between border-b border-white/10 pb-4">
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-300">Global command</p>
-                      <h2 className="mt-1 text-xl font-semibold text-white">Executive Pulse</h2>
+                      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-300">Business overview</p>
+                      <h2 className="mt-1 text-xl font-semibold text-white">Live Dashboard</h2>
                     </div>
                     <div className="flex items-center gap-2 rounded-full bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-300">
                       <span className="home-pulse h-2 w-2 rounded-full bg-emerald-300" />
@@ -290,9 +290,9 @@ export default function HomePage() {
 
                   <div className="grid gap-3 py-4 sm:grid-cols-3">
                     {[
-                      ['Net cash', '$4.82M', '+12.4%'],
-                      ['Orders', '1,284', '+8.1%'],
-                      ['Close risk', 'Low', '2 flags'],
+                      ['Net cash', 'RWF 4.82M', '+12.4%'],
+                      ['Sales', '1,284', '+8.1%'],
+                      ['Month-end', 'On track', '2 items pending'],
                     ].map(([label, value, delta]) => (
                       <div key={label} className="rounded-lg border border-white/10 bg-white/[0.04] p-3">
                         <p className="text-xs text-slate-400">{label}</p>
@@ -367,13 +367,13 @@ export default function HomePage() {
           <div className="mx-auto max-w-7xl">
             <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-end">
               <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.22em] text-cyan-700 dark:text-cyan-300">Platform surface</p>
+                <p className="text-sm font-semibold uppercase tracking-[0.22em] text-cyan-700 dark:text-cyan-300">One platform, every department</p>
                 <h2 className="mt-3 text-4xl font-semibold tracking-tight text-slate-950 dark:text-white sm:text-5xl">
-                  Every department speaks the same operational language.
+                  Your warehouse, shop floor, and office finally agree on the numbers.
                 </h2>
               </div>
               <p className="text-lg leading-8 text-slate-600 dark:text-slate-300">
-                The home screen now shows the product as a board-level operating system: crisp enough for executives, deep enough for finance, and practical enough for warehouse and sales teams.
+                Stop switching between spreadsheets and apps. StockManager connects inventory, sales, purchases, finance and payroll so your team works from one source of truth.
               </p>
             </div>
 
@@ -386,7 +386,7 @@ export default function HomePage() {
                   <h3 className="text-lg font-semibold text-slate-950 dark:text-white">{module.name}</h3>
                   <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-400">{module.copy}</p>
                   <div className="mt-5 flex items-center gap-2 text-sm font-semibold text-cyan-700 opacity-0 transition group-hover:opacity-100 dark:text-cyan-300">
-                    Explore capability
+                    See module
                     <ArrowRight className="h-4 w-4" />
                   </div>
                 </article>
@@ -398,10 +398,10 @@ export default function HomePage() {
         <section id="operations" className="bg-slate-950 px-4 py-20 text-white sm:px-6 lg:px-8 lg:py-28">
           <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-emerald-300">Operating rhythm</p>
-              <h2 className="mt-3 text-4xl font-semibold tracking-tight sm:text-5xl">From transaction noise to boardroom clarity.</h2>
+              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-emerald-300">How it works</p>
+              <h2 className="mt-3 text-4xl font-semibold tracking-tight sm:text-5xl">From daily transactions to clear decisions.</h2>
               <p className="mt-5 text-lg leading-8 text-slate-300">
-                Replace disconnected spreadsheets and stale reports with a controlled flow that captures business events once and turns them into decisions everywhere.
+                Record a sale once. Stock updates automatically. Invoices generate instantly. Reports are ready whenever you need them — daily, monthly, or at year-end.
               </p>
               <div className="mt-8 grid gap-4">
                 {timeline.map((item, index) => (
@@ -420,15 +420,15 @@ export default function HomePage() {
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="rounded-lg bg-white p-5 text-slate-950">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-semibold">Today command queue</p>
+                    <p className="text-sm font-semibold">Today's priorities</p>
                     <Zap className="h-4 w-4 text-amber-500" />
                   </div>
                   <div className="mt-5 space-y-3">
                     {[
-                      ['Approve PO-1048', 'Supplier terms improved 3.2%'],
-                      ['Review reorder risk', '14 SKUs below target'],
-                      ['Release payroll run', 'Variance inside policy'],
-                      ['Close bank match', '92% auto-reconciled'],
+                      ['Approve PO-1048', 'New stock arrival expected'],
+                      ['Low stock alert', '14 items below minimum'],
+                      ['Run monthly payroll', '42 employees ready'],
+                      ['Reconcile bank', '92% matched automatically'],
                     ].map(([title, copy]) => (
                       <div key={title} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
                         <p className="text-sm font-semibold">{title}</p>
@@ -440,13 +440,13 @@ export default function HomePage() {
                 <div className="grid gap-4">
                   <div className="rounded-lg border border-white/10 bg-cyan-300 p-5 text-slate-950">
                     <LineChart className="h-5 w-5" />
-                    <p className="mt-8 text-3xl font-semibold">$682K</p>
+                    <p className="mt-8 text-3xl font-semibold">RWF 850K</p>
                     <p className="mt-2 text-sm font-medium">Cash unlocked by faster collections</p>
                   </div>
                   <div className="rounded-lg border border-white/10 bg-emerald-300 p-5 text-slate-950">
                     <PackageCheck className="h-5 w-5" />
                     <p className="mt-8 text-3xl font-semibold">37%</p>
-                    <p className="mt-2 text-sm font-medium">Fewer stockouts through smarter reorder signals</p>
+                    <p className="mt-2 text-sm font-medium">Fewer stockouts with smart reorder alerts</p>
                   </div>
                 </div>
               </div>
@@ -461,19 +461,19 @@ export default function HomePage() {
                 <div className="inline-grid h-12 w-12 place-items-center rounded-lg bg-slate-950 text-white dark:bg-white dark:text-slate-950">
                   <LockKeyhole className="h-5 w-5" />
                 </div>
-                <h2 className="mt-5 text-4xl font-semibold tracking-tight text-slate-950 dark:text-white">Governance that feels native, not bolted on.</h2>
+                <h2 className="mt-5 text-4xl font-semibold tracking-tight text-slate-950 dark:text-white">Security and control built in from day one.</h2>
                 <p className="mt-4 text-lg leading-8 text-slate-600 dark:text-slate-300">
-                  Permissions, company context, audit history, backups and approval workflows are part of the product story from the first click.
+                  Role-based access, audit trails, automatic backups, and approval workflows keep your data safe and your books clean.
                 </p>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 {[
                   [Building2, 'Multi-company tenancy'],
-                  [Globe2, 'International workflows'],
+                  [Globe2, 'Multi-branch operations'],
                   [FileText, 'Audit-grade reporting'],
                   [WalletCards, 'Bank and cash controls'],
-                  [CircleDollarSign, 'Budget accountability'],
-                  [BadgeCheck, 'Role-aware decisions'],
+                  [CircleDollarSign, 'Budget tracking'],
+                  [BadgeCheck, 'Role-based access'],
                 ].map(([Icon, label]) => {
                   const TypedIcon = Icon as typeof Building2;
                   return (
@@ -493,33 +493,33 @@ export default function HomePage() {
         <section id="pricing" className="px-4 pb-20 sm:px-6 lg:px-8 lg:pb-28">
           <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[1fr_0.8fr]">
             <div className="rounded-lg bg-gradient-to-br from-slate-950 via-[#0d2430] to-[#123323] p-8 text-white shadow-2xl shadow-slate-900/20 lg:p-12">
-              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-cyan-200">SaaS ready</p>
-              <h2 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">Give the system a homepage worthy of the product behind it.</h2>
+              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-cyan-200">Simple pricing</p>
+              <h2 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">Pricing that fits your business size.</h2>
               <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-300">
-                A sharper first impression for customers, operators, investors and internal teams: confident, modern, operational and credible.
+                Starter, Business, and Pro plans. All include local support, Mobile Money payments, and RRA-ready VAT reporting.
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Link to="/register">
                   <Button className="h-12 bg-white px-6 text-slate-950 hover:bg-cyan-100">
-                    Launch workspace
+                    Start free trial
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </Link>
                 <Link to="/dashboard">
                   <Button variant="outline" className="h-12 border-white/20 bg-white/8 px-6 text-white hover:bg-white/14">
-                    View dashboard
+                    See dashboard
                   </Button>
                 </Link>
               </div>
             </div>
             <div className="rounded-lg border border-slate-200 bg-white p-8 dark:border-white/10 dark:bg-white/[0.04]">
               <Factory className="h-8 w-8 text-cyan-700 dark:text-cyan-300" />
-              <h3 className="mt-5 text-2xl font-semibold text-slate-950 dark:text-white">Built for real operators</h3>
+              <h3 className="mt-5 text-2xl font-semibold text-slate-950 dark:text-white">Built for real Rwandan businesses</h3>
               <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-400">
-                Not a generic landing page. The visuals reference the system's actual modules: inventory, sales, purchasing, finance, payroll, reporting and governance.
+                From retail shops in Kigali to distributors in Musanze. Manage stock across branches, pay staff on time, and file taxes without the headache.
               </p>
               <div className="mt-6 space-y-3">
-                {['Responsive mobile navigation', 'Animated dashboard visuals', 'Metrics and trust signals', 'Clean professional footer'].map((item) => (
+                {['Mobile-friendly dashboard', 'Real-time stock alerts', 'RRA-compliant VAT reports', 'Local support via WhatsApp'].map((item) => (
                   <div key={item} className="flex items-center gap-3 text-sm font-medium text-slate-700 dark:text-slate-200">
                     <Check className="h-4 w-4 text-emerald-500" />
                     {item}
@@ -541,7 +541,7 @@ export default function HomePage() {
               <span className="text-base font-semibold tracking-[0.18em] text-slate-950 dark:text-white">STOCKMANAGER</span>
             </Link>
             <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-400">
-              Inventory, finance, purchasing, sales, payroll and governance in one international SaaS operating system.
+              Stock, sales, purchasing, accounting, payroll and reporting — built for Rwandan businesses and compliant with RRA requirements.
             </p>
           </div>
           <div className="flex flex-wrap gap-3 text-sm font-medium text-slate-600 dark:text-slate-300">
@@ -559,7 +559,7 @@ export default function HomePage() {
           <span>© {new Date().getFullYear()} StockManager. All rights reserved.</span>
           <span className="flex items-center gap-2">
             <TrendingUp className="h-3.5 w-3.5" />
-            Built for companies that want operational clarity.
+            Proudly built in Rwanda.
           </span>
         </div>
       </footer>
