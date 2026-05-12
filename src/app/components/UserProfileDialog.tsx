@@ -166,25 +166,40 @@ export function UserProfileDialog({ open, onOpenChange }: UserProfileDialogProps
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[95vw] sm:max-w-lg md:max-w-xl dark:bg-slate-900 dark:border-slate-800 p-4 sm:p-6 max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="dark:text-white">
-            My Profile
-          </DialogTitle>
-          <DialogDescription className="dark:text-slate-400">
-            Manage your personal information and profile picture
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="max-w-[95vw] sm:max-w-lg md:max-w-xl dark:bg-[#06080d] dark:border-white/10 p-0 sm:p-0 max-h-[90vh] overflow-y-auto">
+        <style>{`
+          @keyframes user-scan { 0% { transform: translateX(-115%); } 100% { transform: translateX(115%); } }
+          .user-scan { animation: user-scan 5.5s linear infinite; }
+          @media (prefers-reduced-motion: reduce) { .user-scan { animation: none; } }
+        `}</style>
+        {/* Gradient Header */}
+        <div className="relative overflow-hidden rounded-t-lg border-b border-slate-200 bg-white dark:border-white/10 dark:bg-white/[0.04]">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(14,165,233,0.12),transparent_30%),radial-gradient(circle_at_82%_12%,rgba(16,185,129,0.08),transparent_24%),linear-gradient(135deg,#f8fbff_0%,#edf7f4_50%,#f8fafc_100%)] dark:bg-[radial-gradient(circle_at_18%_18%,rgba(34,211,238,0.10),transparent_30%),radial-gradient(circle_at_82%_12%,rgba(74,222,128,0.06),transparent_24%),linear-gradient(135deg,#05070c_0%,#08111a_50%,#07100d_100%)]" />
+          <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/40 to-transparent user-scan" />
+          <div className="relative flex items-center gap-3 px-5 py-5 sm:px-6">
+            <div className="grid h-10 w-10 place-items-center rounded-lg bg-slate-950 text-white shadow-lg shadow-cyan-500/10 dark:bg-white dark:text-slate-950">
+              <Camera className="h-5 w-5" />
+            </div>
+            <div>
+              <DialogTitle className="text-lg font-semibold tracking-tight text-slate-950 dark:text-white">
+                My Profile
+              </DialogTitle>
+              <DialogDescription className="text-sm text-slate-500 dark:text-slate-400">
+                Manage your personal information and profile picture
+              </DialogDescription>
+            </div>
+          </div>
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6 mt-2 sm:mt-4">
+        <form onSubmit={handleSubmit} className="space-y-5 px-5 py-5 sm:px-6 sm:py-6">
           {/* Avatar Upload */}
           <div className="flex flex-col items-center gap-3 sm:gap-4">
             <div className="relative">
-              <Avatar className="h-20 w-20 sm:h-24 sm:w-24 border-4 border-slate-100 dark:border-slate-800">
+              <Avatar className="h-20 w-20 sm:h-24 sm:w-24 border-4 border-slate-100 dark:border-white/10 shadow-xl">
                 {previewUrl || avatar ? (
                   <AvatarImage src={(previewUrl || avatar) ?? undefined} alt={formData.name} />
                 ) : null}
-                <AvatarFallback className="bg-indigo-600 text-white text-xl sm:text-2xl font-semibold">
+                <AvatarFallback className="bg-gradient-to-br from-cyan-400 to-emerald-400 text-white text-xl sm:text-2xl font-semibold">
                   {getInitials(formData.name)}
                 </AvatarFallback>
               </Avatar>
@@ -192,7 +207,7 @@ export function UserProfileDialog({ open, onOpenChange }: UserProfileDialogProps
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isUploading}
-                className="absolute -bottom-1 -right-1 h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-indigo-600 text-white flex items-center justify-center hover:bg-indigo-700 transition-colors shadow-lg disabled:opacity-50"
+                className="absolute -bottom-1 -right-1 h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-slate-950 text-white flex items-center justify-center hover:bg-slate-800 transition-colors shadow-lg disabled:opacity-50 dark:bg-white dark:text-slate-950 dark:hover:bg-cyan-100"
               >
                 {isUploading ? (
                   <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" />
@@ -214,10 +229,10 @@ export function UserProfileDialog({ open, onOpenChange }: UserProfileDialogProps
           </div>
 
           {/* Form Fields */}
-          <div className="space-y-3 sm:space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          <div className="space-y-4 sm:space-y-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-4">
               <div className="space-y-1.5 sm:space-y-2">
-                <Label htmlFor="name" className="text-sm dark:text-slate-200">
+                <Label htmlFor="name" className="text-sm font-medium text-slate-700 dark:text-slate-300">
                   Full Name *
                 </Label>
                 <Input
@@ -226,12 +241,12 @@ export function UserProfileDialog({ open, onOpenChange }: UserProfileDialogProps
                   onChange={(e) => handleChange('name', e.target.value)}
                   placeholder="Enter your full name"
                   required
-                  className="h-9 sm:h-10 text-sm sm:text-base dark:bg-slate-800 dark:text-white dark:border-slate-700 dark:placeholder:text-slate-500"
+                  className="h-9 sm:h-10 text-sm sm:text-base border-slate-200 bg-white dark:bg-white/[0.06] dark:text-white dark:border-white/10 dark:placeholder:text-slate-500"
                 />
               </div>
 
               <div className="space-y-1.5 sm:space-y-2">
-                <Label htmlFor="email" className="text-sm dark:text-slate-200">
+                <Label htmlFor="email" className="text-sm font-medium text-slate-700 dark:text-slate-300">
                   Email Address *
                 </Label>
                 <Input
@@ -241,14 +256,14 @@ export function UserProfileDialog({ open, onOpenChange }: UserProfileDialogProps
                   onChange={(e) => handleChange('email', e.target.value)}
                   placeholder="your.email@example.com"
                   required
-                  className="h-9 sm:h-10 text-sm sm:text-base dark:bg-slate-800 dark:text-white dark:border-slate-700 dark:placeholder:text-slate-500"
+                  className="h-9 sm:h-10 text-sm sm:text-base border-slate-200 bg-white dark:bg-white/[0.06] dark:text-white dark:border-white/10 dark:placeholder:text-slate-500"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-4">
               <div className="space-y-1.5 sm:space-y-2">
-                <Label htmlFor="phone" className="text-sm dark:text-slate-200">
+                <Label htmlFor="phone" className="text-sm font-medium text-slate-700 dark:text-slate-300">
                   Phone Number
                 </Label>
                 <Input
@@ -257,12 +272,12 @@ export function UserProfileDialog({ open, onOpenChange }: UserProfileDialogProps
                   value={formData.phone}
                   onChange={(e) => handleChange('phone', e.target.value)}
                   placeholder="+250 780 936 645"
-                  className="h-9 sm:h-10 text-sm sm:text-base dark:bg-slate-800 dark:text-white dark:border-slate-700 dark:placeholder:text-slate-500"
+                  className="h-9 sm:h-10 text-sm sm:text-base border-slate-200 bg-white dark:bg-white/[0.06] dark:text-white dark:border-white/10 dark:placeholder:text-slate-500"
                 />
               </div>
 
               <div className="space-y-1.5 sm:space-y-2">
-                <Label htmlFor="jobTitle" className="text-sm dark:text-slate-200">
+                <Label htmlFor="jobTitle" className="text-sm font-medium text-slate-700 dark:text-slate-300">
                   Job Title
                 </Label>
                 <Input
@@ -270,13 +285,13 @@ export function UserProfileDialog({ open, onOpenChange }: UserProfileDialogProps
                   value={formData.jobTitle}
                   onChange={(e) => handleChange('jobTitle', e.target.value)}
                   placeholder="e.g., Accountant, Manager"
-                  className="h-9 sm:h-10 text-sm sm:text-base dark:bg-slate-800 dark:text-white dark:border-slate-700 dark:placeholder:text-slate-500"
+                  className="h-9 sm:h-10 text-sm sm:text-base border-slate-200 bg-white dark:bg-white/[0.06] dark:text-white dark:border-white/10 dark:placeholder:text-slate-500"
                 />
               </div>
             </div>
 
             <div className="space-y-1.5 sm:space-y-2">
-              <Label htmlFor="bio" className="text-sm dark:text-slate-200">
+              <Label htmlFor="bio" className="text-sm font-medium text-slate-700 dark:text-slate-300">
                 Bio
               </Label>
               <Textarea
@@ -286,7 +301,7 @@ export function UserProfileDialog({ open, onOpenChange }: UserProfileDialogProps
                 placeholder="Tell us a bit about yourself..."
                 rows={2}
                 maxLength={500}
-                className="text-sm sm:text-base dark:bg-slate-800 dark:text-white dark:border-slate-700 dark:placeholder:text-slate-500 resize-none"
+                className="text-sm sm:text-base border-slate-200 bg-white dark:bg-white/[0.06] dark:text-white dark:border-white/10 dark:placeholder:text-slate-500 resize-none focus:ring-2 focus:ring-cyan-500"
               />
               <p className="text-xs text-slate-500 dark:text-slate-400 text-right">
                 {formData.bio?.length || 0}/500
@@ -295,13 +310,13 @@ export function UserProfileDialog({ open, onOpenChange }: UserProfileDialogProps
           </div>
 
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-end pt-2">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-end pt-4 border-t border-slate-200 dark:border-white/10">
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
               disabled={isLoading}
-              className="w-full sm:w-auto dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+              className="w-full sm:w-auto border-slate-300 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/10"
             >
               <X className="h-4 w-4 mr-2" />
               Cancel
@@ -309,7 +324,7 @@ export function UserProfileDialog({ open, onOpenChange }: UserProfileDialogProps
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white"
+              className="w-full sm:w-auto bg-slate-950 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-cyan-100"
             >
               {isLoading ? (
                 <>

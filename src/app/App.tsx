@@ -207,6 +207,7 @@ import AnnualAuditTrailPage from './pages/reports/annual/AnnualAuditTrailPage';
 import AccountingPeriodsPage from './pages/settings/AccountingPeriodsPage';
 import CompanyProfilePage from './pages/settings/CompanyProfilePage';
 import RolesSettingsPage from './pages/settings/RolesSettingsPage';
+import OnboardingPage from './pages/OnboardingPage';
 import { LanguageProvider } from '../contexts/LanguageContext';
 // AI chat widget intentionally removed per user request
 import OfflineSyncBanner from './components/OfflineSyncBanner';
@@ -321,6 +322,7 @@ function AppRoutes() {
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/company" element={<CompanySelectorPage />} />
+        <Route path="/onboarding" element={<OnboardingPage />} />
         
         {/* System routes - pages already have Layout component */}
         <Route path="/dashboard" element={<DashboardPageWrapper />} />

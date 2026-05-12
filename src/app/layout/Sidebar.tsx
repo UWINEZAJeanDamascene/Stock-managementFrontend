@@ -25,6 +25,7 @@ import {
   WarehouseIcon,
   BarChart3,
   ArrowRightLeft,
+  ArrowRight,
   ClipboardCheck,
   Boxes,
   ShoppingCart,
@@ -47,6 +48,7 @@ import {
   Banknote,
   ClipboardList,
   Clock,
+  HelpCircle,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -844,7 +846,27 @@ export function Sidebar({
           <div key={section.label}>{renderSection(section, idx === 0)}</div>
         ))}
 
-        {/* All remaining sections */}
+        {/* Onboarding Guide */}
+        <Link
+          to="/onboarding"
+          onClick={handleNavigate}
+          className={cn(
+            "group mt-2 flex items-center gap-2 rounded-xl border border-dashed border-cyan-500/20 bg-gradient-to-r from-cyan-500/5 to-emerald-500/5 px-3 py-2.5 text-xs font-semibold transition-all duration-300 hover:border-cyan-500/40 hover:from-cyan-500/10 hover:to-emerald-500/10",
+            collapsed && "mx-auto h-11 w-11 justify-center rounded-2xl px-0 py-0",
+            location.pathname === "/onboarding"
+              ? "text-cyan-300 border-cyan-500/30 bg-cyan-500/10"
+              : "text-slate-400 hover:text-cyan-300",
+          )}
+          title={collapsed ? "Getting started guide" : undefined}
+        >
+          <HelpCircle className={cn("flex-shrink-0 h-4 w-4", collapsed && "h-5 w-5")} />
+          {!collapsed && (
+            <>
+              <span>Getting started guide</span>
+              <ArrowRight className="ml-auto h-3 w-3 opacity-0 transition-opacity group-hover:opacity-100" />
+            </>
+          )}
+        </Link>
       </nav>
 
       {/* ── Language toggle ── */}
