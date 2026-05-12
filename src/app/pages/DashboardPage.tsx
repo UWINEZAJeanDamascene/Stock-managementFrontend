@@ -339,9 +339,9 @@ export default function DashboardPage() {
   return (
     <Layout>
       <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-[1700px] w-full space-y-6">
+          <div className="mx-auto max-w-[1700px] w-full space-y-6 2xl:max-w-[2200px]">
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 text-white shadow-sm dark:border-slate-800">
-            <div className="grid gap-0 lg:grid-cols-[1.2fr_0.8fr]">
+            <div className="grid gap-0 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] 2xl:grid-cols-[1fr_0.75fr]">
               <div className="p-6 lg:p-7">
                 <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
                   <div>
@@ -467,11 +467,11 @@ export default function DashboardPage() {
                   </Badge>
                 </div>
                 {loading ? (
-                  <Skeleton className="h-[160px] sm:h-[200px] md:h-[260px] w-full bg-white/10" />
+                  <Skeleton className="h-[160px] sm:h-[200px] md:h-[260px] xl:h-[300px] w-full bg-white/10" />
                 ) : (
                   <ChartContainer
                     config={pulseChartConfig}
-                    className="h-[160px] sm:h-[200px] md:h-[260px] w-full"
+                    className="h-[160px] sm:h-[200px] md:h-[260px] xl:h-[300px] w-full"
                   >
                     <AreaChart
                       accessibilityLayer
@@ -614,7 +614,7 @@ export default function DashboardPage() {
             />
           </div>
 
-          <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_0.9fr]">
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_0.9fr] 2xl:grid-cols-[1fr_0.8fr]">
             <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
               <PanelTitle
                 icon={<Zap className="h-4 w-4 text-amber-500" />}
@@ -630,12 +630,12 @@ export default function DashboardPage() {
               />
               <CardContent>
                 {loading ? (
-                  <Skeleton className="h-[200px] sm:h-[240px] md:h-[300px] w-full" />
+                  <Skeleton className="h-[200px] sm:h-[240px] md:h-[300px] xl:h-[360px] w-full" />
                 ) : (
-                  <div className="grid gap-5 lg:grid-cols-[1fr_260px] lg:items-center">
+                  <div className="grid gap-5 lg:grid-cols-[1fr_260px] xl:grid-cols-[1fr_300px] 2xl:grid-cols-[1fr_360px] lg:items-center">
                     <ChartContainer
                       config={bridgeChartConfig}
-                      className="h-[200px] sm:h-[240px] md:h-[300px] w-full -ml-4"
+                      className="h-[200px] sm:h-[240px] md:h-[300px] xl:h-[360px] w-full"
                     >
                       <BarChart
                         accessibilityLayer
@@ -729,17 +729,17 @@ export default function DashboardPage() {
               />
               <CardContent>
                 {loading ? (
-                  <Skeleton className="h-[180px] sm:h-[220px] md:h-[300px] w-full" />
+                  <Skeleton className="h-[180px] sm:h-[220px] md:h-[300px] xl:h-[340px] w-full" />
                 ) : arOutstanding === 0 ? (
                   <EmptyState
                     icon={<ShieldCheck className="h-8 w-8 text-emerald-500" />}
                     message="No outstanding receivables"
                   />
                 ) : (
-                  <div className="grid gap-5 sm:grid-cols-[220px_1fr] sm:items-center">
+                  <div className="grid gap-5 sm:grid-cols-[180px_1fr] md:grid-cols-[220px_1fr] xl:grid-cols-[280px_1fr] sm:items-center">
                     <ChartContainer
                       config={arChartConfig}
-                      className="mx-auto h-[180px] sm:h-[220px] md:h-[260px] w-full"
+                      className="mx-auto h-[180px] sm:h-[220px] md:h-[260px] xl:h-[320px] w-full"
                     >
                       <PieChart>
                         <ChartTooltip
@@ -776,19 +776,19 @@ export default function DashboardPage() {
                         </p>
                       </div>
                       <div className="grid grid-cols-2 gap-3">
-                        <div className="rounded-lg border border-slate-200 p-3 dark:border-slate-800">
-                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                        <div className="overflow-hidden rounded-lg border border-slate-200 p-2 dark:border-slate-800">
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400">
                             Current
                           </p>
-                          <p className="mt-1 font-mono text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                          <p className="mt-1 text-xs font-bold text-emerald-600 dark:text-emerald-400">
                             {formatCurrency(arCurrent)}
                           </p>
                         </div>
-                        <div className="rounded-lg border border-slate-200 p-3 dark:border-slate-800">
-                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                        <div className="overflow-hidden rounded-lg border border-slate-200 p-2 dark:border-slate-800">
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400">
                             Overdue
                           </p>
-                          <p className="mt-1 font-mono text-sm font-bold text-red-600 dark:text-red-400">
+                          <p className="mt-1 text-xs font-bold text-red-600 dark:text-red-400">
                             {formatCurrency(arOverdue)}
                           </p>
                         </div>
@@ -803,7 +803,7 @@ export default function DashboardPage() {
             </Card>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 xl:grid-cols-[0.9fr_1.1fr]">
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-[0.9fr_1.1fr] 2xl:grid-cols-[1fr_1fr]">
             <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
               <PanelTitle
                 icon={<Landmark className="h-4 w-4 text-amber-500" />}
@@ -819,7 +819,7 @@ export default function DashboardPage() {
               />
               <CardContent>
                 {loading ? (
-                  <Skeleton className="h-[160px] sm:h-[200px] md:h-[260px] w-full" />
+                  <Skeleton className="h-[160px] sm:h-[200px] md:h-[260px] xl:h-[300px] w-full" />
                 ) : !upcomingDebt || upcomingDebt.totalUpcoming === 0 ? (
                   <EmptyState
                     icon={<Landmark className="h-8 w-8" />}

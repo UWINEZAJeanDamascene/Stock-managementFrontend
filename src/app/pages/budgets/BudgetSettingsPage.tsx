@@ -25,7 +25,6 @@ import {
   Users,
   BarChart3,
   Zap,
-  ShieldCheck,
   Layers,
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';

@@ -296,7 +296,7 @@ export default function RecurringInvoiceDetailPage() {
     return (
       <Layout>
         <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-[1600px] space-y-6">
+          <div className="mx-auto max-w-[1600px] 2xl:max-w-[2200px] space-y-6">
             <Skeleton className="h-32 w-full rounded-xl" />
             <Skeleton className="h-10 w-80 rounded-lg" />
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -313,7 +313,7 @@ export default function RecurringInvoiceDetailPage() {
     return (
       <Layout>
         <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-[1600px]">
+          <div className="mx-auto max-w-[1600px] 2xl:max-w-[2200px]">
             <div className="flex min-h-[400px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-white p-8 dark:border-slate-800 dark:bg-slate-900/50">
               <AlertTriangle className="mb-4 h-12 w-12 text-slate-400 dark:text-slate-500" />
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Recurring Invoice Not Found</h3>
@@ -331,7 +331,7 @@ export default function RecurringInvoiceDetailPage() {
   return (
     <Layout>
       <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-[1600px] space-y-6">
+        <div className="mx-auto max-w-[1600px] 2xl:max-w-[2200px] space-y-6">
           {/* Hero Header */}
           <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
             <div className="p-5">

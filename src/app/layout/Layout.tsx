@@ -35,9 +35,14 @@ export function Layout({ children, title }: LayoutProps) {
   }, []);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-100 dark:bg-[#090f1c]">
+    <div className="relative flex h-screen overflow-hidden">
+      {/* Full-app background */}
+      <div className="absolute inset-0 bg-[linear-gradient(135deg,#eef7f6_0%,#f8fbff_45%,#e9f2ef_100%)] dark:bg-[linear-gradient(135deg,#061013_0%,#091923_46%,#07140f_100%)]" />
+      <div className="absolute left-[-12rem] top-[-14rem] h-[34rem] w-[34rem] rounded-full bg-cyan-300/30 blur-3xl dark:bg-cyan-400/10" />
+      <div className="absolute bottom-[-12rem] right-[-10rem] h-[30rem] w-[30rem] rounded-full bg-emerald-300/30 blur-3xl dark:bg-emerald-400/10" />
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(15,23,42,.045)_1px,transparent_1px),linear-gradient(90deg,rgba(15,23,42,.045)_1px,transparent_1px)] bg-[size:48px_48px] dark:bg-[linear-gradient(rgba(255,255,255,.045)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.045)_1px,transparent_1px)]" />
       {/* Desktop Sidebar - always visible on lg screens */}
-      <div className={`hidden lg:block transition-all duration-300 ${sidebarCollapsed ? 'w-20' : 'w-72'}`}>
+      <div className={`hidden lg:block transition-all duration-300 relative z-10 ${sidebarCollapsed ? 'w-20' : 'w-72'}`}>
         <Sidebar collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)} />
       </div>
 
@@ -51,7 +56,7 @@ export function Layout({ children, title }: LayoutProps) {
       )}
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col overflow-hidden">
+      <main className="flex-1 flex flex-col overflow-hidden relative z-10">
         {/* Mobile Header - show on screens smaller than lg */}
         <div className="lg:hidden sticky top-0 z-50 flex items-center gap-3 bg-white/95 dark:bg-[#0d1626]/95 backdrop-blur-xl border-b border-slate-200 dark:border-white/10 px-4 py-3 shadow-sm">
           <Button
@@ -146,7 +151,7 @@ export function Layout({ children, title }: LayoutProps) {
         )}
 
         {/* Page Content */}
-        <div className="flex-1 overflow-auto p-4 md:p-6 bg-slate-100 dark:bg-[#090f1c]">
+        <div className="flex-1 overflow-auto p-4 md:p-6">
           {children}
         </div>
       </main>

@@ -158,7 +158,7 @@ export default function PickPackPickPage() {
     return (
       <Layout>
         <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-[1200px] space-y-6">
+          <div className="mx-auto max-w-[1200px] 2xl:max-w-[2200px] space-y-6">
             <div className="overflow-hidden rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900/70">
               <Skeleton className="h-8 w-48" />
               <Skeleton className="mt-2 h-4 w-64" />
@@ -198,7 +198,7 @@ export default function PickPackPickPage() {
     return (
       <Layout>
         <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-[1200px]">
+          <div className="mx-auto max-w-[1200px] 2xl:max-w-[2200px]">
             <div className="flex flex-col items-center justify-center py-20">
               <div className="rounded-full bg-red-50 p-5 dark:bg-red-950/30">
                 <AlertCircle className="h-10 w-10 text-red-500 dark:text-red-400" />
@@ -228,7 +228,7 @@ export default function PickPackPickPage() {
   return (
     <Layout>
       <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-[1200px] space-y-6">
+        <div className="mx-auto max-w-[1200px] 2xl:max-w-[2200px] space-y-6">
           {/* Hero Header */}
           <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
             <div className="p-5">

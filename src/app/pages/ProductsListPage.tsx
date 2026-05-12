@@ -400,7 +400,7 @@ export default function ProductsListPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-4 sm:py-6 px-3 sm:px-4 max-w-7xl">
+      <div className="container mx-auto py-4 sm:py-6 px-3 sm:px-4 max-w-7xl 2xl:max-w-[2200px]">
         {/* Page Header - Responsive */}
         <div className="flex flex-col gap-3 mb-5">
           {/* Title Row */}

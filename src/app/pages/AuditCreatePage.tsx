@@ -145,7 +145,7 @@ export default function AuditCreatePage() {
   return (
     <Layout>
       <Box sx={{ p: 3 }} className="min-h-screen bg-slate-50 dark:bg-slate-950">
-        <Box sx={{ maxWidth: 860, mx: 'auto' }}>
+        <Box sx={{ maxWidth: 860, mx: 'auto' }} className="2xl:!max-w-[1100px]">
         {/* Header */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
           <IconButton onClick={() => navigate('/stock-audits')} sx={{ color: dark ? '#93c5fd' : '#2563eb' }}>

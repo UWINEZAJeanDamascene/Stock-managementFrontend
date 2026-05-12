@@ -446,7 +446,7 @@ export default function ProductFormPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-4 sm:py-6 px-3 sm:px-4 max-w-5xl overflow-x-hidden min-h-0">
+      <div className="container mx-auto py-4 sm:py-6 px-3 sm:px-4 max-w-5xl 2xl:max-w-[1400px] overflow-x-hidden min-h-0">
         {/* Page Header - Responsive */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mb-6">
           {/* Back Button - Full width on mobile, auto on desktop */}

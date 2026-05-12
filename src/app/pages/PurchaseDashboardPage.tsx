@@ -316,7 +316,7 @@ export default function PurchaseDashboardPage() {
   return (
     <Layout>
       <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-[1600px] space-y-6">
+        <div className="mx-auto max-w-[1600px] 2xl:max-w-[2200px] space-y-6">
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div className="min-w-0">
@@ -444,7 +444,7 @@ export default function PurchaseDashboardPage() {
               />
               <CardContent>
                 {loading ? (
-                  <Skeleton className="h-[120px] sm:h-[160px] md:h-[220px] w-full" />
+                  <Skeleton className="h-[120px] sm:h-[160px] md:h-[220px] xl:h-[260px] w-full" />
                 ) : !apAging || apAging.total_outstanding === 0 ? (
                   <EmptyState
                     icon={<CheckCircle className="h-8 w-8 text-emerald-500" />}
@@ -454,13 +454,13 @@ export default function PurchaseDashboardPage() {
                   <div className="space-y-5">
                     <ChartContainer
                       config={agingChartConfig}
-                      className="h-[92px] sm:h-[120px] md:h-[160px] w-full -ml-2"
+                      className="h-[92px] sm:h-[120px] md:h-[160px] xl:h-[200px] w-full -ml-2"
                     >
                       <BarChart
                         accessibilityLayer
                         data={agingBarData}
                         layout="vertical"
-                        margin={{ left: 0, right: 0, top: 8, bottom: 8 }}
+                        margin={{ left: 16, right: 20, top: 8, bottom: 8 }}
                       >
                         <YAxis type="category" dataKey="label" hide />
                         <XAxis
@@ -652,7 +652,7 @@ export default function PurchaseDashboardPage() {
               />
               <CardContent>
                 {loading ? (
-                  <Skeleton className="h-[160px] sm:h-[220px] md:h-[300px] w-full" />
+                  <Skeleton className="h-[160px] sm:h-[220px] md:h-[300px] xl:h-[360px] w-full" />
                 ) : supplierChartData.length === 0 ? (
                   <EmptyState
                     icon={<Users className="h-8 w-8" />}
@@ -661,13 +661,13 @@ export default function PurchaseDashboardPage() {
                 ) : (
                   <ChartContainer
                     config={supplierChartConfig}
-                    className="h-[160px] sm:h-[220px] md:h-[300px] w-full -ml-4"
+                    className="h-[160px] sm:h-[220px] md:h-[300px] xl:h-[360px] w-full -ml-4"
                   >
                     <BarChart
                       accessibilityLayer
                       data={supplierChartData}
                       layout="vertical"
-                      margin={{ left: 0, right: 20, top: 8, bottom: 8 }}
+                      margin={{ left: 16, right: 20, top: 8, bottom: 8 }}
                     >
                       <YAxis
                         dataKey="name"
@@ -675,7 +675,7 @@ export default function PurchaseDashboardPage() {
                         tickLine={false}
                         axisLine={false}
                         tick={{ fontSize: 11 }}
-                        width={100}
+                        width={120}
                       />
                       <XAxis
                         type="number"
@@ -715,17 +715,17 @@ export default function PurchaseDashboardPage() {
               />
               <CardContent>
                 {loading ? (
-                  <Skeleton className="h-[160px] sm:h-[200px] md:h-[300px] w-full" />
+                  <Skeleton className="h-[160px] sm:h-[200px] md:h-[300px] xl:h-[340px] w-full" />
                 ) : pieData.length === 0 ? (
                   <EmptyState
                     icon={<ShoppingCart className="h-8 w-8" />}
                     message="No purchase orders found"
                   />
                 ) : (
-                  <div className="grid gap-5 md:grid-cols-[260px_1fr] md:items-center">
+                  <div className="grid gap-5 md:grid-cols-[260px_1fr] xl:grid-cols-[300px_1fr] md:items-center">
                     <ChartContainer
                       config={statusChartConfig}
-                      className="mx-auto h-[160px] sm:h-[200px] md:h-[250px] w-full -ml-2"
+                      className="mx-auto h-[160px] sm:h-[200px] md:h-[250px] xl:h-[300px] w-full -ml-2"
                     >
                       <PieChart>
                         <ChartTooltip

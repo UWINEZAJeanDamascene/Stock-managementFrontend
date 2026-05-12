@@ -285,7 +285,7 @@ export default function InventoryDashboardPage() {
   return (
     <Layout>
       <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-[1600px] space-y-6">
+        <div className="mx-auto max-w-[1600px] 2xl:max-w-[2200px] space-y-6">
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div className="min-w-0">
@@ -604,7 +604,7 @@ export default function InventoryDashboardPage() {
               />
               <CardContent>
                 {loading ? (
-                  <Skeleton className="h-[160px] sm:h-[220px] md:h-[300px] w-full" />
+                  <Skeleton className="h-[160px] sm:h-[220px] md:h-[300px] xl:h-[360px] w-full" />
                 ) : movementData.length === 0 ? (
                   <EmptyState
                     icon={<Package className="h-8 w-8" />}
@@ -613,13 +613,13 @@ export default function InventoryDashboardPage() {
                 ) : (
                   <ChartContainer
                     config={topMovingChartConfig}
-                    className="h-[160px] sm:h-[220px] md:h-[300px] w-full -ml-4"
+                    className="h-[160px] sm:h-[220px] md:h-[300px] xl:h-[360px] w-full"
                   >
                     <BarChart
                       accessibilityLayer
                       data={movementData}
                       layout="vertical"
-                      margin={{ left: 0, right: 20, top: 8, bottom: 8 }}
+                      margin={{ left: 16, right: 20, top: 8, bottom: 8 }}
                     >
                       <YAxis
                         dataKey="name"
@@ -627,7 +627,7 @@ export default function InventoryDashboardPage() {
                         tickLine={false}
                         axisLine={false}
                         tick={{ fontSize: 11 }}
-                        width={100}
+                        width={120}
                       />
                       <XAxis
                         type="number"
@@ -656,17 +656,17 @@ export default function InventoryDashboardPage() {
               />
               <CardContent>
                 {loading ? (
-                  <Skeleton className="h-[160px] sm:h-[200px] md:h-[300px] w-full" />
+                  <Skeleton className="h-[160px] sm:h-[200px] md:h-[300px] xl:h-[300px] w-full" />
                 ) : pieData.length === 0 ? (
                   <EmptyState
                     icon={<Archive className="h-8 w-8" />}
                     message="No warehouse data available"
                   />
                 ) : (
-                  <div className="grid gap-5 md:grid-cols-[260px_1fr] md:items-center">
+                  <div className="grid gap-5 md:grid-cols-[200px_1fr] md:items-center lg:grid-cols-[240px_1fr] xl:grid-cols-[300px_1fr]">
                     <ChartContainer
                       config={warehouseChartConfig}
-                      className="mx-auto h-[160px] sm:h-[200px] md:h-[250px] w-full -ml-2"
+                      className="mx-auto h-[160px] sm:h-[200px] md:h-[250px] xl:h-[300px] w-full"
                     >
                       <PieChart>
                         <ChartTooltip
@@ -717,10 +717,10 @@ export default function InventoryDashboardPage() {
 
                         return (
                           <div key={warehouse.warehouse_id} className="space-y-1">
-                            <div className="flex items-center justify-between gap-3 text-sm">
+                            <div className="flex items-center justify-between gap-2 text-sm">
                               <div className="flex min-w-0 items-center gap-2">
                                 <span
-                                  className="h-2.5 w-2.5 rounded-full"
+                                  className="h-2.5 w-2.5 shrink-0 rounded-full"
                                   style={{
                                     backgroundColor:
                                       PIE_COLORS[index % PIE_COLORS.length],
@@ -731,7 +731,7 @@ export default function InventoryDashboardPage() {
                                     warehouse.warehouse_code}
                                 </span>
                               </div>
-                              <span className="font-mono text-slate-600 dark:text-slate-300">
+                              <span className="shrink-0 font-mono text-xs text-slate-600 dark:text-slate-300">
                                 {pct}%
                               </span>
                             </div>
@@ -745,9 +745,9 @@ export default function InventoryDashboardPage() {
                                 }}
                               />
                             </div>
-                            <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400">
-                              <span>{formatNumber(warehouse.sku_count)} SKUs</span>
-                              <span>${formatCurrency(warehouse.total_value)}</span>
+                            <div className="flex justify-between gap-2 overflow-hidden text-xs text-slate-500 dark:text-slate-400">
+                              <span className="shrink-0">{formatNumber(warehouse.sku_count)} SKUs</span>
+                              <span className="min-w-0 text-right">${formatCurrency(warehouse.total_value)}</span>
                             </div>
                           </div>
                         );

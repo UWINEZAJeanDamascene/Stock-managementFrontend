@@ -754,10 +754,12 @@ export function Sidebar({
   return (
     <div
       className={cn(
-        "flex h-screen flex-col overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.16),transparent_28%),linear-gradient(180deg,#07111f_0%,#0f172a_42%,#070b13_100%)] transition-all duration-300",
+        "relative flex h-screen flex-col overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.16),transparent_28%),linear-gradient(180deg,#07111f_0%,#0f172a_42%,#070b13_100%)] transition-all duration-300",
         collapsed ? "w-20" : "w-72",
       )}
     >
+      {/* Grid pattern overlay */}
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,.045)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.045)_1px,transparent_1px)] bg-[size:48px_48px] pointer-events-none" />
       {/* ── Logo / header ── */}
       <div
         className={cn(

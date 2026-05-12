@@ -367,7 +367,7 @@ export default function FinanceDashboardPage() {
   return (
     <Layout>
       <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-[1600px] space-y-6">
+        <div className="mx-auto max-w-[1600px] 2xl:max-w-[2200px] space-y-6">
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div className="min-w-0">
@@ -496,17 +496,17 @@ export default function FinanceDashboardPage() {
               />
               <CardContent>
                 {loading ? (
-                  <Skeleton className="h-[260px] w-full" />
+                  <Skeleton className="h-[160px] sm:h-[200px] md:h-[240px] xl:h-[300px] w-full" />
                 ) : !cashFlow || (cashFlow.inflows === 0 && cashFlow.outflows === 0) ? (
                   <EmptyState
                     icon={<TrendingUp className="h-8 w-8" />}
                     message="No cash flow data for this period"
                   />
                 ) : (
-                  <div className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
+                  <div className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr] 2xl:grid-cols-[1fr_0.75fr] lg:items-center">
                     <ChartContainer
                       config={cashFlowChartConfig}
-                      className="h-[160px] sm:h-[200px] md:h-[240px] w-full -ml-4"
+                      className="h-[160px] sm:h-[200px] md:h-[240px] xl:h-[300px] w-full -ml-4"
                     >
                       <BarChart
                         accessibilityLayer
@@ -722,10 +722,10 @@ export default function FinanceDashboardPage() {
                     message="No bank accounts configured"
                   />
                 ) : (
-                  <div className="grid gap-5 md:grid-cols-[230px_1fr] md:items-center">
+                  <div className="grid gap-5 md:grid-cols-[230px_1fr] xl:grid-cols-[280px_1fr] md:items-center">
                     <ChartContainer
                       config={{ value: { label: "Balance", color: "#2563eb" } }}
-                      className="mx-auto h-[160px] sm:h-[200px] md:h-[220px] w-full -ml-2"
+                      className="mx-auto h-[160px] sm:h-[200px] md:h-[220px] xl:h-[280px] w-full -ml-2"
                     >
                       <PieChart>
                         <ChartTooltip
@@ -812,7 +812,7 @@ export default function FinanceDashboardPage() {
               />
               <CardContent>
                 {loading ? (
-                  <Skeleton className="h-[260px] w-full" />
+                  <Skeleton className="h-[120px] sm:h-[140px] md:h-[160px] xl:h-[200px] w-full" />
                 ) : !budgetVsActual?.has_budget ? (
                   <EmptyState
                     icon={<PiggyBank className="h-8 w-8" />}
@@ -825,7 +825,7 @@ export default function FinanceDashboardPage() {
                   <div className="space-y-4">
                     <ChartContainer
                       config={budgetChartConfig}
-                      className="h-[120px] sm:h-[140px] md:h-[160px] w-full -ml-2"
+                      className="h-[120px] sm:h-[140px] md:h-[160px] xl:h-[200px] w-full -ml-2"
                     >
                       <BarChart
                         accessibilityLayer
@@ -1046,7 +1046,7 @@ export default function FinanceDashboardPage() {
               />
               <CardContent>
                 {loading ? (
-                  <Skeleton className="h-[300px] w-full" />
+                  <Skeleton className="h-[300px] xl:h-[360px] w-full" />
                 ) : sourceBarData.length === 0 ? (
                   <EmptyState
                     icon={<WalletCards className="h-8 w-8" />}
@@ -1055,7 +1055,7 @@ export default function FinanceDashboardPage() {
                 ) : (
                   <ChartContainer
                     config={sourceChartConfig}
-                    className="h-[300px] w-full"
+                    className="h-[300px] xl:h-[360px] w-full"
                   >
                     <BarChart
                       accessibilityLayer

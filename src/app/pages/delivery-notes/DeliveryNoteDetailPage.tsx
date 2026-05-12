@@ -293,7 +293,7 @@ export default function DeliveryNoteDetailPage() {
     return (
       <Layout>
         <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-[1600px] space-y-6">
+          <div className="mx-auto max-w-[1600px] 2xl:max-w-[2200px] space-y-6">
             <Skeleton className="h-40 w-full rounded-xl" />
             <Skeleton className="h-24 w-full rounded-xl" />
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -310,7 +310,7 @@ export default function DeliveryNoteDetailPage() {
     return (
       <Layout>
         <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
-          <div className="mx-auto flex max-w-[1600px] flex-col items-center justify-center py-24">
+          <div className="mx-auto flex max-w-[1600px] 2xl:max-w-[2200px] flex-col items-center justify-center py-24">
             <AlertCircle className="mb-4 h-12 w-12 text-red-500" />
             <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Delivery Note Not Found</h2>
             <Button onClick={() => navigate('/delivery-notes')} className="mt-4 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-500">
@@ -325,7 +325,7 @@ export default function DeliveryNoteDetailPage() {
   return (
     <Layout>
       <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-[1600px] space-y-6">
+        <div className="mx-auto max-w-[1600px] 2xl:max-w-[2200px] space-y-6">
           {/* Hero Header */}
           <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
             <div className="p-5">

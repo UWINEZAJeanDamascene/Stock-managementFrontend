@@ -420,7 +420,7 @@ export default function ProductDetailPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-6 px-4 max-w-7xl">
+      <div className="container mx-auto py-6 px-4 max-w-7xl 2xl:max-w-[2200px]">
         {/* Page Header */}
         <div className="mb-6 rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
