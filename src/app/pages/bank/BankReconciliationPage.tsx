@@ -596,7 +596,7 @@ export default function BankReconciliationPage({
 
   const contentClassName = embedded
     ? "space-y-6"
-    : "mx-auto max-w-[1600px] space-y-6";
+    : "mx-auto max-w-[1600px] 2xl:max-w-[2200px] space-y-6";
 
   // Filter lines based on tab
   const filteredJournalLines = reconciliation?.journalLines.filter(line => {
@@ -638,7 +638,7 @@ export default function BankReconciliationPage({
     return (
       <Frame>
         <div className={pageClassName}>
-          <div className={embedded ? "space-y-6" : "mx-auto max-w-[900px] space-y-6"}>
+          <div className={embedded ? "space-y-6" : "mx-auto max-w-[900px] 2xl:max-w-[1400px] space-y-6"}>
             {/* Hero Header */}
             <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
               <div className="p-5">

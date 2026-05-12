@@ -646,7 +646,7 @@ export default function LiabilityDetailPage() {
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
         {/* Hero Header */}
         <div className="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
-          <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-7xl 2xl:max-w-[2200px] px-4 py-6 sm:px-6 lg:px-8">
             <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
               <div className="flex items-start gap-4">
                 <Button
@@ -743,7 +743,7 @@ export default function LiabilityDetailPage() {
           </div>
         </div>
 
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl 2xl:max-w-[2200px] px-4 py-6 sm:px-6 lg:px-8">
           {/* Progress Card */}
           <Card className="mb-6 overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
             <CardContent className="p-5">

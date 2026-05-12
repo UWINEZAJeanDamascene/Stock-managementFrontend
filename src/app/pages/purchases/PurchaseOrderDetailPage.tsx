@@ -411,7 +411,7 @@ export default function PurchaseOrderDetailPage() {
     return (
       <Layout>
         <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-[1600px]">
+          <div className="mx-auto max-w-[1600px] 2xl:max-w-[2200px]">
             <div className="flex items-center gap-4 mb-6">
               <Button variant="outline" size="icon" onClick={() => navigate('/purchase-orders')} className="h-10 w-10 dark:border-slate-700 dark:text-slate-200">
                 <ArrowLeft className="h-4 w-4" />
@@ -435,7 +435,7 @@ export default function PurchaseOrderDetailPage() {
   return (
     <Layout>
       <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-[1600px] space-y-6">
+        <div className="mx-auto max-w-[1600px] 2xl:max-w-[2200px] space-y-6">
           {/* Hero Header */}
           <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
             <div className="grid gap-5 p-5 xl:grid-cols-[1fr_380px] xl:items-stretch">

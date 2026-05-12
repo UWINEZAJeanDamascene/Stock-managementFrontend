@@ -236,7 +236,7 @@ export default function GRNDetailPage() {
     return (
       <Layout>
         <div className="min-h-screen bg-slate-50 px-3 py-6 dark:bg-slate-950 sm:px-6">
-          <div className="mx-auto max-w-[1400px] text-center">
+          <div className="mx-auto max-w-[1400px] 2xl:max-w-[2200px] text-center">
             <p className="text-slate-500 dark:text-slate-400">GRN not found</p>
             <Button variant="link" onClick={() => navigate("/grn")}>{t("common.back", "Back to GRN List")}</Button>
           </div>
@@ -251,7 +251,7 @@ export default function GRNDetailPage() {
   return (
     <Layout>
       <div className="min-h-screen bg-slate-50 px-3 py-4 dark:bg-slate-950 sm:px-4 sm:py-6 lg:px-8">
-        <div className="mx-auto max-w-[1400px] space-y-6">
+        <div className="mx-auto max-w-[1400px] 2xl:max-w-[2200px] space-y-6">
           {/* Header */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-3">

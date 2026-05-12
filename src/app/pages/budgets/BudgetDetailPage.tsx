@@ -610,7 +610,7 @@ export default function BudgetDetailPage() {
     return (
       <Layout>
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
-          <div className="mx-auto max-w-[1600px] px-4 py-5 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-[1600px] 2xl:max-w-[2200px] px-4 py-5 sm:px-6 lg:px-8">
             <Skeleton className="h-32 w-full rounded-xl" />
             <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <Skeleton className="h-28 rounded-xl" />
@@ -639,7 +639,7 @@ export default function BudgetDetailPage() {
             <div className="absolute right-20 top-0 h-64 w-64 rounded-full bg-indigo-500 blur-3xl"></div>
             <div className="absolute left-10 bottom-0 h-48 w-48 rounded-full bg-emerald-500 blur-3xl"></div>
           </div>
-          <div className="relative mx-auto max-w-[1600px] px-4 py-8 sm:px-6 lg:px-8">
+          <div className="relative mx-auto max-w-[1600px] 2xl:max-w-[2200px] px-4 py-8 sm:px-6 lg:px-8">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
               <div className="flex items-start gap-4">
                 <Button
@@ -732,7 +732,7 @@ export default function BudgetDetailPage() {
           </div>
         </div>
 
-        <div className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1600px] 2xl:max-w-[2200px] px-4 py-6 sm:px-6 lg:px-8">
           {/* Summary Cards */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {/* Budget Amount */}

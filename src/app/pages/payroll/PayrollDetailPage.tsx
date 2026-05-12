@@ -384,7 +384,7 @@ export default function PayrollDetailPage() {
     return (
       <Layout>
         <div className="min-h-screen bg-slate-50 px-4 py-6 dark:bg-slate-950">
-          <div className="mx-auto flex max-w-3xl flex-col items-center rounded-xl border border-slate-200 bg-white py-12 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+          <div className="mx-auto flex max-w-3xl 2xl:max-w-[1400px] flex-col items-center rounded-xl border border-slate-200 bg-white py-12 shadow-sm dark:border-slate-800 dark:bg-slate-950">
             <AlertCircle className="h-12 w-12 mb-4 text-muted-foreground dark:text-slate-400" />
             <p className="text-muted-foreground dark:text-slate-400">Payroll record not found</p>
             <Button variant="outline" className="mt-4 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700" onClick={() => navigate('/payroll')}>
@@ -416,7 +416,7 @@ export default function PayrollDetailPage() {
   return (
     <Layout>
       <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-[1400px] space-y-6">
+        <div className="mx-auto max-w-[1400px] 2xl:max-w-[2200px] space-y-6">
         {/* Header */}
         <div className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/70 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex min-w-0 items-center gap-4">

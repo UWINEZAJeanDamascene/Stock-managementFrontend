@@ -359,7 +359,7 @@ export default function LiabilityFormPage() {
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
         {/* Hero Header */}
         <div className="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
-          <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-5xl 2xl:max-w-[1400px] px-4 py-6 sm:px-6 lg:px-8">
             <div className="flex items-center gap-4">
               <Button
                 variant="ghost"
@@ -381,7 +381,7 @@ export default function LiabilityFormPage() {
           </div>
         </div>
 
-        <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-5xl 2xl:max-w-[1400px] px-4 py-6 sm:px-6 lg:px-8">
 
         <form onSubmit={handleSubmit}>
           <div className="grid gap-6">

@@ -612,7 +612,7 @@ export default function BankAccountDetailPage() {
     return (
       <Layout>
         <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-[1600px] space-y-6">
+          <div className="mx-auto max-w-[1600px] 2xl:max-w-[2200px] space-y-6">
             <Skeleton className="h-32 w-full rounded-xl" />
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
               {[...Array(4)].map((_, i) => (
@@ -635,7 +635,7 @@ export default function BankAccountDetailPage() {
   return (
     <Layout>
       <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-[1600px] space-y-6">
+        <div className="mx-auto max-w-[1600px] 2xl:max-w-[2200px] space-y-6">
           {/* Hero Header */}
           <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
             <div className="grid gap-5 p-5 xl:grid-cols-[1fr_380px] xl:items-stretch">

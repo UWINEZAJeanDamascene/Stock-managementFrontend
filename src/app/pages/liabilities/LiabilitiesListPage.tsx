@@ -120,7 +120,7 @@ export default function LiabilitiesListPage() {
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
         {/* Hero Header */}
         <div className="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
-          <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-7xl 2xl:max-w-[2200px] px-4 py-8 sm:px-6 lg:px-8">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-4">
                 <div className="rounded-xl bg-indigo-50 p-3 ring-1 ring-indigo-100 dark:bg-indigo-950/30 dark:ring-indigo-900/40">
@@ -146,7 +146,7 @@ export default function LiabilitiesListPage() {
           </div>
         </div>
 
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl 2xl:max-w-[2200px] px-4 py-6 sm:px-6 lg:px-8">
           {/* Stats Cards */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
             <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">

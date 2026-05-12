@@ -188,7 +188,7 @@ export default function ProjectFormPage() {
 
   return (
     <Layout>
-      <div className="mx-auto max-w-7xl space-y-6">
+      <div className="mx-auto max-w-7xl 2xl:max-w-[2200px] space-y-6">
         <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 dark:border-slate-800 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-start gap-4">
             <Button variant="outline" size="icon" onClick={() => navigate("/projects")} className="mt-1 h-9 w-9">
