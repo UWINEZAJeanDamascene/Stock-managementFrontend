@@ -25,6 +25,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import EmployeeSelect from "@/app/components/EmployeeSelect";
+import PayrollAdvancesTab from "./PayrollAdvancesTab";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Badge } from "@/app/components/ui/badge";
@@ -99,6 +100,9 @@ export default function PayrollListPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [limit, setLimit] = useState(20);
+
+  // Tabs: 'payroll' | 'advances'
+  const [activeTab, setActiveTab] = useState('payroll');
 
   // Filters
   const currentMonth = String(new Date().getMonth() + 1);
@@ -742,6 +746,33 @@ export default function PayrollListPage() {
             </div>
           </div>
 
+          {/* Tabs */}
+          <div className="flex gap-2 border-b border-slate-200 dark:border-slate-800 pb-0">
+            <button
+              onClick={() => setActiveTab('payroll')}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'payroll'
+                  ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400'
+                  : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
+              }`}
+            >
+              Payroll Records
+            </button>
+            <button
+              onClick={() => setActiveTab('advances')}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'advances'
+                  ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400'
+                  : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
+              }`}
+            >
+              Employee Advances
+            </button>
+          </div>
+
+          {activeTab === 'payroll' && (
+            <>
+          <div className="space-y-6">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
             <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
               <CardContent className="p-5">
@@ -1890,7 +1921,12 @@ export default function PayrollListPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        </>
+          )}
+
+          {activeTab === 'advances' && <PayrollAdvancesTab />}
       </div>
+    </div>
     </Layout>
   );
 }

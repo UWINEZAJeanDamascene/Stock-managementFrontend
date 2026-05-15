@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Eye, EyeOff, Loader2, ArrowLeft, ArrowRight, Building2, UserPlus, CheckCircle2, Mail, Phone, ShieldCheck } from 'lucide-react';
+import { Eye, EyeOff, Loader2, ArrowLeft, ArrowRight, Building2, UserPlus, CheckCircle2, Mail, Phone, ShieldCheck, Check } from 'lucide-react';
 import { companyService } from '@/services';
+import { companyApi } from '@/lib/api';
 import { PUBLIC_ROUTES } from '@/config/routes';
 
 const registerSchema = z.object({
@@ -12,6 +13,7 @@ const registerSchema = z.object({
   companyEmail: z.string().email('Please enter a valid company email'),
   companyTin: z.string().optional(),
   companyPhone: z.string().optional(),
+  subscriptionPlan: z.string().optional(),
   adminName: z.string().min(2, 'Your name must be at least 2 characters'),
   adminEmail: z.string().email('Please enter a valid email address'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
@@ -32,21 +34,48 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [emailError, setEmailError] = useState<string | null>(null);
+  const [plans, setPlans] = useState<{ key: string; name: string; description: string; features: string[]; modules: string[]; badge: string; default_billing_amount: number; default_billing_cycle: string; featured: boolean }[]>([]);
+  const [plansLoading, setPlansLoading] = useState(true);
+  const [selectedPlan, setSelectedPlan] = useState<string>('trial');
+
+  useEffect(() => {
+    companyApi.getPublicSubscriptionPlans()
+      .then((res) => {
+        if (res.success && res.data) {
+          const activePlans = res.data.filter((p) => p.is_active).sort((a, b) => a.sort_order - b.sort_order);
+          setPlans(activePlans);
+          if (activePlans.length > 0) {
+            setSelectedPlan(activePlans[0].key);
+          }
+        }
+      })
+      .catch(() => {
+        // fallback: no plans available
+      })
+      .finally(() => setPlansLoading(false));
+  }, []);
 
   const {
     register,
     handleSubmit,
     trigger,
     getValues,
+    setValue,
     formState: { errors },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
     mode: 'onChange',
+    defaultValues: { subscriptionPlan: 'trial' },
   });
 
   const handleContinue = async () => {
     const isValid = await trigger(['companyName', 'companyEmail', 'companyTin', 'companyPhone']);
     if (isValid) setStep(2);
+  };
+
+  const handleSelectPlan = (key: string) => {
+    setSelectedPlan(key);
+    setValue('subscriptionPlan', key);
   };
 
   const onSubmit = async () => {
@@ -64,6 +93,7 @@ export default function RegisterPage() {
           email: data.companyEmail,
           tin: data.companyTin || undefined,
           phone: data.companyPhone || undefined,
+          subscription_plan: data.subscriptionPlan || selectedPlan,
         },
         {
           name: data.adminName,
@@ -197,6 +227,55 @@ export default function RegisterPage() {
                   <input id="companyPhone" type="tel" {...register('companyPhone')} className={iconInputClass} placeholder="+250..." />
                 </div>
               </div>
+            </div>
+
+            {/* Plan Selector */}
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">Select a plan</label>
+              {plansLoading ? (
+                <div className="flex h-20 items-center justify-center rounded-lg border border-slate-200 bg-white dark:border-white/10 dark:bg-white/[0.06]">
+                  <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
+                </div>
+              ) : plans.length === 0 ? (
+                <p className="text-sm text-slate-500 dark:text-slate-400">No plans available. You will be assigned the default trial plan.</p>
+              ) : (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {plans.map((plan) => (
+                    <button
+                      key={plan.key}
+                      type="button"
+                      onClick={() => handleSelectPlan(plan.key)}
+                      className={`relative rounded-xl border p-4 text-left transition-all ${
+                        selectedPlan === plan.key
+                          ? 'border-cyan-500 bg-cyan-50 ring-1 ring-cyan-500 dark:border-cyan-400 dark:bg-cyan-950/20'
+                          : 'border-slate-200 bg-white hover:border-slate-300 dark:border-white/10 dark:bg-white/[0.06] dark:hover:border-white/20'
+                      }`}
+                    >
+                      {selectedPlan === plan.key && (
+                        <span className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-cyan-500 text-white">
+                          <Check className="h-3 w-3" />
+                        </span>
+                      )}
+                      {plan.badge && (
+                        <span className="mb-1 inline-block rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                          {plan.badge}
+                        </span>
+                      )}
+                      <p className="text-sm font-bold text-slate-900 dark:text-white">{plan.name}</p>
+                      <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{plan.description}</p>
+                      <p className="mt-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                        {plan.default_billing_amount > 0 ? `$${plan.default_billing_amount.toLocaleString()}` : 'Free'} / {plan.default_billing_cycle}
+                      </p>
+                      {plan.modules && plan.modules.length > 0 && (
+                        <p className="mt-1.5 text-[11px] text-slate-400 dark:text-slate-500">
+                          {plan.modules.slice(0, 3).join(', ')}{plan.modules.length > 3 ? '...' : ''}
+                        </p>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <input type="hidden" {...register('subscriptionPlan')} value={selectedPlan} />
             </div>
 
             <button type="button" onClick={handleContinue} className="flex h-12 w-full items-center justify-center rounded-lg bg-slate-950 px-4 font-semibold text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-cyan-100">

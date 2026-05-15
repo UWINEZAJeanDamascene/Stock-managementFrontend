@@ -36,6 +36,7 @@ import { Button } from '@/app/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useChatPanelStore } from '@/store/chatPanelStore';
 
 const operatingMetrics = [
   { value: '18+', label: 'Business modules', detail: 'Inventory, sales, purchasing, finance, payroll, reports and more — all connected.' },
@@ -96,6 +97,8 @@ export default function HomePage() {
     { label: 'Pricing', href: '/pricing' },
   ];
 
+  const { open: chatOpen, toggle: toggleChat } = useChatPanelStore();
+
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#f7f9fb] text-slate-950 dark:bg-[#06080d] dark:text-white">
       <style>{`
@@ -152,6 +155,23 @@ export default function HomePage() {
             <Button variant="ghost" size="icon" onClick={toggleTheme} className="text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-white/10">
               {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>
+            <Button
+              size="sm"
+              onClick={toggleChat}
+              className={`h-9 gap-2 rounded-xl px-3 transition-all ${
+                chatOpen
+                  ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-500/30 hover:brightness-110'
+                  : 'bg-gradient-to-r from-indigo-50 to-violet-50 text-indigo-700 ring-1 ring-inset ring-indigo-200 hover:from-indigo-100 hover:to-violet-100 hover:shadow-md dark:from-indigo-500/15 dark:to-violet-500/15 dark:text-indigo-300 dark:ring-indigo-500/30 dark:hover:from-indigo-500/25 dark:hover:to-violet-500/25'
+              }`}
+              title={chatOpen ? 'Close Stacy AI assistant' : 'Open Stacy AI assistant'}
+            >
+              <span className="relative flex h-2 w-2">
+                <span className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-75 ${chatOpen ? 'bg-white' : 'bg-emerald-400'}`} />
+                <span className={`relative inline-flex h-2 w-2 rounded-full ${chatOpen ? 'bg-white' : 'bg-emerald-500'}`} />
+              </span>
+              <Sparkles className="h-4 w-4" />
+              <span className="text-sm font-semibold">AI</span>
+            </Button>
             {isAuthenticated ? (
               <Link to={systemHref}>
                 <Button className="bg-slate-950 px-5 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-cyan-100">
@@ -202,6 +222,17 @@ export default function HomePage() {
                 <Button variant="outline" onClick={toggleLanguage} className="gap-2">
                   <Languages className="h-4 w-4" />
                   {language === 'en' ? 'FR' : 'EN'}
+                </Button>
+                <Button
+                  onClick={() => { toggleChat(); setMobileOpen(false); }}
+                  className={`gap-2 transition-all ${
+                    chatOpen
+                      ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md'
+                      : 'bg-indigo-50 text-indigo-700 ring-1 ring-inset ring-indigo-200 hover:bg-indigo-100 dark:bg-indigo-500/15 dark:text-indigo-300 dark:ring-indigo-500/30'
+                  }`}
+                >
+                  <Sparkles className="h-4 w-4" />
+                  AI
                 </Button>
                 {isAuthenticated ? (
                   <Link to={systemHref} onClick={() => setMobileOpen(false)} className="col-span-2">

@@ -40,6 +40,16 @@ import {
   SelectValue,
 } from '@/app/components/ui/select';
 import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/app/components/ui/alert-dialog';
 
 interface SalesOrderLine {
   _id: string;
@@ -126,6 +136,11 @@ export default function SalesOrdersListPage() {
     total: 0,
     pages: 1,
   });
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
   const fetchSalesOrders = useCallback(async () => {
     try {
@@ -179,9 +194,11 @@ export default function SalesOrdersListPage() {
     fetchSalesOrders();
   }, [fetchSalesOrders]);
 
-  const handleConfirm = async (id: string) => {
+  const doConfirm = async () => {
+    if (!pendingOrderId) return;
+    setConfirming(true);
     try {
-      const response = await salesOrdersApi.confirm(id);
+      const response = await salesOrdersApi.confirm(pendingOrderId);
       if (response.success) {
         toast.success('Sales order confirmed successfully');
         fetchSalesOrders();
@@ -189,14 +206,18 @@ export default function SalesOrdersListPage() {
     } catch (error) {
       console.error('Error confirming sales order:', error);
       toast.error('Failed to confirm sales order');
+    } finally {
+      setConfirming(false);
+      setConfirmDialogOpen(false);
+      setPendingOrderId(null);
     }
   };
 
-  const handleCancel = async (id: string) => {
-    if (!confirm('Are you sure you want to cancel this sales order?')) return;
-    
+  const doCancel = async () => {
+    if (!pendingOrderId) return;
+    setCancelling(true);
     try {
-      const response = await salesOrdersApi.cancel(id, 'Cancelled by user');
+      const response = await salesOrdersApi.cancel(pendingOrderId, 'Cancelled by user');
       if (response.success) {
         toast.success('Sales order cancelled successfully');
         fetchSalesOrders();
@@ -204,6 +225,10 @@ export default function SalesOrdersListPage() {
     } catch (error) {
       console.error('Error cancelling sales order:', error);
       toast.error('Failed to cancel sales order');
+    } finally {
+      setCancelling(false);
+      setCancelDialogOpen(false);
+      setPendingOrderId(null);
     }
   };
 
@@ -588,7 +613,7 @@ export default function SalesOrdersListPage() {
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    onClick={() => handleConfirm(order._id)}
+                                    onClick={() => { setPendingOrderId(order._id); setConfirmDialogOpen(true); }}
                                     title="Confirm"
                                     className="h-8 w-8 p-0 text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
                                   >
@@ -597,7 +622,7 @@ export default function SalesOrdersListPage() {
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    onClick={() => handleCancel(order._id)}
+                                    onClick={() => { setPendingOrderId(order._id); setCancelDialogOpen(true); }}
                                     title="Cancel"
                                     className="h-8 w-8 p-0 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
                                   >
@@ -661,6 +686,42 @@ export default function SalesOrdersListPage() {
           )}
         </div>
       </div>
+
+      {/* Confirm Dialog */}
+      <AlertDialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
+        <AlertDialogContent className="dark:bg-slate-900 dark:border-slate-800">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="dark:text-white">Confirm Sales Order</AlertDialogTitle>
+            <AlertDialogDescription className="dark:text-slate-400">
+              Are you sure you want to confirm this sales order? Once confirmed, it will move to the confirmed status and can be processed for picking & packing.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={confirming} className="dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={doConfirm} disabled={confirming} className="bg-emerald-600 hover:bg-emerald-700">
+              {confirming ? 'Confirming...' : 'Confirm'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Cancel Dialog */}
+      <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <AlertDialogContent className="dark:bg-slate-900 dark:border-slate-800">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="dark:text-white">Cancel Sales Order</AlertDialogTitle>
+            <AlertDialogDescription className="dark:text-slate-400">
+              Are you sure you want to cancel this sales order? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={cancelling} className="dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">Keep Order</AlertDialogCancel>
+            <AlertDialogAction onClick={doCancel} disabled={cancelling} className="bg-red-600 hover:bg-red-700">
+              {cancelling ? 'Cancelling...' : 'Cancel Order'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Layout>
   );
 }

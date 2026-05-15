@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router';
+import { useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -23,6 +24,8 @@ import SecurityLandingPage from './pages/landing/SecurityLandingPage';
 import OperationsLandingPage from './pages/landing/OperationsLandingPage';
 import PlatformLandingPage from './pages/landing/PlatformLandingPage';
 import AIChatBot from './components/AIChatBot';
+import { useCompanyStore } from '@/store/companyStore';
+import { useChatPanelStore } from '@/store/chatPanelStore';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
@@ -33,6 +36,25 @@ import InventoryDashboardPage from './pages/InventoryDashboardPage';
 import SalesDashboardPage from './pages/SalesDashboardPage';
 import PurchaseDashboardPage from './pages/PurchaseDashboardPage';
 import FinanceDashboardPage from './pages/FinanceDashboardPage';
+
+function EnterpriseAIChatBot() {
+  const { isAuthenticated, user } = useAuth();
+  const company = useCompanyStore((state) => state.company);
+  const setChatOpen = useChatPanelStore((state) => state.setOpen);
+  const hasEnterpriseAI = Boolean(
+    isAuthenticated &&
+    user?.role !== 'platform_admin' &&
+    (company?.subscription_plan === 'enterprise' || company?.feature_access?.ai_assistant)
+  );
+
+  useEffect(() => {
+    if (!hasEnterpriseAI) {
+      setChatOpen(false);
+    }
+  }, [hasEnterpriseAI, setChatOpen]);
+
+  return hasEnterpriseAI ? <AIChatBot /> : null;
+}
 import UsersPage from './pages/UsersPage';
 import SecurityPage from './pages/SecurityPage';
 import NotificationsPage from './pages/NotificationsPage';
@@ -43,6 +65,7 @@ import DepartmentsPage from './pages/DepartmentsPage';
 import BulkDataPage from './pages/BulkDataPage';
 import AuditTrailPage from './pages/AuditTrailPage';
 import PlatformAdminPage from './pages/PlatformAdminPage';
+import { PlatformOwnerLayout } from './layout/PlatformOwnerLayout';
 import ProductsListPage from './pages/ProductsListPage';
 import ProductFormPage from './pages/ProductFormPage';
 import ProductDetailPage from './pages/ProductDetailPage';
@@ -132,6 +155,9 @@ import ChartOfAccountsPage from './pages/settings/ChartOfAccountsPage';
 import EmployeesListPage from './pages/employees/EmployeesListPage';
 import EmployeeFormPage from './pages/employees/EmployeeFormPage';
 import EmployeeDetailPage from './pages/employees/EmployeeDetailPage';
+import EmployeeAdvancesListPage from './pages/employee-advances/EmployeeAdvancesListPage';
+import EmployeeAdvanceFormPage from './pages/employee-advances/EmployeeAdvanceFormPage';
+import EmployeeAdvanceDetailPage from './pages/employee-advances/EmployeeAdvanceDetailPage';
 import PayrollListPage from './pages/payroll/PayrollListPage';
 import PayrollRunsListPage from './pages/payroll/PayrollRunsListPage';
 import PayrollDetailPage from './pages/payroll/PayrollDetailPage';
@@ -321,6 +347,7 @@ function AppRoutes() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
         <Route path="/company" element={<CompanySelectorPage />} />
         <Route path="/onboarding" element={<OnboardingPage />} />
         
@@ -349,13 +376,27 @@ function AppRoutes() {
         <Route path="/stock-audits/:id" element={<AuditDetailPage />} />
         <Route path="/batches" element={<BatchesPage />} />
         <Route path="/serial-numbers" element={<SerialNumbersPage />} />
-        <Route path="/purchase-orders" element={<PurchaseOrdersListPage />} />
-        <Route path="/purchase-orders/new" element={<PurchaseOrderFormPage />} />
-        <Route path="/purchase-orders/:id/edit" element={<PurchaseOrderFormPage />} />
+        <Route path="/purchase-orders" element={
+          <ProtectedRoute permission="purchase_orders:read">
+            <PurchaseOrdersListPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/purchase-orders/new" element={
+          <ProtectedRoute permission="purchase_orders:create">
+            <PurchaseOrderFormPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/purchase-orders/:id/edit" element={
+          <ProtectedRoute permission="purchase_orders:update">
+            <PurchaseOrderFormPage />
+          </ProtectedRoute>
+        } />
         <Route path="/purchase-orders/:id" element={
-          <ErrorBoundary>
-            <PurchaseOrderDetailPage />
-          </ErrorBoundary>
+          <ProtectedRoute permission="purchase_orders:read">
+            <ErrorBoundary>
+              <PurchaseOrderDetailPage />
+            </ErrorBoundary>
+          </ProtectedRoute>
         } />
         <Route path="/purchases" element={<PurchasesListPage />} />
         <Route path="/purchases/new" element={<PurchaseFormPage />} />
@@ -660,7 +701,14 @@ function AppRoutes() {
         } />
         <Route path="/bulk-data" element={<BulkDataPage />} />
         <Route path="/audit-trail" element={<AuditTrailPage />} />
-        <Route path="/platform-admin" element={<PlatformAdminPage />} />
+        {/* Platform Owner routes - separate layout, no company context */}
+        <Route path="/platform-admin" element={
+          <ProtectedRoute permission="platform:admin">
+            <PlatformOwnerLayout title="Platform Dashboard">
+              <PlatformAdminPage />
+            </PlatformOwnerLayout>
+          </ProtectedRoute>
+        } />
         
         {/* Employee Master routes */}
         <Route path="/employees" element={
@@ -681,6 +729,33 @@ function AppRoutes() {
         <Route path="/employees/:id/edit" element={
           <ErrorBoundary>
             <EmployeeFormPage />
+          </ErrorBoundary>
+        } />
+
+        {/* Employee Advances routes */}
+        <Route path="/employee-advances" element={
+          <ErrorBoundary>
+            <EmployeeAdvancesListPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/employee-advances/new" element={
+          <ErrorBoundary>
+            <EmployeeAdvanceFormPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/employee-advances/:id" element={
+          <ErrorBoundary>
+            <EmployeeAdvanceDetailPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/employee-advances/:id/repayment" element={
+          <ErrorBoundary>
+            <EmployeeAdvanceFormPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/employee-advances/:id/settlement" element={
+          <ErrorBoundary>
+            <EmployeeAdvanceFormPage />
           </ErrorBoundary>
         } />
 
@@ -890,7 +965,7 @@ export default function App() {
           <LanguageProvider>
             <AuthProvider>
               <CurrencyProvider>
-                <AIChatBot />
+                <EnterpriseAIChatBot />
                 <Toaster position="top-right" richColors />
                 <AppRoutes />
               </CurrencyProvider>

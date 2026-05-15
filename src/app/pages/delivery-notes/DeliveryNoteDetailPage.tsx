@@ -45,9 +45,26 @@ const toNumber = (value: any): number => {
   return 0;
 };
 
-// Get qty from field
+// Get qty from multiple possible fields on an item
 const getQty = (item: any): number => {
-  return toNumber(item.orderedQty ?? item.qtyToDeliver ?? item.pendingQty ?? 0);
+  if (!item) return 0;
+  const candidates = [
+    'orderedQty',
+    'qtyToDeliver',
+    'pendingQty',
+    'quantity',
+    'qty',
+    'requestedQty',
+    'deliveredQty',
+    'amount',
+  ];
+  for (const key of candidates) {
+    if (item[key] !== undefined && item[key] !== null) {
+      const n = toNumber(item[key]);
+      if (!Number.isNaN(n)) return n;
+    }
+  }
+  return 0;
 };
 
 interface DeliveryNoteItem {

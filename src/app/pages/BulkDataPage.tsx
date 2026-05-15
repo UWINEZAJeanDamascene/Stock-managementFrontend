@@ -44,7 +44,7 @@ import {
 
 // ─── Types ──────────────────────────────────────────
 
-type DataType = 'products' | 'clients' | 'suppliers';
+type DataType = string;
 type WizardStep = 'select' | 'upload' | 'map' | 'preview' | 'result';
 
 interface ImportResult {
@@ -134,6 +134,54 @@ const TARGET_FIELDS: Record<DataType, { field: string; label: string; required: 
     { field: 'taxId', label: 'Tax ID', required: false },
     { field: 'paymentTerms', label: 'Payment Terms', required: false },
     { field: 'notes', label: 'Notes', required: false },
+    { field: 'isActive', label: 'Active (true/false)', required: false },
+  ],
+  categories: [
+    { field: 'name', label: 'Category Name', required: true },
+    { field: 'description', label: 'Description', required: false },
+    { field: 'defaultInventoryAccount', label: 'Default Inventory Account', required: false },
+    { field: 'defaultCogsAccount', label: 'Default COGS Account', required: false },
+    { field: 'defaultRevenueAccount', label: 'Default Revenue Account', required: false },
+    { field: 'isActive', label: 'Active (true/false)', required: false },
+  ],
+  warehouses: [
+    { field: 'name', label: 'Warehouse Name', required: true },
+    { field: 'code', label: 'Code', required: false },
+    { field: 'description', label: 'Description', required: false },
+    { field: 'address', label: 'Address', required: false },
+    { field: 'city', label: 'City', required: false },
+    { field: 'country', label: 'Country', required: false },
+    { field: 'contactPerson', label: 'Contact Person', required: false },
+    { field: 'phone', label: 'Phone', required: false },
+    { field: 'email', label: 'Email', required: false },
+    { field: 'inventoryAccount', label: 'Inventory Account', required: false },
+    { field: 'isActive', label: 'Active (true/false)', required: false },
+    { field: 'isDefault', label: 'Default Warehouse (true/false)', required: false },
+  ],
+  bank_accounts: [
+    { field: 'name', label: 'Account Name', required: true },
+    { field: 'accountNumber', label: 'Account Number', required: false },
+    { field: 'bankName', label: 'Bank Name', required: false },
+    { field: 'currencyCode', label: 'Currency', required: false },
+    { field: 'ledgerAccountId', label: 'Ledger Account', required: false },
+    { field: 'openingBalance', label: 'Opening Balance', required: false },
+    { field: 'openingBalanceDate', label: 'Opening Balance Date', required: false },
+    { field: 'accountType', label: 'Account Type', required: false },
+    { field: 'branch', label: 'Branch', required: false },
+    { field: 'swiftCode', label: 'SWIFT / IBAN', required: false },
+    { field: 'targetBalance', label: 'Target Balance', required: false },
+    { field: 'holderName', label: 'Holder Name', required: false },
+    { field: 'notes', label: 'Notes', required: false },
+    { field: 'isActive', label: 'Active (true/false)', required: false },
+    { field: 'isDefault', label: 'Default Account (true/false)', required: false },
+  ],
+  chart_of_accounts: [
+    { field: 'code', label: 'Account Code', required: true },
+    { field: 'name', label: 'Account Name', required: true },
+    { field: 'type', label: 'Type', required: false },
+    { field: 'subtype', label: 'Subtype', required: false },
+    { field: 'normal_balance', label: 'Normal Balance', required: false },
+    { field: 'allow_direct_posting', label: 'Allow Direct Posting', required: false },
     { field: 'isActive', label: 'Active (true/false)', required: false },
   ],
 };
@@ -297,9 +345,13 @@ export default function BulkDataPage() {
     { key: 'products', icon: Package, label: t('bulkData.products'), color: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30' },
     { key: 'clients', icon: Users, label: t('bulkData.clients'), color: 'bg-green-100 text-green-600 dark:bg-green-900/30' },
     { key: 'suppliers', icon: Truck, label: t('bulkData.suppliers'), color: 'bg-orange-100 text-orange-600 dark:bg-orange-900/30' },
+    { key: 'categories', icon: FileSpreadsheet, label: 'Categories', color: 'bg-cyan-100 text-cyan-600 dark:bg-cyan-900/30' },
+    { key: 'warehouses', icon: Database, label: 'Warehouses', color: 'bg-teal-100 text-teal-600 dark:bg-teal-900/30' },
+    { key: 'bank_accounts', icon: Inbox, label: 'Bank Accounts', color: 'bg-violet-100 text-violet-600 dark:bg-violet-900/30' },
+    { key: 'chart_of_accounts', icon: FileCheck, label: 'Chart Of Accounts', color: 'bg-slate-100 text-slate-600 dark:bg-slate-800' },
   ];
 
-  const targetFields = TARGET_FIELDS[selectedType];
+  const targetFields = TARGET_FIELDS[selectedType] || [];
 
   // ── Wizard step labels ──
   const steps: { key: WizardStep; label: string }[] = [
@@ -358,7 +410,7 @@ export default function BulkDataPage() {
             autoMapping[h] = suggestion;
             usedTargets.add(suggestion);
           } else {
-            autoMapping[h] = '';
+            autoMapping[h] = `customFields.${h}`;
           }
         });
         setColumnMapping(autoMapping);
@@ -407,18 +459,7 @@ export default function BulkDataPage() {
       const blob = new Blob([csv], { type: 'text/csv' });
       const file = new File([blob], `${selectedType}_import.csv`, { type: 'text/csv' });
 
-      let result;
-      switch (selectedType) {
-        case 'products':
-          result = await bulkDataApi.importProducts(file);
-          break;
-        case 'clients':
-          result = await bulkDataApi.importClients(file);
-          break;
-        case 'suppliers':
-          result = await bulkDataApi.importSuppliers(file);
-          break;
-      }
+      const result = await bulkDataApi.importData(selectedType, file);
       setImportResult(result.data as ImportResult);
       setSuccess(result.message);
       setStep('result');
@@ -434,12 +475,7 @@ export default function BulkDataPage() {
     setExporting(type);
     setError(null);
     try {
-      let blob;
-      switch (type) {
-        case 'products': blob = await bulkDataApi.exportProducts(); break;
-        case 'clients': blob = await bulkDataApi.exportClients(); break;
-        case 'suppliers': blob = await bulkDataApi.exportSuppliers(); break;
-      }
+      const blob = await bulkDataApi.exportData(type);
       downloadBlob(blob, `${type}_export.csv`);
       setSuccess(t('bulkData.exportSuccess'));
     } catch {
@@ -733,6 +769,7 @@ export default function BulkDataPage() {
                                 }`}
                               >
                                 <option value="">— {t('bulkData.skip')} —</option>
+                                <option value={`customFields.${header}`}>Custom field: {header}</option>
                                 {targetFields.map(tf => (
                                   <option key={tf.field} value={tf.field} disabled={
                                     Object.values(columnMapping).includes(tf.field) && columnMapping[header] !== tf.field

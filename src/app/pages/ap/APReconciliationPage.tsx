@@ -25,6 +25,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Alert, AlertDescription, AlertTitle } from '@/app/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
+import { formatCurrency } from '@/lib/currencyUtils';
 
 interface APTransaction {
   _id: string;
@@ -262,12 +263,8 @@ export default function APReconciliationPage() {
     }
   };
 
-  const formatCurrency = (amount: number | string | undefined | null) => {
-    if (amount === undefined || amount === null) return '$0.00';
-    const num = typeof amount === 'string' ? parseFloat(amount) : Number(amount);
-    if (isNaN(num)) return '$0.00';
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num);
-  };
+  // use shared currency formatter (defaults to company/display currency)
+  // `formatCurrency` imported from lib/currencyUtils
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '-';

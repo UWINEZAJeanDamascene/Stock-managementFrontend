@@ -38,12 +38,7 @@ import {
   ReceiptText,
 } from "lucide-react";
 
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value);
-}
+import { formatCurrency } from '@/lib/currencyUtils';
 
 function formatNumber(value: number): string {
   return new Intl.NumberFormat("en-US").format(value);
@@ -380,7 +375,7 @@ export default function SalesDashboardPage() {
             />
             <MetricCard
               title="Total Invoiced"
-              value={`$${formatCurrency(totalInvoiced)}`}
+              value={formatCurrency(totalInvoiced)}
               subtitle="Month to date, excluding drafts"
               icon={<DollarSign className="h-5 w-5" />}
               tone="green"
@@ -388,8 +383,8 @@ export default function SalesDashboardPage() {
             />
             <MetricCard
               title="Total Collected"
-              value={`$${formatCurrency(totalCollected)}`}
-              subtitle={`Outstanding AR $${formatCurrency(totalOutstanding)}`}
+              value={formatCurrency(totalCollected)}
+              subtitle={`Outstanding AR ${formatCurrency(totalOutstanding)}`}
               icon={<PiggyBank className="h-5 w-5" />}
               tone="violet"
               loading={loading}
@@ -413,7 +408,7 @@ export default function SalesDashboardPage() {
                 action={
                   !loading && (
                     <Badge variant={overdueAmount > 0 ? "destructive" : "secondary"}>
-                      ${formatCurrency(totalOutstanding)}
+                      {formatCurrency(totalOutstanding)}
                     </Badge>
                   )
                 }
@@ -455,7 +450,7 @@ export default function SalesDashboardPage() {
                                     ]?.label || name}
                                   </span>
                                   <span className="font-mono">
-                                    ${formatCurrency(Number(value))}
+                                    {formatCurrency(Number(value))}
                                   </span>
                                 </div>
                               )}
@@ -514,7 +509,7 @@ export default function SalesDashboardPage() {
                               </span>
                             </div>
                             <p className="mt-2 font-mono text-sm font-semibold text-slate-950 dark:text-white">
-                              ${formatCurrency(value)}
+                              {formatCurrency(value)}
                             </p>
                             <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
                               {pct.toFixed(0)}% of AR
@@ -597,7 +592,7 @@ export default function SalesDashboardPage() {
                           Collected
                         </p>
                         <p className="mt-1 text-lg font-bold text-slate-950 dark:text-white">
-                          ${formatCurrency(totalCollected)}
+                          {formatCurrency(totalCollected)}
                         </p>
                       </div>
                       <div className="rounded-lg border border-slate-200 p-3 dark:border-slate-800">
@@ -605,7 +600,7 @@ export default function SalesDashboardPage() {
                           Overdue
                         </p>
                         <p className="mt-1 text-lg font-bold text-slate-950 dark:text-white">
-                          ${formatCurrency(overdueAmount)}
+                          {formatCurrency(overdueAmount)}
                         </p>
                       </div>
                     </div>
@@ -662,18 +657,18 @@ export default function SalesDashboardPage() {
                               </div>
                             </TableCell>
                             <TableCell className="text-right font-mono">
-                              ${formatCurrency(client.total_invoiced)}
+                              {formatCurrency(client.total_invoiced)}
                             </TableCell>
                             <TableCell className="text-right font-mono text-emerald-600 dark:text-emerald-400">
-                              ${formatCurrency(client.total_paid)}
+                              {formatCurrency(client.total_paid)}
                             </TableCell>
                             <TableCell className="text-right font-mono">
                               {client.outstanding > 0 ? (
                                 <span className="text-amber-600 dark:text-amber-400">
-                                  ${formatCurrency(client.outstanding)}
+                                  {formatCurrency(client.outstanding)}
                                 </span>
                               ) : (
-                                <span className="text-slate-400">$0.00</span>
+                                <span className="text-slate-400">{formatCurrency(0)}</span>
                               )}
                             </TableCell>
                             <TableCell className="text-right font-mono text-slate-500">
@@ -703,10 +698,10 @@ export default function SalesDashboardPage() {
                     message="No invoices found"
                   />
                 ) : (
-                  <div className="grid gap-5 md:grid-cols-[260px_1fr] xl:grid-cols-[300px_1fr] md:items-center">
+                  <div className="grid gap-5 md:grid-cols-[minmax(160px,260px)_1fr] xl:grid-cols-[minmax(200px,300px)_1fr] md:items-center overflow-hidden">
                     <ChartContainer
                       config={statusChartConfig}
-                      className="mx-auto h-[160px] sm:h-[200px] md:h-[250px] xl:h-[300px] w-full -ml-2"
+                      className="mx-auto h-[160px] sm:h-[200px] md:h-[250px] xl:h-[300px] w-full -ml-2 min-w-0"
                     >
                       <PieChart>
                         <ChartTooltip
@@ -740,7 +735,7 @@ export default function SalesDashboardPage() {
                         </Pie>
                       </PieChart>
                     </ChartContainer>
-                    <div className="space-y-3">
+                    <div className="space-y-3 min-w-0">
                       {byStatusList.map((status, index) => {
                         const totalCount = byStatusList.reduce(
                           (sum, item) => sum + item.count,

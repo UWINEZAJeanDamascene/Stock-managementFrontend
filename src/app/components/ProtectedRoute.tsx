@@ -37,7 +37,7 @@ export function ProtectedRoute({
   requireAll = false,
   fallback
 }: ProtectedRouteProps) {
-  const { isAuthenticated, hasPermission, hasAnyPermission, loading } = useAuth();
+  const { isAuthenticated, user, hasPermission, hasAnyPermission, loading } = useAuth();
   const location = useLocation();
 
   // Show loading state
@@ -58,7 +58,9 @@ export function ProtectedRoute({
   let hasAccess = true;
 
   if (permission) {
-    hasAccess = hasPermission(permission);
+    hasAccess = permission === "platform:admin" && user?.role === "platform_admin"
+      ? true
+      : hasPermission(permission);
   } else if (permissions && permissions.length > 0) {
     if (requireAll) {
       // Check if user has ALL permissions

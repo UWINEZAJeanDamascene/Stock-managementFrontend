@@ -63,6 +63,7 @@ import {
 } from '@/app/components/ui/table';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import PrepaidExpensesTab from './PrepaidExpensesTab';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 
@@ -80,7 +81,6 @@ interface Expense {
   amount: number;
   taxAmount: number;
   totalAmount: number;
-  // Rwanda-specific fields
   currencyCode?: string;
   exchangeRate?: number;
   amountInRWF?: number;
@@ -128,7 +128,8 @@ export default function ExpensesListPage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  
+  const [activeTab, setActiveTab] = useState<'expenses' | 'prepaid'>('expenses');
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -141,7 +142,7 @@ export default function ExpensesListPage() {
     startDate: '',
     endDate: '',
     paymentMethod: '',
-    status: '', // Added status filter
+    status: '',
   });
 
   // Form states
@@ -161,7 +162,6 @@ export default function ExpensesListPage() {
     recurringFrequency: 'monthly',
     budgetId: '',
     budgetLineId: '',
-    // Rwanda-specific fields
     currencyCode: 'RWF' as CurrencyCode,
     exchangeRate: 1,
     rraTaxCategory: 'vat_standard' as RRATaxCategory,
@@ -178,20 +178,17 @@ export default function ExpensesListPage() {
   const fetchExpenses = useCallback(async () => {
     setLoading(true);
     try {
-      setLoading(true);
       const response = await expensesApi.getAll({
         page: currentPage,
         limit: limit,
         type: filters.type || undefined,
         status: filters.status || undefined,
         search: searchQuery || undefined,
-        startDate: filters.startDate || undefined, 
+        startDate: filters.startDate || undefined,
         endDate: filters.endDate || undefined,
       });
 
       if (response.success) {
-        console.log('[ExpensesListPage] Fetched expenses:', response.data);
-        console.log('[ExpensesListPage] First expense department:', response.data[0]?.department);
         setExpenses(response.data);
         if (response.pagination) {
           setTotalCount(response.pagination?.total || 0);
@@ -207,15 +204,10 @@ export default function ExpensesListPage() {
   }, [currentPage, limit, filters, searchQuery]);
 
   const fetchAccounts = useCallback(async () => {
-    console.log('[ExpensesListPage] Fetching accounts...');
     try {
       const response = await expensesApi.getExpenseAccounts();
-      console.log('[ExpensesListPage] Accounts response:', response);
       if (response.success && response.data) {
-        console.log('[ExpensesListPage] Setting accounts:', response.data.length);
         setExpenseAccounts(response.data);
-      } else {
-        console.log('[ExpensesListPage] No accounts data or success=false');
       }
     } catch (error) {
       console.error('[ExpensesListPage] Failed to fetch expense accounts:', error);
@@ -249,7 +241,6 @@ export default function ExpensesListPage() {
       setSelectedBudgetLines([]);
       return;
     }
-
     try {
       const response = await budgetsApi.getLines(budgetId);
       if (response.success) {
@@ -263,14 +254,9 @@ export default function ExpensesListPage() {
 
   const fetchDepartments = useCallback(async () => {
     try {
-      console.log('[ExpensesListPage] Fetching departments...');
       const response = await departmentsApi.getAll({ isActive: true });
-      console.log('[ExpensesListPage] Departments response:', response);
       if (response.success && response.data) {
         setDepartments(response.data);
-        console.log('[ExpensesListPage] Departments loaded:', response.data.length);
-      } else {
-        console.warn('[ExpensesListPage] No departments data in response');
       }
     } catch (error: any) {
       console.error('[ExpensesListPage] Failed to fetch departments:', error);
@@ -285,6 +271,32 @@ export default function ExpensesListPage() {
     fetchBudgets();
     fetchDepartments();
   }, [fetchExpenses, fetchAccounts, fetchBankAccounts, fetchBudgets, fetchDepartments]);
+
+  const resetForm = () => {
+    setNewExpenseForm({
+      description: '',
+      amount: 0,
+      taxAmount: 0,
+      expenseAccountId: '',
+      paymentMethod: 'bank',
+      bankAccountId: '',
+      expenseDate: new Date().toISOString().split('T')[0],
+      type: 'other_expense',
+      reference: '',
+      notes: '',
+      paid: true,
+      isRecurring: false,
+      recurringFrequency: 'monthly',
+      budgetId: '',
+      budgetLineId: '',
+      currencyCode: 'RWF',
+      exchangeRate: 1,
+      rraTaxCategory: 'vat_standard',
+      isVATRecoverable: true,
+      departmentId: '',
+    });
+    setSelectedBudgetLines([]);
+  };
 
   const handleCreateExpense = async () => {
     if (!newExpenseForm.description || newExpenseForm.amount <= 0) {
@@ -319,7 +331,6 @@ export default function ExpensesListPage() {
         recurringFrequency: newExpenseForm.recurringFrequency,
         budget_id: newExpenseForm.budgetId || undefined,
         budget_line_id: newExpenseForm.budgetLineId || undefined,
-        // Rwanda-specific fields
         currencyCode: newExpenseForm.currencyCode,
         exchangeRate: newExpenseForm.currencyCode === 'RWF' ? 1 : newExpenseForm.exchangeRate,
         rraTaxCategory: newExpenseForm.rraTaxCategory,
@@ -330,30 +341,7 @@ export default function ExpensesListPage() {
       if (response.success) {
         toast.success('Expense created successfully');
         setShowCreateDialog(false);
-        setNewExpenseForm({
-          description: '',
-          amount: 0,
-          taxAmount: 0,
-          expenseAccountId: '',
-          paymentMethod: 'bank',
-          bankAccountId: '',
-          expenseDate: new Date().toISOString().split('T')[0],
-          type: 'other_expense',
-          reference: '',
-          notes: '',
-          paid: true,
-          isRecurring: false,
-          recurringFrequency: 'monthly',
-          budgetId: '',
-          budgetLineId: '',
-          // Reset Rwanda-specific fields
-          currencyCode: 'RWF',
-          exchangeRate: 1,
-          rraTaxCategory: 'vat_standard',
-          isVATRecoverable: true,
-          departmentId: '',
-        });
-        setSelectedBudgetLines([]);
+        resetForm();
         fetchExpenses();
       } else {
         toast.error('Failed to create expense');
@@ -405,8 +393,7 @@ export default function ExpensesListPage() {
 
     const ws = XLSX.utils.json_to_sheet(dataToExport);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Expenses");
-    
+    XLSX.utils.book_append_sheet(wb, ws, 'Expenses');
     const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
     const data = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     saveAs(data, `expenses_${new Date().toISOString().split('T')[0]}.xlsx`);
@@ -428,6 +415,19 @@ export default function ExpensesListPage() {
     }).format(amount || 0);
   };
 
+  const formatRWF = (amount: number) => {
+    return new Intl.NumberFormat('en-RW', {
+      style: 'currency',
+      currency: 'RWF',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount || 0);
+  };
+
+  const formatDate = (date: string) => {
+    return new Date(date).toLocaleDateString();
+  };
+
   const getBudgetLineAccountId = (line: BudgetLine) => {
     return typeof line.account_id === 'object' ? line.account_id._id : line.account_id;
   };
@@ -442,21 +442,7 @@ export default function ExpensesListPage() {
       Number(line.budgeted_amount || 0) -
       Number(line.encumbered_amount || 0) -
       Number(line.actual_amount || 0);
-
     return `${account?.code || ''} - ${account?.name || 'Budget line'}${project ? ` - ${project}` : ''} (${formatCurrency(available)} left)`;
-  };
-
-  const formatRWF = (amount: number) => {
-    return new Intl.NumberFormat('en-RW', {
-      style: 'currency',
-      currency: 'RWF',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount || 0);
-  };
-
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString();
   };
 
   const getStatusBadge = (status: string) => {
@@ -487,7 +473,7 @@ export default function ExpensesListPage() {
     return <Badge variant={variant as any} className={className}>{method}</Badge>;
   };
 
-  // Calculate summary metrics
+  // Summary metrics
   const totalExpenses = expenses.reduce((sum, e) => sum + (e.totalAmountInRWF || e.totalAmount || 0), 0);
   const pendingCount = expenses.filter(e => e.status === 'pending').length;
   const postedCount = expenses.filter(e => e.status === 'posted').length;
@@ -496,7 +482,8 @@ export default function ExpensesListPage() {
   return (
     <Layout>
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
-        {/* Hero Header */}
+
+        {/* ── Hero Header ── */}
         <div className="relative overflow-hidden border-b border-slate-200 bg-gradient-to-br from-indigo-900 via-indigo-800 to-slate-900 dark:border-slate-800">
           <div className="absolute inset-0 opacity-10">
             <div className="absolute right-10 top-10 h-40 w-40 rounded-full bg-white blur-3xl" />
@@ -514,11 +501,18 @@ export default function ExpensesListPage() {
                 </div>
               </div>
               <div className="flex gap-3">
-                <Button variant="outline" onClick={handleExport} className="border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white dark:border-white/20 dark:bg-white/10 dark:text-white dark:hover:bg-white/20">
+                <Button
+                  variant="outline"
+                  onClick={handleExport}
+                  className="border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white dark:border-white/20 dark:bg-white/10 dark:text-white dark:hover:bg-white/20"
+                >
                   <Download className="mr-2 h-4 w-4" />
                   Export
                 </Button>
-                <Button onClick={() => setShowCreateDialog(true)} className="bg-white text-indigo-900 shadow-lg hover:bg-indigo-50 dark:bg-white dark:text-indigo-900">
+                <Button
+                  onClick={() => setShowCreateDialog(true)}
+                  className="bg-white text-indigo-900 shadow-lg hover:bg-indigo-50 dark:bg-white dark:text-indigo-900"
+                >
                   <Plus className="mr-2 h-4 w-4" />
                   New Expense
                 </Button>
@@ -527,336 +521,388 @@ export default function ExpensesListPage() {
           </div>
         </div>
 
+        {/* ── Page Body ── */}
         <div className="mx-auto max-w-7xl 2xl:max-w-[2200px] px-4 py-6 sm:px-6 lg:px-8">
-          {/* Metrics Cards */}
-          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="rounded-lg bg-indigo-50 p-2 text-indigo-600 ring-1 ring-indigo-100 dark:bg-indigo-950/30 dark:text-indigo-400 dark:ring-indigo-900/40">
-                    <Coins className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Total Expenses</p>
-                    <p className="text-xl font-bold text-slate-900 dark:text-white">{formatRWF(totalExpenses)}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="rounded-lg bg-amber-50 p-2 text-amber-600 ring-1 ring-amber-100 dark:bg-amber-950/30 dark:text-amber-400 dark:ring-amber-900/40">
-                    <Clock className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Pending</p>
-                    <p className="text-xl font-bold text-slate-900 dark:text-white">{pendingCount}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="rounded-lg bg-emerald-50 p-2 text-emerald-600 ring-1 ring-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400 dark:ring-emerald-900/40">
-                    <CheckCircle className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Posted</p>
-                    <p className="text-xl font-bold text-slate-900 dark:text-white">{postedCount}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="rounded-lg bg-purple-50 p-2 text-purple-600 ring-1 ring-purple-100 dark:bg-purple-950/30 dark:text-purple-400 dark:ring-purple-900/40">
-                    <Repeat className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Recurring</p>
-                    <p className="text-xl font-bold text-slate-900 dark:text-white">{recurringCount}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+
+          {/* Tab Navigation */}
+          <div className="mb-6 flex gap-1 border-b border-slate-200 dark:border-slate-800">
+            <button
+              onClick={() => setActiveTab('expenses')}
+              className={`px-4 py-2.5 text-sm font-medium transition-colors ${
+                activeTab === 'expenses'
+                  ? 'border-b-2 border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400'
+                  : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
+              }`}
+            >
+              Expense Claims
+            </button>
+            <button
+              onClick={() => setActiveTab('prepaid')}
+              className={`px-4 py-2.5 text-sm font-medium transition-colors ${
+                activeTab === 'prepaid'
+                  ? 'border-b-2 border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400'
+                  : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
+              }`}
+            >
+              Prepaid Expenses
+            </button>
           </div>
 
-          {/* Filters */}
-          <Card className="mb-6 overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-            <CardContent className="p-4">
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-6">
-                <div className="relative col-span-2">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
-                  <Input
-                    placeholder="Search expenses..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="border-slate-200 bg-slate-50 pl-10 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-                  />
-                </div>
-                <Select
-                  value={filters.type}
-                  onValueChange={(value) => setFilters({ ...filters, type: value === 'all' ? '' : value })}
-                >
-                  <SelectTrigger className="border-slate-200 bg-slate-50 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white">
-                    <SelectValue placeholder="Type" />
-                  </SelectTrigger>
-                  <SelectContent className="dark:bg-slate-800">
-                    <SelectItem value="all" className="dark:text-slate-200">All Types</SelectItem>
-                    <SelectItem value="salaries_wages" className="dark:text-slate-200">Salaries & Wages</SelectItem>
-                    <SelectItem value="rent" className="dark:text-slate-200">Rent</SelectItem>
-                    <SelectItem value="utilities" className="dark:text-slate-200">Utilities</SelectItem>
-                    <SelectItem value="transport_delivery" className="dark:text-slate-200">Transport & Delivery</SelectItem>
-                    <SelectItem value="marketing_advertising" className="dark:text-slate-200">Marketing & Advertising</SelectItem>
-                    <SelectItem value="other_expense" className="dark:text-slate-200">Other Expense</SelectItem>
-                    <SelectItem value="interest_income" className="dark:text-slate-200">Interest Income</SelectItem>
-                    <SelectItem value="other_income" className="dark:text-slate-200">Other Income</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select
-                  value={filters.status}
-                  onValueChange={(value) => setFilters({ ...filters, status: value === 'all' ? '' : value })}
-                >
-                  <SelectTrigger className="border-slate-200 bg-slate-50 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white">
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent className="dark:bg-slate-800">
-                    <SelectItem value="all" className="dark:text-slate-200">All Statuses</SelectItem>
-                    <SelectItem value="pending" className="dark:text-slate-200">Pending</SelectItem>
-                    <SelectItem value="approved" className="dark:text-slate-200">Approved</SelectItem>
-                    <SelectItem value="rejected" className="dark:text-slate-200">Rejected</SelectItem>
-                    <SelectItem value="posted" className="dark:text-slate-200">Posted</SelectItem>
-                    <SelectItem value="reversed" className="dark:text-slate-200">Reversed</SelectItem>
-                    <SelectItem value="cancelled" className="dark:text-slate-200">Cancelled</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Input
-                  type="date"
-                  placeholder="Start Date"
-                  value={filters.startDate}
-                  onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
-                  className="border-slate-200 bg-slate-50 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-                />
-                <Input
-                  type="date"
-                  placeholder="End Date"
-                  value={filters.endDate}
-                  onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
-                  className="border-slate-200 bg-slate-50 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-                />
-              </div>
-              <div className="flex justify-end mt-3">
-                <Button variant="ghost" size="sm" onClick={() => setFilters({ type: '', startDate: '', endDate: '', paymentMethod: '', status: '' })} className="text-xs text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white">
-                  <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-                  Clear Filters
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          {/* ── Expenses Tab ── */}
+          {activeTab === 'expenses' && (
+            <div>
+              {/* Metrics Cards */}
+              <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="rounded-lg bg-indigo-50 p-2 text-indigo-600 ring-1 ring-indigo-100 dark:bg-indigo-950/30 dark:text-indigo-400 dark:ring-indigo-900/40">
+                        <Coins className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Total Expenses</p>
+                        <p className="text-xl font-bold text-slate-900 dark:text-white">{formatRWF(totalExpenses)}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
 
-          {/* Expenses Table */}
-          <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-            <CardContent className="p-0">
-              {loading ? (
-                <div className="flex flex-col items-center justify-center py-16">
-                  <Loader2 className="h-10 w-10 animate-spin text-indigo-500 dark:text-indigo-400" />
-                  <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">Loading expenses...</p>
-                </div>
-              ) : expenses.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16">
-                  <div className="rounded-full bg-slate-100 p-4 ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700">
-                    <Receipt className="h-8 w-8 text-slate-400 dark:text-slate-500" />
+                <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="rounded-lg bg-amber-50 p-2 text-amber-600 ring-1 ring-amber-100 dark:bg-amber-950/30 dark:text-amber-400 dark:ring-amber-900/40">
+                        <Clock className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Pending</p>
+                        <p className="text-xl font-bold text-slate-900 dark:text-white">{pendingCount}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="rounded-lg bg-emerald-50 p-2 text-emerald-600 ring-1 ring-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400 dark:ring-emerald-900/40">
+                        <CheckCircle className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Posted</p>
+                        <p className="text-xl font-bold text-slate-900 dark:text-white">{postedCount}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="rounded-lg bg-purple-50 p-2 text-purple-600 ring-1 ring-purple-100 dark:bg-purple-950/30 dark:text-purple-400 dark:ring-purple-900/40">
+                        <Repeat className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Recurring</p>
+                        <p className="text-xl font-bold text-slate-900 dark:text-white">{recurringCount}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Filters */}
+              <Card className="mb-6 overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardContent className="p-4">
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-6">
+                    <div className="relative col-span-2">
+                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+                      <Input
+                        placeholder="Search expenses..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="border-slate-200 bg-slate-50 pl-10 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                      />
+                    </div>
+
+                    <Select
+                      value={filters.type}
+                      onValueChange={(value) => setFilters({ ...filters, type: value === 'all' ? '' : value })}
+                    >
+                      <SelectTrigger className="border-slate-200 bg-slate-50 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white">
+                        <SelectValue placeholder="Type" />
+                      </SelectTrigger>
+                      <SelectContent className="dark:bg-slate-800">
+                        <SelectItem value="all" className="dark:text-slate-200">All Types</SelectItem>
+                        <SelectItem value="salaries_wages" className="dark:text-slate-200">Salaries & Wages</SelectItem>
+                        <SelectItem value="rent" className="dark:text-slate-200">Rent</SelectItem>
+                        <SelectItem value="utilities" className="dark:text-slate-200">Utilities</SelectItem>
+                        <SelectItem value="transport_delivery" className="dark:text-slate-200">Transport & Delivery</SelectItem>
+                        <SelectItem value="marketing_advertising" className="dark:text-slate-200">Marketing & Advertising</SelectItem>
+                        <SelectItem value="other_expense" className="dark:text-slate-200">Other Expense</SelectItem>
+                        <SelectItem value="interest_income" className="dark:text-slate-200">Interest Income</SelectItem>
+                        <SelectItem value="other_income" className="dark:text-slate-200">Other Income</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Select
+                      value={filters.status}
+                      onValueChange={(value) => setFilters({ ...filters, status: value === 'all' ? '' : value })}
+                    >
+                      <SelectTrigger className="border-slate-200 bg-slate-50 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white">
+                        <SelectValue placeholder="Status" />
+                      </SelectTrigger>
+                      <SelectContent className="dark:bg-slate-800">
+                        <SelectItem value="all" className="dark:text-slate-200">All Statuses</SelectItem>
+                        <SelectItem value="pending" className="dark:text-slate-200">Pending</SelectItem>
+                        <SelectItem value="approved" className="dark:text-slate-200">Approved</SelectItem>
+                        <SelectItem value="rejected" className="dark:text-slate-200">Rejected</SelectItem>
+                        <SelectItem value="posted" className="dark:text-slate-200">Posted</SelectItem>
+                        <SelectItem value="reversed" className="dark:text-slate-200">Reversed</SelectItem>
+                        <SelectItem value="cancelled" className="dark:text-slate-200">Cancelled</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Input
+                      type="date"
+                      value={filters.startDate}
+                      onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
+                      className="border-slate-200 bg-slate-50 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                    />
+                    <Input
+                      type="date"
+                      value={filters.endDate}
+                      onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
+                      className="border-slate-200 bg-slate-50 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                    />
                   </div>
-                  <h3 className="mt-4 text-lg font-semibold text-slate-900 dark:text-white">No expenses found</h3>
-                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Get started by creating your first expense.</p>
-                  <Button className="mt-5 bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-700" onClick={() => setShowCreateDialog(true)}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create First Expense
-                  </Button>
-                </div>
-              ) : (
-                <>
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="border-b border-slate-200 bg-slate-50/50 hover:bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/50 dark:hover:bg-slate-900/50">
-                          <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Reference</TableHead>
-                          <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Date</TableHead>
-                          <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Description</TableHead>
-                          <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Account</TableHead>
-                          <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Dept</TableHead>
-                          <TableHead className="text-center text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Curr</TableHead>
-                          <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Amount</TableHead>
-                          <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">RWF</TableHead>
-                          <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Tax</TableHead>
-                          <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Status</TableHead>
-                          <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {expenses.map((expense) => (
-                          <TableRow key={expense._id} className="group border-b border-slate-100 transition-colors hover:bg-indigo-50/40 dark:border-slate-800 dark:hover:bg-indigo-950/20">
-                            <TableCell className="font-medium text-slate-900 dark:text-white">
-                              <div className="flex items-center gap-2">
-                                {expense.isRecurring && (
-                                  <div className="rounded-full bg-purple-50 p-1 ring-1 ring-purple-100 dark:bg-purple-950/30 dark:ring-purple-900/40">
-                                    <Repeat className="h-3 w-3 text-purple-600 dark:text-purple-400" />
+                  <div className="flex justify-end mt-3">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setFilters({ type: '', startDate: '', endDate: '', paymentMethod: '', status: '' })}
+                      className="text-xs text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                    >
+                      <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+                      Clear Filters
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Expenses Table */}
+              <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardContent className="p-0">
+                  {loading ? (
+                    <div className="flex flex-col items-center justify-center py-16">
+                      <Loader2 className="h-10 w-10 animate-spin text-indigo-500 dark:text-indigo-400" />
+                      <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">Loading expenses...</p>
+                    </div>
+                  ) : expenses.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-16">
+                      <div className="rounded-full bg-slate-100 p-4 ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700">
+                        <Receipt className="h-8 w-8 text-slate-400 dark:text-slate-500" />
+                      </div>
+                      <h3 className="mt-4 text-lg font-semibold text-slate-900 dark:text-white">No expenses found</h3>
+                      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Get started by creating your first expense.</p>
+                      <Button
+                        className="mt-5 bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-700"
+                        onClick={() => setShowCreateDialog(true)}
+                      >
+                        <Plus className="mr-2 h-4 w-4" />
+                        Create First Expense
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="border-b border-slate-200 bg-slate-50/50 hover:bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/50 dark:hover:bg-slate-900/50">
+                              <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Reference</TableHead>
+                              <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Date</TableHead>
+                              <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Description</TableHead>
+                              <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Account</TableHead>
+                              <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Dept</TableHead>
+                              <TableHead className="text-center text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Curr</TableHead>
+                              <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Amount</TableHead>
+                              <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">RWF</TableHead>
+                              <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Tax</TableHead>
+                              <TableHead className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Status</TableHead>
+                              <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {expenses.map((expense) => (
+                              <TableRow
+                                key={expense._id}
+                                className="group border-b border-slate-100 transition-colors hover:bg-indigo-50/40 dark:border-slate-800 dark:hover:bg-indigo-950/20"
+                              >
+                                <TableCell className="font-medium text-slate-900 dark:text-white">
+                                  <div className="flex items-center gap-2">
+                                    {expense.isRecurring && (
+                                      <div className="rounded-full bg-purple-50 p-1 ring-1 ring-purple-100 dark:bg-purple-950/30 dark:ring-purple-900/40">
+                                        <Repeat className="h-3 w-3 text-purple-600 dark:text-purple-400" />
+                                      </div>
+                                    )}
+                                    <span className="text-sm">{expense.reference}</span>
                                   </div>
-                                )}
-                                <span className="text-sm">{expense.reference}</span>
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-sm text-slate-600 dark:text-slate-300">{formatDate(expense.date)}</TableCell>
-                            <TableCell className="max-w-xs truncate text-sm text-slate-600 dark:text-slate-300">{expense.description}</TableCell>
-                            <TableCell className="text-sm text-slate-600 dark:text-slate-300">
-                              {expense.account ? (
-                                <div>
-                                  <span className="font-medium text-slate-900 dark:text-white">{expense.account.code}</span>
-                                  <span className="block text-xs text-slate-500 dark:text-slate-400">{expense.account.name}</span>
-                                </div>
-                              ) : (
-                                '-'
-                              )}
-                            </TableCell>
-                            <TableCell className="text-sm text-slate-600 dark:text-slate-300">
-                              {expense.department ? (
-                                <Badge variant="outline" className="border-slate-200 bg-slate-50 text-xs font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
-                                  {expense.department.code}
-                                </Badge>
-                              ) : (
-                                '-'
-                              )}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <Badge variant="outline" className="border-slate-200 bg-slate-50 text-xs font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
-                                {expense.currencyCode || 'RWF'}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-right text-sm font-semibold text-slate-900 dark:text-white">
-                              {formatCurrency(expense.totalAmount, expense.currencyCode || 'RWF')}
-                            </TableCell>
-                            <TableCell className="text-right text-sm text-slate-600 dark:text-slate-300">
-                              {expense.totalAmountInRWF ? formatRWF(expense.totalAmountInRWF) : formatRWF(expense.totalAmount)}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              {expense.rraTaxCategory ? (
-                                <Badge
-                                  variant="outline"
-                                  className={`text-xs ${
-                                    expense.rraTaxCategory === 'vat_standard'
-                                      ? 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950/30 dark:text-blue-300'
-                                      : expense.rraTaxCategory === 'vat_exempt'
-                                      ? 'border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300'
-                                      : expense.rraTaxCategory?.startsWith('wht')
-                                      ? 'border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-800 dark:bg-orange-950/30 dark:text-orange-300'
-                                      : 'border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300'
-                                  }`}
-                                >
-                                  {expense.rraTaxCategory.replace(/_/g, ' ').toUpperCase()}
-                                </Badge>
-                              ) : (
-                                '-'
-                              )}
-                            </TableCell>
-                            <TableCell>{getStatusBadge(expense.status)}</TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end gap-1">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => navigate(`/expenses/${expense._id}`)}
-                                  className="h-8 w-8 text-slate-400 hover:text-indigo-600 dark:text-slate-500 dark:hover:text-indigo-400"
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                                {expense.status === 'pending' && (
-                                  <>
+                                </TableCell>
+                                <TableCell className="text-sm text-slate-600 dark:text-slate-300">{formatDate(expense.date)}</TableCell>
+                                <TableCell className="max-w-xs truncate text-sm text-slate-600 dark:text-slate-300">{expense.description}</TableCell>
+                                <TableCell className="text-sm text-slate-600 dark:text-slate-300">
+                                  {expense.account ? (
+                                    <div>
+                                      <span className="font-medium text-slate-900 dark:text-white">{expense.account.code}</span>
+                                      <span className="block text-xs text-slate-500 dark:text-slate-400">{expense.account.name}</span>
+                                    </div>
+                                  ) : '-'}
+                                </TableCell>
+                                <TableCell className="text-sm text-slate-600 dark:text-slate-300">
+                                  {expense.department ? (
+                                    <Badge variant="outline" className="border-slate-200 bg-slate-50 text-xs font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                                      {expense.department.code}
+                                    </Badge>
+                                  ) : '-'}
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  <Badge variant="outline" className="border-slate-200 bg-slate-50 text-xs font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                                    {expense.currencyCode || 'RWF'}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="text-right text-sm font-semibold text-slate-900 dark:text-white">
+                                  {formatCurrency(expense.totalAmount, expense.currencyCode || 'RWF')}
+                                </TableCell>
+                                <TableCell className="text-right text-sm text-slate-600 dark:text-slate-300">
+                                  {expense.totalAmountInRWF ? formatRWF(expense.totalAmountInRWF) : formatRWF(expense.totalAmount)}
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  {expense.rraTaxCategory ? (
+                                    <Badge
+                                      variant="outline"
+                                      className={`text-xs ${
+                                        expense.rraTaxCategory === 'vat_standard'
+                                          ? 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950/30 dark:text-blue-300'
+                                          : expense.rraTaxCategory === 'vat_exempt'
+                                          ? 'border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300'
+                                          : expense.rraTaxCategory?.startsWith('wht')
+                                          ? 'border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-800 dark:bg-orange-950/30 dark:text-orange-300'
+                                          : 'border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300'
+                                      }`}
+                                    >
+                                      {expense.rraTaxCategory.replace(/_/g, ' ').toUpperCase()}
+                                    </Badge>
+                                  ) : '-'}
+                                </TableCell>
+                                <TableCell>{getStatusBadge(expense.status)}</TableCell>
+                                <TableCell className="text-right">
+                                  <div className="flex justify-end gap-1">
                                     <Button
                                       variant="ghost"
                                       size="icon"
-                                      onClick={() => navigate(`/expenses/${expense._id}/edit`)}
+                                      onClick={() => navigate(`/expenses/${expense._id}`)}
                                       className="h-8 w-8 text-slate-400 hover:text-indigo-600 dark:text-slate-500 dark:hover:text-indigo-400"
                                     >
-                                      <Edit className="h-4 w-4" />
+                                      <Eye className="h-4 w-4" />
                                     </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      onClick={() => {
-                                        setSelectedExpense(expense);
-                                        setShowDeleteDialog(true);
-                                      }}
-                                      className="h-8 w-8 text-slate-400 hover:text-red-600 dark:text-slate-500 dark:hover:text-red-400"
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  </>
-                                )}
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-
-                  {/* Pagination */}
-                  <div className="flex items-center justify-between border-t border-slate-200 px-4 py-3 dark:border-slate-800">
-                    <div className="text-xs text-slate-500 dark:text-slate-400">
-                      Showing <span className="font-medium text-slate-900 dark:text-white">{((currentPage - 1) * limit) + 1}</span> to <span className="font-medium text-slate-900 dark:text-white">{Math.min(currentPage * limit, totalCount)}</span> of <span className="font-medium text-slate-900 dark:text-white">{totalCount}</span> expenses
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                        disabled={currentPage === 1}
-                        className="h-8 border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                      </Button>
-                      <div className="text-xs font-medium text-slate-600 dark:text-slate-300">
-                        Page {currentPage} of {totalPages}
+                                    {expense.status === 'pending' && (
+                                      <>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          onClick={() => navigate(`/expenses/${expense._id}/edit`)}
+                                          className="h-8 w-8 text-slate-400 hover:text-indigo-600 dark:text-slate-500 dark:hover:text-indigo-400"
+                                        >
+                                          <Edit className="h-4 w-4" />
+                                        </Button>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          onClick={() => {
+                                            setSelectedExpense(expense);
+                                            setShowDeleteDialog(true);
+                                          }}
+                                          className="h-8 w-8 text-slate-400 hover:text-red-600 dark:text-slate-500 dark:hover:text-red-400"
+                                        >
+                                          <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                      </>
+                                    )}
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                        disabled={currentPage === totalPages}
-                        className="h-8 border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-                      <Select
-                        value={limit.toString()}
-                        onValueChange={(val) => {
-                          setLimit(parseInt(val));
-                          setCurrentPage(1);
-                        }}
-                      >
-                        <SelectTrigger className="h-8 w-[80px] border-slate-200 bg-white text-xs dark:border-slate-700 dark:bg-slate-900">
-                          <SelectValue placeholder="Limit" />
-                        </SelectTrigger>
-                        <SelectContent className="dark:bg-slate-800">
-                          <SelectItem value="10">10</SelectItem>
-                          <SelectItem value="20">20</SelectItem>
-                          <SelectItem value="50">50</SelectItem>
-                          <SelectItem value="100">100</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
 
-      {/* Create Expense Dialog */}
+                      {/* Pagination */}
+                      <div className="flex items-center justify-between border-t border-slate-200 px-4 py-3 dark:border-slate-800">
+                        <div className="text-xs text-slate-500 dark:text-slate-400">
+                          Showing{' '}
+                          <span className="font-medium text-slate-900 dark:text-white">{((currentPage - 1) * limit) + 1}</span>
+                          {' '}to{' '}
+                          <span className="font-medium text-slate-900 dark:text-white">{Math.min(currentPage * limit, totalCount)}</span>
+                          {' '}of{' '}
+                          <span className="font-medium text-slate-900 dark:text-white">{totalCount}</span>
+                          {' '}expenses
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            disabled={currentPage === 1}
+                            className="h-8 border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                          >
+                            <ChevronLeft className="h-4 w-4" />
+                          </Button>
+                          <div className="text-xs font-medium text-slate-600 dark:text-slate-300">
+                            Page {currentPage} of {totalPages}
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                            disabled={currentPage === totalPages}
+                            className="h-8 border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                          >
+                            <ChevronRight className="h-4 w-4" />
+                          </Button>
+                          <Select
+                            value={limit.toString()}
+                            onValueChange={(val) => {
+                              setLimit(parseInt(val));
+                              setCurrentPage(1);
+                            }}
+                          >
+                            <SelectTrigger className="h-8 w-[80px] border-slate-200 bg-white text-xs dark:border-slate-700 dark:bg-slate-900">
+                              <SelectValue placeholder="Limit" />
+                            </SelectTrigger>
+                            <SelectContent className="dark:bg-slate-800">
+                              <SelectItem value="10">10</SelectItem>
+                              <SelectItem value="20">20</SelectItem>
+                              <SelectItem value="50">50</SelectItem>
+                              <SelectItem value="100">100</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* ── Prepaid Tab ── */}
+          {activeTab === 'prepaid' && <PrepaidExpensesTab />}
+
+        </div>{/* end page body */}
+      </div>{/* end min-h-screen */}
+
+      {/* ════════════════════════════════════════
+          Create Expense Dialog
+      ════════════════════════════════════════ */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
         <DialogContent className="max-w-2xl border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
           <DialogHeader>
@@ -868,7 +914,9 @@ export default function ExpensesListPage() {
               Record a new business expense. Fields marked with * are required.
             </DialogDescription>
           </DialogHeader>
+
           <div className="grid grid-cols-2 gap-4 py-4 max-h-[70vh] overflow-y-auto pr-2">
+            {/* Description */}
             <div className="space-y-2 col-span-2">
               <Label className="text-sm font-medium text-slate-700 dark:text-slate-200">Description *</Label>
               <Input
@@ -878,17 +926,18 @@ export default function ExpensesListPage() {
                 className="border-slate-200 bg-slate-50 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white"
               />
             </div>
+
+            {/* Currency */}
             <div className="space-y-2">
               <Label className="text-sm font-medium text-slate-700 dark:text-slate-200">Currency *</Label>
               <Select
                 value={newExpenseForm.currencyCode}
                 onValueChange={(value) => {
                   const currency = value as CurrencyCode;
-                  const isRWF = currency === 'RWF';
                   setNewExpenseForm({
                     ...newExpenseForm,
                     currencyCode: currency,
-                    exchangeRate: isRWF ? 1 : newExpenseForm.exchangeRate,
+                    exchangeRate: currency === 'RWF' ? 1 : newExpenseForm.exchangeRate,
                   });
                 }}
               >
@@ -904,6 +953,8 @@ export default function ExpensesListPage() {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Exchange Rate */}
             {newExpenseForm.currencyCode !== 'RWF' && (
               <div className="space-y-2">
                 <Label className="text-sm font-medium text-slate-700 dark:text-slate-200">Exchange Rate (to RWF)</Label>
@@ -917,6 +968,8 @@ export default function ExpensesListPage() {
                 />
               </div>
             )}
+
+            {/* Amount */}
             <div className="space-y-2">
               <Label className="text-sm font-medium text-slate-700 dark:text-slate-200">Amount (Net) *</Label>
               <Input
@@ -928,15 +981,13 @@ export default function ExpensesListPage() {
                   const amount = parseFloat(e.target.value) || 0;
                   const taxRate = rraTaxCategories.find(c => c.value === newExpenseForm.rraTaxCategory)?.rate || 0;
                   const taxAmount = newExpenseForm.rraTaxCategory === 'vat_standard' ? Math.round(amount * taxRate / 100) : 0;
-                  setNewExpenseForm({
-                    ...newExpenseForm,
-                    amount,
-                    taxAmount,
-                  });
+                  setNewExpenseForm({ ...newExpenseForm, amount, taxAmount });
                 }}
                 className="border-slate-200 bg-slate-50 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white"
               />
             </div>
+
+            {/* Tax Amount */}
             <div className="space-y-2">
               <Label className="text-sm font-medium text-slate-700 dark:text-slate-200">Tax Amount (Auto-calculated)</Label>
               <Input
@@ -948,6 +999,8 @@ export default function ExpensesListPage() {
                 className="border-slate-200 bg-slate-50 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white"
               />
             </div>
+
+            {/* RRA Tax Category */}
             <div className="space-y-2">
               <Label className="text-sm font-medium text-slate-700 dark:text-slate-200">RRA Tax Category *</Label>
               <Select
@@ -956,11 +1009,7 @@ export default function ExpensesListPage() {
                   const category = value as RRATaxCategory;
                   const taxRate = rraTaxCategories.find(c => c.value === category)?.rate || 0;
                   const taxAmount = category === 'vat_standard' ? Math.round(newExpenseForm.amount * taxRate / 100) : 0;
-                  setNewExpenseForm({
-                    ...newExpenseForm,
-                    rraTaxCategory: category,
-                    taxAmount,
-                  });
+                  setNewExpenseForm({ ...newExpenseForm, rraTaxCategory: category, taxAmount });
                 }}
               >
                 <SelectTrigger className="border-slate-200 bg-slate-50 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white">
@@ -975,11 +1024,13 @@ export default function ExpensesListPage() {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Department */}
             <div className="space-y-2">
               <Label className="text-sm font-medium text-slate-700 dark:text-slate-200">Department (Optional)</Label>
               <Select
-                value={newExpenseForm.departmentId || "_none"}
-                onValueChange={(value) => setNewExpenseForm({ ...newExpenseForm, departmentId: value === "_none" ? "" : value })}
+                value={newExpenseForm.departmentId || '_none'}
+                onValueChange={(value) => setNewExpenseForm({ ...newExpenseForm, departmentId: value === '_none' ? '' : value })}
               >
                 <SelectTrigger className="border-slate-200 bg-slate-50 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white">
                   <SelectValue placeholder="Select department" />
@@ -994,6 +1045,8 @@ export default function ExpensesListPage() {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Expense Account */}
             <div className="space-y-2">
               <Label className="text-sm font-medium text-slate-700 dark:text-slate-200">Expense Account *</Label>
               <Select
@@ -1012,17 +1065,15 @@ export default function ExpensesListPage() {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Budget */}
             <div className="space-y-2">
               <Label className="text-sm font-medium text-slate-700 dark:text-slate-200">Budget (Optional)</Label>
               <Select
-                value={newExpenseForm.budgetId || "_none"}
+                value={newExpenseForm.budgetId || '_none'}
                 onValueChange={(value) => {
-                  const budgetId = value === "_none" ? "" : value;
-                  setNewExpenseForm({
-                    ...newExpenseForm,
-                    budgetId,
-                    budgetLineId: '',
-                  });
+                  const budgetId = value === '_none' ? '' : value;
+                  setNewExpenseForm({ ...newExpenseForm, budgetId, budgetLineId: '' });
                   fetchBudgetLines(budgetId);
                 }}
               >
@@ -1033,20 +1084,22 @@ export default function ExpensesListPage() {
                   <SelectItem value="_none" className="dark:text-slate-200">None</SelectItem>
                   {budgets.map((budget) => (
                     <SelectItem key={budget._id} value={budget._id} className="dark:text-slate-200">
-                      {budget.name} (${(budget.remaining || 0).toLocaleString()} left)
+                      {budget.name} ({formatRWF(budget.remaining || 0)} left)
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Budget Line */}
             {newExpenseForm.budgetId && (
               <div className="space-y-2">
                 <Label className="text-sm font-medium text-slate-700 dark:text-slate-200">Budget Line *</Label>
                 <Select
-                  value={newExpenseForm.budgetLineId || "_none"}
+                  value={newExpenseForm.budgetLineId || '_none'}
                   onValueChange={(value) => {
-                    const budgetLineId = value === "_none" ? "" : value;
-                    const selectedLine = selectedBudgetLines.find((line) => line._id === budgetLineId);
+                    const budgetLineId = value === '_none' ? '' : value;
+                    const selectedLine = selectedBudgetLines.find(line => line._id === budgetLineId);
                     setNewExpenseForm({
                       ...newExpenseForm,
                       budgetLineId,
@@ -1068,6 +1121,8 @@ export default function ExpensesListPage() {
                 </Select>
               </div>
             )}
+
+            {/* Payment Method */}
             <div className="space-y-2">
               <Label className="text-sm font-medium text-slate-700 dark:text-slate-200">Payment Method *</Label>
               <Select
@@ -1089,6 +1144,8 @@ export default function ExpensesListPage() {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Bank Account */}
             <div className="space-y-2">
               <Label className="text-sm font-medium text-slate-700 dark:text-slate-200">Bank Account</Label>
               <Select
@@ -1107,6 +1164,8 @@ export default function ExpensesListPage() {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Expense Date */}
             <div className="space-y-2">
               <Label className="text-sm font-medium text-slate-700 dark:text-slate-200">Expense Date *</Label>
               <Input
@@ -1116,6 +1175,8 @@ export default function ExpensesListPage() {
                 className="border-slate-200 bg-slate-50 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white"
               />
             </div>
+
+            {/* Type */}
             <div className="space-y-2">
               <Label className="text-sm font-medium text-slate-700 dark:text-slate-200">Type</Label>
               <Select
@@ -1137,6 +1198,8 @@ export default function ExpensesListPage() {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Recurring */}
             <div className="space-y-2 col-span-2 border-t border-slate-200 pt-4 mt-2 dark:border-slate-700">
               <div className="flex items-center gap-2">
                 <input
@@ -1172,6 +1235,8 @@ export default function ExpensesListPage() {
                 </div>
               )}
             </div>
+
+            {/* Reference */}
             <div className="space-y-2">
               <Label className="text-sm font-medium text-slate-700 dark:text-slate-200">Reference</Label>
               <Input
@@ -1181,6 +1246,8 @@ export default function ExpensesListPage() {
                 className="border-slate-200 bg-slate-50 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white"
               />
             </div>
+
+            {/* Notes */}
             <div className="space-y-2 col-span-2">
               <Label className="text-sm font-medium text-slate-700 dark:text-slate-200">Notes</Label>
               <Input
@@ -1191,11 +1258,20 @@ export default function ExpensesListPage() {
               />
             </div>
           </div>
+
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreateDialog(false)} className="border-slate-200 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
+            <Button
+              variant="outline"
+              onClick={() => setShowCreateDialog(false)}
+              className="border-slate-200 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+            >
               Cancel
             </Button>
-            <Button onClick={handleCreateExpense} disabled={submitting} className="bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-700">
+            <Button
+              onClick={handleCreateExpense}
+              disabled={submitting}
+              className="bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-700"
+            >
               {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Create Expense
             </Button>
@@ -1203,7 +1279,9 @@ export default function ExpensesListPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
+      {/* ════════════════════════════════════════
+          Cancel Expense Dialog
+      ════════════════════════════════════════ */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent className="border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
           <DialogHeader>
@@ -1216,7 +1294,11 @@ export default function ExpensesListPage() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDeleteDialog(false)} className="border-slate-200 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteDialog(false)}
+              className="border-slate-200 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+            >
               No, Keep It
             </Button>
             <Button variant="destructive" onClick={handleDeleteExpense} disabled={submitting}>
@@ -1226,6 +1308,7 @@ export default function ExpensesListPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
     </Layout>
   );
 }

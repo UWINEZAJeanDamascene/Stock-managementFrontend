@@ -46,6 +46,7 @@ import { Badge } from '@/app/components/ui/badge';
 import { Skeleton } from '@/app/components/ui/skeleton';
 import { Card, CardContent } from '@/app/components/ui/card';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface PurchaseOrder {
   _id: string;
@@ -62,6 +63,7 @@ interface PurchaseOrder {
   orderDate: string;
   expectedDeliveryDate?: string;
   status: 'draft' | 'approved' | 'partially_received' | 'fully_received' | 'cancelled';
+  source?: 'MANUAL' | 'AUTO';
   currencyCode: string;
   subtotal: number;
   taxAmount: number;
@@ -87,6 +89,13 @@ interface PaginationInfo {
 export default function PurchaseOrdersListPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { hasPermission } = useAuth();
+  const canCreatePurchaseOrder = hasPermission('purchase_orders:create');
+  const canUpdatePurchaseOrder = hasPermission('purchase_orders:update');
+  const canApprovePurchaseOrder = hasPermission('purchase_orders:approve');
+  const canCancelPurchaseOrder =
+    hasPermission('purchase_orders:delete') ||
+    hasPermission('purchase_orders:update');
   const [loading, setLoading] = useState(true);
   const [poList, setPoList] = useState<PurchaseOrder[]>([]);
   const [pagination, setPagination] = useState<PaginationInfo | null>(null);
@@ -155,6 +164,7 @@ export default function PurchaseOrdersListPage() {
   }, [fetchPurchaseOrders]);
 
   const handleApprove = async (id: string) => {
+    if (!canApprovePurchaseOrder) return;
     try {
       await purchaseOrdersApi.approve(id);
       fetchPurchaseOrders();
@@ -164,6 +174,7 @@ export default function PurchaseOrdersListPage() {
   };
 
   const handleCancel = async (id: string) => {
+    if (!canCancelPurchaseOrder) return;
     try {
       await purchaseOrdersApi.cancel(id);
       fetchPurchaseOrders();
@@ -334,6 +345,8 @@ export default function PurchaseOrdersListPage() {
                     size="sm"
                     className="bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
                     onClick={() => navigate('/purchase-orders/new')}
+                    disabled={!canCreatePurchaseOrder}
+                    title={!canCreatePurchaseOrder ? t('common.noPermission', 'No permission') : undefined}
                   >
                     <Plus className="mr-2 h-4 w-4" />
                     {t('purchase.orders.newPO', 'New PO')}
@@ -342,6 +355,8 @@ export default function PurchaseOrdersListPage() {
                     variant="outline"
                     size="sm"
                     className="border-slate-200 text-slate-900 dark:border-slate-700 dark:text-white"
+                    disabled={!canCreatePurchaseOrder}
+                    title={!canCreatePurchaseOrder ? t('common.noPermission', 'No permission') : undefined}
                   >
                     <Download className="mr-2 h-4 w-4" />
                     {t('common.import', 'Import')}
@@ -538,6 +553,11 @@ export default function PurchaseOrdersListPage() {
                           <div className="flex items-center gap-2">
                             <FileText className="h-4 w-4 text-slate-400" />
                             {po.referenceNo || 'N/A'}
+                            {po.source === 'AUTO' && (
+                              <Badge variant="outline" className="border-cyan-200 bg-cyan-50 text-cyan-700 dark:border-cyan-800 dark:bg-cyan-950/40 dark:text-cyan-200">
+                                AUTO
+                              </Badge>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell className="text-slate-600 dark:text-slate-300">
@@ -570,36 +590,42 @@ export default function PurchaseOrdersListPage() {
                             </Button>
                             {po.status === 'draft' && (
                               <>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    navigate(`/purchase-orders/${po._id}/edit`);
-                                  }}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleApprove(po._id);
-                                  }}
-                                >
-                                  <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleCancel(po._id);
-                                  }}
-                                >
-                                  <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
-                                </Button>
+                                {canUpdatePurchaseOrder && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigate(`/purchase-orders/${po._id}/edit`);
+                                    }}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                {canApprovePurchaseOrder && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleApprove(po._id);
+                                    }}
+                                  >
+                                    <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                                  </Button>
+                                )}
+                                {canCancelPurchaseOrder && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleCancel(po._id);
+                                    }}
+                                  >
+                                    <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                                  </Button>
+                                )}
                               </>
                             )}
                           </div>

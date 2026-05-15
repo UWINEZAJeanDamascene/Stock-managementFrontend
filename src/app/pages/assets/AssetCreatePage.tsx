@@ -18,7 +18,7 @@ import {
   Package,
   Calculator,
   Building2,
-  DollarSign,
+  Banknote,
   Clock,
   Hash,
   MapPin,
@@ -29,6 +29,7 @@ import {
   TrendingDown,
   Wallet,
 } from "lucide-react";
+import { formatCurrency as sharedFormatCurrency } from '@/lib/currencyUtils';
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Badge } from "@/app/components/ui/badge";
@@ -234,26 +235,23 @@ export default function AssetCreatePage() {
   }, [id, isEdit]);
 
   // Auto-select first category in create mode when categories load.
-  // Use a ref guard to ensure we only apply the default once and avoid
-  // re-running when `formData` changes (prevents update-depth loops).
-  const defaultCategoryAppliedRef = useRef(false);
-
+  // Auto-select first category in create mode when categories load.
   useEffect(() => {
-    console.debug("[AssetCreatePage] auto-select effect run", { isEdit, categoriesLength: categories.length, applied: defaultCategoryAppliedRef.current });
-    if (!isEdit && categories.length > 0 && !defaultCategoryAppliedRef.current) {
-      const defaultCat = categories[0];
-      console.debug("[AssetCreatePage] applying default category", defaultCat?._id);
-      setFormData((prev: any) => ({
-        ...prev,
-        categoryId: String(defaultCat._id),
-        usefulLifeMonths: defaultCat.defaultUsefulLifeMonths || 60,
-        depreciationMethod: defaultCat.defaultDepreciationMethod || "straight_line",
-        assetAccountCode: defaultCat.defaultAssetAccountCode || "1700",
-        accumDepreciationAccountCode: defaultCat.defaultAccumDepreciationAccountCode || "1810",
-        depreciationExpenseAccountCode: defaultCat.defaultDepreciationExpenseAccountCode || "5800",
-      }));
-      defaultCategoryAppliedRef.current = true;
-      console.debug("[AssetCreatePage] defaultCategoryAppliedRef set to true");
+    if (!isEdit && categories.length > 0) {
+      // Only set default when user hasn't already selected a category
+      setFormData((prev: any) => {
+        if (prev.categoryId && prev.categoryId !== "") return prev;
+        const defaultCat = categories[0];
+        return {
+          ...prev,
+          categoryId: String(defaultCat._id),
+          usefulLifeMonths: defaultCat.defaultUsefulLifeMonths || prev.usefulLifeMonths || 60,
+          depreciationMethod: defaultCat.defaultDepreciationMethod || prev.depreciationMethod || "straight_line",
+          assetAccountCode: defaultCat.defaultAssetAccountCode || prev.assetAccountCode || "1700",
+          accumDepreciationAccountCode: defaultCat.defaultAccumDepreciationAccountCode || prev.accumDepreciationAccountCode || "1810",
+          depreciationExpenseAccountCode: defaultCat.defaultDepreciationExpenseAccountCode || prev.depreciationExpenseAccountCode || "5800",
+        };
+      });
     }
   }, [categories, isEdit]);
 
@@ -391,10 +389,7 @@ export default function AssetCreatePage() {
 
   const formatCurrency = (amount: any) => {
     const num = getNumericValue(amount);
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(num);
+    return sharedFormatCurrency(num, 'FRW');
   };
 
   if (initialLoading) {
@@ -513,10 +508,16 @@ export default function AssetCreatePage() {
                         <option value="">None</option>
                         {categories.map((cat) => (
                           <option key={String(cat._id)} value={String(cat._id)}>
-                            {cat.name}
+                            {cat.name || cat.title || cat.displayName || 'Unnamed category'}
                           </option>
                         ))}
                       </select>
+                      {categories.length === 0 && (
+                        <p className="text-sm text-red-600 mt-1">No asset categories loaded from server. Create categories first or check API.</p>
+                      )}
+                      {formData.categoryId && categories.length > 0 && !categories.find(c => String(c._id) === String(formData.categoryId)) && (
+                        <p className="text-sm text-yellow-500 mt-1">Selected category ID not found in loaded categories (id: {String(formData.categoryId)}).</p>
+                      )}
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -653,7 +654,7 @@ export default function AssetCreatePage() {
               <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 dark:text-white">
-                    <DollarSign className="h-5 w-5" />
+                    <Banknote className="h-5 w-5" />
                     {t("assets.sections.purchaseDetails")}
                   </CardTitle>
                 </CardHeader>
@@ -1052,7 +1053,7 @@ export default function AssetCreatePage() {
                 <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 dark:text-white">
-                      <DollarSign className="h-5 w-5" />
+                      <Banknote className="h-5 w-5" />
                       Payment Source
                     </CardTitle>
                     <CardDescription className="dark:text-slate-400">

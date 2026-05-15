@@ -7,6 +7,8 @@ import { Button } from '@/app/components/ui/button';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useNavigate } from 'react-router';
 import NotificationBell from '@/app/components/NotificationBell';
+import { useChatPanelStore } from '@/store/chatPanelStore';
+import { useCompanyStore } from '@/store/companyStore';
 
 interface LayoutProps {
   children: ReactNode;
@@ -19,6 +21,25 @@ export function Layout({ children, title }: LayoutProps) {
   const { theme, toggleTheme } = useTheme();
   const isMobile = useIsMobile();
   const navigate = useNavigate();
+  const { open: chatOpen, width: chatWidth, toggle: toggleChat, setOpen: setChatOpen } = useChatPanelStore();
+  const company = useCompanyStore((state) => state.company);
+  const [isLg, setIsLg] = useState(false);
+  const hasEnterpriseAI = Boolean(company?.subscription_plan === 'enterprise' || company?.feature_access?.ai_assistant);
+  const effectiveChatOpen = chatOpen && hasEnterpriseAI;
+
+  useEffect(() => {
+    const mql = window.matchMedia('(min-width: 1024px)');
+    const onChange = () => setIsLg(mql.matches);
+    mql.addEventListener('change', onChange);
+    setIsLg(mql.matches);
+    return () => mql.removeEventListener('change', onChange);
+  }, []);
+
+  useEffect(() => {
+    if (!hasEnterpriseAI) {
+      setChatOpen(false);
+    }
+  }, [hasEnterpriseAI, setChatOpen]);
 
   // When the app layout is mounted, lock document scrolling so the app's
   // internal scroll container is the only vertical scroll. Remove the lock
@@ -35,7 +56,10 @@ export function Layout({ children, title }: LayoutProps) {
   }, []);
 
   return (
-    <div className="relative flex h-screen overflow-hidden">
+    <div
+      className="relative flex h-screen overflow-hidden"
+      style={{ paddingRight: isLg && effectiveChatOpen ? chatWidth : undefined }}
+    >
       {/* Full-app background */}
       <div className="absolute inset-0 bg-[linear-gradient(135deg,#eef7f6_0%,#f8fbff_45%,#e9f2ef_100%)] dark:bg-[linear-gradient(135deg,#061013_0%,#091923_46%,#07140f_100%)]" />
       <div className="absolute left-[-12rem] top-[-14rem] h-[34rem] w-[34rem] rounded-full bg-cyan-300/30 blur-3xl dark:bg-cyan-400/10" />
@@ -127,6 +151,26 @@ export function Layout({ children, title }: LayoutProps) {
 
             <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50/80 p-1.5 dark:border-white/10 dark:bg-white/[0.04]">
               <NotificationBell />
+              {hasEnterpriseAI && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={toggleChat}
+                  className={`h-10 gap-2 rounded-xl px-3 transition-all ${
+                    chatOpen
+                      ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-500/30 hover:brightness-110'
+                      : 'bg-gradient-to-r from-indigo-50 to-violet-50 text-indigo-700 ring-1 ring-inset ring-indigo-200 hover:from-indigo-100 hover:to-violet-100 hover:shadow-md dark:from-indigo-500/15 dark:to-violet-500/15 dark:text-indigo-300 dark:ring-indigo-500/30 dark:hover:from-indigo-500/25 dark:hover:to-violet-500/25'
+                  }`}
+                  title={chatOpen ? 'Close Stacy AI assistant' : 'Open Stacy AI assistant'}
+                >
+                  <span className="relative flex h-2 w-2">
+                    <span className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-75 ${chatOpen ? 'bg-white' : 'bg-emerald-400'}`} />
+                    <span className={`relative inline-flex h-2 w-2 rounded-full ${chatOpen ? 'bg-white' : 'bg-emerald-500'}`} />
+                  </span>
+                  <Sparkles className="h-4 w-4" />
+                  <span className="text-sm font-semibold">AI</span>
+                </Button>
+              )}
               <Button
                 variant="ghost"
                 size="sm"

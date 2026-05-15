@@ -722,7 +722,7 @@ export default function PurchaseDashboardPage() {
                     message="No purchase orders found"
                   />
                 ) : (
-                  <div className="grid gap-5 md:grid-cols-[260px_1fr] xl:grid-cols-[300px_1fr] md:items-center">
+                  <div className="grid gap-5 md:grid-cols-[minmax(160px,260px)_1fr] xl:grid-cols-[minmax(200px,300px)_1fr] md:items-center">
                     <ChartContainer
                       config={statusChartConfig}
                       className="mx-auto h-[160px] sm:h-[200px] md:h-[250px] xl:h-[300px] w-full -ml-2"

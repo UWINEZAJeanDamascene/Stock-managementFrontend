@@ -663,10 +663,10 @@ export default function InventoryDashboardPage() {
                     message="No warehouse data available"
                   />
                 ) : (
-                  <div className="grid gap-5 md:grid-cols-[200px_1fr] md:items-center lg:grid-cols-[240px_1fr] xl:grid-cols-[300px_1fr]">
+                  <div className="grid gap-5 md:grid-cols-[minmax(140px,200px)_1fr] md:items-center lg:grid-cols-[minmax(160px,240px)_1fr] xl:grid-cols-[minmax(200px,300px)_1fr] overflow-hidden">
                     <ChartContainer
                       config={warehouseChartConfig}
-                      className="mx-auto h-[160px] sm:h-[200px] md:h-[250px] xl:h-[300px] w-full"
+                      className="mx-auto h-[160px] sm:h-[200px] md:h-[250px] xl:h-[300px] w-full min-w-0"
                     >
                       <PieChart>
                         <ChartTooltip
@@ -702,7 +702,7 @@ export default function InventoryDashboardPage() {
                         </Pie>
                       </PieChart>
                     </ChartContainer>
-                    <div className="space-y-3">
+                    <div className="space-y-3 min-w-0">
                       {warehouseBreakdown.map((warehouse, index) => {
                         const pct =
                           totalValue > 0

@@ -736,10 +736,10 @@ export default function DashboardPage() {
                     message="No outstanding receivables"
                   />
                 ) : (
-                  <div className="grid gap-5 sm:grid-cols-[180px_1fr] md:grid-cols-[220px_1fr] xl:grid-cols-[280px_1fr] sm:items-center">
+                  <div className="grid gap-5 sm:grid-cols-[minmax(140px,180px)_1fr] md:grid-cols-[minmax(160px,220px)_1fr] xl:grid-cols-[minmax(200px,280px)_1fr] sm:items-center overflow-hidden">
                     <ChartContainer
                       config={arChartConfig}
-                      className="mx-auto h-[180px] sm:h-[220px] md:h-[260px] xl:h-[320px] w-full"
+                      className="mx-auto h-[180px] sm:h-[220px] md:h-[260px] xl:h-[320px] w-full min-w-0"
                     >
                       <PieChart>
                         <ChartTooltip
@@ -766,7 +766,7 @@ export default function DashboardPage() {
                         />
                       </PieChart>
                     </ChartContainer>
-                    <div className="space-y-3">
+                    <div className="space-y-3 min-w-0">
                       <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
                         <p className="text-xs text-slate-500 dark:text-slate-400">
                           Outstanding

@@ -39,10 +39,11 @@ export function formatCurrency(
   amount: number | any,
   currency: string = 'FRW'
 ): string {
-  const num = typeof amount === 'number' ? amount : Number(amount) || 0;
-  return new Intl.NumberFormat('en-US', { 
-    style: 'currency', 
-    currency 
+  let num = typeof amount === 'number' ? amount : Number(amount) || 0;
+  if (isNaN(num)) num = 0;
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency
   }).format(num);
 }
 
@@ -68,7 +69,7 @@ export const CURRENCY_SYMBOLS: Record<string, string> = {
   USD: '$',
   EUR: '€',
   GBP: '£',
-  FRW: 'FRw',
+  FRW: 'RWF',
   LBP: 'ل.ل',
   SAR: 'ر.س',
   AED: 'د.إ',

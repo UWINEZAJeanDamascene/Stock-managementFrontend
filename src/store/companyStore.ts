@@ -20,6 +20,11 @@ export interface Company {
     postcode?: string;
   };
   base_currency?: string;
+  subscription_plan?: string;
+  subscription_status?: string;
+  feature_access?: Record<string, boolean>;
+  enabledModules?: string[];
+  subscription_modules?: string[];
 }
 
 interface CompanyState {

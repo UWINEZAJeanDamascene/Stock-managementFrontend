@@ -12,14 +12,10 @@ import {
   ArrowLeft,
   Loader2,
   Package,
-  Calendar,
-  DollarSign,
   Calculator,
   TrendingDown,
   FileText,
   Trash2,
-  Plus,
-  Pencil,
   RefreshCw,
   Shield,
   Play,
@@ -27,7 +23,6 @@ import {
   Wrench,
   History,
   Truck,
-  BadgeCheck,
   Layers,
   Banknote,
   X,
@@ -67,6 +62,7 @@ import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { formatCurrency as sharedFormatCurrency } from "@/lib/currencyUtils";
 
 export default function AssetDetailPage() {
   const { t } = useTranslation();
@@ -87,7 +83,7 @@ export default function AssetDetailPage() {
     new Date().toISOString().split("T")[0],
   );
   const [depreciating, setDepreciating] = useState(false);
-  const [depreciationPreview, setDepreciationPreview] = useState<any>(null);
+  // const [depreciationPreview, setDepreciationPreview] = useState<any>(null);
 
   // Disposal dialog
   const [disposeDialogOpen, setDisposeDialogOpen] = useState(false);
@@ -248,11 +244,12 @@ export default function AssetDetailPage() {
   };
 
   const formatCurrency = (amount: any) => {
+    // Normalize Decimal128/strings to number, then delegate to shared formatter
     let numAmount = 0;
     if (amount !== null && amount !== undefined && amount !== "") {
       if (typeof amount === "object") {
-        if (amount.$numberDecimal) {
-          numAmount = parseFloat(amount.$numberDecimal);
+        if ((amount as any).$numberDecimal) {
+          numAmount = parseFloat((amount as any).$numberDecimal);
         } else if (typeof amount.toString === "function") {
           numAmount = parseFloat(amount.toString());
         }
@@ -262,10 +259,8 @@ export default function AssetDetailPage() {
         numAmount = amount;
       }
     }
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(numAmount);
+    if (isNaN(numAmount)) numAmount = 0;
+    return sharedFormatCurrency(numAmount, 'FRW');
   };
 
   const formatDate = (date: string | undefined | null) => {
@@ -898,7 +893,7 @@ export default function AssetDetailPage() {
 
         {/* Dispose Dialog - Enhanced */}
         <Dialog open={disposeDialogOpen} onOpenChange={setDisposeDialogOpen}>
-          <DialogContent className="max-w-lg border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-950">
+          <DialogContent className="w-full max-w-lg border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-950">
             <DialogHeader className="gap-1">
               <div className="flex items-center gap-2">
                 <div className="rounded-lg bg-red-50 p-2 text-red-700 ring-1 ring-red-100 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900/60">
@@ -923,7 +918,7 @@ export default function AssetDetailPage() {
                 <Label className="text-sm font-medium dark:text-slate-200">{t("assets.fields.disposalDate")}</Label>
                 <Input type="date" value={disposalForm.disposalDate} onChange={(e) => setDisposalForm({ ...disposalForm, disposalDate: e.target.value })} className="dark:bg-slate-900 dark:text-white dark:border-slate-700" />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label className="text-sm font-medium dark:text-slate-200">Gross Proceeds</Label>
                   <Input type="number" min="0" step="0.01" value={disposalForm.disposalProceeds} onChange={(e) => setDisposalForm({ ...disposalForm, disposalProceeds: parseFloat(e.target.value) || 0 })} className="dark:bg-slate-900 dark:text-white dark:border-slate-700" />
@@ -934,19 +929,45 @@ export default function AssetDetailPage() {
                 </div>
               </div>
               <div className="rounded-lg border border-slate-100 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900/50">
-                <div className="flex justify-between text-sm text-slate-600 dark:text-slate-300">
+                <div className="flex flex-col justify-between gap-1 text-sm text-slate-600 sm:flex-row dark:text-slate-300">
                   <span>Net Proceeds:</span>
-                  <span className="font-semibold text-slate-900 dark:text-white">{formatCurrency(disposalForm.disposalProceeds - disposalForm.disposalCosts)}</span>
+                  <span className="font-semibold text-slate-900 dark:text-white">{formatCurrency(Number(disposalForm.disposalProceeds || 0) - Number(disposalForm.disposalCosts || 0))}</span>
                 </div>
-                <div className="mt-1 flex justify-between text-sm text-slate-600 dark:text-slate-300">
+                <div className="mt-1 flex flex-col justify-between gap-1 text-sm text-slate-600 sm:flex-row dark:text-slate-300">
                   <span>Current Book Value:</span>
                   <span className="font-semibold text-slate-900 dark:text-white">{formatCurrency(asset.netBookValue)}</span>
                 </div>
-                <div className="mt-2 flex justify-between border-t border-slate-200 pt-2 text-sm dark:border-slate-800">
+                <div className="mt-2 flex flex-col justify-between gap-1 border-t border-slate-200 pt-2 text-sm sm:flex-row dark:border-slate-800">
                   <span className="text-slate-600 dark:text-slate-300">Expected Gain/Loss:</span>
-                  <span className={`font-semibold ${(disposalForm.disposalProceeds - disposalForm.disposalCosts - parseFloat(asset.netBookValue?.toString() || "0")) >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
-                    {formatCurrency(disposalForm.disposalProceeds - disposalForm.disposalCosts - parseFloat(asset.netBookValue?.toString() || "0"))}
-                  </span>
+                  {(() => {
+                    const proceeds = Number(disposalForm.disposalProceeds || 0);
+                    const costs = Number(disposalForm.disposalCosts || 0);
+
+                    // Normalize bookValue same way formatCurrency does (handles Decimal128)
+                    let bookValue = 0;
+                    const nbv: any = asset.netBookValue;
+                    if (nbv !== null && nbv !== undefined && nbv !== "") {
+                      if (typeof nbv === "object") {
+                        if ((nbv as any).$numberDecimal) {
+                          bookValue = parseFloat((nbv as any).$numberDecimal);
+                        } else if (typeof (nbv as any).toString === "function") {
+                          bookValue = parseFloat((nbv as any).toString());
+                        }
+                      } else if (typeof nbv === "string") {
+                        bookValue = parseFloat(nbv);
+                      } else {
+                        bookValue = nbv;
+                      }
+                    }
+                    if (isNaN(bookValue)) bookValue = 0;
+
+                    const gainLoss = proceeds - costs - bookValue;
+                    return (
+                      <span className={`font-semibold ${gainLoss >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                        {formatCurrency(gainLoss)}
+                      </span>
+                    );
+                  })()}
                 </div>
               </div>
               {disposalForm.disposalProceeds > 0 && (
@@ -967,12 +988,12 @@ export default function AssetDetailPage() {
                 <Input value={disposalForm.notes} onChange={(e) => setDisposalForm({ ...disposalForm, notes: e.target.value })} placeholder="Additional disposal details..." className="dark:bg-slate-900 dark:text-white dark:border-slate-700" />
               </div>
             </div>
-            <DialogFooter className="gap-2">
-              <Button variant="outline" size="sm" onClick={() => setDisposeDialogOpen(false)} className="dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
+            <DialogFooter className="flex-col gap-2 sm:flex-row">
+              <Button variant="outline" size="sm" onClick={() => setDisposeDialogOpen(false)} className="w-full dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800 sm:w-auto">
                 <X className="mr-1 h-4 w-4" />
                 {t("common.cancel")}
               </Button>
-              <Button size="sm" variant="destructive" onClick={handleDispose} disabled={disposing}>
+              <Button size="sm" variant="destructive" onClick={handleDispose} disabled={disposing} className="w-full sm:w-auto">
                 {disposing && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
                 <Trash2 className="mr-1 h-4 w-4" />
                 {t("assets.actions.dispose")}

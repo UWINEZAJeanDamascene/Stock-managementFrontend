@@ -924,14 +924,17 @@ export default function PayrollDetailPage() {
                   <div>
                     <p className="text-xs text-muted-foreground dark:text-slate-400">RSSB Employer Pension (6%)</p>
                     <p className="font-medium text-blue-600 dark:text-blue-400">{formatCurrency(record.contributions?.rssbEmployerPension || 0)}</p>
+                    <Badge variant="outline" className="mt-1 text-[10px] border-blue-200 text-blue-700 dark:border-blue-800 dark:text-blue-400">6150 RSSB Employer Cost</Badge>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground dark:text-slate-400">RSSB Employer Maternity (0.3%)</p>
                     <p className="font-medium text-blue-600 dark:text-blue-400">{formatCurrency(record.contributions?.rssbEmployerMaternity || 0)}</p>
+                    <Badge variant="outline" className="mt-1 text-[10px] border-blue-200 text-blue-700 dark:border-blue-800 dark:text-blue-400">6150 RSSB Employer Cost</Badge>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground dark:text-slate-400">Occupational Hazard ({record.contributions?.occupationalHazardRate || 2}%)</p>
                     <p className="font-medium text-blue-600 dark:text-blue-400">{formatCurrency(record.contributions?.occupationalHazard || 0)}</p>
+                    <Badge variant="outline" className="mt-1 text-[10px] border-blue-200 text-blue-700 dark:border-blue-800 dark:text-blue-400">2310 Employer Contribution Payable</Badge>
                   </div>
                   {record.deductions.healthInsurance > 0 && (
                     <div>

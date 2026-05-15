@@ -88,7 +88,47 @@ interface NavItem {
   href: string;
   icon: React.ElementType;
   permission: string;
+  featureKey?: string; // maps to backend FEATURE_KEYS for plan-based visibility
+  moduleNames?: string[]; // maps to subscription plan display modules for item-level visibility
   disabled?: boolean;
+}
+
+const CORE_MODULES = [
+  "Dashboards",
+  "Products and categories",
+  "Warehouses",
+  "Stock levels and movements",
+  "Suppliers",
+  "Purchase orders",
+  "GRN",
+  "Clients",
+  "Quotations",
+  "Invoices",
+];
+
+const BUSINESS_MODULES = [
+  ...CORE_MODULES,
+  "Sales orders",
+  "Pick and pack",
+  "Delivery notes",
+  "Credit notes",
+  "Recurring invoices",
+  "AR and AP",
+  "Bank accounts",
+  "Petty cash",
+  "Expenses",
+  "Reports hub",
+];
+
+function expandPlanModules(modules?: string[]) {
+  const normalized = new Set((modules || []).map((module) => module.toLowerCase()));
+  if (normalized.has("everything in core")) {
+    CORE_MODULES.forEach((module) => normalized.add(module.toLowerCase()));
+  }
+  if (normalized.has("everything in business")) {
+    BUSINESS_MODULES.forEach((module) => normalized.add(module.toLowerCase()));
+  }
+  return normalized;
 }
 
 // ── Section Definitions ───────────────────────────────────────────────────────
@@ -105,30 +145,40 @@ const dashboardsNav: NavSection = {
       href: "/dashboard",
       icon: LayoutDashboard,
       permission: "products:read",
+      featureKey: "inventory",
+      moduleNames: ["Dashboards"],
     },
     {
       nameKey: "nav.inventoryDashboard",
       href: "/dashboard/inventory",
       icon: Boxes,
       permission: "stock:read",
+      featureKey: "inventory",
+      moduleNames: ["Dashboards"],
     },
     {
       nameKey: "nav.salesDashboard",
       href: "/dashboard/sales",
       icon: TrendingUp,
       permission: "sales_invoices:read",
+      featureKey: "sales",
+      moduleNames: ["Dashboards"],
     },
     {
       nameKey: "nav.purchaseDashboard",
       href: "/dashboard/purchases",
       icon: ShoppingCart,
       permission: "purchase_orders:read",
+      featureKey: "purchases",
+      moduleNames: ["Dashboards"],
     },
     {
       nameKey: "nav.financeDashboard",
       href: "/dashboard/finance",
       icon: PieChart,
       permission: "journal_entries:read",
+      featureKey: "finance",
+      moduleNames: ["Financial reports"],
     },
   ],
 };
@@ -145,54 +195,72 @@ const inventoryNav: NavSection = {
       href: "/products",
       icon: Package,
       permission: "products:read",
+      featureKey: "inventory",
+      moduleNames: ["Products and categories"],
     },
     {
       nameKey: "nav.categories",
       href: "/categories",
       icon: FolderTree,
       permission: "products:read",
+      featureKey: "inventory",
+      moduleNames: ["Products and categories"],
     },
     {
       nameKey: "nav.warehouses",
       href: "/warehouses",
       icon: WarehouseIcon,
       permission: "warehouses:read",
+      featureKey: "inventory",
+      moduleNames: ["Warehouses"],
     },
     {
       nameKey: "nav.stockLevels",
       href: "/stock-levels",
       icon: BarChart3,
       permission: "stock:read",
+      featureKey: "inventory",
+      moduleNames: ["Stock levels and movements"],
     },
     {
       nameKey: "nav.stockMovements",
       href: "/stock-movements",
       icon: ArrowRightLeft,
       permission: "stock:read",
+      featureKey: "inventory",
+      moduleNames: ["Stock levels and movements"],
     },
     {
       nameKey: "nav.stockTransfers",
       href: "/stock-transfers",
       icon: ArrowRightLeft,
       permission: "stock_transfers:read",
+      featureKey: "inventory",
+      moduleNames: ["Stock transfers"],
     },
     {
       nameKey: "nav.stockAudits",
       href: "/stock-audits",
       icon: ClipboardCheck,
       permission: "stock_audits:read",
+      featureKey: "inventory",
+      moduleNames: ["Stock audits"],
     },
     {
       nameKey: "nav.batches",
       href: "/batches",
       icon: Boxes,
       permission: "stock:read",
+      featureKey: "inventory",
+      moduleNames: ["Batches"],
     },
     {
       nameKey: "nav.serialNumbers",
       href: "/serial-numbers",
       icon: Package,
       permission: "stock:read",
+      featureKey: "inventory",
+      moduleNames: ["Serial numbers"],
     },
   ],
 };
@@ -209,25 +277,33 @@ const purchasingNav: NavSection = {
       href: "/suppliers",
       icon: Building2,
       permission: "suppliers:read",
+      featureKey: "purchases",
+      moduleNames: ["Suppliers"],
     },
     {
       nameKey: "nav.purchaseOrders",
       href: "/purchase-orders",
       icon: ClipboardList,
       permission: "purchase_orders:read",
+      featureKey: "purchases",
+      moduleNames: ["Purchase orders"],
     },
-    { nameKey: "nav.grn", href: "/grn", icon: Truck, permission: "grn:read" },
+    { nameKey: "nav.grn", href: "/grn", icon: Truck, permission: "grn:read", featureKey: "purchases", moduleNames: ["GRN"] },
     {
       nameKey: "nav.purchases",
       href: "/purchases",
       icon: ShoppingCart,
       permission: "purchase_orders:read",
+      featureKey: "purchases",
+      moduleNames: ["Purchase orders"],
     },
     {
       nameKey: "nav.purchaseReturns",
       href: "/purchase-returns",
       icon: Truck,
       permission: "purchase_returns:read",
+      featureKey: "purchases",
+      moduleNames: ["Purchase orders"],
     },
   ],
 };
@@ -244,66 +320,88 @@ const salesNav: NavSection = {
       href: "/sales-legacy",
       icon: Receipt,
       permission: "sales_invoices:read",
+      featureKey: "sales",
+      moduleNames: ["POS", "Invoices"],
     },
     {
       nameKey: "nav.clients",
       href: "/clients",
       icon: Users,
       permission: "clients:read",
+      featureKey: "sales",
+      moduleNames: ["Clients"],
     },
     {
       nameKey: "nav.quotations",
       href: "/quotations",
       icon: FileText,
       permission: "quotations:read",
+      featureKey: "sales",
+      moduleNames: ["Quotations"],
     },
     {
       nameKey: "nav.salesOrders",
       href: "/sales-orders",
       icon: ShoppingCart,
       permission: "sales_orders:read",
+      featureKey: "sales",
+      moduleNames: ["Sales orders"],
     },
     {
       nameKey: "nav.pickPacks",
       href: "/pick-packs",
       icon: Package,
       permission: "stock:read",
+      featureKey: "sales",
+      moduleNames: ["Pick and pack"],
     },
     {
       nameKey: "nav.invoices",
       href: "/invoices",
       icon: FileText,
       permission: "sales_invoices:read",
+      featureKey: "sales",
+      moduleNames: ["Invoices"],
     },
     {
       nameKey: "nav.deliveryNotes",
       href: "/delivery-notes",
       icon: Truck,
       permission: "delivery_notes:read",
+      featureKey: "sales",
+      moduleNames: ["Delivery notes"],
     },
     {
       nameKey: "nav.creditNotes",
       href: "/credit-notes",
       icon: FileText,
       permission: "credit_notes:read",
+      featureKey: "sales",
+      moduleNames: ["Credit notes"],
     },
     {
       nameKey: "nav.recurringInvoices",
       href: "/recurring-invoices",
       icon: FileText,
       permission: "sales_invoices:read",
+      featureKey: "sales",
+      moduleNames: ["Recurring invoices"],
     },
     {
       nameKey: "nav.accountsReceivable",
       href: "/ar-receipts",
       icon: Receipt,
       permission: "ar_receipts:read",
+      featureKey: "sales",
+      moduleNames: ["AR and AP"],
     },
     {
       nameKey: "nav.accountsPayable",
       href: "/ap-payments",
       icon: Wallet,
       permission: "ap_payments:read",
+      featureKey: "sales",
+      moduleNames: ["AR and AP"],
     },
   ],
 };
@@ -320,84 +418,112 @@ const financeNav: NavSection = {
       href: "/bank-accounts",
       icon: Banknote,
       permission: "bank_accounts:read",
+      featureKey: "finance",
+      moduleNames: ["Bank accounts"],
     },
     {
       nameKey: "nav.chartOfAccounts",
       href: "/chart-of-accounts",
       icon: BookOpen,
       permission: "chart_of_accounts:read",
+      featureKey: "finance",
+      moduleNames: ["Chart of accounts"],
     },
     {
       nameKey: "nav.journalEntries",
       href: "/journal",
       icon: BookOpen,
       permission: "journal_entries:read",
+      featureKey: "finance",
+      moduleNames: ["Journal entries"],
     },
     {
       nameKey: "nav.pettyCash",
       href: "/petty-cash",
       icon: Wallet,
       permission: "petty_cash:read",
+      featureKey: "finance",
+      moduleNames: ["Petty cash"],
     },
     {
       nameKey: "nav.fixedAssets",
       href: "/assets",
       icon: HardDrive,
       permission: "fixed_assets:read",
+      featureKey: "fixed_assets",
+      moduleNames: ["Fixed assets"],
     },
     {
       nameKey: "nav.liabilities",
       href: "/liabilities",
       icon: Scale,
       permission: "loans:read",
+      featureKey: "finance",
+      moduleNames: ["Liabilities"],
     },
     {
       nameKey: "nav.expenses",
       href: "/expenses",
       icon: Receipt,
       permission: "expenses:read",
+      featureKey: "finance",
+      moduleNames: ["Expenses"],
     },
     {
       nameKey: "nav.budgets",
       href: "/budgets",
       icon: PieChart,
       permission: "budgets:read",
+      featureKey: "finance",
+      moduleNames: ["Budgets"],
     },
     {
       nameKey: "nav.projects",
       href: "/projects",
       icon: FolderTree,
       permission: "budgets:read",
+      featureKey: "projects",
+      moduleNames: ["Projects"],
     },
     {
       nameKey: "nav.budgetSettings",
       href: "/budgets/settings",
       icon: Settings,
       permission: "budgets:read",
+      featureKey: "finance",
+      moduleNames: ["Budgets"],
     },
     {
       nameKey: "nav.employees",
       href: "/employees",
       icon: Users,
       permission: "payroll:read",
+      featureKey: "payroll",
+      moduleNames: ["Employees"],
     },
     {
       nameKey: "nav.payroll",
       href: "/payroll",
       icon: DollarSign,
       permission: "payroll:read",
+      featureKey: "payroll",
+      moduleNames: ["Payroll runs"],
     },
     {
       nameKey: "payroll.payrollRuns",
       href: "/payroll-runs",
       icon: Play,
       permission: "payroll:read",
+      featureKey: "payroll",
+      moduleNames: ["Payroll runs"],
     },
     {
       nameKey: "nav.accountingPeriods",
       href: "/periods",
       icon: Calendar,
       permission: "periods:read",
+      featureKey: "finance",
+      moduleNames: ["Financial reports"],
     },
   ],
 };
@@ -414,36 +540,48 @@ const reportsNav: NavSection = {
       href: "/reports",
       icon: FileText,
       permission: "reports:read",
+      featureKey: "reports",
+      moduleNames: ["Reports hub", "Financial reports"],
     },
     {
       nameKey: "nav.profitLoss",
       href: "/reports/profit-loss",
       icon: TrendingUp,
       permission: "reports:read",
+      featureKey: "reports",
+      moduleNames: ["Reports hub", "Financial reports"],
     },
     {
       nameKey: "nav.balanceSheet",
       href: "/reports/balance-sheet",
       icon: Scale,
       permission: "reports:read",
+      featureKey: "reports",
+      moduleNames: ["Reports hub", "Financial reports"],
     },
     {
       nameKey: "nav.cashFlow",
       href: "/reports/cash-flow",
       icon: Waves,
       permission: "reports:read",
+      featureKey: "reports",
+      moduleNames: ["Reports hub", "Financial reports"],
     },
     {
       nameKey: "nav.financialRatios",
       href: "/reports/financial-ratios",
       icon: Gauge,
       permission: "reports:read",
+      featureKey: "reports",
+      moduleNames: ["Reports hub", "Financial reports"],
     },
     {
       nameKey: "nav.debtMaturity",
       href: "/reports/debt-maturity",
       icon: Clock,
       permission: "reports:read",
+      featureKey: "reports",
+      moduleNames: ["Reports hub", "Financial reports"],
     },
   ],
 };
@@ -565,7 +703,7 @@ export function Sidebar({
   useEffect(() => {
     // Clear any old localStorage company data
     localStorage.removeItem('company-storage');
-    
+
     // Always fetch fresh company profile from DB
     companyApi.getMe().then((response) => {
       if (response.success && response.data) {
@@ -583,6 +721,11 @@ export function Sidebar({
           logo_url: companyData.logo_url,
           address: companyData.address,
           base_currency: companyData.base_currency,
+          subscription_plan: companyData.subscription_plan,
+          subscription_status: companyData.subscription_status,
+          feature_access: companyData.feature_access,
+          enabledModules: companyData.enabledModules,
+          subscription_modules: companyData.subscription_modules,
         });
       }
     }).catch(() => {
@@ -616,9 +759,27 @@ export function Sidebar({
     navigate("/login", { replace: true });
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const filterByPermission = (items: NavItem[]) =>
-    items.filter((item) => checkPermission(item.permission as any));
+  const planModules = expandPlanModules(company?.subscription_modules);
+
+  const hasModuleAccess = (item: NavItem) => {
+    if (item.moduleNames && item.moduleNames.length > 0 && planModules.size > 0) {
+      return item.moduleNames.some((moduleName) => planModules.has(moduleName.toLowerCase()));
+    }
+    if (item.moduleNames && item.moduleNames.length > 0 && company?.subscription_modules) {
+      return false;
+    }
+    return true;
+  };
+
+  const hasFeatureAccess = (featureKey?: string) => {
+    if (!featureKey) return true; // system items without featureKey are always visible
+    const fa = company?.feature_access;
+    if (!fa || typeof fa !== 'object') return !company; // allow while loading, lock down once loaded
+    return Boolean(fa[featureKey]);
+  };
+
+  const filterVisible = (items: NavItem[]) =>
+    items.filter((item) => hasFeatureAccess(item.featureKey) && hasModuleAccess(item));
 
   const handleNavigate = () => {
     if (onNavigate) onNavigate();
@@ -695,7 +856,7 @@ export function Sidebar({
   // ── Render a whole section ─────────────────────────────────────────────────
 
   const renderSection = (section: NavSection, isDashboards = false) => {
-    const visible = filterByPermission(section.items);
+    const visible = filterVisible(section.items);
     if (visible.length === 0) return null;
     const useGrid = !collapsed && (isDashboards || visible.length > 4);
 
@@ -738,9 +899,10 @@ export function Sidebar({
         >
           {visible.map((item) => {
             const active = isPathActive(item.href);
+            const disabled = !checkPermission(item.permission);
             return (
               <li key={item.href}>
-                {renderNavItem(item, active, section, useGrid, (item as any).disabled)}
+                {renderNavItem(item, active, section, useGrid, item.disabled || disabled)}
               </li>
             );
           })}

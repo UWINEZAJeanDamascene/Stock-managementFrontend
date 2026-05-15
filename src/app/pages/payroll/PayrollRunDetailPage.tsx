@@ -1373,7 +1373,10 @@ export default function PayrollRunDetailPage() {
                 </div>
                 <div>
                   <div className="mb-2 flex items-center justify-between text-sm">
-                    <span className="text-slate-600 dark:text-slate-300">RSSB Employer</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-600 dark:text-slate-300">RSSB Employer</span>
+                      <Badge variant="outline" className="text-[10px] border-blue-200 text-blue-700 dark:border-blue-800 dark:text-blue-400">6150 / 2310</Badge>
+                    </div>
                     <span className="font-mono font-semibold text-blue-600 dark:text-blue-400">
                       {formatCurrency(rssbEmployerTotal)}
                     </span>

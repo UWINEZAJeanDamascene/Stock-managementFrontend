@@ -51,6 +51,7 @@ import { Input } from '@/app/components/ui/input';
 import { Textarea } from '@/app/components/ui/textarea';
 import { Label } from '@/app/components/ui/label';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface PurchaseOrder {
   _id: string;
@@ -145,6 +146,14 @@ export default function PurchaseOrderDetailPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { id } = useParams();
+  const { hasPermission } = useAuth();
+  const canUpdatePurchaseOrder = hasPermission('purchase_orders:update');
+  const canApprovePurchaseOrder = hasPermission('purchase_orders:approve');
+  const canCancelPurchaseOrder =
+    hasPermission('purchase_orders:delete') ||
+    hasPermission('purchase_orders:update');
+  const canCreateGrn = hasPermission('grn:create');
+  const canRecordPayment = hasPermission('ap_payments:create');
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -210,7 +219,7 @@ export default function PurchaseOrderDetailPage() {
   }, []);
 
   const handleApprove = async () => {
-    if (!id) return;
+    if (!id || !canApprovePurchaseOrder) return;
     setActionLoading(true);
     try {
       await purchaseOrdersApi.approve(id, sendEmailApprove);
@@ -223,7 +232,7 @@ export default function PurchaseOrderDetailPage() {
   };
 
   const handleCancel = async () => {
-    if (!id) return;
+    if (!id || !canCancelPurchaseOrder) return;
     setActionLoading(true);
     try {
       await purchaseOrdersApi.cancel(id, sendEmailCancel);
@@ -536,50 +545,58 @@ export default function PurchaseOrderDetailPage() {
 
             {/* Email Options & Action Buttons */}
             <div className="border-t border-slate-100 px-5 py-4 dark:border-slate-800">
-              {purchaseOrder.status === 'draft' && (
+              {purchaseOrder.status === 'draft' && (canApprovePurchaseOrder || canCancelPurchaseOrder) && (
                 <div className="mb-3 flex flex-wrap items-center gap-4">
-                  <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-                    <Checkbox
-                      checked={sendEmailApprove}
-                      onCheckedChange={(checked) => setSendEmailApprove(checked === true)}
-                    />
-                    <Mail className="h-4 w-4" />
-                    {t('purchase.detail.sendEmailApprove', 'Send email notification on approve')}
-                  </label>
-                  <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-                    <Checkbox
-                      checked={sendEmailCancel}
-                      onCheckedChange={(checked) => setSendEmailCancel(checked === true)}
-                    />
-                    <Mail className="h-4 w-4" />
-                    {t('purchase.detail.sendEmailCancel', 'Send email notification on cancel')}
-                  </label>
+                  {canApprovePurchaseOrder && (
+                    <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                      <Checkbox
+                        checked={sendEmailApprove}
+                        onCheckedChange={(checked) => setSendEmailApprove(checked === true)}
+                      />
+                      <Mail className="h-4 w-4" />
+                      {t('purchase.detail.sendEmailApprove', 'Send email notification on approve')}
+                    </label>
+                  )}
+                  {canCancelPurchaseOrder && (
+                    <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                      <Checkbox
+                        checked={sendEmailCancel}
+                        onCheckedChange={(checked) => setSendEmailCancel(checked === true)}
+                      />
+                      <Mail className="h-4 w-4" />
+                      {t('purchase.detail.sendEmailCancel', 'Send email notification on cancel')}
+                    </label>
+                  )}
                 </div>
               )}
 
               <div className="flex flex-wrap gap-2">
                 {purchaseOrder.status === 'draft' && (
                   <>
-                    <Button
-                      size="sm"
-                      className="bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
-                      onClick={handleApprove}
-                      disabled={actionLoading}
-                    >
-                      {actionLoading ? (
-                        <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-                      ) : (
-                        <CheckCircle className="mr-1 h-4 w-4" />
-                      )}
-                      {t('purchase.detail.approve', 'Approve')}
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={handleCancel} disabled={actionLoading} className="border-red-200 text-red-700 hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/30">
-                      <XCircle className="mr-1 h-4 w-4" />
-                      {t('purchase.detail.cancel', 'Cancel')}
-                    </Button>
+                    {canApprovePurchaseOrder && (
+                      <Button
+                        size="sm"
+                        className="bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
+                        onClick={handleApprove}
+                        disabled={actionLoading}
+                      >
+                        {actionLoading ? (
+                          <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                        ) : (
+                          <CheckCircle className="mr-1 h-4 w-4" />
+                        )}
+                        {t('purchase.detail.approve', 'Approve')}
+                      </Button>
+                    )}
+                    {canCancelPurchaseOrder && (
+                      <Button size="sm" variant="outline" onClick={handleCancel} disabled={actionLoading} className="border-red-200 text-red-700 hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/30">
+                        <XCircle className="mr-1 h-4 w-4" />
+                        {t('purchase.detail.cancel', 'Cancel')}
+                      </Button>
+                    )}
                   </>
                 )}
-                {purchaseOrder.status === 'approved' && (
+                {purchaseOrder.status === 'approved' && canCreateGrn && (
                   <Button
                     size="sm"
                     className="bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
@@ -590,22 +607,24 @@ export default function PurchaseOrderDetailPage() {
                     <span className="sm:hidden">{t('purchase.detail.createGRN', 'GRN')}</span>
                   </Button>
                 )}
-                {(purchaseOrder.status === 'approved' || purchaseOrder.status === 'partially_received' || purchaseOrder.status === 'fully_received') && (purchaseOrder as any).paymentStatus !== 'paid' && (
+                {(purchaseOrder.status === 'approved' || purchaseOrder.status === 'partially_received' || purchaseOrder.status === 'fully_received') && (purchaseOrder as any).paymentStatus !== 'paid' && canRecordPayment && (
                   <Button size="sm" variant="outline" onClick={() => setPaymentOpen(true)} className="dark:border-slate-700 dark:text-white">
                     <DollarSign className="mr-1 h-4 w-4" />
                     <span className="hidden sm:inline">{t('purchase.detail.recordPayment', 'Record Payment')}</span>
                     <span className="sm:hidden">{t('purchase.detail.recordPayment', 'Payment')}</span>
                   </Button>
                 )}
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => navigate(`/purchase-orders/${id}/edit`)}
-                  className="dark:border-slate-700 dark:text-white"
-                >
-                  <Pencil className="mr-1 h-4 w-4" />
-                  {t('common.edit', 'Edit')}
-                </Button>
+                {canUpdatePurchaseOrder && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => navigate(`/purchase-orders/${id}/edit`)}
+                    className="dark:border-slate-700 dark:text-white"
+                  >
+                    <Pencil className="mr-1 h-4 w-4" />
+                    {t('common.edit', 'Edit')}
+                  </Button>
+                )}
               </div>
             </div>
           </div>
@@ -808,7 +827,7 @@ export default function PurchaseOrderDetailPage() {
               <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
                 <CardHeader className="flex flex-row items-center justify-between border-b border-slate-100 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/30">
                   <PanelTitle icon={<Truck className="h-4 w-4" />} title={t('purchase.detail.grnList', 'Goods Received Notes')} />
-                  {purchaseOrder.status === 'approved' && (
+                  {purchaseOrder.status === 'approved' && canCreateGrn && (
                     <Button
                       size="sm"
                       className="bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
@@ -873,7 +892,7 @@ export default function PurchaseOrderDetailPage() {
               <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
                 <CardHeader className="flex flex-row items-center justify-between border-b border-slate-100 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/30">
                   <PanelTitle icon={<Banknote className="h-4 w-4" />} title={t('purchase.detail.paymentsTitle', 'Payments')} />
-                  {purchaseOrder.status !== 'cancelled' && (purchaseOrder.paymentStatus || 'unpaid') !== 'paid' && (
+                  {purchaseOrder.status !== 'cancelled' && (purchaseOrder.paymentStatus || 'unpaid') !== 'paid' && canRecordPayment && (
                     <Button
                       size="sm"
                       className="bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"

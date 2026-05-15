@@ -34,6 +34,7 @@ import {
 } from '@/app/components/ui/table';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { formatCurrency } from '@/lib/currencyUtils';
 
 // Types
 interface FixedAsset {
@@ -155,13 +156,8 @@ export default function AssetsListPage() {
     return <Badge variant={config.variant} className="dark:bg-slate-700 dark:text-slate-200">{config.label}</Badge>;
   };
 
-  const formatCurrency = (amount: any) => {
-    const num = getNumericValue(amount);
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(num);
-  };
+  // use shared currency formatter (defaults to company/display currency)
+  // `formatCurrency` imported from lib/currencyUtils
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '-';
@@ -191,6 +187,17 @@ export default function AssetsListPage() {
       }
     }
     return 0;
+  };
+
+  // Helper to resolve an amount from multiple potential keys on an asset
+  const getAssetAmount = (asset: any, keys: string[]): string => {
+    for (const k of keys) {
+      const val = asset ? asset[k] : undefined;
+      const num = getNumericValue(val);
+      if (num !== 0) return formatCurrency(num);
+    }
+    // fallback to 0
+    return formatCurrency(0);
   };
 
   // Helper to get category name by ID
@@ -376,9 +383,9 @@ export default function AssetsListPage() {
                           <TableCell className="text-sm text-slate-600 dark:text-slate-300">{asset.name}</TableCell>
                           <TableCell className="text-sm text-slate-600 dark:text-slate-300">{getCategoryName(asset.categoryId)}</TableCell>
                           <TableCell className="text-sm text-slate-600 dark:text-slate-300">{formatDate(asset.purchaseDate)}</TableCell>
-                          <TableCell className="text-right text-sm text-slate-600 dark:text-slate-300">{formatCurrency(asset.purchaseCost)}</TableCell>
-                          <TableCell className="text-right text-sm text-slate-600 dark:text-slate-300">{formatCurrency(asset.accumulatedDepreciation)}</TableCell>
-                          <TableCell className="text-right text-sm font-semibold text-slate-900 dark:text-white">{formatCurrency(asset.netBookValue)}</TableCell>
+                          <TableCell className="text-right text-sm text-slate-600 dark:text-slate-300">{getAssetAmount(asset, ['purchaseCost','purchase_cost','cost','totalValue','total_value'])}</TableCell>
+                          <TableCell className="text-right text-sm text-slate-600 dark:text-slate-300">{getAssetAmount(asset, ['accumulatedDepreciation','accumulated_depreciation','accumDepreciation','accum_depr'])}</TableCell>
+                          <TableCell className="text-right text-sm font-semibold text-slate-900 dark:text-white">{getAssetAmount(asset, ['netBookValue','net_book_value','netValue','net_book'])}</TableCell>
                           <TableCell>{getStatusBadge(asset.status)}</TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-1">

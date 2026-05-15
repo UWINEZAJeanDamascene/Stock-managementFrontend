@@ -279,9 +279,81 @@ export const authApi = {
 };
 
 // Company API (Public - for registration)
+export type PlatformPlan = string;
+export type PlatformSubscriptionStatus = "trialing" | "active" | "past_due" | "suspended" | "cancelled";
+export type PlatformBillingCycle = "monthly" | "quarterly" | "annual";
+export type PlatformFeatureKey =
+  | "inventory"
+  | "sales"
+  | "purchases"
+  | "finance"
+  | "payroll"
+  | "reports"
+  | "projects"
+  | "fixed_assets"
+  | "ai_assistant"
+  | "integrations";
+
+export type PlatformFeatureAccess = Record<PlatformFeatureKey, boolean>;
+
+export interface PlatformCompany {
+  _id: string;
+  name: string;
+  code?: string;
+  email: string;
+  phone?: string;
+  tin?: string;
+  approvalStatus: "pending" | "approved" | "rejected";
+  status?: "pending" | "approved" | "rejected";
+  isActive: boolean;
+  subscription_plan: PlatformPlan;
+  subscription_status: PlatformSubscriptionStatus;
+  billing_cycle: PlatformBillingCycle;
+  billing_amount: number;
+  next_billing_date: string | null;
+  feature_access: PlatformFeatureAccess;
+  enabledModuleCount: number;
+  enabledModules: PlatformFeatureKey[];
+  subscription_modules?: string[];
+  platform_notes?: string;
+  trial_ends_at: string | null;
+  last_payment_reminder_at: string | null;
+  last_platform_message_at: string | null;
+  registration_rejection_reason?: string | null;
+  setup_completed: boolean;
+  users?: number;
+  activeUsers?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PlatformDashboardData {
+  stats: {
+    total: number;
+    pending: number;
+    approved: number;
+    rejected: number;
+    pastDue: number;
+    upcomingPayments: number;
+    monthlyRecurringRevenue: number;
+  };
+  companies: PlatformCompany[];
+  packageMatrix: Array<{ plan: PlatformPlan; name: string; modules: string[]; features: PlatformFeatureKey[] }>;
+}
+
+export interface PlatformAccessUpdate {
+  subscription_plan?: PlatformPlan;
+  subscription_status?: PlatformSubscriptionStatus;
+  billing_cycle?: PlatformBillingCycle;
+  billing_amount?: number;
+  next_billing_date?: string | null;
+  feature_access?: Partial<PlatformFeatureAccess>;
+  platform_notes?: string;
+}
+
 export const companyApi = {
   register: (
-    companyData: { name: string; email: string; tin?: string; phone?: string },
+    companyData: { name: string; email: string; tin?: string; phone?: string; subscription_plan?: string },
     adminData: { name: string; email: string; password: string },
   ) =>
     request<{
@@ -369,6 +441,11 @@ export const companyApi = {
   getPendingCompanies: () =>
     request<{ success: boolean; data: unknown[] }>("/companies/pending"),
 
+  getPlatformDashboard: () =>
+    request<{ success: boolean; data: PlatformDashboardData }>(
+      "/companies/platform-dashboard",
+    ),
+
   getAllCompanies: (params?: {
     page?: number;
     limit?: number;
@@ -391,6 +468,211 @@ export const companyApi = {
       `/companies/${id}/reject`,
       { method: "PUT", body: { reason } },
     ),
+
+  updatePlatformAccess: (id: string, data: PlatformAccessUpdate) =>
+    request<{ success: boolean; message: string; data: PlatformCompany }>(
+      `/companies/${id}/platform-access`,
+      { method: "PUT", body: data },
+    ),
+
+  sendPaymentReminder: (
+    id: string,
+    data: { subject?: string; message?: string },
+  ) =>
+    request<{
+      success: boolean;
+      message: string;
+      data: { sent: boolean; company: PlatformCompany };
+    }>(`/companies/${id}/payment-reminder`, {
+      method: "POST",
+      body: data,
+    }),
+
+  broadcastPlatformUpdate: (data: {
+    subject?: string;
+    message?: string;
+    companyIds?: string[];
+  }) =>
+    request<{
+      success: boolean;
+      message: string;
+      data: { sent: number; failed: number; recipients: number };
+    }>("/companies/platform-broadcast", {
+      method: "POST",
+      body: data,
+    }),
+
+  getPlatformAnalytics: () =>
+    request<{
+      success: boolean;
+      data: {
+        mrr: number;
+        mrrByPlan: Record<string, number>;
+        totalTenants: number;
+        activeTenants: number;
+        planDistribution: Record<string, number>;
+        statusDistribution: Record<string, number>;
+        growthTrend: Array<{ month: string; count: number }>;
+        churnTrend: Array<{ month: string; count: number }>;
+        activeTenantTrend: Array<{ month: string; count: number }>;
+      };
+    }>("/companies/platform-analytics", { method: "GET" }),
+
+  getPlatformAuditLogs: (params?: {
+    action?: string;
+    entity_type?: string;
+    entity_id?: string;
+    date_from?: string;
+    date_to?: string;
+    status?: string;
+    company_id?: string;
+    page?: number;
+    per_page?: number;
+  }) =>
+    request<{
+      success: boolean;
+      data: Array<{
+        _id: string;
+        action: string;
+        entity_type: string;
+        entity_id: string;
+        company_id?: { _id: string; name: string; code?: string } | null;
+        user_id?: { _id: string; name: string; email: string } | null;
+        changes?: unknown;
+        status: string;
+        createdAt: string;
+      }>;
+      pagination: { page: number; per_page: number; total: number; total_pages: number };
+    }>("/companies/platform-audit-logs", { method: "GET", params }),
+
+  getCompanyUsers: (companyId: string, params?: {
+    page?: number;
+    limit?: number;
+    role?: string;
+    isActive?: string;
+    search?: string;
+  }) =>
+    request<{
+      success: boolean;
+      data: Array<{
+        _id: string;
+        name: string;
+        email: string;
+        role: string;
+        isActive: boolean;
+        lastLogin?: string;
+        createdAt: string;
+      }>;
+      pagination: { total: number; pages: number; currentPage: number; limit: number };
+    }>(`/companies/${companyId}/users`, { method: "GET", params }),
+
+  impersonateUser: (companyId: string, userId: string) =>
+    request<{
+      success: boolean;
+      data: {
+        access_token: string;
+        refresh_token: string;
+        user: {
+          _id: string;
+          name: string;
+          email: string;
+          role: string;
+          company: { _id: string; name: string; email: string } | null;
+        };
+      };
+    }>(`/companies/${companyId}/users/${userId}/impersonate`, { method: "POST" }),
+
+  forcePasswordReset: (companyId: string, userId: string) =>
+    request<{
+      success: boolean;
+      message: string;
+      data: {
+        tempPassword: string;
+        user: { _id: string; name: string; email: string };
+      };
+    }>(`/companies/${companyId}/users/${userId}/force-password-reset`, { method: "POST" }),
+
+  getSubscriptionPlans: (params?: { active?: boolean }) =>
+    request<{
+      success: boolean;
+      data: Array<{
+        _id: string;
+        key: string;
+        name: string;
+        description: string;
+        features: string[];
+        modules: string[];
+        outcomes: string[];
+        badge: string;
+        icon: string;
+        featured: boolean;
+        button_label: string;
+        default_billing_amount: number;
+        default_billing_cycle: string;
+        is_active: boolean;
+        sort_order: number;
+      }>;
+    }>('/companies/subscription-plans', { method: "GET", params }),
+
+  getPublicSubscriptionPlans: () =>
+    request<{
+      success: boolean;
+      data: Array<{
+        _id: string;
+        key: string;
+        name: string;
+        description: string;
+        features: string[];
+        modules: string[];
+        outcomes: string[];
+        badge: string;
+        icon: string;
+        featured: boolean;
+        button_label: string;
+        default_billing_amount: number;
+        default_billing_cycle: string;
+        is_active: boolean;
+        sort_order: number;
+      }>;
+    }>('/companies/subscription-plans/public', { method: "GET", params: { active: 'true' } }),
+
+  createSubscriptionPlan: (data: {
+    key: string;
+    name: string;
+    description?: string;
+    features?: string[];
+    modules?: string[];
+    outcomes?: string[];
+    badge?: string;
+    icon?: string;
+    featured?: boolean;
+    button_label?: string;
+    default_billing_amount?: number;
+    default_billing_cycle?: string;
+    is_active?: boolean;
+    sort_order?: number;
+  }) =>
+    request<{ success: boolean; data: unknown }>('/companies/subscription-plans', { method: "POST", body: data }),
+
+  updateSubscriptionPlan: (key: string, data: {
+    name?: string;
+    description?: string;
+    features?: string[];
+    modules?: string[];
+    outcomes?: string[];
+    badge?: string;
+    icon?: string;
+    featured?: boolean;
+    button_label?: string;
+    default_billing_amount?: number;
+    default_billing_cycle?: string;
+    is_active?: boolean;
+    sort_order?: number;
+  }) =>
+    request<{ success: boolean; data: unknown }>(`/companies/subscription-plans/${key}`, { method: "PUT", body: data }),
+
+  deleteSubscriptionPlan: (key: string) =>
+    request<{ success: boolean; message: string }>(`/companies/subscription-plans/${key}`, { method: "DELETE" }),
 
   // Capital Management
   recordOwnerCapital: (data: {
@@ -2813,12 +3095,24 @@ export const chatApi = {
   send: async (
     message: string,
     history: ChatMessage[] = [],
+    context?: string,
   ): Promise<{ success: boolean; reply: string; provider?: string; cached?: boolean }> => {
     const token = localStorage.getItem("token");
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
     if (token) headers["Authorization"] = `Bearer ${token}`;
+
+    // Build augmented history with system context injected
+    let augmentedHistory = history;
+    if (context && context.trim()) {
+      const systemMsg: ChatMessage = {
+        role: "user",
+        content: `[SYSTEM CONTEXT — Do not repeat this back to the user. Use this information to answer their questions accurately.]\n\n${context.trim()}`,
+      };
+      // Insert system context as first message, then the rest
+      augmentedHistory = [systemMsg, ...history];
+    }
 
     // 90s timeout to accommodate 6-provider fallback chain (Groq→Mistral→OpenRouter→DeepSeek→Together→Gemini)
     const controller = new AbortController();
@@ -2828,7 +3122,7 @@ export const chatApi = {
       const response = await fetch(`${API_BASE_URL}/chat`, {
         method: "POST",
         headers,
-        body: JSON.stringify({ message, history }),
+        body: JSON.stringify({ message, history: augmentedHistory }),
         signal: controller.signal,
       });
 
@@ -3138,6 +3432,11 @@ export const serialNumberApi = {
     request<{ success: boolean; data: unknown }>(
       `/serial-numbers/product/${productId}/available`,
     ),
+  // Delete a serial number
+  delete: (id: string) =>
+    request<{ success: boolean; data: unknown }>(`/serial-numbers/${id}`, {
+      method: 'DELETE',
+    }),
 };
 
 // Advanced Stock API - Stock Transfers
@@ -3777,7 +4076,176 @@ export const loansApi = {
     request<{ success: boolean; data: unknown }>(`/loans/${id}/schedule`),
 };
 
-// Budget API
+// ── Employee Advances API ─────────────────────────────────────────
+interface EmployeeAdvance {
+  _id: string;
+  employee: { _id: string; firstName: string; lastName: string; employeeId: string };
+  referenceNo: string;
+  description: string;
+  amount: number;
+  amountRepaid: number;
+  balance: number;
+  issueDate: string;
+  dueDate?: string;
+  status: "issued" | "partially_repaid" | "fully_repaid" | "written_off";
+  paymentMethod: string;
+  bankAccountId?: string;
+  journalEntryId?: { _id: string; entryNumber: string };
+  repayments: Array<{
+    amount: number;
+    date: string;
+    paymentMethod: string;
+    notes: string;
+    journalEntryId?: { _id: string; entryNumber: string };
+  }>;
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const employeeAdvanceApi = {
+  getAll: (params?: {
+    status?: string;
+    employeeId?: string;
+    startDate?: string;
+    endDate?: string;
+    page?: number;
+    limit?: number;
+  }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{
+      success: boolean;
+      data: EmployeeAdvance[];
+      pagination: { total: number; page: number; limit: number; totalPages: number };
+    }>(`/employee-advances${query ? `?${query}` : ""}`);
+  },
+  getById: (id: string) =>
+    request<{ success: boolean; data: EmployeeAdvance }>(`/employee-advances/${id}`),
+  create: (data: {
+    employeeId: string;
+    description?: string;
+    amount: number;
+    issueDate?: string;
+    dueDate?: string;
+    paymentMethod?: string;
+    bankAccountId?: string;
+    notes?: string;
+  }) =>
+    request<{ success: boolean; data: EmployeeAdvance; message: string }>("/employee-advances", {
+      method: "POST",
+      body: data,
+    }),
+  recordRepayment: (
+    id: string,
+    data: {
+      amount: number;
+      date?: string;
+      paymentMethod: string;
+      bankAccountId?: string;
+      notes?: string;
+    },
+  ) =>
+    request<{ success: boolean; data: EmployeeAdvance; message: string }>(
+      `/employee-advances/${id}/repayment`,
+      { method: "POST", body: data },
+    ),
+  getEmployeeBalance: (employeeId: string) =>
+    request<{ success: boolean; data: { totalIssued: number; totalRepaid: number; totalBalance: number } }>(
+      `/employee-advances/employee/${employeeId}/balance`,
+    ),
+  settle: (
+    id: string,
+    data: {
+      expenseAmount?: number;
+      expenseAccountCode?: string;
+      expenseDescription?: string;
+      refundAmount?: number;
+      refundMethod?: string;
+      refundBankAccountId?: string;
+      notes?: string;
+      date?: string;
+    },
+  ) =>
+    request<{ success: boolean; data: EmployeeAdvance; message: string }>(
+      `/employee-advances/${id}/settle`,
+      { method: "POST", body: data },
+    ),
+  delete: (id: string) =>
+    request<{ success: boolean; message: string }>(`/employee-advances/${id}`, {
+      method: "DELETE",
+    }),
+};
+
+// ── Employee Advances API end ───────────────────────────────────────
+
+export interface PrepaidExpense {
+  _id: string;
+  referenceNo: string;
+  vendor: string;
+  description: string;
+  totalAmount: number;
+  expenseAccountCode: string;
+  paymentMethod: string;
+  bankAccountId?: string;
+  startDate: string;
+  endDate: string;
+  frequency: 'monthly' | 'quarterly' | 'annually';
+  status: 'active' | 'fully_amortized' | 'cancelled';
+  journalEntryId?: { _id: string; entryNumber: string; date: string; status: string } | null;
+  amortizations: {
+    _id: string;
+    amount: number;
+    date: string;
+    description: string;
+    journalEntryId?: { _id: string; entryNumber: string; date: string; status: string } | null;
+    status: 'pending' | 'posted' | 'reversed';
+    createdAt: string;
+  }[];
+  remainingBalance: number;
+  totalAmortized: number;
+  notes: string;
+  createdBy?: { _id: string; name: string; email: string };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const prepaidExpenseApi = {
+  getAll: (params?: { status?: string; search?: string }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; data: PrepaidExpense[] }>(`/prepaid-expenses${query ? `?${query}` : ""}`);
+  },
+  getById: (id: string) =>
+    request<{ success: boolean; data: PrepaidExpense }>(`/prepaid-expenses/${id}`),
+  create: (data: {
+    referenceNo?: string;
+    vendor?: string;
+    description: string;
+    totalAmount: number;
+    expenseAccountCode: string;
+    paymentMethod?: string;
+    bankAccountId?: string;
+    startDate: string;
+    endDate: string;
+    frequency?: string;
+    notes?: string;
+  }) =>
+    request<{ success: boolean; data: PrepaidExpense; message: string }>("/prepaid-expenses", {
+      method: "POST",
+      body: data,
+    }),
+  postAmortization: (id: string, amortizationId: string) =>
+    request<{ success: boolean; data: PrepaidExpense; message: string }>(
+      `/prepaid-expenses/${id}/amortizations/${amortizationId}/post`,
+      { method: "POST" },
+    ),
+  delete: (id: string) =>
+    request<{ success: boolean; message: string }>(`/prepaid-expenses/${id}`, {
+      method: "DELETE",
+    }),
+};
+
+// ── Prepaid Expenses API end ────────────────────────────────────────
+
 export interface BudgetItem {
   _id?: string;
   category: string;
@@ -5299,6 +5767,39 @@ export const auditTrailApi = {
 
 // Bulk Data Import/Export API
 export const bulkDataApi = {
+  getTypes: () =>
+    request<{
+      success: boolean;
+      data: Array<{
+        key: string;
+        label: string;
+        resource: string;
+        fields: Array<{ field: string; label: string; required: boolean }>;
+      }>;
+    }>("/bulk/types"),
+  exportData: (type: string) => {
+    const token = localStorage.getItem("token");
+    return fetch(`${API_BASE_URL}/bulk/export/${type}`, {
+      headers: { Authorization: token ? `Bearer ${token}` : "" },
+    }).then((res) => {
+      if (!res.ok) throw new Error(`Failed to export ${type}`);
+      return res.blob();
+    });
+  },
+  importData: (type: string, file: File) => {
+    const token = localStorage.getItem("token");
+    const formData = new FormData();
+    formData.append("file", file);
+    return fetch(`${API_BASE_URL}/bulk/import/${type}`, {
+      method: "POST",
+      headers: { Authorization: token ? `Bearer ${token}` : "" },
+      body: formData,
+    }).then(async (res) => {
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || `Failed to import ${type}`);
+      return data;
+    });
+  },
   exportProducts: () => {
     const token = localStorage.getItem("token");
     return fetch(`${API_BASE_URL}/bulk/export/products`, {
@@ -5326,7 +5827,7 @@ export const bulkDataApi = {
       return res.blob();
     });
   },
-  downloadTemplate: (type: "products" | "clients" | "suppliers") => {
+  downloadTemplate: (type: string) => {
     const token = localStorage.getItem("token");
     return fetch(`${API_BASE_URL}/bulk/template/${type}`, {
       headers: { Authorization: token ? `Bearer ${token}` : "" },
@@ -7008,6 +7509,21 @@ export const taxLiabilityApi = {
       "/taxes/settlements/rssb",
       { method: "POST", body: data },
     ),
+  postIncomeTaxAccrual: (data: {
+    amount: number;
+    accrual_date?: string;
+    period_description?: string;
+    rate_pct?: number;
+  }) =>
+    request<{
+      success: boolean;
+      data: SettlementResult & {
+        accrual_reference: string;
+        tax_code: string;
+        accrual_date: string;
+      };
+      message: string;
+    }>("/taxes/income-tax-accrual", { method: "POST", body: data }),
   preview: (data: { transactionType: string; [key: string]: any }) =>
     request<{
       success: boolean;

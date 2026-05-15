@@ -16,6 +16,7 @@ type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 export default function ForgotPasswordPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const {
     register,
@@ -27,11 +28,16 @@ export default function ForgotPasswordPage() {
 
   const onSubmit = async (data: ForgotPasswordFormData) => {
     setIsLoading(true);
+    setError(null);
     try {
-      await authService.forgotPassword(data.email);
-      setSuccess(true);
-    } catch {
-      setSuccess(true);
+      const response = await authService.forgotPassword(data.email);
+      if (response.success) {
+        setSuccess(true);
+      } else {
+        setError(response.error || 'Could not send reset email. Please try again later.');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not send reset email. Please try again later.');
     } finally {
       setIsLoading(false);
     }
@@ -93,6 +99,7 @@ export default function ForgotPasswordPage() {
                   </div>
                 ) : (
                   <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+                    {error && <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-600 dark:text-red-300">{error}</div>}
                     <div>
                       <label htmlFor="email" className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">Workspace email</label>
                       <div className="relative">

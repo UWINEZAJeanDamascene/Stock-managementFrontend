@@ -190,15 +190,12 @@ export default function SerialNumbersPage() {
     setSaving(true);
     setError(null);
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL || 'https://stock-tenancy-system.onrender.com/api'}/serial-numbers/${deleteId}`,
-        { method: 'DELETE', credentials: 'include' }
-      ).then(r => r.json());
-      if (response.success) {
+      const response = await serialNumberApi.delete(deleteId);
+      if (response && (response as any).success) {
         setDeleteOpen(false);
         fetchSerials();
       } else {
-        setError(response.message || 'Failed to delete');
+        setError((response as any).message || 'Failed to delete');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete');
