@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { loansApi, Liability, LiabilityTransaction, bankAccountsApi } from '@/lib/api';
@@ -117,6 +117,29 @@ export default function LiabilityDetailPage() {
     reference: '',
     notes: ''
   });
+
+  // Compute accrued interest since last interest charge or repayment
+  const accruedInterest = useMemo(() => {
+    if (!liability) return 0;
+    const rate = liability.interestRate || 0;
+    const balance = liability.outstandingBalance || 0;
+    if (rate <= 0 || balance <= 0) return 0;
+
+    const today = new Date();
+    // Find last transaction that affects interest accrual (interest_charge or repayment)
+    const relevantTx = transactions
+      .filter(tx => tx.type === 'interest_charge' || tx.type === 'repayment')
+      .sort((a, b) => new Date(b.transactionDate).getTime() - new Date(a.transactionDate).getTime());
+
+    const lastDate = relevantTx.length > 0
+      ? new Date(relevantTx[0].transactionDate)
+      : (liability.startDate ? new Date(liability.startDate) : today);
+
+    const daysElapsed = Math.max(0, Math.ceil((today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24)));
+    // Simple interest: P * R * (days/365)
+    const interest = balance * (rate / 100) * (daysElapsed / 365);
+    return Math.round(interest * 100) / 100;
+  }, [liability, transactions]);
 
   const fetchBankAccounts = useCallback(async () => {
     try {
@@ -730,7 +753,15 @@ export default function LiabilityDetailPage() {
                           <Zap className="mr-2 h-4 w-4 text-amber-500" />
                           Quick Interest
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setInterestOpen(true)} disabled={submitting}>
+                        <DropdownMenuItem onClick={() => {
+                          setInterestForm({
+                            amount: accruedInterest,
+                            transactionDate: new Date().toISOString().split('T')[0],
+                            reference: '',
+                            notes: `Accrued interest since last charge/payment`
+                          });
+                          setInterestOpen(true);
+                        }} disabled={submitting}>
                           <TrendingUp className="mr-2 h-4 w-4" />
                           Manual Interest
                         </DropdownMenuItem>
@@ -820,6 +851,23 @@ export default function LiabilityDetailPage() {
                   </div>
                   <div className="rounded-lg bg-blue-50 p-2 text-blue-600 ring-1 ring-blue-100 dark:bg-blue-950/30 dark:text-blue-400 dark:ring-blue-900/40">
                     <Percent className="h-5 w-5" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Accrued Interest</p>
+                    <p className="mt-2 text-2xl font-bold text-amber-600 dark:text-amber-400">{formatCurrency(accruedInterest)}</p>
+                    {accruedInterest > 0 && (
+                      <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">Since last charge/payment</p>
+                    )}
+                  </div>
+                  <div className="rounded-lg bg-amber-50 p-2 text-amber-600 ring-1 ring-amber-100 dark:bg-amber-950/30 dark:text-amber-400 dark:ring-amber-900/40">
+                    <TrendingUp className="h-5 w-5" />
                   </div>
                 </div>
               </CardContent>
@@ -1243,6 +1291,11 @@ export default function LiabilityDetailPage() {
                   onChange={(e) => setInterestForm({...interestForm, amount: parseFloat(e.target.value) || 0})}
                   className="dark:bg-slate-700 dark:text-white dark:border-slate-600"
                 />
+                {liability && liability.interestRate > 0 && (
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Suggested: {formatCurrency(accruedInterest)} (based on {liability.interestRate}% rate × {liability.outstandingBalance?.toLocaleString()} balance × days since last charge)
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label className="dark:text-slate-200">{t('liabilities.date')}</Label>

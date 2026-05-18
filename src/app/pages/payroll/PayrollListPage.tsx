@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
-import { payrollApi, PayrollRecord } from "@/lib/api";
+import { payrollApi, reportsApi, timesheetsApi, PayrollRecord } from "@/lib/api";
+import { employeeApi } from "@/lib/api.employees";
 import { Layout } from "../../layout/Layout";
 import {
   Plus,
@@ -13,7 +14,6 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
-  CheckCircle,
   Play,
   FileText,
   Eye,
@@ -23,12 +23,22 @@ import {
   Calculator,
   BookOpen,
   TrendingUp,
+  Building2,
+  ClipboardList,
+  Send,
+  CheckCircle,
+  XCircle,
+  Pencil,
+  ArrowLeft,
+  Save,
 } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import EmployeeSelect from "@/app/components/EmployeeSelect";
 import PayrollAdvancesTab from "./PayrollAdvancesTab";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Badge } from "@/app/components/ui/badge";
+// import { Label } from "@/app/components/ui/label";
 import {
   Card,
   CardContent,
@@ -101,8 +111,167 @@ export default function PayrollListPage() {
   const [totalCount, setTotalCount] = useState(0);
   const [limit, setLimit] = useState(20);
 
-  // Tabs: 'payroll' | 'advances'
+  const queryClient = useQueryClient();
+
+  // Tabs: 'payroll' | 'advances' | 'labor-cost' | 'timesheets'
   const [activeTab, setActiveTab] = useState('payroll');
+
+  // Labor Cost Analysis state
+  const [lcYear, setLcYear] = useState(String(new Date().getFullYear()));
+  const [lcMonth, setLcMonth] = useState("all");
+  const [lcViewBy, setLcViewBy] = useState("employee");
+
+  const { data: lcData, isLoading: lcLoading } = useQuery<any>({
+    queryKey: ["labor-cost-analysis", lcYear, lcMonth, lcViewBy],
+    queryFn: async () => {
+      const res = await reportsApi.getLaborCostAnalysis({
+        year: lcYear || undefined,
+        month: lcMonth === "all" ? undefined : lcMonth,
+        viewBy: lcViewBy,
+      });
+      return res.data as any;
+    },
+    enabled: activeTab === "labor-cost",
+  });
+
+  // Timesheets state
+  const [tsSearch, setTsSearch] = useState("");
+  const [tsPeriod, setTsPeriod] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  });
+
+  const { data: tsData, isLoading: tsLoading } = useQuery({
+    queryKey: ["timesheets", tsPeriod],
+    queryFn: async () => {
+      const res = await timesheetsApi.getAll({ period: tsPeriod });
+      return (res.data || []) as any[];
+    },
+    enabled: activeTab === "timesheets",
+  });
+
+  const tsSubmit = useMutation({
+    mutationFn: (id: string) => timesheetsApi.submit(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["timesheets", tsPeriod] });
+    },
+  });
+
+  const tsApprove = useMutation({
+    mutationFn: (id: string) => timesheetsApi.approve(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["timesheets", tsPeriod] });
+    },
+  });
+
+  const tsReject = useMutation({
+    mutationFn: (id: string) => timesheetsApi.reject(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["timesheets", tsPeriod] });
+    },
+  });
+
+  const tsItems = (tsData || []).filter((t: any) =>
+    t.employeeName?.toLowerCase().includes(tsSearch.toLowerCase())
+  );
+
+  const tsStatusColors: Record<string, string> = {
+    draft: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
+    submitted: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
+    approved: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",
+    rejected: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
+  };
+
+  // Inline Timesheet Form
+  const [tsShowForm, setTsShowForm] = useState(false);
+  const [tsEditingId, setTsEditingId] = useState<string | null>(null);
+  const [tsFormEmployeeId, setTsFormEmployeeId] = useState("");
+  const [tsFormPeriod, setTsFormPeriod] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  });
+  const [tsFormLines, setTsFormLines] = useState<any[]>([{ date: "", hoursWorked: "", activityType: "", notes: "" }]);
+
+  const { data: tsFormEmployees } = useQuery({
+    queryKey: ["employees", "active"],
+    queryFn: async () => {
+      const res = await employeeApi.getAll({ status: "active" });
+      return res.data || [];
+    },
+    enabled: activeTab === "timesheets" && tsShowForm,
+  });
+
+  const { data: tsFormExisting } = useQuery({
+    queryKey: ["timesheet", tsEditingId],
+    queryFn: async () => {
+      if (!tsEditingId) return null;
+      const res = await timesheetsApi.getById(tsEditingId);
+      return res.data;
+    },
+    enabled: Boolean(tsEditingId) && tsShowForm,
+  });
+
+  useEffect(() => {
+    if (tsFormExisting) {
+      const emp = tsFormExisting.employee as any;
+      setTsFormEmployeeId(emp?._id || emp || "");
+      setTsFormPeriod(`${tsFormExisting.period?.year}-${String(tsFormExisting.period?.month).padStart(2, "0")}`);
+      setTsFormLines((tsFormExisting.lines || []).map((l: any) => ({
+        ...l,
+        date: l.date ? l.date.split("T")[0] : "",
+        hoursWorked: String(l.hoursWorked),
+      })));
+    } else if (!tsEditingId) {
+      setTsFormEmployeeId("");
+      const now = new Date();
+      setTsFormPeriod(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`);
+      setTsFormLines([{ date: "", hoursWorked: "", activityType: "", notes: "" }]);
+    }
+  }, [tsFormExisting, tsEditingId]);
+
+  const tsSaveMutation = useMutation({
+    mutationFn: async () => {
+      const [year, month] = tsFormPeriod.split("-").map(Number);
+      const payload = {
+        employeeId: tsFormEmployeeId,
+        period: { month, year },
+        lines: tsFormLines.map((l) => ({
+          date: l.date,
+          hoursWorked: parseFloat(l.hoursWorked) || 0,
+          activityType: l.activityType,
+          notes: l.notes || undefined,
+        })).filter((l) => l.date && l.hoursWorked > 0 && l.activityType),
+      };
+      if (tsEditingId) {
+        return timesheetsApi.update(tsEditingId, payload);
+      }
+      return timesheetsApi.create(payload);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["timesheets", tsPeriod] });
+      setTsShowForm(false);
+      setTsEditingId(null);
+    },
+  });
+
+  const tsAddLine = () => setTsFormLines([...tsFormLines, { date: "", hoursWorked: "", activityType: "", notes: "" }]);
+  const tsRemoveLine = (i: number) => setTsFormLines(tsFormLines.filter((_, idx) => idx !== i));
+  const tsUpdateLine = (i: number, field: string, value: string) => {
+    const next = [...tsFormLines];
+    next[i][field] = value;
+    setTsFormLines(next);
+  };
+  const tsTotalHours = tsFormLines.reduce((s, l) => s + (parseFloat(l.hoursWorked) || 0), 0);
+
+  const TS_ACTIVITY_TYPES = [
+    { value: "production", label: "Production" },
+    { value: "assembly", label: "Assembly" },
+    { value: "quality_control", label: "Quality Control" },
+    { value: "packing_warehouse", label: "Packing / Warehouse" },
+    { value: "administration", label: "Administration" },
+    { value: "sales_support", label: "Sales Support" },
+    { value: "other", label: "Other" },
+  ];
 
   // Filters
   const currentMonth = String(new Date().getMonth() + 1);
@@ -681,11 +850,11 @@ export default function PayrollListPage() {
 
                 <div className="mt-5 flex flex-wrap gap-2">
                   <Button
-                    onClick={() => navigate("/payroll-runs/new")}
+                    onClick={() => navigate("/payroll/generate")}
                     className="h-10 gap-2 bg-blue-600 hover:bg-blue-700"
                   >
                     <Users className="h-4 w-4" />
-                    Generate Payroll Run
+                    Generate Payroll
                   </Button>
                   <Button
                     variant="outline"
@@ -767,6 +936,26 @@ export default function PayrollListPage() {
               }`}
             >
               Employee Advances
+            </button>
+            <button
+              onClick={() => setActiveTab('labor-cost')}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'labor-cost'
+                  ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400'
+                  : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
+              }`}
+            >
+              Labor Cost Analysis
+            </button>
+            <button
+              onClick={() => setActiveTab('timesheets')}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'timesheets'
+                  ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400'
+                  : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
+              }`}
+            >
+              Timesheets
             </button>
           </div>
 
@@ -1113,15 +1302,15 @@ export default function PayrollListPage() {
                 <p className="text-slate-500 dark:text-slate-400 mb-4">
                   {filterMonth || filterYear || filterStatus
                     ? "Try adjusting your filters."
-                    : "Generate a payroll run for all employees, or create an individual record."}
+                    : "Generate payroll records for all employees, or create an individual record."}
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <Button
-                    onClick={() => navigate("/payroll-runs/new")}
+                    onClick={() => navigate("/payroll/generate")}
                     className="bg-blue-600 hover:bg-blue-700"
                   >
                     <Users className="mr-2 h-4 w-4" />
-                    Generate Payroll Run
+                    Generate Payroll
                   </Button>
                   <Button variant="outline" onClick={() => setShowCreateDialog(true)}>
                     <Plus className="mr-2 h-4 w-4" />
@@ -1925,6 +2114,309 @@ export default function PayrollListPage() {
           )}
 
           {activeTab === 'advances' && <PayrollAdvancesTab />}
+
+          {activeTab === 'labor-cost' && (
+            <div className="space-y-6">
+              {/* Filters */}
+              <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardContent className="flex flex-wrap gap-3 pt-6">
+                  <Input type="number" placeholder="Year" value={lcYear} onChange={(e) => setLcYear(e.target.value)} className="w-32 dark:bg-slate-900 dark:text-white dark:border-slate-700" />
+                  <Select value={lcMonth} onValueChange={setLcMonth}>
+                    <SelectTrigger className="w-40 dark:bg-slate-900 dark:text-white dark:border-slate-700"><SelectValue placeholder="All months" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All months</SelectItem>
+                      {Array.from({ length: 12 }, (_, i) => (
+                        <SelectItem key={i + 1} value={String(i + 1)}>{new Date(0, i).toLocaleString("en", { month: "long" })}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={lcViewBy} onValueChange={setLcViewBy}>
+                    <SelectTrigger className="w-48 dark:bg-slate-900 dark:text-white dark:border-slate-700"><SelectValue placeholder="View by" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="employee">By Employee</SelectItem>
+                      <SelectItem value="department">By Department</SelectItem>
+                      <SelectItem value="account">By Account</SelectItem>
+                      <SelectItem value="trend">Trend Over Time</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </CardContent>
+              </Card>
+
+              {/* Summary Cards */}
+              <div className="grid gap-4 sm:grid-cols-3">
+                <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                      <DollarSign className="h-4 w-4 text-emerald-600" /> Total Direct Labor
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                      {formatCurrency(Array.isArray(lcData) ? lcData.reduce((s: number, r: any) => s + (r.direct || 0), 0) : (lcData?.accounts?.find((a: any) => a.accountCode === '5300')?.amount || 0))}
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                      <Building2 className="h-4 w-4 text-blue-600" /> Total Indirect Labor
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                      {formatCurrency(Array.isArray(lcData) ? lcData.reduce((s: number, r: any) => s + (r.indirect || 0), 0) : (lcData?.accounts?.find((a: any) => a.accountCode === '5400')?.amount || 0))}
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                      <Users className="h-4 w-4 text-violet-600" /> Records
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-2xl font-bold text-slate-900 dark:text-white">{Array.isArray(lcData) ? lcData.length : (lcData?.accounts?.length || 0)}</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Report Data */}
+              <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader>
+                  <CardTitle className="text-base font-semibold text-slate-950 dark:text-white">Report Data</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {lcLoading ? (
+                    <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-slate-400" /></div>
+                  ) : !lcData || (Array.isArray(lcData) && lcData.length === 0) ? (
+                    <div className="flex flex-col items-center justify-center py-10 text-slate-400">
+                      <TrendingUp className="h-10 w-10 mb-2" />
+                      <p>No data found</p>
+                      <p className="text-xs mt-1">Try adjusting the year, month, or view filters</p>
+                    </div>
+                  ) : lcViewBy === "trend" ? (
+                    <div className="divide-y dark:divide-slate-800">
+                      {lcData.map((row: any, i: number) => (
+                        <div key={i} className="flex items-center justify-between py-3">
+                          <span className="font-medium text-slate-900 dark:text-white">{row.period}</span>
+                          <div className="flex gap-6 text-sm">
+                            <span className="text-emerald-600 dark:text-emerald-400">Direct: {formatCurrency(row.direct || 0)}</span>
+                            <span className="text-blue-600 dark:text-blue-400">Indirect: {formatCurrency(row.indirect || 0)}</span>
+                            <span className="text-slate-500 dark:text-slate-400">Gross: {formatCurrency(row.total_gross || 0)}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : lcViewBy === "account" ? (
+                    <div className="space-y-2">
+                      {lcData.accounts?.map((row: any) => (
+                        <div key={row.accountCode} className="flex items-center justify-between py-3">
+                          <span className="font-medium text-slate-900 dark:text-white">{row.accountCode} — {row.accountName}</span>
+                          <span className="font-semibold text-slate-900 dark:text-white">{formatCurrency(row.amount || 0)}</span>
+                        </div>
+                      ))}
+                      <div className="flex justify-between pt-3 font-bold text-slate-900 dark:text-white border-t dark:border-slate-800">
+                        <span>Total</span>
+                        <span>{formatCurrency(lcData.total || 0)}</span>
+                      </div>
+                    </div>
+                  ) : lcViewBy === "department" ? (
+                    <div className="divide-y dark:divide-slate-800">
+                      {lcData.map((row: any, i: number) => (
+                        <div key={i} className="flex items-center justify-between py-3">
+                          <span className="font-medium text-slate-900 dark:text-white">{row.department}</span>
+                          <div className="flex gap-6 text-sm">
+                            <span className="text-emerald-600 dark:text-emerald-400">Direct: {formatCurrency(row.direct || 0)}</span>
+                            <span className="text-blue-600 dark:text-blue-400">Indirect: {formatCurrency(row.indirect || 0)}</span>
+                            <span className="text-slate-500 dark:text-slate-400">{row.count} employees</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="divide-y dark:divide-slate-800">
+                      {lcData.map((row: any, i: number) => (
+                        <div key={i} className="flex items-center justify-between py-3">
+                          <div>
+                            <span className="font-medium text-slate-900 dark:text-white">{row.employee_name}</span>
+                            <span className="ml-2 text-xs text-slate-400 capitalize">({row.labor_type || "—"})</span>
+                          </div>
+                          <div className="flex gap-6 text-sm">
+                            <span className="text-emerald-600 dark:text-emerald-400">Direct: {formatCurrency(row.direct || 0)}</span>
+                            <span className="text-blue-600 dark:text-blue-400">Indirect: {formatCurrency(row.indirect || 0)}</span>
+                            <span className="text-slate-500 dark:text-slate-400">Gross: {formatCurrency(row.gross || 0)}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {activeTab === 'timesheets' && (
+            <div className="space-y-6">
+              {tsShowForm ? (
+                <div className="space-y-6">
+                  <div className="flex items-center gap-3">
+                    <Button variant="ghost" size="icon" onClick={() => { setTsShowForm(false); setTsEditingId(null); }} className="dark:text-slate-300">
+                      <ArrowLeft className="h-5 w-5" />
+                    </Button>
+                    <h2 className="text-lg font-semibold text-slate-950 dark:text-white">{tsEditingId ? "Edit Timesheet" : "New Timesheet"}</h2>
+                  </div>
+
+                  <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base font-semibold text-slate-950 dark:text-white">Employee & Period</CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid gap-4 sm:grid-cols-2 pt-2">
+                      <div className="space-y-1">
+                        <Label className="text-sm text-slate-600 dark:text-slate-400">Employee</Label>
+                        <Select value={tsFormEmployeeId} onValueChange={setTsFormEmployeeId}>
+                          <SelectTrigger className="dark:bg-slate-900 dark:text-white dark:border-slate-700"><SelectValue placeholder="Select employee" /></SelectTrigger>
+                          <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
+                            {(tsFormEmployees || []).map((e: any) => (
+                              <SelectItem key={e._id} value={e._id} className="dark:text-slate-200">{e.firstName} {e.lastName} ({e.employeeId})</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-sm text-slate-600 dark:text-slate-400">Period</Label>
+                        <Input type="month" value={tsFormPeriod} onChange={(e) => setTsFormPeriod(e.target.value)} className="dark:bg-slate-900 dark:text-white dark:border-slate-700" />
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                    <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                      <CardTitle className="text-base font-semibold text-slate-950 dark:text-white">Work Entries</CardTitle>
+                      <span className="text-sm text-slate-500 dark:text-slate-400">Total: {tsTotalHours.toFixed(1)} hrs</span>
+                    </CardHeader>
+                    <CardContent className="space-y-3 pt-2">
+                      {tsFormLines.map((line, i) => (
+                        <div key={i} className="grid gap-3 sm:grid-cols-5 items-end border p-3 rounded-md bg-slate-50 dark:bg-slate-900 dark:border-slate-700">
+                          <div className="space-y-1 sm:col-span-1">
+                            <Label className="text-xs text-slate-600 dark:text-slate-400">Date</Label>
+                            <Input type="date" value={line.date} onChange={(e) => tsUpdateLine(i, "date", e.target.value)} className="dark:bg-slate-800 dark:text-white dark:border-slate-700" />
+                          </div>
+                          <div className="space-y-1 sm:col-span-1">
+                            <Label className="text-xs text-slate-600 dark:text-slate-400">Hours</Label>
+                            <Input type="number" min={0} max={24} step={0.5} value={line.hoursWorked} onChange={(e) => tsUpdateLine(i, "hoursWorked", e.target.value)} className="dark:bg-slate-800 dark:text-white dark:border-slate-700" />
+                          </div>
+                          <div className="space-y-1 sm:col-span-2">
+                            <Label className="text-xs text-slate-600 dark:text-slate-400">Activity</Label>
+                            <Select value={line.activityType} onValueChange={(v) => tsUpdateLine(i, "activityType", v)}>
+                              <SelectTrigger className="dark:bg-slate-800 dark:text-white dark:border-slate-700"><SelectValue placeholder="Select activity" /></SelectTrigger>
+                              <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
+                                {TS_ACTIVITY_TYPES.map((a) => <SelectItem key={a.value} value={a.value} className="dark:text-slate-200">{a.label}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="flex gap-2 sm:col-span-1">
+                            <Button variant="outline" size="sm" className="flex-1 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800" onClick={() => tsRemoveLine(i)}><Trash2 className="h-4 w-4" /></Button>
+                          </div>
+                        </div>
+                      ))}
+                      <Button variant="outline" onClick={tsAddLine} className="dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">
+                        <Plus className="mr-2 h-4 w-4" /> Add Entry
+                      </Button>
+                    </CardContent>
+                  </Card>
+
+                  <div className="flex justify-end gap-3">
+                    <Button variant="outline" onClick={() => { setTsShowForm(false); setTsEditingId(null); }} className="dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">Cancel</Button>
+                    <Button onClick={() => tsSaveMutation.mutate()} disabled={tsSaveMutation.isPending || !tsFormEmployeeId} className="bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200">
+                      {tsSaveMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                      Save
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-lg font-semibold text-slate-950 dark:text-white">Timesheets</h2>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">Employee work hour tracking</p>
+                    </div>
+                    <Button onClick={() => { setTsEditingId(null); setTsShowForm(true); }} className="bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200">
+                      <Plus className="mr-2 h-4 w-4" /> New Timesheet
+                    </Button>
+                  </div>
+
+                  <div className="flex flex-wrap gap-3">
+                    <Input
+                      type="month"
+                      value={tsPeriod}
+                      onChange={(e) => setTsPeriod(e.target.value)}
+                      className="w-44 dark:bg-slate-900 dark:text-white dark:border-slate-700"
+                    />
+                    <div className="relative flex-1 max-w-sm">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                      <Input
+                        placeholder="Search employee..."
+                        value={tsSearch}
+                        onChange={(e) => setTsSearch(e.target.value)}
+                        className="pl-9 dark:bg-slate-900 dark:text-white dark:border-slate-700"
+                      />
+                    </div>
+                  </div>
+
+                  <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base font-semibold text-slate-950 dark:text-white">All Timesheets</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {tsLoading ? (
+                        <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-slate-400" /></div>
+                      ) : tsItems.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-10 text-slate-400">
+                          <ClipboardList className="h-10 w-10 mb-2" />
+                          <p>No timesheets found for this period</p>
+                        </div>
+                      ) : (
+                        <div className="divide-y dark:divide-slate-800">
+                          {tsItems.map((t: any) => (
+                            <div key={t._id} className="flex items-center justify-between py-3 px-4 -mx-4 hover:bg-slate-50 dark:hover:bg-slate-900">
+                              <div className="flex-1 cursor-pointer min-w-0" onClick={() => navigate(`/timesheets/${t._id}`)}>
+                                <p className="font-medium text-slate-900 dark:text-white">{t.employeeName}</p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">{t.period?.monthName} {t.period?.year} • {t.totalHours} hrs total</p>
+                              </div>
+                              <div className="flex items-center gap-2 ml-2">
+                                <span className="text-xs text-slate-500 hidden sm:inline dark:text-slate-400">{t.directHours || 0} direct / {t.indirectHours || 0} indirect</span>
+                                <Badge className={tsStatusColors[t.status] || "bg-slate-100 dark:bg-slate-800 dark:text-slate-300"}>{t.status}</Badge>
+                                {t.status === "draft" && (
+                                  <>
+                                    <Button variant="ghost" size="icon" className="h-7 w-7 dark:text-slate-300" title="Edit" onClick={(e) => { e.stopPropagation(); setTsEditingId(t._id); setTsShowForm(true); }}>
+                                      <Pencil className="h-3.5 w-3.5" />
+                                    </Button>
+                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-blue-600 dark:text-blue-400" title="Submit" onClick={(e) => { e.stopPropagation(); tsSubmit.mutate(t._id); }} disabled={tsSubmit.isPending}>
+                                      <Send className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </>
+                                )}
+                                {t.status === "submitted" && (
+                                  <>
+                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 dark:text-red-400" title="Reject" onClick={(e) => { e.stopPropagation(); tsReject.mutate(t._id); }} disabled={tsReject.isPending}>
+                                      <XCircle className="h-3.5 w-3.5" />
+                                    </Button>
+                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-emerald-600 dark:text-emerald-400" title="Approve" onClick={(e) => { e.stopPropagation(); tsApprove.mutate(t._id); }} disabled={tsApprove.isPending}>
+                                      <CheckCircle className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </>
+              )}
+            </div>
+          )}
       </div>
     </div>
     </Layout>

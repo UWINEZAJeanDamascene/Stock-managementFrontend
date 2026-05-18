@@ -61,6 +61,7 @@ export default function ExpenseDetailPage() {
     description: '',
     amount: 0,
     taxAmount: 0,
+    withholdingTax: 0,
     expenseAccountId: '',
     paymentMethod: 'bank',
     bankAccountId: '',
@@ -99,6 +100,7 @@ export default function ExpenseDetailPage() {
           description: response.data.description || '',
           amount: response.data.amount || 0,
           taxAmount: response.data.taxAmount || 0,
+          withholdingTax: response.data.withholdingTax || 0,
           expenseAccountId: response.data.account?._id || '',
           paymentMethod: response.data.method || 'bank',
           bankAccountId: response.data.bankAccount?._id || '',
@@ -167,11 +169,15 @@ export default function ExpenseDetailPage() {
 
     setSubmitting(true);
     try {
+      const isWHTEdit = editForm.rraTaxCategory.startsWith('wht_');
+      const editTaxAmount = isWHTEdit ? 0 : editForm.taxAmount;
+      const editTotalAmount = editForm.amount + editTaxAmount;
+
       const response = await expensesApi.update(id!, {
         description: editForm.description,
         amount: editForm.amount,
-        tax_amount: editForm.taxAmount,
-        total_amount: editForm.amount + editForm.taxAmount,
+        tax_amount: editTaxAmount,
+        total_amount: editTotalAmount,
         expense_account_id: editForm.expenseAccountId,
         payment_method: editForm.paymentMethod,
         bank_account_id: editForm.bankAccountId || undefined,
@@ -179,6 +185,9 @@ export default function ExpenseDetailPage() {
         type: editForm.type,
         reference: editForm.reference,
         notes: editForm.notes,
+        rraTaxCategory: editForm.rraTaxCategory,
+        isVATRecoverable: editForm.isVATRecoverable,
+        department_id: editForm.departmentId || undefined,
       });
 
       if (response.success) {
@@ -514,14 +523,27 @@ export default function ExpenseDetailPage() {
             <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <div className="rounded-lg bg-orange-50 p-2 text-orange-600 ring-1 ring-orange-100 dark:bg-orange-950/30 dark:text-orange-400 dark:ring-orange-900/40">
+                  <div className={`rounded-lg p-2 ring-1 ${expense.rraTaxCategory?.startsWith('wht_')
+                    ? 'bg-orange-50 text-orange-600 ring-orange-100 dark:bg-orange-950/30 dark:text-orange-400 dark:ring-orange-900/40'
+                    : 'bg-orange-50 text-orange-600 ring-orange-100 dark:bg-orange-950/30 dark:text-orange-400 dark:ring-orange-900/40'
+                  }`}>
                     <TriangleAlert className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Tax Amount</p>
-                    <p className="text-xl font-bold text-slate-900 dark:text-white">
-                      {formatCurrency(expense.taxAmount, expense.currencyCode || 'RWF')}
+                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      {expense.rraTaxCategory?.startsWith('wht_') ? 'Withholding Tax' : 'Tax Amount'}
                     </p>
+                    <p className="text-xl font-bold text-slate-900 dark:text-white">
+                      {expense.rraTaxCategory?.startsWith('wht_')
+                        ? formatCurrency(expense.withholdingTax || 0, expense.currencyCode || 'RWF')
+                        : formatCurrency(expense.taxAmount, expense.currencyCode || 'RWF')
+                      }
+                    </p>
+                    {expense.rraTaxCategory?.startsWith('wht_') && (expense.withholdingTax || 0) > 0 && (
+                      <p className="text-xs text-orange-600 dark:text-orange-400">
+                        Net paid: {formatCurrency(expense.amount - (expense.withholdingTax || 0), expense.currencyCode || 'RWF')}
+                      </p>
+                    )}
                   </div>
                 </div>
               </CardContent>
@@ -758,20 +780,44 @@ export default function ExpenseDetailPage() {
                 step="0.01"
                 placeholder="0.00"
                 value={editForm.amount || ''}
-                onChange={(e) => setEditForm({ ...editForm, amount: parseFloat(e.target.value) || 0 })}
+                onChange={(e) => {
+                  const amount = parseFloat(e.target.value) || 0;
+                  const category = editForm.rraTaxCategory;
+                  const taxRate = rraTaxCategories.find(c => c.value === category)?.rate || 0;
+                  const isVAT = category === 'vat_standard';
+                  const isWHT = category.startsWith('wht_');
+                  const taxAmount = isVAT ? Math.round(amount * taxRate / 100) : 0;
+                  const withholdingTax = isWHT ? Math.round(amount * taxRate / 100) : 0;
+                  setEditForm({ ...editForm, amount, taxAmount, withholdingTax });
+                }}
                 className="border-slate-200 bg-slate-50 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white"
               />
             </div>
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-slate-700 dark:text-slate-200">Tax Amount</Label>
+              <Label className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                {editForm.rraTaxCategory.startsWith('wht_') ? 'Withholding Tax (Auto-calculated)' : 'Tax Amount'}
+              </Label>
               <Input
                 type="number"
                 step="0.01"
                 placeholder="0.00"
-                value={editForm.taxAmount || ''}
-                onChange={(e) => setEditForm({ ...editForm, taxAmount: parseFloat(e.target.value) || 0 })}
-                className="border-slate-200 bg-slate-50 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                value={editForm.rraTaxCategory.startsWith('wht_') ? (editForm.withholdingTax || '') : (editForm.taxAmount || '')}
+                onChange={(e) => {
+                  if (!editForm.rraTaxCategory.startsWith('wht_')) {
+                    setEditForm({ ...editForm, taxAmount: parseFloat(e.target.value) || 0 });
+                  }
+                }}
+                readOnly={editForm.rraTaxCategory.startsWith('wht_')}
+                className={`text-sm dark:text-white ${editForm.rraTaxCategory.startsWith('wht_')
+                  ? 'border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950/30 dark:text-orange-200'
+                  : 'border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900'
+                }`}
               />
+              {editForm.rraTaxCategory.startsWith('wht_') && (editForm.withholdingTax || 0) > 0 && (
+                <p className="text-xs text-orange-600 dark:text-orange-400">
+                  Net paid to supplier: {(editForm.amount - (editForm.withholdingTax || 0)).toLocaleString()}
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <Label className="text-sm font-medium text-slate-700 dark:text-slate-200">Currency *</Label>
@@ -815,7 +861,15 @@ export default function ExpenseDetailPage() {
               <Label className="text-sm font-medium text-slate-700 dark:text-slate-200">RRA Tax Category *</Label>
               <Select
                 value={editForm.rraTaxCategory}
-                onValueChange={(value) => setEditForm({ ...editForm, rraTaxCategory: value as RRATaxCategory })}
+                onValueChange={(value) => {
+                  const category = value as RRATaxCategory;
+                  const taxRate = rraTaxCategories.find(c => c.value === category)?.rate || 0;
+                  const isVAT = category === 'vat_standard';
+                  const isWHT = category.startsWith('wht_');
+                  const taxAmount = isVAT ? Math.round(editForm.amount * taxRate / 100) : 0;
+                  const withholdingTax = isWHT ? Math.round(editForm.amount * taxRate / 100) : 0;
+                  setEditForm({ ...editForm, rraTaxCategory: category, taxAmount, withholdingTax });
+                }}
               >
                 <SelectTrigger className="border-slate-200 bg-slate-50 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white">
                   <SelectValue placeholder="Select tax category" />

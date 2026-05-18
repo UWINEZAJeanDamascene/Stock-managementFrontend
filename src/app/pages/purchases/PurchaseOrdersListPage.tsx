@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback, type ReactNode } from 'react';
+import { useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
 import { useNavigate } from 'react-router';
-import { purchaseOrdersApi, suppliersApi } from '@/lib/api';
+import { purchaseOrdersApi, suppliersApi, freightAnalysisApi } from '@/lib/api';
 import { Layout } from '../../layout/Layout';
 import {
   Plus,
@@ -16,6 +16,10 @@ import {
   TrendingUp,
   AlertCircle,
   Hash,
+  Truck,
+  BarChart3,
+  Loader2,
+  AlertTriangle,
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
@@ -44,7 +48,7 @@ import {
 } from '@/app/components/ui/pagination';
 import { Badge } from '@/app/components/ui/badge';
 import { Skeleton } from '@/app/components/ui/skeleton';
-import { Card, CardContent } from '@/app/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -108,7 +112,71 @@ export default function PurchaseOrdersListPage() {
   const [dateFrom, setDateFrom] = useState<string>('');
   const [dateTo, setDateTo] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  
+
+  // Tabs
+  const [activeTab, setActiveTab] = useState<'orders' | 'freight'>('orders');
+
+  // Freight Analysis state
+  const [freightLoading, setFreightLoading] = useState(false);
+  const [freightData, setFreightData] = useState<any>(null);
+  const [freightDateFrom, setFreightDateFrom] = useState('');
+  const [freightDateTo, setFreightDateTo] = useState('');
+
+  const fetchFreightAnalysis = useCallback(async () => {
+    setFreightLoading(true);
+    try {
+      const res = await freightAnalysisApi.getAnalysis({
+        date_from: freightDateFrom || undefined,
+        date_to: freightDateTo || undefined,
+      });
+      if (res.success && res.data) {
+        setFreightData(res.data);
+      }
+    } catch (e) {
+      console.error('Failed to fetch freight analysis:', e);
+    } finally {
+      setFreightLoading(false);
+    }
+  }, [freightDateFrom, freightDateTo]);
+
+  useEffect(() => {
+    if (activeTab === 'freight') {
+      fetchFreightAnalysis();
+    }
+  }, [activeTab, fetchFreightAnalysis]);
+
+  // Derived freight metrics (fallback to perGRN when backend summary is empty/wrong)
+  const freightDerived = useMemo(() => {
+    if (!freightData) return null;
+    const perGRN = (freightData.perGRN || []) as any[];
+    const derivedTotalFreight = perGRN.reduce((s: number, g: any) => s + (g.freightAmount || 0), 0);
+    const derivedTotalGoodsValue = perGRN.reduce((s: number, g: any) => s + (g.goodsValue || 0), 0);
+    const derivedFlaggedCount = perGRN.filter((g: any) => !g.hasFreight).length;
+    const derivedPct = derivedTotalGoodsValue > 0 ? (derivedTotalFreight / derivedTotalGoodsValue) * 100 : 0;
+
+    // Derive supplier data from perGRN when backend perSupplier is empty
+    const supplierMap = new Map<string, any>();
+    perGRN.forEach((g: any) => {
+      const name = g.supplierName || 'Unknown';
+      if (!supplierMap.has(name)) {
+        supplierMap.set(name, { supplierName: name, totalFreight: 0, billCount: 0 });
+      }
+      const entry = supplierMap.get(name);
+      entry.totalFreight += (g.freightAmount || 0);
+      entry.billCount += 1;
+    });
+
+    const hasGRNData = perGRN.length > 0;
+    return {
+      totalFreight: hasGRNData ? derivedTotalFreight : (freightData.summary?.totalFreight || 0),
+      totalGoodsValue: hasGRNData ? derivedTotalGoodsValue : (freightData.summary?.totalGoodsValue || 0),
+      overallFreightPct: hasGRNData ? derivedPct : (freightData.summary?.overallFreightPct || 0),
+      flaggedGRNCount: hasGRNData ? derivedFlaggedCount : (freightData.summary?.flaggedGRNCount || 0),
+      perSupplier: (freightData.perSupplier?.length > 0) ? freightData.perSupplier : Array.from(supplierMap.values()),
+      perGRN: perGRN,
+    };
+  }, [freightData]);
+
   const fetchSuppliers = useCallback(async () => {
     try {
       console.log('[PurchaseOrdersListPage] Fetching suppliers...');
@@ -416,6 +484,32 @@ export default function PurchaseOrdersListPage() {
             />
           </div>
 
+          {/* Tabs */}
+          <div className="flex gap-1 rounded-lg border border-slate-200 bg-white p-1 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <button
+              onClick={() => setActiveTab('orders')}
+              className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+                activeTab === 'orders'
+                  ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300'
+                  : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800'
+              }`}
+            >
+              Purchase Orders ({pagination?.total || poList.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('freight')}
+              className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+                activeTab === 'freight'
+                  ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300'
+                  : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800'
+              }`}
+            >
+              Freight Cost Analysis
+            </button>
+          </div>
+
+          {activeTab === 'orders' && (
+            <>
           {/* Filters */}
           <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
             <CardContent className="p-5">
@@ -680,6 +774,167 @@ export default function PurchaseOrdersListPage() {
                   </PaginationItem>
                 </PaginationContent>
               </Pagination>
+            </div>
+          )}
+          </>
+          )}
+
+          {activeTab === 'freight' && (
+            <div className="space-y-6">
+              {/* Filters */}
+              <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardContent className="flex flex-wrap items-end gap-4 p-5">
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">From</label>
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-slate-400" />
+                      <Input type="date" value={freightDateFrom} onChange={(e) => setFreightDateFrom(e.target.value)} className="h-9 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white" />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">To</label>
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-slate-400" />
+                      <Input type="date" value={freightDateTo} onChange={(e) => setFreightDateTo(e.target.value)} className="h-9 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white" />
+                    </div>
+                  </div>
+                  <Button onClick={fetchFreightAnalysis} className="h-9 gap-1.5 bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200">
+                    <BarChart3 className="h-4 w-4" />
+                    Run Report
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {freightLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+                </div>
+              ) : freightData ? (
+                <div className="space-y-6">
+                  {/* Summary Cards */}
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                      <CardContent className="p-5">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Total Freight</p>
+                        <p className="mt-3 text-2xl font-bold text-slate-950 dark:text-white">{formatCurrency(freightDerived?.totalFreight || 0, 'FRW')}</p>
+                      </CardContent>
+                    </Card>
+                    <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                      <CardContent className="p-5">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Total Goods Value</p>
+                        <p className="mt-3 text-2xl font-bold text-slate-950 dark:text-white">{formatCurrency(freightDerived?.totalGoodsValue || 0, 'FRW')}</p>
+                      </CardContent>
+                    </Card>
+                    <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                      <CardContent className="p-5">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Freight % of Goods</p>
+                        <p className="mt-3 text-2xl font-bold text-slate-950 dark:text-white">{Number(freightDerived?.overallFreightPct || 0).toFixed(2)}%</p>
+                      </CardContent>
+                    </Card>
+                    <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                      <CardContent className="p-5">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">GRNs Without Freight</p>
+                        <div className="mt-3 flex items-center gap-2">
+                          <span className="text-2xl font-bold text-amber-600 dark:text-amber-400">{freightDerived?.flaggedGRNCount || 0}</span>
+                          {(freightDerived?.flaggedGRNCount || 0) > 0 && <AlertTriangle className="h-5 w-5 text-amber-500" />}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Per Supplier */}
+                  <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base font-semibold text-slate-950 dark:text-white">Freight by Supplier</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="bg-slate-50 hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-900">
+                              <TableHead className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Supplier</TableHead>
+                              <TableHead className="text-right text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Bills</TableHead>
+                              <TableHead className="text-right text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Total Freight</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {(!freightDerived?.perSupplier || freightDerived.perSupplier.length === 0) && (
+                              <TableRow>
+                                <TableCell colSpan={3} className="text-center py-6 text-slate-500 dark:text-slate-400">No supplier data</TableCell>
+                              </TableRow>
+                            )}
+                            {(freightDerived?.perSupplier || []).map((s: any, i: number) => (
+                              <TableRow key={i} className="hover:bg-slate-50/60 dark:hover:bg-slate-900/40">
+                                <TableCell className="font-medium text-slate-900 dark:text-white">{s.supplierName}</TableCell>
+                                <TableCell className="text-right text-slate-600 dark:text-slate-300">{s.billCount}</TableCell>
+                                <TableCell className="text-right text-slate-600 dark:text-slate-300">{formatCurrency(s.totalFreight, 'FRW')}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Per GRN */}
+                  <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base font-semibold text-slate-950 dark:text-white">Freight by GRN</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="bg-slate-50 hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-900">
+                              <TableHead className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">GRN</TableHead>
+                              <TableHead className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Supplier</TableHead>
+                              <TableHead className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">PO</TableHead>
+                              <TableHead className="text-right text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Goods Value</TableHead>
+                              <TableHead className="text-right text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Freight</TableHead>
+                              <TableHead className="text-right text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Freight %</TableHead>
+                              <TableHead className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Status</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {(!freightDerived?.perGRN || freightDerived.perGRN.length === 0) && (
+                              <TableRow>
+                                <TableCell colSpan={7} className="text-center py-6 text-slate-500 dark:text-slate-400">No GRN data</TableCell>
+                              </TableRow>
+                            )}
+                            {(freightDerived?.perGRN || []).map((g: any) => (
+                              <TableRow key={g.grnId} className="hover:bg-slate-50/60 dark:hover:bg-slate-900/40">
+                                <TableCell className="font-medium text-slate-900 dark:text-white">{g.referenceNo}</TableCell>
+                                <TableCell className="text-slate-600 dark:text-slate-300">{g.supplierName}</TableCell>
+                                <TableCell className="text-slate-600 dark:text-slate-300">{g.poReference}</TableCell>
+                                <TableCell className="text-right text-slate-600 dark:text-slate-300">{formatCurrency(g.goodsValue, 'FRW')}</TableCell>
+                                <TableCell className="text-right text-slate-600 dark:text-slate-300">{formatCurrency(g.freightAmount, 'FRW')}</TableCell>
+                                <TableCell className="text-right text-slate-600 dark:text-slate-300">{g.freightPct.toFixed(2)}%</TableCell>
+                                <TableCell>
+                                  {g.hasFreight ? (
+                                    <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+                                      <TrendingUp className="mr-1 h-3 w-3" /> Recorded
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="outline" className="text-amber-600 border-amber-200 dark:text-amber-300 dark:border-amber-800">
+                                      <AlertTriangle className="mr-1 h-3 w-3" /> Missing
+                                    </Badge>
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+                  <Truck className="h-10 w-10 mb-2" />
+                  <p>No freight data</p>
+                  <p className="text-xs mt-1">Set a date range and click Run Report</p>
+                </div>
+              )}
             </div>
           )}
         </div>

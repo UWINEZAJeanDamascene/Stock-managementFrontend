@@ -149,23 +149,23 @@ export function BudgetScenarioSelector({
             <Button
               variant="outline"
               size="sm"
-              className="gap-2 h-9 px-3 relative"
+              className="relative h-10 gap-2 rounded-lg border-white/15 bg-white/5 px-3 text-white hover:bg-white/15 hover:text-white"
               type="button"
               
             >
-              <Layers className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium">
+              <Layers className="h-4 w-4 text-indigo-200" />
+              <span className="text-sm font-semibold">
                 {t("budgets.scenarios.title", "Scenario")}:
               </span>
-              <span className="max-w-[100px] truncate">
+              <span className="max-w-[160px] truncate text-sm text-slate-100">
                 {currentScenario?.scenario_name || primaryScenario?.scenario_name || t("budgets.scenarios.base", "Base Case")}
               </span>
-              <ChevronDown className="h-3 w-3 text-muted-foreground ml-1" />
+              <ChevronDown className="ml-1 h-3.5 w-3.5 text-slate-400" />
             </Button>
           </DropdownMenuTrigger>
             <DropdownMenuContent
               align="end"
-              className="w-72 max-w-[90vw] z-[9999] bg-popover border shadow-md"
+              className="z-[9999] w-80 max-w-[90vw] border-slate-200 bg-popover shadow-xl dark:border-slate-800"
               sideOffset={8}
               avoidCollisions={true}
             >
@@ -177,14 +177,14 @@ export function BudgetScenarioSelector({
             {scenarios.map((scenario) => (
               <DropdownMenuItem
                 key={scenario._id}
-                className="flex items-center justify-between py-2 cursor-pointer"
+                className="flex cursor-pointer items-center justify-between gap-3 py-2.5"
                 onClick={() => handleScenarioSwitch(scenario)}
               >
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                   {getScenarioIcon(scenario.scenario_type)}
-                  <div className="flex flex-col min-w-0">
+                  <div className="flex min-w-0 flex-col">
                     <span className="font-medium truncate">{scenario.scenario_name || scenario.name}</span>
-                    <div className="flex items-center gap-1">
+                    <div className="mt-1 flex items-center gap-1">
                       <Badge className={`text-xs ${getScenarioBadgeColor(scenario.scenario_type)}`}>
                         {scenario.scenario_type}
                       </Badge>
@@ -198,7 +198,7 @@ export function BudgetScenarioSelector({
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="h-6 px-2 text-xs"
+                    className="h-7 shrink-0 rounded-md px-2 text-xs"
                     onClick={(e) => handleSetPrimary(scenario._id, e)}
                   >
                     {t("budgets.scenarios.setPrimaryShort", "Set Primary")}
@@ -235,7 +235,7 @@ export function BudgetScenarioSelector({
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2"
+            className="gap-2 rounded-lg text-white hover:bg-white/10 hover:text-white"
             onClick={() => setShowComparisonDialog(true)}
           >
             <BarChart3 className="h-4 w-4" />

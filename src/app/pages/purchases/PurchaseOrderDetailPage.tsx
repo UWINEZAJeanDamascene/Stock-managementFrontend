@@ -88,6 +88,13 @@ interface PurchaseOrder {
     paidDate: string;
   }>;
   notes?: string;
+  freight?: {
+    carrier?: string;
+    amount?: number;
+    paymentMethod?: string;
+    account?: string;
+    includeInInventoryCost?: boolean;
+  };
   createdBy?: {
     name: string;
     email: string;
@@ -805,6 +812,12 @@ export default function PurchaseOrderDetailPage() {
                         <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('purchase.detail.tax', 'Tax')}</p>
                         <p className="mt-1 text-sm font-medium text-slate-900 dark:text-white">{formatCurrency(purchaseOrder.taxAmount, purchaseOrder.currencyCode)}</p>
                       </div>
+                      {purchaseOrder.freight && Number(purchaseOrder.freight.amount) > 0 && (
+                        <div className="text-right">
+                          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('purchase.detail.freight', 'Freight (est.)')}</p>
+                          <p className="mt-1 text-sm font-medium text-slate-900 dark:text-white">{formatCurrency(purchaseOrder.freight.amount, purchaseOrder.currencyCode)}</p>
+                        </div>
+                      )}
                       <div className="text-right">
                         <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('purchase.detail.total', 'Total')}</p>
                         <p className="mt-1 text-lg font-bold text-slate-950 dark:text-white">{formatCurrency(purchaseOrder.totalAmount, purchaseOrder.currencyCode)}</p>

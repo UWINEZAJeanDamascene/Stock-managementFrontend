@@ -4,8 +4,13 @@ import { useTranslation } from "react-i18next";
 import {
   budgetsApi,
   chartOfAccountsApi,
+  departmentsApi,
+  exchangeRatesApi,
+  usersApi,
   ChartOfAccountItem,
   BudgetLine,
+  type CurrencyInfo,
+  type Department,
 } from "@/lib/api";
 import { Layout } from "../../layout/Layout";
 import {
@@ -14,11 +19,8 @@ import {
   Trash2,
   Loader2,
   Save,
-  DollarSign,
   FileText,
   List,
-  CalendarDays,
-  Wallet,
 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
@@ -57,6 +59,12 @@ interface LineItem {
   notes: string;
 }
 
+interface UserOption {
+  _id: string;
+  name: string;
+  email?: string;
+}
+
 const MONTHS = [
   { value: 1, label: "January" },
   { value: 2, label: "February" },
@@ -81,18 +89,35 @@ export default function BudgetFormPage() {
   const [loading, setLoading] = useState(isEdit);
   const [submitting, setSubmitting] = useState(false);
   const [accounts, setAccounts] = useState<ChartOfAccountItem[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [users, setUsers] = useState<UserOption[]>([]);
+  const [currencies, setCurrencies] = useState<CurrencyInfo[]>([]);
+  const [parentBudgets, setParentBudgets] = useState<Array<{ _id: string; name: string; code?: string | null }>>([]);
 
   const currentYear = new Date().getFullYear();
 
   const [form, setForm] = useState({
     name: "",
+    code: "",
     description: "",
-    type: "expense" as "revenue" | "expense" | "profit",
+    purpose: "",
+    tags: "",
+    type: "expense" as "revenue" | "expense" | "profit" | "opex" | "capex" | "project",
     fiscal_year: currentYear,
     periodStart: "",
     periodEnd: "",
     periodType: "yearly" as "monthly" | "quarterly" | "yearly" | "custom",
+    budget_cycle: "fixed_year" as "fixed_year" | "rolling",
     amount: 0,
+    department: "",
+    owner_id: "",
+    parent_budget_id: "",
+    entity_id: "",
+    base_currency: "",
+    exchange_rate_type: "spot" as "fixed" | "spot" | "average",
+    exchange_rate: 1,
+    allow_multi_currency: false,
+    allocation_method: "manual" as "manual" | "top_down" | "bottom_up" | "percentage_split",
     notes: "",
   });
 
@@ -102,7 +127,7 @@ export default function BudgetFormPage() {
   const filteredAccounts = accounts.filter((acc) => {
     if (form.type === "revenue") {
       return ["revenue", "income"].includes(acc.type?.toLowerCase());
-    } else if (form.type === "expense") {
+    } else if (["expense", "opex", "capex", "project"].includes(form.type)) {
       return ["expense", "cogs"].includes(acc.type?.toLowerCase());
     }
     return true; // 'profit' or any other type shows all accounts
@@ -119,6 +144,37 @@ export default function BudgetFormPage() {
     }
   }, []);
 
+  const fetchSetupData = useCallback(async () => {
+    const safeData = <T,>(value: any, fallback: T): T => {
+      if (Array.isArray(value?.data)) return value.data as T;
+      if (Array.isArray(value?.data?.data)) return value.data.data as T;
+      return fallback;
+    };
+
+    const [departmentResult, usersResult, currenciesResult, budgetsResult] = await Promise.allSettled([
+      departmentsApi.getAll({ isActive: true }),
+      usersApi.getAll({ limit: 100, isActive: true }),
+      exchangeRatesApi.getCurrencies(),
+      budgetsApi.getAll({ limit: 100 }),
+    ]);
+
+    if (departmentResult.status === "fulfilled") {
+      setDepartments(safeData<Department[]>(departmentResult.value, []));
+    }
+    if (usersResult.status === "fulfilled") {
+      setUsers(safeData<UserOption[]>(usersResult.value, []));
+    }
+    if (currenciesResult.status === "fulfilled") {
+      setCurrencies(safeData<CurrencyInfo[]>(currenciesResult.value, []));
+    }
+    if (budgetsResult.status === "fulfilled") {
+      setParentBudgets(
+        safeData<Array<{ _id: string; name: string; code?: string | null }>>(budgetsResult.value, [])
+          .filter((budget) => budget._id !== id),
+      );
+    }
+  }, [id]);
+
   const fetchBudget = useCallback(async () => {
     if (!id) return;
     setLoading(true);
@@ -128,13 +184,26 @@ export default function BudgetFormPage() {
         const b = response.data;
         setForm({
           name: b.name || "",
+          code: b.code || "",
           description: b.description || "",
+          purpose: b.purpose || "",
+          tags: Array.isArray(b.tags) ? b.tags.join(", ") : "",
           type: b.type || "expense",
           fiscal_year: b.fiscal_year || currentYear,
           periodStart: b.periodStart ? b.periodStart.split("T")[0] : "",
           periodEnd: b.periodEnd ? b.periodEnd.split("T")[0] : "",
           periodType: b.periodType || "yearly",
+          budget_cycle: b.budget_cycle || "fixed_year",
           amount: (b.amount as number) || 0,
+          department: typeof b.department === "object" ? b.department?._id || "" : b.department || "",
+          owner_id: typeof b.owner_id === "object" ? b.owner_id?._id || "" : b.owner_id || "",
+          parent_budget_id: typeof b.parent_budget_id === "object" ? b.parent_budget_id?._id || "" : b.parent_budget_id || "",
+          entity_id: typeof b.entity_id === "object" ? b.entity_id?._id || "" : b.entity_id || "",
+          base_currency: b.base_currency || "",
+          exchange_rate_type: b.exchange_rate_type || "spot",
+          exchange_rate: Number(b.exchange_rate || 1),
+          allow_multi_currency: Boolean(b.allow_multi_currency),
+          allocation_method: b.allocation_method || "manual",
           notes: b.notes || "",
         });
 
@@ -170,10 +239,11 @@ export default function BudgetFormPage() {
 
   useEffect(() => {
     fetchAccounts();
+    fetchSetupData();
     if (isEdit) {
       fetchBudget();
     }
-  }, [fetchAccounts, fetchBudget, isEdit]);
+  }, [fetchAccounts, fetchSetupData, fetchBudget, isEdit]);
 
   const addLine = () => {
     setLines([
@@ -214,13 +284,26 @@ export default function BudgetFormPage() {
       if (isEdit) {
         const response: any = await budgetsApi.update(id!, {
           name: form.name,
+          code: form.code || undefined,
           description: form.description,
+          purpose: form.purpose,
+          tags: form.tags.split(",").map((tag) => tag.trim()).filter(Boolean),
           type: form.type,
           fiscal_year: form.fiscal_year,
           periodStart: form.periodStart || undefined,
           periodEnd: form.periodEnd || undefined,
           periodType: form.periodType,
+          budget_cycle: form.budget_cycle,
           amount: form.amount,
+          department: form.department || undefined,
+          owner_id: form.owner_id || null,
+          entity_id: form.entity_id || null,
+          parent_budget_id: form.parent_budget_id || null,
+          base_currency: form.base_currency || null,
+          exchange_rate_type: form.exchange_rate_type,
+          exchange_rate: form.exchange_rate || 1,
+          allow_multi_currency: form.allow_multi_currency,
+          allocation_method: form.allocation_method,
           notes: form.notes,
         });
         if (!response.success) {
@@ -229,13 +312,26 @@ export default function BudgetFormPage() {
       } else {
         const response: any = await budgetsApi.create({
           name: form.name,
+          code: form.code || undefined,
           description: form.description,
+          purpose: form.purpose,
+          tags: form.tags.split(",").map((tag) => tag.trim()).filter(Boolean),
           type: form.type,
           fiscal_year: form.fiscal_year,
           periodStart: form.periodStart || undefined,
           periodEnd: form.periodEnd || undefined,
           periodType: form.periodType,
+          budget_cycle: form.budget_cycle,
           amount: form.amount,
+          department: form.department || undefined,
+          owner_id: form.owner_id || null,
+          entity_id: form.entity_id || null,
+          parent_budget_id: form.parent_budget_id || null,
+          base_currency: form.base_currency || null,
+          exchange_rate_type: form.exchange_rate_type,
+          exchange_rate: form.exchange_rate || 1,
+          allow_multi_currency: form.allow_multi_currency,
+          allocation_method: form.allocation_method,
           notes: form.notes,
         });
         if (response.success) {
@@ -375,12 +471,39 @@ export default function BudgetFormPage() {
                   className="border-slate-200 bg-slate-50 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-400"
                 />
               </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-slate-700 dark:text-slate-200">{t("budgets.code", "Budget Code")}</Label>
+                <Input
+                  placeholder={t("budgets.codePlaceholder", "e.g., OPEX-2026")}
+                  value={form.code}
+                  onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })}
+                  className="border-slate-200 bg-slate-50 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-400"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-slate-700 dark:text-slate-200">{t("budgets.tags", "Tags & Classification")}</Label>
+                <Input
+                  placeholder={t("budgets.tagsPlaceholder", "region, entity, category")}
+                  value={form.tags}
+                  onChange={(e) => setForm({ ...form, tags: e.target.value })}
+                  className="border-slate-200 bg-slate-50 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-400"
+                />
+              </div>
               <div className="space-y-2 col-span-2">
                 <Label className="text-xs font-semibold text-slate-700 dark:text-slate-200">{t("budgets.description", "Description")}</Label>
                 <Input
                   placeholder={t("budgets.descriptionPlaceholder", "Optional description")}
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  className="border-slate-200 bg-slate-50 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-400"
+                />
+              </div>
+              <div className="space-y-2 col-span-2">
+                <Label className="text-xs font-semibold text-slate-700 dark:text-slate-200">{t("budgets.purpose", "Purpose")}</Label>
+                <Textarea
+                  placeholder={t("budgets.purposePlaceholder", "Objective, scope, assumptions")}
+                  value={form.purpose}
+                  onChange={(e) => setForm({ ...form, purpose: e.target.value })}
                   className="border-slate-200 bg-slate-50 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-400"
                 />
               </div>
@@ -394,11 +517,36 @@ export default function BudgetFormPage() {
                     <SelectItem value="expense" className="text-sm text-slate-700 dark:text-slate-200">
                       {t("budgets.types.expense", "Expense")}
                     </SelectItem>
+                    <SelectItem value="opex" className="text-sm text-slate-700 dark:text-slate-200">
+                      {t("budgets.types.opex", "Operational (OPEX)")}
+                    </SelectItem>
+                    <SelectItem value="capex" className="text-sm text-slate-700 dark:text-slate-200">
+                      {t("budgets.types.capex", "Capital (CAPEX)")}
+                    </SelectItem>
+                    <SelectItem value="project" className="text-sm text-slate-700 dark:text-slate-200">
+                      {t("budgets.types.project", "Project Budget")}
+                    </SelectItem>
                     <SelectItem value="revenue" className="text-sm text-slate-700 dark:text-slate-200">
                       {t("budgets.types.revenue", "Revenue")}
                     </SelectItem>
                     <SelectItem value="profit" className="text-sm text-slate-700 dark:text-slate-200">
                       {t("budgets.types.profit", "Profit")}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-slate-700 dark:text-slate-200">{t("budgets.budgetCycle", "Budget Cycle")}</Label>
+                <Select value={form.budget_cycle} onValueChange={(value) => setForm({ ...form, budget_cycle: value as any })}>
+                  <SelectTrigger className="border-slate-200 bg-slate-50 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+                    <SelectItem value="fixed_year" className="text-sm text-slate-700 dark:text-slate-200">
+                      {t("budgets.cycles.fixedYear", "Fixed fiscal year")}
+                    </SelectItem>
+                    <SelectItem value="rolling" className="text-sm text-slate-700 dark:text-slate-200">
+                      {t("budgets.cycles.rolling", "Rolling")}
                     </SelectItem>
                   </SelectContent>
                 </Select>
@@ -449,6 +597,128 @@ export default function BudgetFormPage() {
                     <SelectItem value="custom" className="text-sm text-slate-700 dark:text-slate-200">
                       {t("budgets.periodTypes.custom", "Custom")}
                     </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-slate-700 dark:text-slate-200">{t("budgets.department", "Department / Cost Center")}</Label>
+                <Select value={form.department || "none"} onValueChange={(value) => setForm({ ...form, department: value === "none" ? "" : value })}>
+                  <SelectTrigger className="border-slate-200 bg-slate-50 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+                    <SelectItem value="none" className="text-sm text-slate-700 dark:text-slate-200">
+                      {t("common.none", "None")}
+                    </SelectItem>
+                    {departments.map((department) => (
+                      <SelectItem key={department._id} value={department._id} className="text-sm text-slate-700 dark:text-slate-200">
+                        {department.code} - {department.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-slate-700 dark:text-slate-200">{t("budgets.owner", "Budget Owner")}</Label>
+                <Select value={form.owner_id || "none"} onValueChange={(value) => setForm({ ...form, owner_id: value === "none" ? "" : value })}>
+                  <SelectTrigger className="border-slate-200 bg-slate-50 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+                    <SelectItem value="none" className="text-sm text-slate-700 dark:text-slate-200">
+                      {t("common.none", "None")}
+                    </SelectItem>
+                    {users.map((user) => (
+                      <SelectItem key={user._id} value={user._id} className="text-sm text-slate-700 dark:text-slate-200">
+                        {user.name}{user.email ? ` - ${user.email}` : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-slate-700 dark:text-slate-200">{t("budgets.parentBudget", "Parent Budget")}</Label>
+                <Select value={form.parent_budget_id || "none"} onValueChange={(value) => setForm({ ...form, parent_budget_id: value === "none" ? "" : value })}>
+                  <SelectTrigger className="border-slate-200 bg-slate-50 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+                    <SelectItem value="none" className="text-sm text-slate-700 dark:text-slate-200">
+                      {t("common.none", "None")}
+                    </SelectItem>
+                    {parentBudgets.map((budget) => (
+                      <SelectItem key={budget._id} value={budget._id} className="text-sm text-slate-700 dark:text-slate-200">
+                        {budget.code ? `${budget.code} - ` : ""}{budget.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-slate-700 dark:text-slate-200">{t("budgets.allocationMethod", "Allocation Method")}</Label>
+                <Select value={form.allocation_method} onValueChange={(value) => setForm({ ...form, allocation_method: value as any })}>
+                  <SelectTrigger className="border-slate-200 bg-slate-50 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+                    <SelectItem value="manual" className="text-sm text-slate-700 dark:text-slate-200">Manual</SelectItem>
+                    <SelectItem value="top_down" className="text-sm text-slate-700 dark:text-slate-200">Top-down</SelectItem>
+                    <SelectItem value="bottom_up" className="text-sm text-slate-700 dark:text-slate-200">Bottom-up</SelectItem>
+                    <SelectItem value="percentage_split" className="text-sm text-slate-700 dark:text-slate-200">Percentage split</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-slate-700 dark:text-slate-200">{t("budgets.baseCurrency", "Base Currency")}</Label>
+                <Select value={form.base_currency || "none"} onValueChange={(value) => setForm({ ...form, base_currency: value === "none" ? "" : value })}>
+                  <SelectTrigger className="border-slate-200 bg-slate-50 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+                    <SelectItem value="none" className="text-sm text-slate-700 dark:text-slate-200">
+                      {t("budgets.companyCurrency", "Company currency")}
+                    </SelectItem>
+                    {currencies.map((currency) => (
+                      <SelectItem key={currency.code} value={currency.code} className="text-sm text-slate-700 dark:text-slate-200">
+                        {currency.code} - {currency.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-slate-700 dark:text-slate-200">{t("budgets.exchangeRateType", "Exchange Rate Type")}</Label>
+                <Select value={form.exchange_rate_type} onValueChange={(value) => setForm({ ...form, exchange_rate_type: value as any })}>
+                  <SelectTrigger className="border-slate-200 bg-slate-50 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+                    <SelectItem value="spot" className="text-sm text-slate-700 dark:text-slate-200">Spot</SelectItem>
+                    <SelectItem value="fixed" className="text-sm text-slate-700 dark:text-slate-200">Fixed</SelectItem>
+                    <SelectItem value="average" className="text-sm text-slate-700 dark:text-slate-200">Average</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-slate-700 dark:text-slate-200">{t("budgets.exchangeRate", "Exchange Rate")}</Label>
+                <Input
+                  type="number"
+                  step="0.000001"
+                  min="0"
+                  value={form.exchange_rate}
+                  onChange={(e) => setForm({ ...form, exchange_rate: parseFloat(e.target.value) || 1 })}
+                  className="border-slate-200 bg-slate-50 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-slate-700 dark:text-slate-200">{t("budgets.multiCurrencyEntry", "Multi-currency Entry")}</Label>
+                <Select value={form.allow_multi_currency ? "yes" : "no"} onValueChange={(value) => setForm({ ...form, allow_multi_currency: value === "yes" })}>
+                  <SelectTrigger className="border-slate-200 bg-slate-50 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+                    <SelectItem value="no" className="text-sm text-slate-700 dark:text-slate-200">No</SelectItem>
+                    <SelectItem value="yes" className="text-sm text-slate-700 dark:text-slate-200">Yes</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Layout } from '../layout/Layout';
-import { departmentsApi, usersApi } from '@/lib/api';
+import { departmentsApi } from '@/lib/api';
+import { employeeApi } from '@/lib/api.employees';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import {
@@ -28,22 +29,26 @@ import { Card, CardContent } from '@/app/components/ui/card';
 import { Checkbox } from '@/app/components/ui/checkbox';
 import { Badge } from '@/app/components/ui/badge';
 import { Label } from '@/app/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/app/components/ui/select';
 
 interface DeptRow {
   _id: string;
   name: string;
   description: string;
-  userCount: number;
+  employeeCount: number;
+  defaultLaborAccount?: "5300" | "5400" | null;
   createdAt: string;
-  users?: DeptUser[];
+  employees?: DeptEmployee[];
 }
 
-interface DeptUser {
+interface DeptEmployee {
   _id: string;
-  name: string;
-  email: string;
-  role: string;
-  isActive: boolean;
+  employeeId: string;
+  firstName: string;
+  lastName: string;
+  email?: string;
+  position?: string;
+  status: string;
 }
 
 const toneClass = {
@@ -116,14 +121,14 @@ export default function DepartmentsPage() {
   const [editingDept, setEditingDept] = useState<DeptRow | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [expandedUsers, setExpandedUsers] = useState<DeptUser[]>([]);
+  const [expandedEmployees, setExpandedEmployees] = useState<DeptEmployee[]>([]);
   const [expandLoading, setExpandLoading] = useState(false);
 
-  // Assign users state
+  // Assign employees state
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [assignDeptId, setAssignDeptId] = useState<string | null>(null);
-  const [allUsers, setAllUsers] = useState<DeptUser[]>([]);
-  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+  const [allEmployees, setAllEmployees] = useState<DeptEmployee[]>([]);
+  const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<string[]>([]);
   const [assignLoading, setAssignLoading] = useState(false);
 
   useEffect(() => {
@@ -165,6 +170,7 @@ export default function DepartmentsPage() {
       name: formData.get('name') as string,
       code: formData.get('code') as string,
       description: formData.get('description') as string,
+      defaultLaborAccount: (((formData.get('defaultLaborAccount') as string) === 'none' ? null : (formData.get('defaultLaborAccount') as string)) || null) as "5300" | "5400" | null,
     };
     try {
       if (editingDept) {
@@ -186,17 +192,18 @@ export default function DepartmentsPage() {
   const toggleExpand = async (id: string) => {
     if (expandedId === id) {
       setExpandedId(null);
+      setExpandedEmployees([]);
       return;
     }
     setExpandedId(id);
     setExpandLoading(true);
     try {
-      const response = await departmentsApi.getById(id);
+      const response = await departmentsApi.getEmployees(id);
       if (response.success) {
-        setExpandedUsers((response.data as any).users || []);
+        setExpandedEmployees(response.data || []);
       }
     } catch {
-      setExpandedUsers([]);
+      setExpandedEmployees([]);
     } finally {
       setExpandLoading(false);
     }
@@ -204,23 +211,23 @@ export default function DepartmentsPage() {
 
   const openAssignModal = async (deptId: string) => {
     setAssignDeptId(deptId);
-    setSelectedUserIds([]);
+    setSelectedEmployeeIds([]);
     setShowAssignModal(true);
     try {
-      const response = await usersApi.getAll({ limit: 200 });
-      setAllUsers(response.data as DeptUser[]);
+      const response = await employeeApi.getAll({ status: 'active' });
+      setAllEmployees(response.data || []);
     } catch {
-      setAllUsers([]);
+      setAllEmployees([]);
     }
   };
 
-  const handleAssignUsers = async () => {
-    if (!assignDeptId || selectedUserIds.length === 0) return;
+  const handleAssignEmployees = async () => {
+    if (!assignDeptId || selectedEmployeeIds.length === 0) return;
     setAssignLoading(true);
     try {
-      await (departmentsApi as any).assignUsers(assignDeptId, selectedUserIds);
+      await departmentsApi.assignEmployees(assignDeptId, selectedEmployeeIds);
       setShowAssignModal(false);
-      setSuccess(t('departments.usersAssigned'));
+      setSuccess(t('departments.employeesAssigned'));
       fetchDepartments();
       if (expandedId === assignDeptId) toggleExpand(assignDeptId);
     } catch {
@@ -230,10 +237,10 @@ export default function DepartmentsPage() {
     }
   };
 
-  const handleRemoveUser = async (deptId: string, userId: string) => {
+  const handleRemoveEmployee = async (deptId: string, employeeId: string) => {
     try {
-      await (departmentsApi as any).removeUser(deptId, userId);
-      setSuccess(t('departments.userRemoved'));
+      await departmentsApi.removeEmployee(deptId, employeeId);
+      setSuccess(t('departments.employeeRemoved'));
       fetchDepartments();
       if (expandedId === deptId) toggleExpand(deptId);
     } catch {
@@ -255,11 +262,11 @@ export default function DepartmentsPage() {
   }, [success, error]);
 
   const totalDepts = departments.length;
-  const totalUsersInDepts = departments.reduce((sum, d) => sum + d.userCount, 0);
-  const deptsWithUsers = departments.filter((d) => d.userCount > 0).length;
+  const totalEmployeesInDepts = departments.reduce((sum, d) => sum + (d.employeeCount || 0), 0);
+  const deptsWithEmployees = departments.filter((d) => (d.employeeCount || 0) > 0).length;
   const largestDept = departments.reduce(
-    (max, d) => (d.userCount > max.userCount ? d : max),
-    departments[0] || { name: '-', userCount: 0 }
+    (max, d) => ((d.employeeCount || 0) > (max.employeeCount || 0) ? d : max),
+    departments[0] || { name: '-', employeeCount: 0 }
   );
 
   return (
@@ -318,15 +325,15 @@ export default function DepartmentsPage() {
                   </p>
                 </div>
                 <div className="rounded-lg bg-white p-3 shadow-sm dark:bg-slate-900">
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Users</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Employees</p>
                   <p className="mt-1 text-xl font-bold text-emerald-600 dark:text-emerald-400">
-                    {totalUsersInDepts}
+                    {totalEmployeesInDepts}
                   </p>
                 </div>
                 <div className="rounded-lg bg-white p-3 shadow-sm dark:bg-slate-900">
                   <p className="text-xs text-slate-500 dark:text-slate-400">Active</p>
                   <p className="mt-1 text-xl font-bold text-violet-600 dark:text-violet-400">
-                    {deptsWithUsers}
+                    {deptsWithEmployees}
                   </p>
                 </div>
               </div>
@@ -338,30 +345,30 @@ export default function DepartmentsPage() {
             <MetricCard
               title="Total Departments"
               value={String(totalDepts)}
-              subtitle={`${deptsWithUsers} with assigned users`}
+              subtitle={`${deptsWithEmployees} with assigned employees`}
               icon={<Building2 className="h-5 w-5" />}
               tone="blue"
               loading={loading}
             />
             <MetricCard
-              title="Assigned Users"
-              value={String(totalUsersInDepts)}
-              subtitle="Total users across all departments"
+              title="Assigned Employees"
+              value={String(totalEmployeesInDepts)}
+              subtitle="Total employees across all departments"
               icon={<UserCheck className="h-5 w-5" />}
               tone="emerald"
               loading={loading}
             />
             <MetricCard
               title="Active Departments"
-              value={String(deptsWithUsers)}
-              subtitle="Departments with at least 1 user"
+              value={String(deptsWithEmployees)}
+              subtitle="Departments with at least 1 employee"
               icon={<Briefcase className="h-5 w-5" />}
               tone="violet"
               loading={loading}
             />
             <MetricCard
               title="Largest Department"
-              value={String(largestDept.userCount)}
+              value={String(largestDept.employeeCount || 0)}
               subtitle={largestDept.name}
               icon={<Crown className="h-5 w-5" />}
               tone="amber"
@@ -448,7 +455,7 @@ export default function DepartmentsPage() {
                         variant="secondary"
                         className="flex items-center gap-1 h-6 px-2.5 text-xs bg-slate-100 text-slate-700 dark:bg-slate-900 dark:text-slate-300"
                       >
-                        <Users className="h-3 w-3" /> {dept.userCount}
+                        <Users className="h-3 w-3" /> {dept.employeeCount || 0}
                       </Badge>
                       {isAdmin() && (
                         <>
@@ -456,7 +463,7 @@ export default function DepartmentsPage() {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
-                            title={t('departments.assignUsers')}
+                            title="Assign Employees"
                             onClick={() => openAssignModal(dept._id)}
                           >
                             <UserPlus className="h-4 w-4" />
@@ -499,35 +506,35 @@ export default function DepartmentsPage() {
                     </div>
                   </div>
 
-                  {/* Expanded user list */}
+                  {/* Expanded employee list */}
                   {expandedId === dept._id && (
                     <div className="border-t border-slate-200 bg-slate-50/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/50">
                       {expandLoading ? (
                         <div className="flex justify-center py-4">
                           <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
                         </div>
-                      ) : expandedUsers.length === 0 ? (
+                      ) : expandedEmployees.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-4 text-slate-500 dark:text-slate-400">
                           <Users className="h-5 w-5 text-slate-300 dark:text-slate-600 mb-1" />
-                          <p className="text-sm">{t('departments.noUsersInDept')}</p>
+                          <p className="text-sm">No employees in this department</p>
                         </div>
                       ) : (
                         <div className="space-y-2">
-                          {expandedUsers.map((user) => (
+                          {expandedEmployees.map((emp) => (
                             <div
-                              key={user._id}
+                              key={emp._id}
                               className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-slate-800 dark:bg-slate-950"
                             >
                               <div className="flex items-center gap-3">
                                 <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-50 text-xs font-bold text-blue-700 dark:bg-blue-950/60 dark:text-blue-300">
-                                  {user.name.charAt(0).toUpperCase()}
+                                  {emp.firstName.charAt(0).toUpperCase()}
                                 </div>
                                 <div>
                                   <p className="text-sm font-medium text-slate-900 dark:text-white">
-                                    {user.name}
+                                    {emp.firstName} {emp.lastName}
                                   </p>
                                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                                    {user.email} · {user.role}
+                                    {emp.employeeId} · {emp.position || 'No position'}
                                   </p>
                                 </div>
                               </div>
@@ -536,8 +543,8 @@ export default function DepartmentsPage() {
                                   variant="ghost"
                                   size="icon"
                                   className="h-7 w-7 text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
-                                  title={t('departments.removeUser')}
-                                  onClick={() => handleRemoveUser(dept._id, user._id)}
+                                  title="Remove Employee"
+                                  onClick={() => handleRemoveEmployee(dept._id, emp._id)}
                                 >
                                   <UserMinus className="h-3.5 w-3.5" />
                                 </Button>
@@ -613,6 +620,24 @@ export default function DepartmentsPage() {
                     className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500"
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    Default Labor Account
+                  </Label>
+                  <Select
+                    name="defaultLaborAccount"
+                    defaultValue={editingDept?.defaultLaborAccount || "none"}
+                  >
+                    <SelectTrigger className="dark:bg-slate-900 dark:text-white dark:border-slate-700">
+                      <SelectValue placeholder="Select default labor account" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      <SelectItem value="5300">5300 - Direct Labor</SelectItem>
+                      <SelectItem value="5400">5400 - Salaries & Wages</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="flex justify-end gap-2 pt-2">
                   <Button
                     type="button"
@@ -639,13 +664,13 @@ export default function DepartmentsPage() {
           </div>
         )}
 
-        {/* Assign Users Modal */}
+        {/* Assign Employees Modal */}
         {showAssignModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
             <Card className="w-full max-w-md max-h-[80vh] flex flex-col border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-950">
               <div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-slate-800">
                 <h2 className="text-lg font-semibold text-slate-950 dark:text-white">
-                  {t('departments.assignUsers')}
+                  Assign Employees
                 </h2>
                 <Button
                   variant="ghost"
@@ -657,25 +682,25 @@ export default function DepartmentsPage() {
                 </Button>
               </div>
               <div className="flex-1 overflow-y-auto p-5 space-y-2">
-                {allUsers.length === 0 ? (
+                {allEmployees.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-8 text-slate-500 dark:text-slate-400">
                     <Users className="h-8 w-8 text-slate-300 dark:text-slate-600 mb-2" />
                     <p className="text-sm">{t('common.noData')}</p>
                   </div>
                 ) : (
-                  allUsers.map((user) => (
+                  allEmployees.map((emp) => (
                     <label
-                      key={user._id}
+                      key={emp._id}
                       className="flex items-center gap-3 rounded-lg border border-slate-200 p-3 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900 cursor-pointer"
                     >
                       <Checkbox
-                        checked={selectedUserIds.includes(user._id)}
+                        checked={selectedEmployeeIds.includes(emp._id)}
                         onCheckedChange={(checked) => {
                           if (checked) {
-                            setSelectedUserIds((prev) => [...prev, user._id]);
+                            setSelectedEmployeeIds((prev) => [...prev, emp._id]);
                           } else {
-                            setSelectedUserIds((prev) =>
-                              prev.filter((id) => id !== user._id)
+                            setSelectedEmployeeIds((prev) =>
+                              prev.filter((id) => id !== emp._id)
                             );
                           }
                         }}
@@ -683,14 +708,14 @@ export default function DepartmentsPage() {
                       />
                       <div className="flex items-center gap-3">
                         <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-50 text-xs font-bold text-blue-700 dark:bg-blue-950/60 dark:text-blue-300">
-                          {user.name.charAt(0).toUpperCase()}
+                          {emp.firstName.charAt(0).toUpperCase()}
                         </div>
                         <div>
                           <p className="text-sm font-medium text-slate-900 dark:text-white">
-                            {user.name}
+                            {emp.firstName} {emp.lastName}
                           </p>
                           <p className="text-xs text-slate-500 dark:text-slate-400">
-                            {user.email} · {user.role}
+                            {emp.employeeId} · {emp.position || 'No position'}
                           </p>
                         </div>
                       </div>
@@ -707,12 +732,12 @@ export default function DepartmentsPage() {
                   {t('common.cancel')}
                 </Button>
                 <Button
-                  onClick={handleAssignUsers}
-                  disabled={selectedUserIds.length === 0 || assignLoading}
+                  onClick={handleAssignEmployees}
+                  disabled={selectedEmployeeIds.length === 0 || assignLoading}
                   className="gap-2 bg-blue-600 hover:bg-blue-700"
                 >
                   {assignLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                  {t('departments.assign')} ({selectedUserIds.length})
+                  Assign ({selectedEmployeeIds.length})
                 </Button>
               </div>
             </Card>

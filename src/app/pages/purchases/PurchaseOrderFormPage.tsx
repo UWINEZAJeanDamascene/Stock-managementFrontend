@@ -18,6 +18,7 @@ import {
   ReceiptText,
   ClipboardList,
   Sparkles,
+  Truck,
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
@@ -40,6 +41,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/app/components/ui/card';
 import { Badge } from '@/app/components/ui/badge';
 import { Label } from '@/app/components/ui/label';
+import { Switch } from '@/app/components/ui/switch';
 import { useTranslation } from 'react-i18next';
 
 interface Supplier {
@@ -79,6 +81,14 @@ interface POLine {
   accountId?: string;
 }
 
+interface FreightData {
+  carrier: string;
+  amount: number;
+  paymentMethod: string;
+  account: string;
+  includeInInventoryCost: boolean;
+}
+
 interface PurchaseOrderFormData {
   supplier: string;
   warehouse: string;
@@ -87,6 +97,7 @@ interface PurchaseOrderFormData {
   currencyCode: string;
   notes: string;
   lines: POLine[];
+  freight: FreightData;
 }
 
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'RWF', 'KES', 'UGX', 'TZS'];
@@ -115,6 +126,13 @@ export default function PurchaseOrderFormPage() {
     currencyCode: 'FRW',
     notes: '',
     lines: [],
+    freight: {
+      carrier: '',
+      amount: 0,
+      paymentMethod: 'on_account',
+      account: '5110',
+      includeInInventoryCost: false,
+    },
   });
 
   const fetchSuppliers = useCallback(async () => {
@@ -231,6 +249,13 @@ export default function PurchaseOrderFormPage() {
             budget_line_id: line.budget_line_id || '',
             accountId: line.accountId || '',
           })) || [],
+          freight: {
+            carrier: po.freight?.carrier || '',
+            amount: po.freight?.amount || 0,
+            paymentMethod: po.freight?.paymentMethod || 'on_account',
+            account: po.freight?.account || '5110',
+            includeInInventoryCost: po.freight?.includeInInventoryCost || false,
+          },
         });
       }
     } catch (error) {
@@ -421,6 +446,13 @@ export default function PurchaseOrderFormPage() {
         currencyCode: formData.currencyCode,
         notes: formData.notes || undefined,
         lines: linesWithTotals,
+        freight: {
+          carrier: formData.freight.carrier || undefined,
+          amount: Number(formData.freight.amount) || 0,
+          paymentMethod: formData.freight.paymentMethod || 'on_account',
+          account: formData.freight.account || '5110',
+          includeInInventoryCost: formData.freight.includeInInventoryCost || false,
+        },
       };
 
       let savedPoId: string | undefined;
@@ -867,6 +899,77 @@ export default function PurchaseOrderFormPage() {
                       </Table>
                     </div>
                   )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Additional Costs / Freight */}
+            <div className="lg:col-span-2">
+              <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="border-b border-slate-100 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/30">
+                  <PanelTitle icon={<Truck className="h-4 w-4" />} title={t('purchase.form.additionalCosts', 'Additional Costs')} />
+                </CardHeader>
+                <CardContent className="space-y-4 p-5">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label className="text-slate-900 dark:text-white">{t('purchase.form.freightCarrier', 'Freight carrier')}</Label>
+                      <Input
+                        value={formData.freight.carrier}
+                        onChange={(e) => setFormData(prev => ({ ...prev, freight: { ...prev.freight, carrier: e.target.value } }))}
+                        placeholder={t('purchase.form.freightCarrierPlaceholder', 'Name of transporter')}
+                        className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-slate-200 dark:border-slate-700"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-slate-900 dark:text-white">{t('purchase.form.freightAmount', 'Freight amount (estimated)')}</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={formData.freight.amount}
+                        onChange={(e) => setFormData(prev => ({ ...prev, freight: { ...prev.freight, amount: parseFloat(e.target.value) || 0 } }))}
+                        className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-slate-200 dark:border-slate-700"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-slate-900 dark:text-white">{t('purchase.form.freightPaymentMethod', 'Freight payment method')}</Label>
+                      <Select
+                        value={formData.freight.paymentMethod}
+                        onValueChange={(value) => setFormData(prev => ({ ...prev, freight: { ...prev.freight, paymentMethod: value } }))}
+                      >
+                        <SelectTrigger className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-slate-200 dark:border-slate-700">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                          <SelectItem value="cash">{t('purchase.form.cash', 'Cash')}</SelectItem>
+                          <SelectItem value="bank_transfer">{t('purchase.form.bankTransfer', 'Bank Transfer')}</SelectItem>
+                          <SelectItem value="mobile_money">{t('purchase.form.mobileMoney', 'MoMo')}</SelectItem>
+                          <SelectItem value="on_account">{t('purchase.form.onAccount', 'On Account (AP)')}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                    <div>
+                      <Label className="text-slate-900 dark:text-white">{t('purchase.form.freightAccount', 'Freight account')}</Label>
+                      <Input
+                        value={formData.freight.account}
+                        onChange={(e) => setFormData(prev => ({ ...prev, freight: { ...prev.freight, account: e.target.value } }))}
+                        placeholder="5110"
+                        className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-slate-200 dark:border-slate-700"
+                      />
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <Switch
+                        id="includeFreight"
+                        checked={formData.freight.includeInInventoryCost}
+                        onCheckedChange={(checked) => setFormData(prev => ({ ...prev, freight: { ...prev.freight, includeInInventoryCost: checked } }))}
+                      />
+                      <Label htmlFor="includeFreight" className="text-sm text-slate-700 dark:text-slate-300 cursor-pointer">
+                        {t('purchase.form.includeInInventoryCost', 'Include freight in inventory cost')}
+                      </Label>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </div>

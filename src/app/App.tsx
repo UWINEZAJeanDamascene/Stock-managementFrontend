@@ -91,6 +91,8 @@ import GRNListPage from './pages/grn/GRNListPage';
 import GRNCreatePage from './pages/grn/GRNCreatePage';
 import GRNDetailPage from './pages/grn/GRNDetailPage';
 import GRNEditPage from './pages/grn/GRNEditPage';
+import FreightBillsListPage from './pages/freight/FreightBillsListPage';
+import FreightBillFormPage from './pages/freight/FreightBillFormPage';
 import PurchaseReturnsListPage from './pages/purchase-returns/PurchaseReturnsListPage';
 import PurchaseReturnCreatePage from './pages/purchase-returns/PurchaseReturnCreatePage';
 import PurchaseReturnDetailPage from './pages/purchase-returns/PurchaseReturnDetailPage';
@@ -234,6 +236,8 @@ import AccountingPeriodsPage from './pages/settings/AccountingPeriodsPage';
 import CompanyProfilePage from './pages/settings/CompanyProfilePage';
 import RolesSettingsPage from './pages/settings/RolesSettingsPage';
 import OnboardingPage from './pages/OnboardingPage';
+import TimesheetFormPage from './pages/timesheets/TimesheetFormPage';
+import TimesheetDetailPage from './pages/timesheets/TimesheetDetailPage';
 import { LanguageProvider } from '../contexts/LanguageContext';
 // AI chat widget intentionally removed per user request
 import OfflineSyncBanner from './components/OfflineSyncBanner';
@@ -413,6 +417,9 @@ function AppRoutes() {
         <Route path="/purchase-returns" element={<PurchaseReturnsListPage />} />
         <Route path="/purchase-returns/new" element={<PurchaseReturnCreatePage />} />
         <Route path="/purchase-returns/:id" element={<PurchaseReturnDetailPage />} />
+        <Route path="/freight-bills" element={<FreightBillsListPage />} />
+        <Route path="/freight-bills/new" element={<FreightBillFormPage />} />
+        <Route path="/freight-bills/:id/edit" element={<FreightBillFormPage />} />
         <Route path="/clients" element={<ClientsListPage />} />
         <Route path="/clients/new" element={<ClientFormPage />} />
         <Route path="/clients/:id/edit" element={<ClientFormPage />} />
@@ -793,6 +800,23 @@ function AppRoutes() {
         <Route path="/payroll/generate" element={
           <ErrorBoundary>
             <PayrollGenerationPage />
+          </ErrorBoundary>
+        } />
+
+        {/* Timesheet routes */}
+        <Route path="/timesheets/new" element={
+          <ErrorBoundary>
+            <TimesheetFormPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/timesheets/:id" element={
+          <ErrorBoundary>
+            <TimesheetDetailPage />
+          </ErrorBoundary>
+        } />
+        <Route path="/timesheets/:id/edit" element={
+          <ErrorBoundary>
+            <TimesheetFormPage />
           </ErrorBoundary>
         } />
 

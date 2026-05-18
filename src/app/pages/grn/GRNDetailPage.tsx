@@ -17,6 +17,7 @@ import {
   Clock,
   Receipt,
   Package,
+  Truck,
 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import {
@@ -64,6 +65,17 @@ interface GRNDetail {
   status: "draft" | "confirmed";
   totalAmount: number;
   supplierInvoiceNo?: string;
+  freight?: {
+    carrier?: string;
+    actualAmount?: number;
+    paymentMethod?: string;
+    account?: string;
+    includeInInventoryCost?: boolean;
+    allocationMethod?: string;
+    invoiceReference?: string;
+    invoiceDate?: string;
+    paidBy?: string;
+  };
   lines: Array<{
     _id: string;
     product: {
@@ -200,7 +212,15 @@ export default function GRNDetailPage() {
       return sum + lineTotal * (toNum(line.taxRate) / 100);
     }, 0);
   };
-  const calculateTotal = () => calculateSubtotal() + calculateTax();
+  const calculateTotal = () => {
+    let total = calculateSubtotal() + calculateTax();
+    const freightAmt = Number(grn?.freight?.actualAmount) || 0;
+    const freightAbsorbed = grn?.freight?.includeInInventoryCost;
+    if (freightAmt > 0 && !freightAbsorbed) {
+      total += freightAmt;
+    }
+    return total;
+  };
 
   /* ── Status badge ── */
   function StatusBadge({ status }: { status: string }) {
@@ -432,6 +452,40 @@ export default function GRNDetailPage() {
                           <p className="text-sm font-medium text-slate-900 dark:text-white">{grn.supplierInvoiceNo || "-"}</p>
                         </div>
                       </div>
+                      {grn.freight && Number(grn.freight.actualAmount) > 0 && (
+                        <div className="mt-4 rounded-lg border border-amber-100 bg-amber-50/50 p-4 dark:border-amber-900/30 dark:bg-amber-950/20">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Truck className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                            <p className="text-sm font-semibold text-slate-900 dark:text-white">{t("grn.freightInfo", "Freight Information")}</p>
+                          </div>
+                          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 text-sm">
+                            <div>
+                              <p className="text-xs text-slate-500 dark:text-slate-400">{t("grn.freightCarrier", "Carrier")}</p>
+                              <p className="font-medium text-slate-900 dark:text-white">{grn.freight.carrier || "—"}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-slate-500 dark:text-slate-400">{t("grn.freightAmount", "Amount")}</p>
+                              <p className="font-medium text-slate-900 dark:text-white">{formatCurrency(grn.freight.actualAmount)}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-slate-500 dark:text-slate-400">{t("grn.freightMethod", "Method")}</p>
+                              <p className="font-medium text-slate-900 dark:text-white">{grn.freight.paymentMethod?.replace('_', ' ') || "—"}</p>
+                            </div>
+                            {grn.freight.invoiceReference && (
+                              <div>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">{t("grn.freightInvoiceRef", "Invoice Ref")}</p>
+                                <p className="font-medium text-slate-900 dark:text-white">{grn.freight.invoiceReference}</p>
+                              </div>
+                            )}
+                            {grn.freight.includeInInventoryCost !== undefined && (
+                              <div>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">{t("grn.freightIncluded", "Included in Cost")}</p>
+                                <p className="font-medium text-slate-900 dark:text-white">{grn.freight.includeInInventoryCost ? t("common.yes", "Yes") : t("common.no", "No")}</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 </TabsContent>
@@ -483,6 +537,12 @@ export default function GRNDetailPage() {
                       <span>{t("grn.tax", "Tax")}</span>
                       <span className="font-medium text-slate-900 dark:text-white">{formatCurrency(calculateTax())}</span>
                     </div>
+                    {grn?.freight && Number(grn.freight.actualAmount) > 0 && !grn.freight.includeInInventoryCost && (
+                      <div className="flex justify-between text-slate-600 dark:text-slate-300">
+                        <span>{t("grn.freight", "Freight")}</span>
+                        <span className="font-medium text-slate-900 dark:text-white">{formatCurrency(grn.freight.actualAmount)}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between border-t border-slate-200 pt-2 text-base font-bold text-slate-900 dark:border-slate-700 dark:text-white">
                       <span>{t("grn.total", "Total")}</span>
                       <span>{formatCurrency(calculateTotal())}</span>

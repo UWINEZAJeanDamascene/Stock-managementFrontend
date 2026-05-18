@@ -30,6 +30,7 @@ import {
 } from '@/app/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { Label } from '@/app/components/ui/label';
+import { Switch } from '@/app/components/ui/switch';
 import { useTranslation } from 'react-i18next';
 
 interface PurchaseOrder {
@@ -100,6 +101,17 @@ interface GRNDetail {
   status: 'draft' | 'confirmed';
   totalAmount: number;
   supplierInvoiceNo?: string;
+  freight?: {
+    carrier?: string;
+    actualAmount?: number;
+    paymentMethod?: string;
+    account?: string;
+    includeInInventoryCost?: boolean;
+    allocationMethod?: string;
+    invoiceReference?: string;
+    invoiceDate?: string;
+    paidBy?: string;
+  };
   lines: Array<{
     _id: string;
     product: {
@@ -139,6 +151,17 @@ export default function GRNEditPage() {
   
   const [lines, setLines] = useState<GRNLine[]>([]);
 
+  // Freight state
+  const [freightCarrier, setFreightCarrier] = useState<string>('');
+  const [freightActualAmount, setFreightActualAmount] = useState<number>(0);
+  const [freightPaymentMethod, setFreightPaymentMethod] = useState<string>('on_account');
+  const [freightAccount, setFreightAccount] = useState<string>('5110');
+  const [freightIncludeInCost, setFreightIncludeInCost] = useState<boolean>(false);
+  const [freightAllocationMethod, setFreightAllocationMethod] = useState<string>('by_value');
+  const [freightInvoiceRef, setFreightInvoiceRef] = useState<string>('');
+  const [freightInvoiceDate, setFreightInvoiceDate] = useState<string>('');
+  const [freightPaidBy, setFreightPaidBy] = useState<string>('company');
+
   const fetchGRN = useCallback(async () => {
     if (!id) return;
     
@@ -153,6 +176,17 @@ export default function GRNEditPage() {
         setSupplierInvoiceNo(grnData.supplierInvoiceNo || '');
         setReferenceNo(grnData.referenceNo || '');
         setReceivedDate(grnData.receivedDate ? grnData.receivedDate.split('T')[0] : '');
+
+        const f = grnData.freight || {};
+        setFreightCarrier(f.carrier || '');
+        setFreightActualAmount(f.actualAmount || 0);
+        setFreightPaymentMethod(f.paymentMethod || 'on_account');
+        setFreightAccount(f.account || '5110');
+        setFreightIncludeInCost(f.includeInInventoryCost || false);
+        setFreightAllocationMethod(f.allocationMethod || 'by_value');
+        setFreightInvoiceRef(f.invoiceReference || '');
+        setFreightInvoiceDate(f.invoiceDate ? f.invoiceDate.split('T')[0] : '');
+        setFreightPaidBy(f.paidBy || 'company');
       }
     } catch (error) {
       console.error('Failed to fetch GRN:', error);
@@ -366,7 +400,18 @@ export default function GRNEditPage() {
         referenceNo: referenceNo || undefined,
         supplierInvoiceNo: supplierInvoiceNo || undefined,
         receivedDate: receivedDate || undefined,
-        lines: validLines
+        lines: validLines,
+        freight: {
+          carrier: freightCarrier || undefined,
+          actualAmount: Number(freightActualAmount) || 0,
+          paymentMethod: freightPaymentMethod || 'on_account',
+          account: freightAccount || '5110',
+          includeInInventoryCost: freightIncludeInCost || false,
+          allocationMethod: freightAllocationMethod || 'by_value',
+          invoiceReference: freightInvoiceRef || undefined,
+          invoiceDate: freightInvoiceDate || undefined,
+          paidBy: freightPaidBy || 'company',
+        },
       };
 
       const response = await grnApi.update(id, grnData as any);
@@ -632,6 +677,72 @@ export default function GRNEditPage() {
               </CardContent>
             </Card>
 
+            {/* Additional Costs / Freight */}
+            <Card className="dark:bg-slate-800">
+              <CardHeader>
+                <CardTitle className="text-slate-900 dark:text-white">{t('grn.additionalCosts', 'Additional Costs')}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="space-y-1">
+                  <Label className="text-slate-900 dark:text-white text-xs">{t('grn.freightCarrier', 'Freight carrier')}</Label>
+                  <Input value={freightCarrier} onChange={(e) => setFreightCarrier(e.target.value)} placeholder={t('grn.freightCarrierPlaceholder', 'Name of transporter')} className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600 text-sm" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-slate-900 dark:text-white text-xs">{t('grn.actualFreightAmount', 'Actual freight amount')}</Label>
+                  <Input type="number" min={0} step="0.01" value={freightActualAmount} onChange={(e) => setFreightActualAmount(parseFloat(e.target.value) || 0)} className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600 text-sm" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-slate-900 dark:text-white text-xs">{t('grn.freightPaymentMethod', 'Freight payment method')}</Label>
+                  <Select value={freightPaymentMethod} onValueChange={setFreightPaymentMethod}>
+                    <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600 text-sm"><SelectValue /></SelectTrigger>
+                    <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                      <SelectItem value="cash">{t('grn.cash', 'Cash')}</SelectItem>
+                      <SelectItem value="bank_transfer">{t('grn.bankTransfer', 'Bank Transfer')}</SelectItem>
+                      <SelectItem value="mobile_money">{t('grn.mobileMoney', 'MoMo')}</SelectItem>
+                      <SelectItem value="on_account">{t('grn.onAccount', 'On Account (AP)')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-slate-900 dark:text-white text-xs">{t('grn.freightAccount', 'Freight account')}</Label>
+                  <Input value={freightAccount} onChange={(e) => setFreightAccount(e.target.value)} placeholder="5110" className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600 text-sm" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-slate-900 dark:text-white text-xs">{t('grn.freightInvoiceRef', 'Freight invoice reference')}</Label>
+                  <Input value={freightInvoiceRef} onChange={(e) => setFreightInvoiceRef(e.target.value)} className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600 text-sm" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-slate-900 dark:text-white text-xs">{t('grn.freightInvoiceDate', 'Freight invoice date')}</Label>
+                  <Input type="date" value={freightInvoiceDate} onChange={(e) => setFreightInvoiceDate(e.target.value)} className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600 text-sm" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-slate-900 dark:text-white text-xs">{t('grn.freightPaidBy', 'Freight paid by')}</Label>
+                  <Select value={freightPaidBy} onValueChange={setFreightPaidBy}>
+                    <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600 text-sm"><SelectValue /></SelectTrigger>
+                    <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                      <SelectItem value="company">{t('grn.paidByCompany', 'Company (expense)')}</SelectItem>
+                      <SelectItem value="supplier">{t('grn.paidBySupplier', 'Supplier (deduct from AP)')}</SelectItem>
+                      <SelectItem value="third_party">{t('grn.paidByThirdParty', 'Third party')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-slate-900 dark:text-white text-xs">{t('grn.allocationMethod', 'Allocation method')}</Label>
+                  <Select value={freightAllocationMethod} onValueChange={setFreightAllocationMethod}>
+                    <SelectTrigger className="bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-200 dark:border-slate-600 text-sm"><SelectValue /></SelectTrigger>
+                    <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                      <SelectItem value="by_value">{t('grn.byValue', 'By value')}</SelectItem>
+                      <SelectItem value="by_quantity">{t('grn.byQuantity', 'By quantity')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center gap-2 pt-1">
+                  <Switch id="editIncludeFreight" checked={freightIncludeInCost} onCheckedChange={setFreightIncludeInCost} />
+                  <Label htmlFor="editIncludeFreight" className="text-xs text-slate-600 dark:text-slate-300 cursor-pointer">{t('grn.includeInInventoryCost', 'Include freight in inventory cost')}</Label>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Summary */}
             <Card className="dark:bg-slate-800">
               <CardHeader>
@@ -647,9 +758,15 @@ export default function GRNEditPage() {
                     <span className="dark:text-slate-300">{t('grn.tax', 'Tax')}</span>
                     <span className="font-medium dark:text-slate-200">${calculateTax().toFixed(2)}</span>
                   </div>
+                  {freightActualAmount > 0 && (
+                    <div className="flex justify-between">
+                      <span className="dark:text-slate-300">{t('grn.freight', 'Freight')}</span>
+                      <span className="font-medium dark:text-slate-200">${freightActualAmount.toFixed(2)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-lg font-bold pt-2 border-t dark:border-slate-600">
                     <span className="text-slate-900 dark:text-white">{t('grn.total', 'Total')}</span>
-                    <span className="text-slate-900 dark:text-white">${calculateTotal().toFixed(2)}</span>
+                    <span className="text-slate-900 dark:text-white">${(calculateTotal() + freightActualAmount).toFixed(2)}</span>
                   </div>
                 </div>
               </CardContent>

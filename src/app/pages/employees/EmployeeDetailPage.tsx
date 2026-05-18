@@ -20,6 +20,7 @@ import {
   DollarSign,
   ShieldCheck,
   AlertTriangle,
+  Briefcase,
 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
@@ -317,6 +318,43 @@ export default function EmployeeDetailPage() {
                   </Button>
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          {/* Labor Classification Card */}
+          <Card className="border-slate-200/80 bg-white dark:border-slate-800 dark:bg-slate-950">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-950 dark:text-white">
+                <Briefcase className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+                Labor Classification
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-1">
+              <InfoRow
+                icon={<Building2 className="h-4 w-4" />}
+                label="Labor Type"
+                value={
+                  employee.laborType ? (
+                    <Badge variant="outline" className="capitalize">
+                      {employee.laborType}
+                    </Badge>
+                  ) : (
+                    <span className="text-slate-400">Not set</span>
+                  )
+                }
+              />
+              {employee.laborType === "mixed" && (
+                <InfoRow
+                  icon={<TrendingUp className="h-4 w-4" />}
+                  label="Default Direct %"
+                  value={employee.defaultDirectPercentage != null ? `${employee.defaultDirectPercentage}%` : "—"}
+                />
+              )}
+              <InfoRow
+                icon={<MapPin className="h-4 w-4" />}
+                label="Cost Center"
+                value={employee.costCenter || "—"}
+              />
             </CardContent>
           </Card>
 

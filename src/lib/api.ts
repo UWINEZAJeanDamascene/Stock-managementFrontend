@@ -2447,6 +2447,17 @@ export const grnApi = {
       batchNo?: string;
       serialNumbers?: string[];
     }>;
+    freight?: {
+      carrier?: string;
+      actualAmount?: number;
+      paymentMethod?: string;
+      account?: string;
+      includeInInventoryCost?: boolean;
+      allocationMethod?: string;
+      invoiceReference?: string;
+      invoiceDate?: string;
+      paidBy?: string;
+    };
   }) =>
     request<{ success: boolean; data: unknown }>("/stock/advanced/grn", {
       method: "POST",
@@ -2478,6 +2489,73 @@ export const grnApi = {
     request<{ success: boolean; message: string }>(`/stock/advanced/grn/${id}`, {
       method: "DELETE",
     }),
+};
+
+// Freight Bills API
+export const freightBillsApi = {
+  getAll: (params?: {
+    status?: string;
+    page?: number;
+    limit?: number;
+  }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; data: unknown; pagination?: unknown }>(
+      `/stock/advanced/freight-bills${query ? `?${query}` : ""}`,
+    );
+  },
+  getById: (id: string) =>
+    request<{ success: boolean; data: unknown }>(`/stock/advanced/freight-bills/${id}`),
+  create: (data: {
+    referenceNo: string;
+    supplier?: string;
+    carrierName?: string;
+    amount: number;
+    account?: string;
+    invoiceDate?: string;
+    paymentMethod?: string;
+    grnMatches?: Array<{ grn: string; amountAllocated: number }>;
+  }) =>
+    request<{ success: boolean; data: unknown }>("/stock/advanced/freight-bills", {
+      method: "POST",
+      body: data,
+    }),
+  update: (id: string, data: {
+    referenceNo?: string;
+    supplier?: string;
+    carrierName?: string;
+    amount?: number;
+    account?: string;
+    invoiceDate?: string;
+    paymentMethod?: string;
+    grnMatches?: Array<{ grn: string; amountAllocated: number }>;
+  }) =>
+    request<{ success: boolean; data: unknown }>(`/stock/advanced/freight-bills/${id}`, {
+      method: "PUT",
+      body: data,
+    }),
+  confirm: (id: string) =>
+    request<{ success: boolean; data: unknown }>(
+      `/stock/advanced/freight-bills/${id}/confirm`,
+      { method: "POST" },
+    ),
+  delete: (id: string) =>
+    request<{ success: boolean; message: string }>(`/stock/advanced/freight-bills/${id}`, {
+      method: "DELETE",
+    }),
+};
+
+// Freight Analysis API
+export const freightAnalysisApi = {
+  getAnalysis: (params?: {
+    date_from?: string;
+    date_to?: string;
+    supplier_id?: string;
+  }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; data: unknown }>(
+      `/stock/advanced/freight-analysis${query ? `?${query}` : ""}`,
+    );
+  },
 };
 
 // Purchase Returns API
@@ -3002,6 +3080,29 @@ export const reportsApi = {
     return request<{ success: boolean; message: string; data: unknown }>(
       "/reports/generate-snapshot",
       { method: "POST", body: data },
+    );
+  },
+
+  // Labor Cost Analysis
+  getLaborCostAnalysis: (params?: {
+    year?: string;
+    month?: string;
+    viewBy?: string;
+  }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; data: unknown }>(
+      `/reports/labor-cost-analysis${query ? `?${query}` : ""}`,
+    );
+  },
+
+  getPayrollAuditTrail: (params?: {
+    year?: string;
+    month?: string;
+    employeeId?: string;
+  }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; data: unknown }>(
+      `/reports/payroll-audit-trail${query ? `?${query}` : ""}`,
     );
   },
 };
@@ -4246,6 +4347,73 @@ export const prepaidExpenseApi = {
 
 // ── Prepaid Expenses API end ────────────────────────────────────────
 
+export interface DeferredRevenue {
+  _id: string;
+  referenceNo: string;
+  customer: string;
+  description: string;
+  totalAmount: number;
+  revenueAccountCode: string;
+  paymentMethod: string;
+  startDate: string;
+  endDate: string;
+  frequency: string;
+  status: 'active' | 'fully_recognized' | 'cancelled';
+  recognitions: {
+    _id: string;
+    amount: number;
+    date: string;
+    description: string;
+    journalEntryId?: { _id: string; entryNumber: string; date: string; status: string } | null;
+    status: 'pending' | 'posted' | 'reversed';
+    createdAt: string;
+  }[];
+  remainingBalance: number;
+  totalRecognized: number;
+  notes: string;
+  journalEntryId?: { _id: string; entryNumber: string; date: string; status: string } | null;
+  createdBy?: { _id: string; name: string; email: string };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const deferredRevenueApi = {
+  getAll: (params?: { status?: string; search?: string }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; data: DeferredRevenue[] }>(`/deferred-revenue${query ? `?${query}` : ""}`);
+  },
+  getById: (id: string) =>
+    request<{ success: boolean; data: DeferredRevenue }>(`/deferred-revenue/${id}`),
+  create: (data: {
+    referenceNo?: string;
+    customer?: string;
+    description: string;
+    totalAmount: number;
+    revenueAccountCode: string;
+    paymentMethod?: string;
+    bankAccountId?: string;
+    startDate: string;
+    endDate: string;
+    frequency?: string;
+    notes?: string;
+  }) =>
+    request<{ success: boolean; data: DeferredRevenue; message: string }>("/deferred-revenue", {
+      method: "POST",
+      body: data,
+    }),
+  postRecognition: (id: string, recognitionId: string) =>
+    request<{ success: boolean; data: DeferredRevenue; message: string }>(
+      `/deferred-revenue/${id}/recognitions/${recognitionId}/post`,
+      { method: "POST" },
+    ),
+  delete: (id: string) =>
+    request<{ success: boolean; message: string }>(`/deferred-revenue/${id}`, {
+      method: "DELETE",
+    }),
+};
+
+// ── Deferred Revenue API end ────────────────────────────────────────
+
 export interface BudgetItem {
   _id?: string;
   category: string;
@@ -4261,20 +4429,32 @@ export interface Budget {
   _id: string;
   budgetId: string;
   name: string;
+  code?: string | null;
   description?: string;
+  purpose?: string;
+  tags?: string[];
   company?: string;
   company_id?: string;
-  type: "revenue" | "expense" | "profit";
+  type: "revenue" | "expense" | "profit" | "opex" | "capex" | "project";
   status: "draft" | "pending_approval" | "active" | "approved" | "rejected" | "closed" | "cancelled" | "locked";
   fiscal_year?: number;
   periodStart: string;
   periodEnd: string;
   periodType: "monthly" | "quarterly" | "yearly" | "custom";
+  budget_cycle?: "fixed_year" | "rolling";
   amount: number;
   originalAmount?: number;
   adjustedAmount?: number;
   items?: BudgetItem[];
   department?: { _id: string; name: string } | string | null;
+  owner_id?: { _id: string; name: string; email: string } | string | null;
+  entity_id?: { _id: string; name: string; code?: string; base_currency?: string } | string | null;
+  parent_budget_id?: { _id: string; name: string; code?: string; fiscal_year?: number } | string | null;
+  base_currency?: string | null;
+  exchange_rate_type?: "fixed" | "spot" | "average";
+  exchange_rate?: number;
+  allow_multi_currency?: boolean;
+  allocation_method?: "manual" | "top_down" | "bottom_up" | "percentage_split";
   notes?: string;
   approvalStatus?: "pending" | "approved" | "rejected";
   approvedBy?: { _id: string; name: string; email: string } | null;
@@ -4677,15 +4857,27 @@ export const budgetsApi = {
     request<{ success: boolean; data: Budget }>(`/budgets/${id}`),
   create: (data: {
     name: string;
+    code?: string;
     description?: string;
-    type: "revenue" | "expense" | "profit";
+    purpose?: string;
+    tags?: string[];
+    type: "revenue" | "expense" | "profit" | "opex" | "capex" | "project";
     status?: "draft" | "active";
     fiscal_year: number;
     periodStart?: string;
     periodEnd?: string;
     periodType?: "monthly" | "quarterly" | "yearly" | "custom";
+    budget_cycle?: "fixed_year" | "rolling";
     amount: number;
     department?: string;
+    owner_id?: string | null;
+    entity_id?: string | null;
+    parent_budget_id?: string | null;
+    base_currency?: string | null;
+    exchange_rate_type?: "fixed" | "spot" | "average";
+    exchange_rate?: number;
+    allow_multi_currency?: boolean;
+    allocation_method?: "manual" | "top_down" | "bottom_up" | "percentage_split";
     notes?: string;
     items?: BudgetItem[];
   }) =>
@@ -4697,15 +4889,27 @@ export const budgetsApi = {
     id: string,
     data: Partial<{
       name: string;
+      code: string;
       description: string;
-      type: "revenue" | "expense" | "profit";
+      purpose: string;
+      tags: string[];
+      type: "revenue" | "expense" | "profit" | "opex" | "capex" | "project";
       status: "draft" | "active" | "closed" | "cancelled";
       fiscal_year: number;
       periodStart: string;
       periodEnd: string;
       periodType: "monthly" | "quarterly" | "yearly" | "custom";
+      budget_cycle: "fixed_year" | "rolling";
       amount: number;
       department: string;
+      owner_id: string | null;
+      entity_id: string | null;
+      parent_budget_id: string | null;
+      base_currency: string | null;
+      exchange_rate_type: "fixed" | "spot" | "average";
+      exchange_rate: number;
+      allow_multi_currency: boolean;
+      allocation_method: "manual" | "top_down" | "bottom_up" | "percentage_split";
       notes: string;
       items: BudgetItem[];
     }>,
@@ -10185,6 +10389,9 @@ export interface Expense {
   rraTaxCategory?: string;
   rraTaxTransactionId?: string;
   isVATRecoverable?: boolean;
+  withholdingTax?: number;
+  withholdingTaxRate?: number;
+  withholdingTaxInRWF?: number;
   // Department allocation
   departmentId?: string;
   department?: {
@@ -10269,10 +10476,156 @@ export interface Department {
     email: string;
   } | null;
   budgetLimit: number;
+  defaultLaborAccount?: "5300" | "5400" | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
 }
+
+// Timesheet Types
+export interface TimesheetLine {
+  date: string;
+  hoursWorked: number;
+  activityType: string;
+  notes?: string;
+}
+
+export interface Timesheet {
+  _id: string;
+  company: string;
+  employee: string | { _id: string; firstName: string; lastName: string; employeeId: string; laborType?: string };
+  employeeName: string;
+  period: { month: number; year: number; monthName: string };
+  lines: TimesheetLine[];
+  status: "draft" | "submitted" | "approved" | "rejected";
+  totalHours?: number;
+  directHours?: number;
+  indirectHours?: number;
+  directPercentage?: number;
+  approvedBy?: string;
+  approvedAt?: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Timesheets API
+export const timesheetsApi = {
+  getAll: (params?: { period?: string; status?: string; employeeId?: string }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; count: number; data: Timesheet[] }>(
+      `/timesheets${query ? `?${query}` : ""}`,
+    );
+  },
+  getById: (id: string) =>
+    request<{ success: boolean; data: Timesheet }>(`/timesheets/${id}`),
+  create: (payload: {
+    employeeId: string;
+    period: { month: number; year: number };
+    lines: TimesheetLine[];
+  }) =>
+    request<{ success: boolean; data: Timesheet }>("/timesheets", {
+      method: "POST",
+      body: payload,
+    }),
+  update: (id: string, payload: { lines: TimesheetLine[] }) =>
+    request<{ success: boolean; data: Timesheet }>(`/timesheets/${id}`, {
+      method: "PUT",
+      body: payload,
+    }),
+  submit: (id: string) =>
+    request<{ success: boolean; data: Timesheet }>(`/timesheets/${id}/submit`, {
+      method: "PUT",
+    }),
+  approve: (id: string) =>
+    request<{ success: boolean; data: Timesheet }>(`/timesheets/${id}/approve`, {
+      method: "PUT",
+    }),
+  reject: (id: string, reason?: string) =>
+    request<{ success: boolean; data: Timesheet }>(`/timesheets/${id}/reject`, {
+      method: "PUT",
+      body: { reason },
+    }),
+  delete: (id: string) =>
+    request<{ success: boolean; message: string }>(`/timesheets/${id}`, {
+      method: "DELETE",
+    }),
+};
+
+// Interest Income API
+export const interestApi = {
+  getSummary: () =>
+    request<{ success: boolean; count: number; data: any[] }>("/interest/interest-summary"),
+
+  getAccruals: (params?: { bankAccount?: string; year?: string; month?: string; status?: string }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; count: number; data: any[] }>(`/interest/interest-accruals${query ? `?${query}` : ""}`);
+  },
+
+  preview: (id: string, year: number, month: number) =>
+    request<{ success: boolean; data: any }>(`/interest/bank-accounts/${id}/interest-calculate`, {
+      method: "POST",
+      body: { year, month },
+    }),
+
+  post: (id: string, year: number, month: number, singleStep?: boolean) =>
+    request<{ success: boolean; data: any }>(`/interest/bank-accounts/${id}/interest-post`, {
+      method: "POST",
+      body: { year, month, singleStep },
+    }),
+
+  confirmReceipt: (accrualId: string) =>
+    request<{ success: boolean; data: any }>(`/interest/interest-accruals/${accrualId}/confirm`, {
+      method: "POST",
+    }),
+
+  reverse: (accrualId: string) =>
+    request<{ success: boolean; data: any }>(`/interest/interest-accruals/${accrualId}/reverse`, {
+      method: "POST",
+    }),
+
+  // Fixed Deposit
+  getFixedDeposits: (params?: { status?: string }) => {
+    const query = buildQuery(params as Record<string, any>);
+    return request<{ success: boolean; count: number; data: any[] }>(`/interest/fixed-deposits${query ? `?${query}` : ""}`);
+  },
+
+  getFixedDeposit: (id: string) =>
+    request<{ success: boolean; data: any }>(`/interest/fixed-deposits/${id}`),
+
+  createFixedDeposit: (data: any) =>
+    request<{ success: boolean; data: any }>("/interest/fixed-deposits", {
+      method: "POST",
+      body: data,
+    }),
+
+  updateFixedDeposit: (id: string, data: any) =>
+    request<{ success: boolean; data: any }>(`/interest/fixed-deposits/${id}`, {
+      method: "PUT",
+      body: data,
+    }),
+
+  deleteFixedDeposit: (id: string) =>
+    request<{ success: boolean; message: string }>(`/interest/fixed-deposits/${id}`, {
+      method: "DELETE",
+    }),
+
+  placeFixedDeposit: (id: string) =>
+    request<{ success: boolean; data: any }>(`/interest/fixed-deposits/${id}/place`, {
+      method: "POST",
+    }),
+
+  accrueFixedDeposit: (id: string, year: number, month: number) =>
+    request<{ success: boolean; data: any }>(`/interest/fixed-deposits/${id}/accrue`, {
+      method: "POST",
+      body: { year, month },
+    }),
+
+  matureFixedDeposit: (id: string) =>
+    request<{ success: boolean; data: any }>(`/interest/fixed-deposits/${id}/mature`, {
+      method: "POST",
+    }),
+};
 
 // Expenses API
 export const expensesApi = {
@@ -10356,6 +10709,10 @@ export const expensesApi = {
       reference: string;
       notes: string;
       paid: boolean;
+      // Rwanda-specific fields
+      rraTaxCategory?: RRATaxCategory;
+      isVATRecoverable?: boolean;
+      department_id?: string;
     }>,
   ) =>
     request<{ success: boolean; data: Expense }>(`/expenses/${id}`, {
@@ -10478,6 +10835,7 @@ export const departmentsApi = {
     description?: string;
     manager?: string;
     budgetLimit?: number;
+    defaultLaborAccount?: "5300" | "5400" | null;
   }) =>
     request<{ success: boolean; data: Department }>("/departments", {
       method: "POST",
@@ -10493,6 +10851,7 @@ export const departmentsApi = {
       description: string;
       manager: string;
       budgetLimit: number;
+      defaultLaborAccount: "5300" | "5400" | null;
       isActive: boolean;
     }>,
   ) =>
@@ -10505,6 +10864,23 @@ export const departmentsApi = {
   delete: (id: string) =>
     request<{ success: boolean; message: string }>(`/departments/${id}`, {
       method: "DELETE",
+    }),
+
+  // Get employees in department
+  getEmployees: (id: string) =>
+    request<{ success: boolean; count: number; data: any[] }>(`/departments/${id}/employees`),
+
+  // Assign employees to department
+  assignEmployees: (id: string, employeeIds: string[]) =>
+    request<{ success: boolean; message: string; data: any }>(`/departments/${id}/assign-employees`, {
+      method: "PUT",
+      body: { employeeIds },
+    }),
+
+  // Remove employee from department
+  removeEmployee: (id: string, employeeId: string) =>
+    request<{ success: boolean; message: string }>(`/departments/${id}/remove-employee/${employeeId}`, {
+      method: "PUT",
     }),
 };
 

@@ -961,10 +961,9 @@ export default function PayrollRunDetailPage() {
                           </SelectTrigger>
                           <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
                             {chartAccounts
-                              .filter((a) => a.type === "expense")
+                              .filter((a) => a.type === "expense" || a.type === "cogs")
                               .map((a) => (
-                                <SelectItem key={a._id} value={a._id} className="dark:text-slate-200">
-                                  {a.code} — {a.name}
+                                <SelectItem key={a._id} value={a._id} className="dark:text-slate-200">{a.code} — {a.name}
                                 </SelectItem>
                               ))}
                           </SelectContent>

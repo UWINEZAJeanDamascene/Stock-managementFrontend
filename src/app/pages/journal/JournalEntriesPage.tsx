@@ -18,6 +18,7 @@ import {
   BadgeCheck,
   AlertTriangle,
   Pencil,
+  RefreshCw,
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
@@ -98,6 +99,11 @@ export default function JournalEntriesPage() {
   const [voidDialogOpen, setVoidDialogOpen] = useState(false);
   const [voidingEntry, setVoidingEntry] = useState<JournalEntry | null>(null);
   const [voiding, setVoiding] = useState(false);
+
+  // Backfill dialog
+  const [backfillDialogOpen, setBackfillDialogOpen] = useState(false);
+  const [backfillLoading, setBackfillLoading] = useState(false);
+  const [backfillResult, setBackfillResult] = useState<any>(null);
 
   const fetchEntries = useCallback(async () => {
     setLoading(true);

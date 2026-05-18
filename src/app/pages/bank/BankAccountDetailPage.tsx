@@ -190,6 +190,11 @@ export default function BankAccountDetailPage() {
   } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Interest accrual state
+  const [showInterestDialog, setShowInterestDialog] = useState(false);
+  const [interestLoading, setInterestLoading] = useState(false);
+  const [interestResult, setInterestResult] = useState<any>(null);
+
   // Fetch statement lines - ONLY show imported CSV data
   const fetchStatementLines = useCallback(async () => {
     // Statement lines are ONLY from CSV/Excel imports
@@ -577,6 +582,30 @@ export default function BankAccountDetailPage() {
       setReconcileMessage("Reconciliation failed — please try again.");
     } finally {
       setReconciling(false);
+    }
+  };
+
+  // ── Interest accrual ─────────────────────────────────────────────────────────
+  const handleAccrueInterest = async () => {
+    if (!id) return;
+    setInterestLoading(true);
+    try {
+      const response = await bankAccountsApi.accrueInterest(id);
+      if (response.success) {
+        setInterestResult(response.data);
+        setShowInterestDialog(true);
+        toast.success(response.message);
+        // Refresh account and transactions
+        fetchAccount();
+        fetchTransactions();
+      } else {
+        toast.error(response.message || "Interest accrual failed");
+      }
+    } catch (error: any) {
+      console.error("[BankAccountDetailPage] Interest accrual error:", error);
+      toast.error(error?.message || "Failed to accrue interest");
+    } finally {
+      setInterestLoading(false);
     }
   };
 

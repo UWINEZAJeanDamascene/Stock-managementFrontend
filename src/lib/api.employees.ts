@@ -46,6 +46,10 @@ export interface Employee {
   taxStatus: "resident" | "non-resident";
   rssbRegistrationNumber?: string;
   tinNumber?: string;
+  laborType?: "direct" | "indirect" | "mixed" | null;
+  defaultDirectPercentage?: number | null;
+  costCenter?: string | null;
+  departmentRef?: string | null;
   currentSalary: SalarySnapshot | null;
   grossSalary?: number; // virtual
   payrollHistory?: PayrollHistoryItem[];
@@ -105,6 +109,10 @@ export interface CreateEmployeePayload {
   taxStatus?: "resident" | "non-resident";
   rssbRegistrationNumber?: string;
   tinNumber?: string;
+  laborType?: "direct" | "indirect" | "mixed" | null;
+  defaultDirectPercentage?: number | null;
+  costCenter?: string | null;
+  departmentRef?: string | null;
   salary?: {
     basicSalary: number;
     transportAllowance?: number;
@@ -136,6 +144,10 @@ export interface UpdateEmployeePayload {
   taxStatus?: "resident" | "non-resident";
   rssbRegistrationNumber?: string;
   tinNumber?: string;
+  laborType?: "direct" | "indirect" | "mixed" | null;
+  defaultDirectPercentage?: number | null;
+  costCenter?: string | null;
+  departmentRef?: string | null;
 }
 
 export interface ChangeSalaryPayload {

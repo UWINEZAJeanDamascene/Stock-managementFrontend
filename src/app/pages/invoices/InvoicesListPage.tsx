@@ -21,6 +21,7 @@ import {
   TrendingUp,
   Wallet,
   Clock,
+  ReceiptText,
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
@@ -43,6 +44,8 @@ import {
   SelectValue,
 } from '@/app/components/ui/select';
 import { useTranslation } from 'react-i18next';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs';
+import DeferredRevenueTab from './DeferredRevenueTab';
 
 interface Invoice {
   _id: string;
@@ -94,6 +97,8 @@ export default function InvoicesListPage() {
   const [clientFilter, setClientFilter] = useState('all');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [activeTab, setActiveTab] = useState('invoices');
+
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 20,
@@ -305,8 +310,21 @@ export default function InvoicesListPage() {
             </div>
           </div>
 
-          {/* Metric Cards */}
-          {!loading && invoices.length > 0 && (
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            <TabsList className="grid w-full grid-cols-2 bg-white p-1 shadow-sm dark:border dark:border-slate-800 dark:bg-slate-950 sm:w-auto sm:inline-flex">
+              <TabsTrigger value="invoices" className="gap-1.5 data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 dark:data-[state=active]:bg-indigo-950/40 dark:data-[state=active]:text-indigo-300">
+                <FileText className="h-4 w-4" />
+                Invoices
+              </TabsTrigger>
+              <TabsTrigger value="deferred" className="gap-1.5 data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 dark:data-[state=active]:bg-indigo-950/40 dark:data-[state=active]:text-indigo-300">
+                <ReceiptText className="h-4 w-4" />
+                Deferred Revenue
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="invoices" className="space-y-6 mt-0">
+              {/* Metric Cards */}
+              {!loading && invoices.length > 0 && (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:gap-4">
               <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
                 <CardContent className="flex items-center gap-3 p-4">
@@ -542,6 +560,12 @@ export default function InvoicesListPage() {
               )}
             </CardContent>
           </Card>
+            </TabsContent>
+
+            <TabsContent value="deferred" className="mt-0">
+              <DeferredRevenueTab />
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </Layout>

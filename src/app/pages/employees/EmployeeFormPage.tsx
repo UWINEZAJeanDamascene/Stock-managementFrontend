@@ -73,6 +73,10 @@ interface FormData {
   taxStatus: string;
   rssbRegistrationNumber: string;
   tinNumber: string;
+  laborType: "direct" | "indirect" | "mixed" | "";
+  defaultDirectPercentage: string;
+  costCenter: string;
+  departmentRef: string;
   // Salary (only on create)
   basicSalary: string;
   transportAllowance: string;
@@ -103,6 +107,10 @@ function emptyForm(): FormData {
     taxStatus: "resident",
     rssbRegistrationNumber: "",
     tinNumber: "",
+    laborType: "",
+    defaultDirectPercentage: "",
+    costCenter: "",
+    departmentRef: "",
     basicSalary: "",
     transportAllowance: "0",
     housingAllowance: "0",
@@ -133,6 +141,10 @@ function populateFromEmployee(emp: any): FormData {
     taxStatus: emp.taxStatus || "resident",
     rssbRegistrationNumber: emp.rssbRegistrationNumber || "",
     tinNumber: emp.tinNumber || "",
+    laborType: emp.laborType || "",
+    defaultDirectPercentage: emp.defaultDirectPercentage != null ? String(emp.defaultDirectPercentage) : "",
+    costCenter: emp.costCenter || "",
+    departmentRef: emp.departmentRef || "",
     basicSalary: emp.currentSalary?.basicSalary?.toString() || "",
     transportAllowance: emp.currentSalary?.transportAllowance?.toString() || "0",
     housingAllowance: emp.currentSalary?.housingAllowance?.toString() || "0",
@@ -245,6 +257,10 @@ export default function EmployeeFormPage() {
       taxStatus: form.taxStatus as "resident" | "non-resident",
       rssbRegistrationNumber: form.rssbRegistrationNumber.trim() || undefined,
       tinNumber: form.tinNumber.trim() || undefined,
+      laborType: (form.laborType || undefined) as "direct" | "indirect" | "mixed" | undefined,
+      defaultDirectPercentage: form.defaultDirectPercentage ? parseFloat(form.defaultDirectPercentage) : undefined,
+      costCenter: form.costCenter.trim() || undefined,
+      departmentRef: form.departmentRef || undefined,
     };
 
     if (isEdit) {
@@ -463,6 +479,38 @@ export default function EmployeeFormPage() {
                     value={form.location}
                     onChange={(e) => updateField("location", e.target.value)}
                     placeholder="e.g. Kigali"
+                  />
+                </Field>
+                <Field label="Labor Type">
+                  <Select
+                    value={form.laborType}
+                    onValueChange={(v) => updateField("laborType", v)}
+                  >
+                    <SelectTrigger><SelectValue placeholder="Select labor type" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="direct">Direct Labor</SelectItem>
+                      <SelectItem value="indirect">Indirect Labor</SelectItem>
+                      <SelectItem value="mixed">Mixed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+                {form.laborType === "mixed" && (
+                  <Field label="Default Direct %">
+                    <Input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={form.defaultDirectPercentage}
+                      onChange={(e) => updateField("defaultDirectPercentage", e.target.value)}
+                      placeholder="0-100"
+                    />
+                  </Field>
+                )}
+                <Field label="Cost Center">
+                  <Input
+                    value={form.costCenter}
+                    onChange={(e) => updateField("costCenter", e.target.value)}
+                    placeholder="e.g. PROD-001"
                   />
                 </Field>
               </CardContent>

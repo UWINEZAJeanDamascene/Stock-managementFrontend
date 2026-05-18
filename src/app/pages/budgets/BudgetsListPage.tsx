@@ -375,10 +375,13 @@ export default function BudgetsListPage() {
   const handleExport = () => {
     try {
       const dataToExport = budgets.map((b) => ({
+        Code: b.code || "",
         Name: b.name,
         Type: b.type,
         Status: b.status,
         "Fiscal Year": b.fiscal_year || "",
+        "Budget Cycle": b.budget_cycle || "",
+        "Base Currency": b.base_currency || "",
         Amount: b.amount,
         Description: b.description || "",
         "Period Start": b.periodStart
@@ -459,6 +462,9 @@ export default function BudgetsListPage() {
       revenue: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/40",
       expense: "bg-red-50 text-red-700 ring-1 ring-red-100 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900/40",
       profit: "bg-indigo-50 text-indigo-700 ring-1 ring-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-300 dark:ring-indigo-900/40",
+      opex: "bg-amber-50 text-amber-700 ring-1 ring-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900/40",
+      capex: "bg-violet-50 text-violet-700 ring-1 ring-violet-100 dark:bg-violet-950/40 dark:text-violet-300 dark:ring-violet-900/40",
+      project: "bg-cyan-50 text-cyan-700 ring-1 ring-cyan-100 dark:bg-cyan-950/40 dark:text-cyan-300 dark:ring-cyan-900/40",
     };
     const className = config[type] || config.expense;
     return (
@@ -662,6 +668,15 @@ export default function BudgetsListPage() {
                   <SelectItem value="expense" className="text-sm text-slate-700 dark:text-slate-200">
                     {t("budgets.types.expense", "Expense")}
                   </SelectItem>
+                  <SelectItem value="opex" className="text-sm text-slate-700 dark:text-slate-200">
+                    {t("budgets.types.opex", "Operational (OPEX)")}
+                  </SelectItem>
+                  <SelectItem value="capex" className="text-sm text-slate-700 dark:text-slate-200">
+                    {t("budgets.types.capex", "Capital (CAPEX)")}
+                  </SelectItem>
+                  <SelectItem value="project" className="text-sm text-slate-700 dark:text-slate-200">
+                    {t("budgets.types.project", "Project Budget")}
+                  </SelectItem>
                   <SelectItem value="revenue" className="text-sm text-slate-700 dark:text-slate-200">
                     {t("budgets.types.revenue", "Revenue")}
                   </SelectItem>
@@ -767,6 +782,11 @@ export default function BudgetsListPage() {
                           <TableCell className="font-medium text-slate-700 dark:text-slate-200">
                             <div>
                               <div className="font-semibold text-slate-900 dark:text-white">{budget.name}</div>
+                              {budget.code ? (
+                                <div className="text-xs font-medium uppercase text-indigo-600 dark:text-indigo-300">
+                                  {budget.code}
+                                </div>
+                              ) : null}
                               {budget.description && (
                                 <div className="max-w-[200px] truncate text-xs text-slate-500 dark:text-slate-400">
                                   {budget.description}

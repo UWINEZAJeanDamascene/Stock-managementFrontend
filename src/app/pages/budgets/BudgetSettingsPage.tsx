@@ -1062,6 +1062,22 @@ export default function BudgetSettingsPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="flex items-center space-x-2">
                             <Switch
+                              id="allow-parallel"
+                              checked={formSettings.allow_parallel_approvals}
+                              onCheckedChange={v => setFormSettings({ ...formSettings, allow_parallel_approvals: v })}
+                            />
+                            <Label htmlFor="allow-parallel" className="cursor-pointer text-slate-700 dark:text-slate-300">Allow Parallel Approvals</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Switch
+                              id="require-all-steps"
+                              checked={formSettings.require_all_steps}
+                              onCheckedChange={v => setFormSettings({ ...formSettings, require_all_steps: v })}
+                            />
+                            <Label htmlFor="require-all-steps" className="cursor-pointer text-slate-700 dark:text-slate-300">Require All Steps</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Switch
                               id="notify-approval"
                               checked={formSettings.notify_requester_on_approval}
                               onCheckedChange={v => setFormSettings({ ...formSettings, notify_requester_on_approval: v })}

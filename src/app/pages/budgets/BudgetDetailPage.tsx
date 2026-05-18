@@ -462,6 +462,9 @@ export default function BudgetDetailPage() {
       revenue: { className: "bg-emerald-100 text-emerald-800" },
       expense: { className: "bg-red-100 text-red-800" },
       profit: { className: "bg-blue-100 text-blue-800" },
+      opex: { className: "bg-amber-100 text-amber-800" },
+      capex: { className: "bg-violet-100 text-violet-800" },
+      project: { className: "bg-cyan-100 text-cyan-800" },
     };
     const { className } = config[type] || config.expense;
     return (
@@ -634,34 +637,41 @@ export default function BudgetDetailPage() {
     <Layout>
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
         {/* Hero Header */}
-        <div className="relative overflow-hidden border-b border-slate-200 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 dark:border-slate-800">
-          <div className="absolute inset-0 opacity-20">
-            <div className="absolute right-20 top-0 h-64 w-64 rounded-full bg-indigo-500 blur-3xl"></div>
-            <div className="absolute left-10 bottom-0 h-48 w-48 rounded-full bg-emerald-500 blur-3xl"></div>
-          </div>
-          <div className="relative mx-auto max-w-[1600px] 2xl:max-w-[2200px] px-4 py-8 sm:px-6 lg:px-8">
-            <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+        <div className="relative overflow-hidden border-b border-slate-800 bg-slate-950">
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-indigo-400/50 to-transparent" />
+          <div className="relative mx-auto max-w-[1600px] 2xl:max-w-[2200px] px-4 py-7 sm:px-6 lg:px-8">
+            <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
               <div className="flex items-start gap-4">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => navigate("/budgets")}
-                  className="h-9 w-9 shrink-0 p-0 text-slate-300 hover:bg-white/10 hover:text-white"
+                  className="mt-1 h-9 w-9 shrink-0 rounded-lg p-0 text-slate-300 hover:bg-white/10 hover:text-white"
                 >
                   <ArrowLeft className="h-5 w-5" />
                 </Button>
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h1 className="text-xl font-bold tracking-tight text-white sm:text-2xl lg:text-3xl">
+                    <h1 className="max-w-5xl text-xl font-bold tracking-tight text-white sm:text-2xl lg:text-3xl">
                       {budget.name}
                     </h1>
                     {getStatusBadge(budget.status)}
                     {getTypeBadge(budget.type)}
+                    {budget.code ? (
+                      <Badge variant="outline" className="border-white/20 bg-white/10 text-white">
+                        {budget.code}
+                      </Badge>
+                    ) : null}
                   </div>
-                  <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-slate-300">
+                  <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-300">
                     {budget.description || t("budgets.noDescription", "No description")}
                   </p>
-                  <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-400">
+                  {budget.purpose ? (
+                    <p className="mt-2 max-w-3xl text-xs leading-relaxed text-slate-400">
+                      {budget.purpose}
+                    </p>
+                  ) : null}
+                  <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-400">
                     <span className="flex items-center gap-1">
                       <Landmark className="h-3.5 w-3.5" />
                       {t("budgets.fiscalYear", "FY")}: {budget.fiscal_year || "-"}
@@ -676,10 +686,31 @@ export default function BudgetDetailPage() {
                         {budget.scenario_name}
                       </span>
                     )}
+                    {budget.base_currency ? (
+                      <span className="flex items-center gap-1">
+                        <CircleDollarSign className="h-3.5 w-3.5" />
+                        {budget.base_currency} {budget.exchange_rate_type ? `(${budget.exchange_rate_type})` : ""}
+                      </span>
+                    ) : null}
+                    {budget.owner_id && typeof budget.owner_id === "object" ? (
+                      <span className="flex items-center gap-1">
+                        <User className="h-3.5 w-3.5" />
+                        {budget.owner_id.name}
+                      </span>
+                    ) : null}
                   </div>
+                  {Array.isArray(budget.tags) && budget.tags.length > 0 ? (
+                    <div className="mt-4 flex flex-wrap gap-1.5">
+                      {budget.tags.map((tag) => (
+                        <Badge key={tag} variant="outline" className="border-white/15 bg-white/5 text-[11px] text-slate-200">
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
               </div>
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex w-full flex-wrap items-center gap-2 xl:w-auto xl:justify-end">
                 <BudgetScenarioSelector
                   budgetId={id!}
                   budgetName={budget.name}
@@ -693,18 +724,18 @@ export default function BudgetDetailPage() {
                 />
                 {budget.status === "draft" && (
                   <>
-                    <Button variant="outline" onClick={() => navigate(`/budgets/${id}/edit`)} className="gap-2 border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white">
+                    <Button variant="outline" onClick={() => navigate(`/budgets/${id}/edit`)} className="gap-2 rounded-lg border-white/15 bg-white/5 text-white hover:bg-white/15 hover:text-white">
                       <Pencil className="h-4 w-4" />
                       {t("common.edit", "Edit")}
                     </Button>
-                    <Button onClick={() => setApproveOpen(true)} className="gap-2 bg-emerald-600 text-white hover:bg-emerald-700">
+                    <Button onClick={() => setApproveOpen(true)} className="gap-2 rounded-lg bg-emerald-600 text-white shadow-sm shadow-emerald-950/30 hover:bg-emerald-500">
                       <CheckCircle className="h-4 w-4" />
                       {t("budgets.approve", "Approve")}
                     </Button>
                   </>
                 )}
                 {(budget.status === "draft" || budget.status === "approved") && (
-                  <Button variant="outline" onClick={() => setRejectOpen(true)} className="gap-2 border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white">
+                  <Button variant="outline" onClick={() => setRejectOpen(true)} className="gap-2 rounded-lg border-white/15 bg-white/5 text-white hover:bg-white/15 hover:text-white">
                     <XCircle className="h-4 w-4" />
                     {t("budgets.reject", "Reject")}
                   </Button>
@@ -722,7 +753,7 @@ export default function BudgetDetailPage() {
                   </Button>
                 )}
                 {(budget.status === "approved" || budget.status === "locked") && (
-                  <Button variant="outline" onClick={() => setCloseOpen(true)} className="gap-2 border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white">
+                  <Button variant="outline" onClick={() => setCloseOpen(true)} className="gap-2 rounded-lg border-white/15 bg-white/5 text-white hover:bg-white/15 hover:text-white">
                     <Power className="h-4 w-4" />
                     {t("budgets.close", "Close")}
                   </Button>
@@ -969,8 +1000,210 @@ export default function BudgetDetailPage() {
 
                 {/* Add Line Form */}
                 {showAddLine && budget.status === "draft" && (
-                  <div className="mb-4 rounded-lg border border-slate-200 bg-muted/30 p-4 dark:border-slate-800">
-                    <div className="mb-4 flex items-start justify-between gap-4">
+                  <div className="mb-5 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                    <div className="border-b border-slate-100 bg-slate-50/80 px-5 py-4 dark:border-slate-800 dark:bg-slate-900/50">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                          <div className="flex items-center gap-2 text-sm font-semibold text-slate-950 dark:text-white">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 dark:bg-indigo-500/15">
+                              <FolderTree className="h-4 w-4 text-indigo-600 dark:text-indigo-300" />
+                            </div>
+                            Budget line allocation
+                          </div>
+                          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500 dark:text-slate-400">
+                            Create a line and optionally link it to a project or WBS node so budget, actual, and encumbrance reporting stay aligned.
+                          </p>
+                        </div>
+                        <Badge variant="outline" className="w-fit border-indigo-200 bg-indigo-50 text-xs text-indigo-700 dark:border-indigo-400/25 dark:bg-indigo-500/10 dark:text-indigo-200">
+                          Draft entry
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 gap-4 p-5 md:grid-cols-6 xl:grid-cols-12">
+                      <div className="md:col-span-3 xl:col-span-3">
+                        <Label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                          {t("budgets.account", "Account")} *
+                        </Label>
+                        <Select
+                          value={newLine.account_id}
+                          onValueChange={(value) =>
+                            setNewLine({ ...newLine, account_id: value })
+                          }
+                        >
+                          <SelectTrigger className="mt-1.5 h-11">
+                            <SelectValue
+                              placeholder={t(
+                                "budgets.selectAccount",
+                                "Select account",
+                              )}
+                            />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {accounts.map((acc) => (
+                              <SelectItem key={acc._id} value={acc._id}>
+                                {acc.code} - {acc.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="md:col-span-3 xl:col-span-4">
+                        <div className="flex items-center justify-between gap-2">
+                          <Label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                            Allocation Scope: Project / WBS
+                          </Label>
+                        </div>
+                        <p className="mt-1 min-h-5 text-xs text-slate-500 dark:text-slate-400">
+                          Leave blank only when this line is shared.
+                        </p>
+                        <Select
+                          value={newLine.project_id || "__none__"}
+                          onValueChange={(value) =>
+                            setNewLine({
+                              ...newLine,
+                              project_id: value === "__none__" ? "" : value,
+                            })
+                          }
+                        >
+                          <SelectTrigger className="mt-1.5 h-11">
+                            <SelectValue
+                              placeholder={t(
+                                "projects.selectProject",
+                                "Select project (optional)",
+                              )}
+                            />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__none__">
+                              Unassigned / shared budget
+                            </SelectItem>
+                            {projects.map((p) => (
+                              <SelectItem key={p._id} value={p._id}>
+                                <span className="font-mono text-xs">{p.wbs_code}</span> {p.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="md:col-span-2 xl:col-span-2">
+                        <Label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                          Category
+                        </Label>
+                        <Input
+                          className="mt-1.5 h-11"
+                          value={newLine.category}
+                          onChange={(e) =>
+                            setNewLine({
+                              ...newLine,
+                              category: e.target.value,
+                            })
+                          }
+                          placeholder="Payroll"
+                        />
+                      </div>
+                      <div className="md:col-span-2 xl:col-span-1">
+                        <Label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                          {t("budgets.month", "Month")}
+                        </Label>
+                        <Select
+                          value={newLine.period_month.toString()}
+                          onValueChange={(value) =>
+                            setNewLine({
+                              ...newLine,
+                              period_month: parseInt(value),
+                            })
+                          }
+                        >
+                          <SelectTrigger className="mt-1.5 h-11">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {MONTHS.map((m) => (
+                              <SelectItem
+                                key={m.value}
+                                value={m.value.toString()}
+                              >
+                                {m.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="md:col-span-2 xl:col-span-1">
+                        <Label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                          {t("budgets.year", "Year")}
+                        </Label>
+                        <Input
+                          className="mt-1.5 h-11"
+                          type="number"
+                          value={newLine.period_year}
+                          onChange={(e) =>
+                            setNewLine({
+                              ...newLine,
+                              period_year:
+                                parseInt(e.target.value) ||
+                                new Date().getFullYear(),
+                            })
+                          }
+                        />
+                      </div>
+                      <div className="md:col-span-3 xl:col-span-1">
+                        <Label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                          {t("budgets.amount", "Amount")} *
+                        </Label>
+                        <Input
+                          className="mt-1.5 h-11"
+                          type="number"
+                          step="0.01"
+                          value={newLine.budgeted_amount || ""}
+                          onChange={(e) =>
+                            setNewLine({
+                              ...newLine,
+                              budgeted_amount: parseFloat(e.target.value) || 0,
+                            })
+                          }
+                        />
+                      </div>
+                      <div className="md:col-span-3 xl:col-span-6">
+                        <Label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                          Notes
+                        </Label>
+                        <Input
+                          className="mt-1.5 h-11"
+                          value={newLine.notes}
+                          onChange={(e) =>
+                            setNewLine({
+                              ...newLine,
+                              notes: e.target.value,
+                            })
+                          }
+                          placeholder="Planning assumption or cost driver"
+                        />
+                      </div>
+                      <div className="flex items-end justify-end gap-2 md:col-span-3 xl:col-span-6">
+                        <Button
+                          className="h-11 gap-2 rounded-lg bg-slate-950 px-5 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200"
+                          onClick={handleAddLine}
+                          disabled={submitting}
+                        >
+                          {submitting ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Plus className="h-4 w-4" />
+                          )}
+                          Save line
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="h-11 rounded-lg"
+                          onClick={() => setShowAddLine(false)}
+                        >
+                          <XCircle className="h-4 w-4" />
+                          <span className="sr-only">Close allocation form</span>
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="hidden">
                       <div>
                         <div className="flex items-center gap-2 text-sm font-semibold">
                           <FolderTree className="h-4 w-4 text-indigo-600" />
@@ -981,7 +1214,7 @@ export default function BudgetDetailPage() {
                         </p>
                       </div>
                     </div>
-                    <div className="grid grid-cols-1 gap-3 md:grid-cols-8">
+                    <div className="hidden">
                       <div className="md:col-span-2">
                         <Label className="text-xs">
                           {t("budgets.account", "Account")} *
@@ -1791,80 +2024,122 @@ export default function BudgetDetailPage() {
         </Dialog>
 
       <Dialog open={lineConsumptionOpen} onOpenChange={setLineConsumptionOpen}>
-        <DialogContent className="max-h-[85vh] max-w-6xl overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Budget line consumption</DialogTitle>
-            <DialogDescription>
-              Review commitments and liquidation documents that consumed this budget line.
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent className="max-h-[92vh] w-[calc(100vw-2rem)] max-w-7xl overflow-hidden border-slate-800 bg-slate-950 p-0 text-slate-100 shadow-2xl sm:rounded-xl">
+          <div className="border-b border-slate-800 bg-slate-950 px-5 py-5 sm:px-6">
+            <DialogHeader className="pr-8">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-indigo-500/15 ring-1 ring-indigo-400/30">
+                  <Receipt className="h-5 w-5 text-indigo-300" />
+                </div>
+                <div>
+                  <DialogTitle className="text-xl font-semibold text-white">
+                    Budget line consumption
+                  </DialogTitle>
+                  <DialogDescription className="mt-1 max-w-3xl text-sm text-slate-400">
+                    Review commitments, actuals, and remaining availability for the selected budget line.
+                  </DialogDescription>
+                </div>
+              </div>
+            </DialogHeader>
+          </div>
 
           {selectedLine && (
-            <div className="space-y-6">
-              <div className="grid gap-3 md:grid-cols-5">
-                <div className="rounded-lg border p-3">
-                  <div className="text-xs uppercase text-muted-foreground">Account</div>
-                  <div className="mt-1 text-sm font-medium">{getAccountName(selectedLine.account_id)}</div>
+            <div className="max-h-[calc(92vh-158px)] overflow-y-auto px-5 py-5 sm:px-6">
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(150px,0.8fr)_minmax(300px,1.7fr)_minmax(220px,1.2fr)_minmax(240px,1.3fr)]">
+                <div className="min-w-0 rounded-lg border border-slate-800 bg-slate-900/70 p-4">
+                  <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Account</div>
+                  <div className="mt-2 break-words text-sm font-semibold leading-6 text-white">{getAccountName(selectedLine.account_id)}</div>
                 </div>
-                <div className="rounded-lg border p-3">
-                  <div className="text-xs uppercase text-muted-foreground">Project / WBS</div>
-                  <div className="mt-1 text-sm font-medium">
-                    {selectedLine.project_id ? getProjectMeta(selectedLine.project_id, selectedLine.wbs_code).label : "Unassigned"}
+                <div className="min-w-0 rounded-lg border border-slate-800 bg-slate-900/70 p-4">
+                  <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Project / WBS</div>
+                  <div className="mt-2 break-words text-sm font-semibold leading-6 text-white">
+                    {selectedLine.project_id ? getProjectMeta(selectedLine.project_id, selectedLine.wbs_code).label : "Unassigned / shared budget"}
                   </div>
                 </div>
-                <div className="rounded-lg border p-3">
-                  <div className="text-xs uppercase text-muted-foreground">Budgeted</div>
-                  <div className="mt-1 text-sm font-semibold">{formatCurrency(selectedLine.budgeted_amount)}</div>
-                </div>
-                <div className="rounded-lg border p-3">
-                  <div className="text-xs uppercase text-muted-foreground">Committed</div>
-                  <div className="mt-1 text-sm font-semibold">{formatCurrency(selectedLine.encumbered_amount || 0)}</div>
-                </div>
-                <div className="rounded-lg border p-3">
-                  <div className="text-xs uppercase text-muted-foreground">Actual / Available</div>
-                  <div className="mt-1 text-sm font-semibold">
-                    {formatCurrency(selectedLine.actual_amount || 0)} / {formatCurrency(getLineAvailable(selectedLine))}
+                <div className="min-w-0 rounded-lg border border-slate-800 bg-slate-900/70 p-4">
+                  <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Budgeted</div>
+                  <div className="mt-2 whitespace-nowrap text-2xl font-bold text-white">{formatCurrency(selectedLine.budgeted_amount)}</div>
+                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-800">
+                    <div
+                      className="h-full rounded-full bg-emerald-500"
+                      style={{ width: `${Math.min(100, Math.max(0, getLineUtilization(selectedLine)))}%` }}
+                    />
                   </div>
+                </div>
+                <div className="min-w-0 rounded-lg border border-slate-800 bg-slate-900/70 p-4">
+                  <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Available</div>
+                  <div className="mt-2 whitespace-nowrap text-2xl font-bold text-emerald-300">{formatCurrency(getLineAvailable(selectedLine))}</div>
+                  <div className="mt-1 text-xs text-slate-400">Actual {formatCurrency(selectedLine.actual_amount || 0)}</div>
                 </div>
               </div>
 
-              <div className="grid gap-6 xl:grid-cols-2">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">Commitments</CardTitle>
-                    <CardDescription>Encumbrances raised against this budget line.</CardDescription>
+              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                <div className="min-w-0 rounded-lg border border-slate-800 bg-slate-900/50 p-4">
+                  <div className="text-xs text-slate-400">Committed</div>
+                  <div className="mt-1 whitespace-nowrap text-lg font-semibold text-amber-300">{formatCurrency(selectedLine.encumbered_amount || 0)}</div>
+                </div>
+                <div className="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
+                  <div className="text-xs text-slate-400">Utilization</div>
+                  <div className="mt-1 text-lg font-semibold text-indigo-300">{getLineUtilization(selectedLine).toFixed(1)}%</div>
+                </div>
+                <div className="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
+                  <div className="text-xs text-slate-400">Documents</div>
+                  <div className="mt-1 text-lg font-semibold text-white">{lineEncumbrances.length + lineActualConsumptions.length}</div>
+                </div>
+              </div>
+
+              <div className="mt-6 grid gap-5 xl:grid-cols-2">
+                <Card className="overflow-hidden border-slate-800 bg-slate-950 shadow-none">
+                  <CardHeader className="border-b border-slate-800 bg-slate-900/50 px-5 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/15 ring-1 ring-amber-400/25">
+                        <Receipt className="h-4 w-4 text-amber-300" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-base text-white">Commitments</CardTitle>
+                        <CardDescription className="text-xs text-slate-400">Encumbrances raised against this budget line.</CardDescription>
+                      </div>
+                    </div>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="p-0">
                     {lineConsumptionLoading ? (
-                      <div className="flex items-center justify-center py-10">
+                      <div className="flex items-center justify-center py-14 text-slate-400">
                         <Loader2 className="h-6 w-6 animate-spin" />
                       </div>
                     ) : lineEncumbrances.length === 0 ? (
-                      <div className="py-8 text-sm text-muted-foreground">No encumbrances have been posted to this line.</div>
+                      <div className="px-5 py-12 text-center">
+                        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-slate-900 ring-1 ring-slate-800">
+                          <Receipt className="h-5 w-5 text-slate-500" />
+                        </div>
+                        <div className="mt-3 text-sm font-medium text-slate-200">No commitments posted</div>
+                        <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500">
+                          Encumbrances from purchase orders, GRNs, expenses, or manual commitments will appear here.
+                        </p>
+                      </div>
                     ) : (
                       <Table>
                         <TableHeader>
-                          <TableRow>
-                            <TableHead>Source</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead className="text-right">Encumbered</TableHead>
-                            <TableHead className="text-right">Remaining</TableHead>
+                          <TableRow className="border-slate-800 hover:bg-transparent">
+                            <TableHead className="min-w-[220px] text-xs uppercase text-slate-500">Source</TableHead>
+                            <TableHead className="text-xs uppercase text-slate-500">Status</TableHead>
+                            <TableHead className="text-right text-xs uppercase text-slate-500">Encumbered</TableHead>
+                            <TableHead className="text-right text-xs uppercase text-slate-500">Remaining</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {lineEncumbrances.map((encumbrance) => (
-                            <TableRow key={encumbrance._id}>
-                              <TableCell>
-                                <div className="font-medium">{encumbrance.source_number}</div>
-                                <div className="text-xs text-muted-foreground">
+                            <TableRow key={encumbrance._id} className="border-slate-800 hover:bg-slate-900/60">
+                              <TableCell className="align-top">
+                                <div className="font-medium text-white">{encumbrance.source_number}</div>
+                                <div className="mt-1 max-w-[340px] whitespace-normal text-xs leading-5 text-slate-400">
                                   {encumbrance.source_type.replaceAll("_", " ")} • {encumbrance.description}
                                 </div>
                               </TableCell>
-                              <TableCell>
-                                <Badge variant="outline">{encumbrance.status.replaceAll("_", " ")}</Badge>
+                              <TableCell className="align-top">
+                                <Badge variant="outline" className="border-amber-400/30 bg-amber-500/10 text-amber-200">{encumbrance.status.replaceAll("_", " ")}</Badge>
                               </TableCell>
-                              <TableCell className="text-right">{formatCurrency(encumbrance.encumbered_amount)}</TableCell>
-                              <TableCell className="text-right">{formatCurrency(encumbrance.remaining_amount)}</TableCell>
+                              <TableCell className="text-right align-top font-medium text-slate-100">{formatCurrency(encumbrance.encumbered_amount)}</TableCell>
+                              <TableCell className="text-right align-top font-medium text-emerald-300">{formatCurrency(encumbrance.remaining_amount)}</TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
@@ -1873,53 +2148,63 @@ export default function BudgetDetailPage() {
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <Receipt className="h-4 w-4" />
-                      Actual consumption
-                    </CardTitle>
-                    <CardDescription>Liquidation documents that converted commitments into actual spend.</CardDescription>
+                <Card className="overflow-hidden border-slate-800 bg-slate-950 shadow-none">
+                  <CardHeader className="border-b border-slate-800 bg-slate-900/50 px-5 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/15 ring-1 ring-emerald-400/25">
+                        <Receipt className="h-4 w-4 text-emerald-300" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-base text-white">Actual consumption</CardTitle>
+                        <CardDescription className="text-xs text-slate-400">Liquidation documents that converted commitments into actual spend.</CardDescription>
+                      </div>
+                    </div>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="p-0">
                     {lineConsumptionLoading ? (
-                      <div className="flex items-center justify-center py-10">
+                      <div className="flex items-center justify-center py-14 text-slate-400">
                         <Loader2 className="h-6 w-6 animate-spin" />
                       </div>
                     ) : lineActualConsumptions.length === 0 ? (
-                      <div className="py-8 text-sm text-muted-foreground">
-                        No actual consumption documents are linked to this line yet.
+                      <div className="px-5 py-12 text-center">
+                        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-slate-900 ring-1 ring-slate-800">
+                          <Receipt className="h-5 w-5 text-slate-500" />
+                        </div>
+                        <div className="mt-3 text-sm font-medium text-slate-200">No actuals posted</div>
+                        <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500">
+                          Liquidations and direct actual documents linked to this budget line will appear here.
+                        </p>
                       </div>
                     ) : (
                       <Table>
                         <TableHeader>
-                          <TableRow>
-                            <TableHead>Document</TableHead>
-                            <TableHead>Date</TableHead>
-                            <TableHead>Origin</TableHead>
-                            <TableHead className="text-right">Amount</TableHead>
+                          <TableRow className="border-slate-800 hover:bg-transparent">
+                            <TableHead className="min-w-[220px] text-xs uppercase text-slate-500">Document</TableHead>
+                            <TableHead className="text-xs uppercase text-slate-500">Date</TableHead>
+                            <TableHead className="text-xs uppercase text-slate-500">Origin</TableHead>
+                            <TableHead className="text-right text-xs uppercase text-slate-500">Amount</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {lineActualConsumptions.map((consumption) => (
-                            <TableRow key={consumption._id}>
-                              <TableCell>
-                                <div className="font-medium">{consumption.document_number}</div>
-                                <div className="text-xs text-muted-foreground">
+                            <TableRow key={consumption._id} className="border-slate-800 hover:bg-slate-900/60">
+                              <TableCell className="align-top">
+                                <div className="font-medium text-white">{consumption.document_number}</div>
+                                <div className="mt-1 text-xs text-slate-400">
                                   {consumption.document_type.replaceAll("_", " ")}
                                   {consumption.source_number ? ` • from ${consumption.source_number}` : ""}
                                 </div>
                                 {consumption.notes ? (
-                                  <div className="text-xs text-muted-foreground">{consumption.notes}</div>
+                                  <div className="mt-1 text-xs text-slate-500">{consumption.notes}</div>
                                 ) : null}
                               </TableCell>
-                              <TableCell>{formatDate(consumption.document_date)}</TableCell>
-                              <TableCell>
-                                <Badge variant="outline">
+                              <TableCell className="align-top text-slate-300">{formatDate(consumption.document_date)}</TableCell>
+                              <TableCell className="align-top">
+                                <Badge variant="outline" className="border-emerald-400/30 bg-emerald-500/10 text-emerald-200">
                                   {consumption.origin_type === "direct_actual" ? "Direct actual" : "Encumbrance liquidation"}
                                 </Badge>
                               </TableCell>
-                              <TableCell className="text-right">{formatCurrency(consumption.amount)}</TableCell>
+                              <TableCell className="text-right align-top font-medium text-slate-100">{formatCurrency(consumption.amount)}</TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
@@ -1931,8 +2216,8 @@ export default function BudgetDetailPage() {
             </div>
           )}
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setLineConsumptionOpen(false)}>
+          <DialogFooter className="border-t border-slate-800 bg-slate-950 px-5 py-4 sm:px-6">
+            <Button variant="outline" className="border-slate-700 bg-slate-900 text-slate-100 hover:bg-slate-800 hover:text-white" onClick={() => setLineConsumptionOpen(false)}>
               Close
             </Button>
           </DialogFooter>

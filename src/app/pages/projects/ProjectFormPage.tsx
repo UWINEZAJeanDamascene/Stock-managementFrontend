@@ -188,15 +188,16 @@ export default function ProjectFormPage() {
 
   return (
     <Layout>
-      <div className="mx-auto max-w-7xl 2xl:max-w-[2200px] space-y-6">
-        <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 dark:border-slate-800 lg:flex-row lg:items-center lg:justify-between">
+      <div className="mx-auto max-w-[1500px] space-y-6 px-4 py-5 sm:px-6 lg:px-8">
+        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+          <div className="flex flex-col gap-4 border-b border-slate-200 bg-slate-50/80 px-5 py-5 dark:border-slate-800 dark:bg-slate-900/50 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-start gap-4">
-            <Button variant="outline" size="icon" onClick={() => navigate("/projects")} className="mt-1 h-9 w-9">
+            <Button variant="outline" size="icon" onClick={() => navigate("/projects")} className="mt-1 h-9 w-9 shrink-0 rounded-lg">
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div className="space-y-2">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-indigo-600 text-white">
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-600 text-white shadow-sm shadow-indigo-950/20">
                   <Briefcase className="h-5 w-5" />
                 </span>
                 <h1 className="text-2xl font-semibold tracking-normal text-slate-950 dark:text-white">
@@ -211,10 +212,10 @@ export default function ProjectFormPage() {
             </div>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row">
-            <Button variant="outline" onClick={() => navigate("/projects")} type="button">
+            <Button variant="outline" className="rounded-lg" onClick={() => navigate("/projects")} type="button">
               {t("common.cancel", "Cancel")}
             </Button>
-            <Button form="project-form" type="submit" disabled={saving}>
+            <Button className="rounded-lg bg-slate-950 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200" form="project-form" type="submit" disabled={saving}>
               {saving ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
@@ -226,27 +227,31 @@ export default function ProjectFormPage() {
             </Button>
           </div>
         </div>
+        </div>
 
-        <form id="project-form" onSubmit={handleSubmit} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <form id="project-form" onSubmit={handleSubmit} className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
           <div className="space-y-6">
           {/* Basic Info */}
-          <Card className="overflow-hidden border-slate-200 shadow-sm dark:border-slate-800">
-            <CardHeader>
+          <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <CardHeader className="border-b border-slate-100 bg-slate-50/70 px-5 py-4 dark:border-slate-800 dark:bg-slate-900/40">
               <CardTitle className="flex items-center gap-2 text-base">
-                <ClipboardList className="h-4 w-4 text-indigo-600" />
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 dark:bg-indigo-500/15">
+                  <ClipboardList className="h-4 w-4 text-indigo-600 dark:text-indigo-300" />
+                </span>
                 {t("projects.basicInfo", "Project Identity")}
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-sm">
                 {t("projects.basicInfoDesc", "Define the master project record used by budgets, WBS, and reporting.")}
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-5 p-5">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="project_code">
+                  <Label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400" htmlFor="project_code">
                     {t("projects.projectCode", "Project Code")} <span className="text-red-500">*</span>
                   </Label>
                   <Input
+                    className="h-11"
                     id="project_code"
                     value={formData.project_code}
                     onChange={(e) =>
@@ -258,10 +263,11 @@ export default function ProjectFormPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="name">
+                  <Label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400" htmlFor="name">
                     {t("projects.name", "Name")} <span className="text-red-500">*</span>
                   </Label>
                   <Input
+                    className="h-11"
                     id="name"
                     value={formData.name}
                     onChange={(e) =>
@@ -274,7 +280,7 @@ export default function ProjectFormPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">{t("projects.description", "Description")}</Label>
+                <Label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400" htmlFor="description">{t("projects.description", "Description")}</Label>
                 <Textarea
                   id="description"
                   value={formData.description}
@@ -282,20 +288,20 @@ export default function ProjectFormPage() {
                     setFormData({ ...formData, description: e.target.value })
                   }
                   placeholder={t("projects.descriptionPlaceholder", "Optional description")}
-                  rows={3}
+                  rows={4}
                 />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label>{t("projects.type", "Type")}</Label>
+                  <Label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("projects.type", "Type")}</Label>
                   <Select
                     value={formData.type}
                     onValueChange={(value: any) =>
                       setFormData({ ...formData, type: value })
                     }
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="h-11">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -308,14 +314,14 @@ export default function ProjectFormPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>{t("projects.status", "Status")}</Label>
+                  <Label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("projects.status", "Status")}</Label>
                   <Select
                     value={formData.status}
                     onValueChange={(value: any) =>
                       setFormData({ ...formData, status: value })
                     }
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="h-11">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -328,14 +334,14 @@ export default function ProjectFormPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>{t("projects.priority", "Priority")}</Label>
+                  <Label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("projects.priority", "Priority")}</Label>
                   <Select
                     value={formData.priority}
                     onValueChange={(value: any) =>
                       setFormData({ ...formData, priority: value })
                     }
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="h-11">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -350,7 +356,7 @@ export default function ProjectFormPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>{t("projects.parentProject", "Parent Project (Optional)")}</Label>
+                <Label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("projects.parentProject", "Parent Project (Optional)")}</Label>
                 <Select
                   value={formData.parent_id || "__none__"}
                   onValueChange={(value) =>
@@ -360,7 +366,7 @@ export default function ProjectFormPage() {
                     })
                   }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="h-11">
                     <SelectValue placeholder={t("projects.noParent", "No parent (top level)")} />
                   </SelectTrigger>
                   <SelectContent>
@@ -381,21 +387,24 @@ export default function ProjectFormPage() {
           </Card>
 
           {/* Budget Info */}
-          <Card className="border-slate-200 shadow-sm dark:border-slate-800">
-            <CardHeader>
+          <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <CardHeader className="border-b border-slate-100 bg-slate-50/70 px-5 py-4 dark:border-slate-800 dark:bg-slate-900/40">
               <CardTitle className="flex items-center gap-2 text-base">
-                <CircleDollarSign className="h-4 w-4 text-emerald-600" />
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-500/15">
+                  <CircleDollarSign className="h-4 w-4 text-emerald-600 dark:text-emerald-300" />
+                </span>
                 {t("projects.budgetInfo", "Commercial Controls")}
               </CardTitle>
               <CardDescription>
                 Capture approved budget, contract value, and billing method for budget versus actual reporting.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-5 p-5">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="budget_allocated">{t("projects.budgetAllocated", "Budget Allocated")}</Label>
+                  <Label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400" htmlFor="budget_allocated">{t("projects.budgetAllocated", "Budget Allocated")}</Label>
                   <Input
+                    className="h-11"
                     id="budget_allocated"
                     type="number"
                     step="0.01"
@@ -410,8 +419,9 @@ export default function ProjectFormPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="contract_value">{t("projects.contractValue", "Contract Value")}</Label>
+                  <Label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400" htmlFor="contract_value">{t("projects.contractValue", "Contract Value")}</Label>
                   <Input
+                    className="h-11"
                     id="contract_value"
                     type="number"
                     step="0.01"
@@ -427,14 +437,14 @@ export default function ProjectFormPage() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label>{t("projects.billingType", "Billing Type")}</Label>
+                <Label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t("projects.billingType", "Billing Type")}</Label>
                 <Select
                   value={formData.billing_type}
                   onValueChange={(value: any) =>
                     setFormData({ ...formData, billing_type: value })
                   }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="h-11">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -450,21 +460,24 @@ export default function ProjectFormPage() {
           </Card>
 
           {/* Timeline */}
-          <Card className="border-slate-200 shadow-sm dark:border-slate-800">
-            <CardHeader>
+          <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <CardHeader className="border-b border-slate-100 bg-slate-50/70 px-5 py-4 dark:border-slate-800 dark:bg-slate-900/40">
               <CardTitle className="flex items-center gap-2 text-base">
-                <CalendarDays className="h-4 w-4 text-blue-600" />
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-500/15">
+                  <CalendarDays className="h-4 w-4 text-blue-600 dark:text-blue-300" />
+                </span>
                 {t("projects.timeline", "Delivery Timeline")}
               </CardTitle>
               <CardDescription>
                 Set planned start and finish dates for scheduling and progress review.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-5 p-5">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="start_date">{t("projects.startDate", "Start Date")}</Label>
+                  <Label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400" htmlFor="start_date">{t("projects.startDate", "Start Date")}</Label>
                   <Input
+                    className="h-11"
                     id="start_date"
                     type="date"
                     value={formData.start_date}
@@ -474,8 +487,9 @@ export default function ProjectFormPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="end_date">{t("projects.endDate", "End Date")}</Label>
+                  <Label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400" htmlFor="end_date">{t("projects.endDate", "End Date")}</Label>
                   <Input
+                    className="h-11"
                     id="end_date"
                     type="date"
                     min={formData.start_date || undefined}
@@ -491,18 +505,20 @@ export default function ProjectFormPage() {
 
           </div>
 
-          <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
-            <Card className="border-slate-200 shadow-sm dark:border-slate-800">
-              <CardHeader>
+          <aside className="space-y-4 xl:sticky xl:top-6 xl:self-start">
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <CardHeader className="border-b border-slate-100 bg-slate-50/70 px-5 py-4 dark:border-slate-800 dark:bg-slate-900/40">
                 <CardTitle className="flex items-center gap-2 text-base">
-                  <ShieldCheck className="h-4 w-4 text-indigo-600" />
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 dark:bg-indigo-500/15">
+                    <ShieldCheck className="h-4 w-4 text-indigo-600 dark:text-indigo-300" />
+                  </span>
                   Control Summary
                 </CardTitle>
                 <CardDescription>Live review before saving.</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4 text-sm">
-                <div className="rounded-md border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900">
-                  <div className="text-xs font-medium uppercase text-slate-500">Project</div>
+              <CardContent className="space-y-4 p-5 text-sm">
+                <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-4 dark:border-indigo-400/25 dark:bg-indigo-500/10">
+                  <div className="text-xs font-semibold uppercase tracking-wide text-indigo-700 dark:text-indigo-200">Project</div>
                   <div className="mt-1 font-semibold text-slate-950 dark:text-white">
                     {formData.name || "Untitled project"}
                   </div>
@@ -511,25 +527,25 @@ export default function ProjectFormPage() {
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div>
+                  <div className="rounded-lg border border-slate-200 p-3 dark:border-slate-800">
                     <div className="text-xs text-slate-500">Status</div>
                     <div className="font-medium capitalize">{formData.status?.replace("_", " ")}</div>
                   </div>
-                  <div>
+                  <div className="rounded-lg border border-slate-200 p-3 dark:border-slate-800">
                     <div className="text-xs text-slate-500">Priority</div>
                     <div className="font-medium capitalize">{formData.priority}</div>
                   </div>
-                  <div>
+                  <div className="rounded-lg border border-slate-200 p-3 dark:border-slate-800">
                     <div className="text-xs text-slate-500">Budget</div>
                     <div className="font-medium">{formatCurrency(formData.budget_allocated)}</div>
                   </div>
-                  <div>
+                  <div className="rounded-lg border border-slate-200 p-3 dark:border-slate-800">
                     <div className="text-xs text-slate-500">Contract</div>
                     <div className="font-medium">{formatCurrency(formData.contract_value)}</div>
                   </div>
                 </div>
-                <div className="rounded-md border border-slate-200 p-3 dark:border-slate-800">
-                  <div className="flex items-center gap-2 text-xs font-medium uppercase text-slate-500">
+                <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
+                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
                     <FolderTree className="h-3.5 w-3.5" />
                     WBS Placement
                   </div>
@@ -537,13 +553,13 @@ export default function ProjectFormPage() {
                     {selectedParent ? `${selectedParent.wbs_code} - ${selectedParent.name}` : "Top-level project"}
                   </div>
                 </div>
-                <div className="rounded-md border border-slate-200 p-3 dark:border-slate-800">
+                <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
                   <div className="text-xs text-slate-500">Projected margin</div>
                   <div className={`mt-1 text-lg font-semibold ${projectedMargin < 0 ? "text-red-600" : "text-emerald-600"}`}>
                     {formatCurrency(projectedMargin)}
                   </div>
                 </div>
-                <Button className="w-full" type="submit" disabled={saving}>
+                <Button className="h-11 w-full rounded-lg bg-slate-950 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200" type="submit" disabled={saving}>
                   {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                   {isEditing ? "Save project" : "Create project"}
                 </Button>

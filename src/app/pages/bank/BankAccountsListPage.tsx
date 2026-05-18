@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, type ReactNode } from "react";
 import { useNavigate, useLocation } from "react-router";
-import { bankAccountsApi, type CashPosition } from "@/lib/api";
+import { bankAccountsApi, interestApi, type CashPosition } from "@/lib/api";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { Layout } from "../../layout/Layout";
 import {
   Plus,
@@ -23,6 +25,11 @@ import {
   Star,
   PiggyBank,
   TrendingUp,
+  CalendarDays,
+  CheckCircle,
+  Calculator,
+  Send,
+  RotateCcw,
 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
@@ -57,6 +64,13 @@ import {
 } from "@/app/components/ui/tooltip";
 
 import { Label } from "@/app/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/app/components/ui/dialog";
 import { useTranslation } from "react-i18next";
 import { BankToCashTransferDialog } from "@/app/components/BankToCashTransferDialog";
 
@@ -83,10 +97,111 @@ export default function BankAccountsListPage() {
     accountType: "bk_bank",
     currencyCode: "USD",
     openingBalance: "0",
+    interestRate: "",
     isDefault: false,
     isActive: true,
+    // Interest fields
+    interestAccountType: "current",
+    interestCalculationMethod: "simple",
+    interestCreditFrequency: "monthly",
+    interestIncomeAccount: "4300",
+    interestAccrualAccount: "1350",
+    bankStatementReference: false,
+    interestStartDate: "",
   });
   const [saving, setSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState<"accounts" | "fixed-deposits" | "interest-income">("accounts");
+  const [fdSearch, setFdSearch] = useState("");
+  const [showFdDialog, setShowFdDialog] = useState(false);
+  const [fdForm, setFdForm] = useState({
+    depositReference: "",
+    bankName: "",
+    principalAmount: "",
+    interestRate: "",
+    startDate: "",
+    maturityDate: "",
+    bankAccountId: "",
+  });
+
+  // Fixed Deposits data
+  const queryClient = useQueryClient();
+  const { data: fdData, isLoading: fdLoading } = useQuery({
+    queryKey: ["fixed-deposits"],
+    queryFn: async () => {
+      const res = await interestApi.getFixedDeposits();
+      return res.data || [];
+    },
+    enabled: activeTab === "fixed-deposits",
+  });
+
+  const placeMutation = useMutation({
+    mutationFn: (id: string) => interestApi.placeFixedDeposit(id),
+    onSuccess: () => { toast.success("Placement posted"); queryClient.invalidateQueries({ queryKey: ["fixed-deposits"] }); },
+    onError: (err: any) => toast.error(err.message || "Placement failed"),
+  });
+
+  const matureMutation = useMutation({
+    mutationFn: (id: string) => interestApi.matureFixedDeposit(id),
+    onSuccess: () => { toast.success("Maturity posted"); queryClient.invalidateQueries({ queryKey: ["fixed-deposits"] }); },
+    onError: (err: any) => toast.error(err.message || "Maturity failed"),
+  });
+
+  const createFdMutation = useMutation({
+    mutationFn: (data: any) => interestApi.createFixedDeposit(data),
+    onSuccess: () => {
+      toast.success("Fixed deposit created");
+      setShowFdDialog(false);
+      setFdForm({ depositReference: "", bankName: "", principalAmount: "", interestRate: "", startDate: "", maturityDate: "", bankAccountId: "" });
+      queryClient.invalidateQueries({ queryKey: ["fixed-deposits"] });
+    },
+    onError: (err: any) => toast.error(err.message || "Create failed"),
+  });
+
+  // Interest Income state
+  const [iiYear, setIiYear] = useState(new Date().getFullYear());
+  const [iiMonth, setIiMonth] = useState(new Date().getMonth() + 1);
+
+  const { data: iiSummary, isLoading: iiSummaryLoading } = useQuery({
+    queryKey: ["interest-summary"],
+    queryFn: async () => {
+      const res = await interestApi.getSummary();
+      return res.data || [];
+    },
+    enabled: activeTab === "interest-income",
+  });
+
+  const { data: iiAccruals, isLoading: iiAccrualsLoading } = useQuery({
+    queryKey: ["interest-accruals", iiYear, iiMonth],
+    queryFn: async () => {
+      const res = await interestApi.getAccruals({ year: String(iiYear), month: String(iiMonth) });
+      return res.data || [];
+    },
+    enabled: activeTab === "interest-income",
+  });
+
+  const previewMutation = useMutation({
+    mutationFn: ({ id, y, m }: { id: string; y: number; m: number }) => interestApi.preview(id, y, m),
+    onSuccess: (res) => toast.success(`Calculated interest: ${Number(res.data.calculatedInterest).toFixed(2)}`),
+    onError: (err: any) => toast.error(err.message || "Preview failed"),
+  });
+
+  const postMutation = useMutation({
+    mutationFn: ({ id, y, m }: { id: string; y: number; m: number }) => interestApi.post(id, y, m),
+    onSuccess: () => { toast.success("Interest posted"); queryClient.invalidateQueries({ queryKey: ["interest-accruals"] }); },
+    onError: (err: any) => toast.error(err.message || "Post failed"),
+  });
+
+  const confirmMutation = useMutation({
+    mutationFn: (accrualId: string) => interestApi.confirmReceipt(accrualId),
+    onSuccess: () => { toast.success("Receipt confirmed"); queryClient.invalidateQueries({ queryKey: ["interest-accruals"] }); },
+    onError: (err: any) => toast.error(err.message || "Confirm failed"),
+  });
+
+  const reverseMutation = useMutation({
+    mutationFn: (accrualId: string) => interestApi.reverse(accrualId),
+    onSuccess: () => { toast.success("Reversed"); queryClient.invalidateQueries({ queryKey: ["interest-accruals"] }); },
+    onError: (err: any) => toast.error(err.message || "Reverse failed"),
+  });
 
   const fetchAccounts = useCallback(async () => {
     setLoading(true);
@@ -129,8 +244,16 @@ export default function BankAccountsListPage() {
               accountType: account.accountType || "bk_bank",
               currencyCode: account.currencyCode || "USD",
               openingBalance: String(account.openingBalance || "0"),
+              interestRate: account.interestRate ? String(account.interestRate) : "",
               isDefault: account.isDefault || false,
               isActive: account.isActive !== false,
+              interestAccountType: account.interestAccountType || "current",
+              interestCalculationMethod: account.interestCalculationMethod || "simple",
+              interestCreditFrequency: account.interestCreditFrequency || "monthly",
+              interestIncomeAccount: account.interestIncomeAccount || "4300",
+              interestAccrualAccount: account.interestAccrualAccount || "1350",
+              bankStatementReference: account.bankStatementReference || false,
+              interestStartDate: account.interestStartDate ? new Date(account.interestStartDate).toISOString().split("T")[0] : "",
             });
           }
         })
@@ -290,6 +413,14 @@ export default function BankAccountsListPage() {
       const submitData = {
         ...updateDataWithoutOpeningBalance,
         openingBalance: parseFloat(formData.openingBalance) || 0,
+        interestRate: parseFloat(formData.interestRate) || 0,
+        interestAccountType: formData.interestAccountType,
+        interestCalculationMethod: formData.interestCalculationMethod,
+        interestCreditFrequency: formData.interestCreditFrequency,
+        interestIncomeAccount: formData.interestIncomeAccount,
+        interestAccrualAccount: formData.interestAccrualAccount,
+        bankStatementReference: formData.bankStatementReference,
+        interestStartDate: formData.interestStartDate || null,
       };
 
       console.log(
@@ -540,6 +671,125 @@ export default function BankAccountsListPage() {
                         </div>
                       </div>
 
+                      {/* Interest Settings */}
+                      <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-900/50 space-y-4">
+                        <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                          <TrendingUp className="h-4 w-4 text-emerald-600" />
+                          Interest Settings
+                        </h3>
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                          <div className="space-y-2">
+                            <Label htmlFor="interestAccountType" className="text-sm font-medium text-slate-700 dark:text-slate-300">Account Type for Interest</Label>
+                            <Select
+                              value={formData.interestAccountType}
+                              onValueChange={(v) => setFormData({ ...formData, interestAccountType: v })}
+                            >
+                              <SelectTrigger id="interestAccountType" className="dark:bg-slate-900 dark:text-white dark:border-slate-700">
+                                <SelectValue placeholder="Select type" />
+                              </SelectTrigger>
+                              <SelectContent className="dark:bg-slate-900 dark:border-slate-700">
+                                <SelectItem value="current">Current Account (No Interest)</SelectItem>
+                                <SelectItem value="savings">Savings Account</SelectItem>
+                                <SelectItem value="fixed_deposit">Fixed Deposit</SelectItem>
+                                <SelectItem value="call_account">Call Account</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          {formData.interestAccountType !== "current" && (
+                            <>
+                              <div className="space-y-2">
+                                <Label htmlFor="interestRate" className="text-sm font-medium text-slate-700 dark:text-slate-300">Interest Rate (% p.a.)</Label>
+                                <Input
+                                  id="interestRate"
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  value={formData.interestRate}
+                                  onChange={(e) => setFormData({ ...formData, interestRate: e.target.value })}
+                                  placeholder="e.g., 5.5"
+                                  className="dark:bg-slate-900 dark:text-white dark:border-slate-700"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="interestCalculationMethod" className="text-sm font-medium text-slate-700 dark:text-slate-300">Calculation Method</Label>
+                                <Select
+                                  value={formData.interestCalculationMethod}
+                                  onValueChange={(v) => setFormData({ ...formData, interestCalculationMethod: v })}
+                                >
+                                  <SelectTrigger id="interestCalculationMethod" className="dark:bg-slate-900 dark:text-white dark:border-slate-700">
+                                    <SelectValue placeholder="Select method" />
+                                  </SelectTrigger>
+                                  <SelectContent className="dark:bg-slate-900 dark:border-slate-700">
+                                    <SelectItem value="simple">Simple Interest</SelectItem>
+                                    <SelectItem value="compound_monthly">Compound Interest (Monthly)</SelectItem>
+                                    <SelectItem value="compound_quarterly">Compound Interest (Quarterly)</SelectItem>
+                                    <SelectItem value="daily_average">Daily Average Balance</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="interestCreditFrequency" className="text-sm font-medium text-slate-700 dark:text-slate-300">Credit Frequency</Label>
+                                <Select
+                                  value={formData.interestCreditFrequency}
+                                  onValueChange={(v) => setFormData({ ...formData, interestCreditFrequency: v })}
+                                >
+                                  <SelectTrigger id="interestCreditFrequency" className="dark:bg-slate-900 dark:text-white dark:border-slate-700">
+                                    <SelectValue placeholder="Select frequency" />
+                                  </SelectTrigger>
+                                  <SelectContent className="dark:bg-slate-900 dark:border-slate-700">
+                                    <SelectItem value="monthly">Monthly</SelectItem>
+                                    <SelectItem value="quarterly">Quarterly</SelectItem>
+                                    <SelectItem value="annually">Annually</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="interestIncomeAccount" className="text-sm font-medium text-slate-700 dark:text-slate-300">Interest Income Account</Label>
+                                <Input
+                                  id="interestIncomeAccount"
+                                  value={formData.interestIncomeAccount}
+                                  onChange={(e) => setFormData({ ...formData, interestIncomeAccount: e.target.value })}
+                                  placeholder="4300"
+                                  className="dark:bg-slate-900 dark:text-white dark:border-slate-700"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="interestAccrualAccount" className="text-sm font-medium text-slate-700 dark:text-slate-300">Interest Accrual Account</Label>
+                                <Input
+                                  id="interestAccrualAccount"
+                                  value={formData.interestAccrualAccount}
+                                  onChange={(e) => setFormData({ ...formData, interestAccrualAccount: e.target.value })}
+                                  placeholder="1350"
+                                  className="dark:bg-slate-900 dark:text-white dark:border-slate-700"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="interestStartDate" className="text-sm font-medium text-slate-700 dark:text-slate-300">Interest Start Date</Label>
+                                <Input
+                                  id="interestStartDate"
+                                  type="date"
+                                  value={formData.interestStartDate}
+                                  onChange={(e) => setFormData({ ...formData, interestStartDate: e.target.value })}
+                                  className="dark:bg-slate-900 dark:text-white dark:border-slate-700"
+                                />
+                              </div>
+                              <div className="flex items-center gap-2 sm:col-span-2">
+                                <input
+                                  type="checkbox"
+                                  id="bankStatementReference"
+                                  checked={formData.bankStatementReference}
+                                  onChange={(e) => setFormData({ ...formData, bankStatementReference: e.target.checked })}
+                                  className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-800"
+                                />
+                                <Label htmlFor="bankStatementReference" className="text-sm font-normal text-slate-700 dark:text-slate-300">
+                                  Wait for bank statement confirmation before posting interest
+                                </Label>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
                       <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50/50 p-3 dark:border-slate-800 dark:bg-slate-900/50">
                         <input
                           type="checkbox"
@@ -716,7 +966,43 @@ export default function BankAccountsListPage() {
               </div>
             </div>
 
-            {/* Summary Metric Tiles */}
+            {/* Tabs */}
+            <div className="flex gap-1 rounded-lg border border-slate-200 bg-white p-1 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <button
+                onClick={() => setActiveTab("accounts")}
+                className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+                  activeTab === "accounts"
+                    ? "bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300"
+                    : "text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800"
+                }`}
+              >
+                Bank Accounts ({accounts.length})
+              </button>
+              <button
+                onClick={() => setActiveTab("fixed-deposits")}
+                className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+                  activeTab === "fixed-deposits"
+                    ? "bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300"
+                    : "text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800"
+                }`}
+              >
+                Fixed Deposits ({fdData?.length || 0})
+              </button>
+              <button
+                onClick={() => setActiveTab("interest-income")}
+                className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+                  activeTab === "interest-income"
+                    ? "bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300"
+                    : "text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800"
+                }`}
+              >
+                Interest Income
+              </button>
+            </div>
+
+            {activeTab === "accounts" && (
+              <>
+                {/* Summary Metric Tiles */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
               <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
                 <CardContent className="p-5">
@@ -1189,8 +1475,286 @@ export default function BankAccountsListPage() {
                 </div>
               </Card>
             )}
+              </>
+            )}
+
+            {activeTab === "fixed-deposits" && (
+              <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base">Fixed Deposits</CardTitle>
+                    <Button size="sm" onClick={() => setShowFdDialog(true)}>
+                      <Plus className="mr-2 h-4 w-4" /> New Fixed Deposit
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <Input
+                    placeholder="Search deposits..."
+                    value={fdSearch}
+                    onChange={(e) => setFdSearch(e.target.value)}
+                    className="max-w-sm mb-4"
+                  />
+                  {fdLoading ? (
+                    <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-slate-400" /></div>
+                  ) : (fdData || []).filter((f: any) =>
+                    f.depositReference?.toLowerCase().includes(fdSearch.toLowerCase()) ||
+                    f.bankName?.toLowerCase().includes(fdSearch.toLowerCase())
+                  ).length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-10 text-slate-400">
+                      <Landmark className="h-10 w-10 mb-2" />
+                      <p>No fixed deposits found</p>
+                    </div>
+                  ) : (
+                    <div className="divide-y">
+                      {(fdData || []).filter((f: any) =>
+                        f.depositReference?.toLowerCase().includes(fdSearch.toLowerCase()) ||
+                        f.bankName?.toLowerCase().includes(fdSearch.toLowerCase())
+                      ).map((f: any) => (
+                        <div key={f._id} className="flex items-center justify-between py-3">
+                          <div className="min-w-0">
+                            <p className="font-medium text-slate-900 dark:text-white">{f.depositReference}</p>
+                            <p className="text-xs text-slate-500">{f.bankName} • Principal: {Number(f.principalAmount).toLocaleString()} • Rate: {f.interestRate}%</p>
+                            <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
+                              <CalendarDays className="h-3 w-3" />
+                              {new Date(f.startDate).toLocaleDateString()} → {new Date(f.maturityDate).toLocaleDateString()}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge className={
+                              f.status === "active" ? "bg-blue-50 text-blue-700" :
+                              f.status === "matured" ? "bg-emerald-50 text-emerald-700" :
+                              f.status === "closed" ? "bg-slate-100 text-slate-700" :
+                              "bg-amber-50 text-amber-700"
+                            }>{f.status}</Badge>
+                            {f.status === "active" && (
+                              <>
+                                <Button variant="outline" size="sm" onClick={() => placeMutation.mutate(f._id)} disabled={placeMutation.isPending}>
+                                  <TrendingUp className="mr-1 h-3.5 w-3.5" /> Place
+                                </Button>
+                                <Button size="sm" onClick={() => matureMutation.mutate(f._id)} disabled={matureMutation.isPending}>
+                                  <CheckCircle className="mr-1 h-3.5 w-3.5" /> Mature
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {activeTab === "interest-income" && (
+              <div className="space-y-6">
+                {/* Period Selector */}
+                <div className="flex gap-3">
+                  <div className="rounded-lg border border-slate-200 bg-white p-1 shadow-sm dark:border-slate-800 dark:bg-slate-900 flex gap-1">
+                    <Input type="number" value={iiYear} onChange={(e) => setIiYear(parseInt(e.target.value))} className="w-32 dark:bg-slate-900 dark:text-white dark:border-slate-700" />
+                    <Input type="number" min={1} max={12} value={iiMonth} onChange={(e) => setIiMonth(parseInt(e.target.value))} className="w-28 dark:bg-slate-900 dark:text-white dark:border-slate-700" />
+                  </div>
+                </div>
+
+                {/* Interest-bearing Accounts */}
+                <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-950 dark:text-white">
+                      <div className="rounded-lg bg-emerald-50 p-1.5 text-emerald-700 ring-1 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60">
+                        <TrendingUp className="h-4 w-4" />
+                      </div>
+                      Interest-Bearing Accounts
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {iiSummaryLoading ? (
+                      <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-slate-400" /></div>
+                    ) : !(iiSummary || []).length ? (
+                      <div className="flex flex-col items-center justify-center py-10 text-slate-400">
+                        <TrendingUp className="h-10 w-10 mb-2" />
+                        <p>No interest-bearing accounts configured</p>
+                        <p className="text-xs mt-1">Set an interest rate on a bank account to see it here</p>
+                      </div>
+                    ) : (
+                      <div className="divide-y dark:divide-slate-800">
+                        {(iiSummary || []).map((acc: any) => (
+                          <div key={acc._id} className="flex items-center justify-between py-4">
+                            <div className="min-w-0">
+                              <p className="font-medium text-slate-900 dark:text-white">{acc.name}</p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Balance: {Number(acc.balance).toLocaleString()} • Rate: {acc.rate}% • Method: {acc.method}</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button variant="outline" size="sm" onClick={() => previewMutation.mutate({ id: acc._id, y: iiYear, m: iiMonth })} disabled={previewMutation.isPending} className="dark:border-slate-700 dark:text-slate-200">
+                                <Calculator className="mr-1.5 h-3.5 w-3.5" /> Preview
+                              </Button>
+                              <Button size="sm" onClick={() => postMutation.mutate({ id: acc._id, y: iiYear, m: iiMonth })} disabled={postMutation.isPending}>
+                                <Send className="mr-1.5 h-3.5 w-3.5" /> Post
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Accruals */}
+                <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base font-semibold text-slate-950 dark:text-white">Interest Accruals ({iiMonth}/{iiYear})</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {iiAccrualsLoading ? (
+                      <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-slate-400" /></div>
+                    ) : !(iiAccruals || []).length ? (
+                      <div className="flex flex-col items-center justify-center py-10 text-slate-400">
+                        <CalendarDays className="h-10 w-10 mb-2" />
+                        <p>No accruals for this period</p>
+                        <p className="text-xs mt-1">Use Preview then Post to generate accruals</p>
+                      </div>
+                    ) : (
+                      <div className="divide-y dark:divide-slate-800">
+                        {(iiAccruals || []).map((a: any) => (
+                          <div key={a._id} className="flex items-center justify-between py-4">
+                            <div className="min-w-0">
+                              <p className="font-medium text-slate-900 dark:text-white">{a.bankAccount?.name || "Fixed Deposit"}</p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Principal: {Number(a.principal).toLocaleString()} • Interest: {Number(a.calculatedInterest).toFixed(2)} • {a.method}</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Badge className={
+                                a.status === "pending" ? "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300" :
+                                a.status === "posted" ? "bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300" :
+                                a.status === "confirmed" ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300" :
+                                "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+                              }>{a.status}</Badge>
+                              {a.status === "pending" && (
+                                <Button variant="outline" size="sm" onClick={() => confirmMutation.mutate(a._id)} disabled={confirmMutation.isPending} className="dark:border-slate-700 dark:text-slate-200">
+                                  <CheckCircle className="mr-1.5 h-3.5 w-3.5" /> Confirm
+                                </Button>
+                              )}
+                              {a.status !== "reversed" && (
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30" onClick={() => reverseMutation.mutate(a._id)} disabled={reverseMutation.isPending}>
+                                  <RotateCcw className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            )}
           </div>
         </div>
+
+        {/* Fixed Deposit Dialog */}
+        <Dialog open={showFdDialog} onOpenChange={setShowFdDialog}>
+          <DialogContent className="max-w-lg dark:border-slate-800 dark:bg-slate-950">
+            <DialogHeader>
+              <DialogTitle className="dark:text-white">New Fixed Deposit</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label className="dark:text-slate-300">Deposit Reference <span className="text-red-500">*</span></Label>
+                <Input
+                  value={fdForm.depositReference}
+                  onChange={(e) => setFdForm({ ...fdForm, depositReference: e.target.value })}
+                  placeholder="e.g., FD-2026-001"
+                  className="dark:bg-slate-900 dark:text-white dark:border-slate-700"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="dark:text-slate-300">Bank Name <span className="text-red-500">*</span></Label>
+                <Input
+                  value={fdForm.bankName}
+                  onChange={(e) => setFdForm({ ...fdForm, bankName: e.target.value })}
+                  placeholder="e.g., Equity Bank"
+                  className="dark:bg-slate-900 dark:text-white dark:border-slate-700"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="dark:text-slate-300">Principal Amount <span className="text-red-500">*</span></Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={fdForm.principalAmount}
+                    onChange={(e) => setFdForm({ ...fdForm, principalAmount: e.target.value })}
+                    placeholder="0.00"
+                    className="dark:bg-slate-900 dark:text-white dark:border-slate-700"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="dark:text-slate-300">Interest Rate (% p.a.) <span className="text-red-500">*</span></Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={fdForm.interestRate}
+                    onChange={(e) => setFdForm({ ...fdForm, interestRate: e.target.value })}
+                    placeholder="e.g., 8.5"
+                    className="dark:bg-slate-900 dark:text-white dark:border-slate-700"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="dark:text-slate-300">Start Date <span className="text-red-500">*</span></Label>
+                  <Input
+                    type="date"
+                    value={fdForm.startDate}
+                    onChange={(e) => setFdForm({ ...fdForm, startDate: e.target.value })}
+                    className="dark:bg-slate-900 dark:text-white dark:border-slate-700"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="dark:text-slate-300">Maturity Date <span className="text-red-500">*</span></Label>
+                  <Input
+                    type="date"
+                    value={fdForm.maturityDate}
+                    onChange={(e) => setFdForm({ ...fdForm, maturityDate: e.target.value })}
+                    className="dark:bg-slate-900 dark:text-white dark:border-slate-700"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="dark:text-slate-300">Linked Bank Account <span className="text-red-500">*</span></Label>
+                <Select
+                  value={fdForm.bankAccountId}
+                  onValueChange={(v) => setFdForm({ ...fdForm, bankAccountId: v })}
+                >
+                  <SelectTrigger className="dark:bg-slate-900 dark:text-white dark:border-slate-700">
+                    <SelectValue placeholder="Select bank account" />
+                  </SelectTrigger>
+                  <SelectContent className="dark:bg-slate-900 dark:border-slate-700">
+                    {accounts.filter((a) => a.isActive !== false).map((a) => (
+                      <SelectItem key={a._id} value={a._id}>{a.name} ({a.currencyCode || "USD"})</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowFdDialog(false)} className="dark:border-slate-700 dark:text-slate-200">Cancel</Button>
+              <Button
+                onClick={() => createFdMutation.mutate({
+                  depositReference: fdForm.depositReference,
+                  bankName: fdForm.bankName,
+                  principalAmount: parseFloat(fdForm.principalAmount) || 0,
+                  interestRate: parseFloat(fdForm.interestRate) || 0,
+                  startDate: fdForm.startDate,
+                  maturityDate: fdForm.maturityDate,
+                  bankAccountId: fdForm.bankAccountId,
+                })}
+                disabled={!fdForm.depositReference || !fdForm.bankName || !fdForm.principalAmount || !fdForm.interestRate || !fdForm.startDate || !fdForm.maturityDate || !fdForm.bankAccountId || createFdMutation.isPending}
+              >
+                {createFdMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Create
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <BankToCashTransferDialog
           open={showTransferDialog}
