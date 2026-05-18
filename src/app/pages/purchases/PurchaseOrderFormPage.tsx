@@ -123,7 +123,7 @@ export default function PurchaseOrderFormPage() {
     warehouse: '',
     orderDate: new Date().toISOString().split('T')[0],
     expectedDeliveryDate: '',
-    currencyCode: 'FRW',
+    currencyCode: 'RWF',
     notes: '',
     lines: [],
     freight: {
@@ -234,7 +234,7 @@ export default function PurchaseOrderFormPage() {
           warehouse: po.warehouse?._id || '',
           orderDate: po.orderDate ? new Date(po.orderDate).toISOString().split('T')[0] : '',
           expectedDeliveryDate: po.expectedDeliveryDate ? new Date(po.expectedDeliveryDate).toISOString().split('T')[0] : '',
-          currencyCode: po.currencyCode || 'FRW',
+          currencyCode: po.currencyCode || 'RWF',
           notes: po.notes || '',
           lines: po.lines?.map((line: any) => ({
             _id: line._id,
@@ -672,7 +672,7 @@ export default function PurchaseOrderFormPage() {
                         {t('purchase.form.currency', 'Currency')}
                       </Label>
                       <Select
-                        value={formData.currencyCode || 'FRW'}
+                        value={formData.currencyCode || 'RWF'}
                         onValueChange={(value) => setFormData({ ...formData, currencyCode: value })}
                       >
                         <SelectTrigger className="border-slate-200 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white">

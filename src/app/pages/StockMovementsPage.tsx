@@ -31,6 +31,7 @@ import {
 import { stockApi, warehousesApi } from '@/lib/api';
 import { Layout } from '../layout/Layout';
 import { StockAdjustmentDialog } from '@/app/components/StockAdjustmentDialog';
+import { useFormatCurrency } from '@/lib/currencyUtils';
 
 interface StockMovement {
   _id: string;
@@ -268,13 +269,7 @@ export default function StockMovementsPage() {
     return isNaN(n) ? 0 : n;
   };
 
-  const formatCurrency = (value: number | string) => {
-    const num = toNum(value);
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(num);
-  };
+  const formatCurrency = useFormatCurrency();
 
   // Calculate summary
   const totalIn = movements

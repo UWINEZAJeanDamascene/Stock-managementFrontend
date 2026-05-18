@@ -22,6 +22,7 @@ import {
   Eye,
   RotateCcw,
 } from 'lucide-react';
+import { useFormatCurrency } from '@/lib/currencyUtils';
 import { Skeleton } from '@/app/components/ui/skeleton';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
@@ -239,10 +240,7 @@ export default function ARDashboardPage() {
     loadAging();
   }, [agingClientFilter, agingAsOfDate]);
 
-  const formatMoney = (val: number) => {
-    const num = typeof val === 'number' ? val : parseFloat(val as any);
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(isNaN(num) ? 0 : num);
-  };
+  const formatMoney = useFormatCurrency();
 
   const getStatusStyle = (status: string) => {
     const map: Record<string, string> = {

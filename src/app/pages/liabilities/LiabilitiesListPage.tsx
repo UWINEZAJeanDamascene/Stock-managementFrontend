@@ -32,6 +32,7 @@ import {
   XCircle,
   CheckCircle2
 } from 'lucide-react';
+import { useFormatCurrency } from '@/lib/currencyUtils';
 import { toast } from 'sonner';
 
 export default function LiabilitiesListPage() {
@@ -81,13 +82,7 @@ export default function LiabilitiesListPage() {
     );
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2
-    }).format(amount || 0);
-  };
+  const formatCurrency = useFormatCurrency();
 
   const totalPrincipal = liabilities.reduce((sum, l) => sum + (l.originalAmount || 0), 0);
   const totalOutstanding = liabilities.reduce((sum, l) => sum + (l.outstandingBalance || 0), 0);

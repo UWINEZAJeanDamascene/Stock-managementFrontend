@@ -1,5 +1,5 @@
 import { useCurrency } from '@/contexts/CurrencyContext';
-import { RefreshCw, DollarSign } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 
 export default function CurrencySelector() {
   const { 
@@ -9,7 +9,8 @@ export default function CurrencySelector() {
     loading, 
     error,
     refreshRates,
-    rates 
+    rates,
+    getCurrencySymbol
   } = useCurrency();
 
   if (error) {
@@ -22,7 +23,7 @@ export default function CurrencySelector() {
 
   return (
     <div className="flex items-center gap-2">
-      <DollarSign className="h-4 w-4 text-slate-400" />
+      <span className="h-4 w-8 text-slate-400 text-xs flex items-center justify-center">{getCurrencySymbol(displayCurrency)}</span>
       <select
         value={displayCurrency}
         onChange={(e) => setDisplayCurrency(e.target.value)}

@@ -232,6 +232,55 @@ const authService = {
   },
 
   /**
+   * Check if platform admin setup is needed
+   * Calls GET /auth/platform-admin-status
+   */
+  async checkPlatformAdminStatus(): Promise<{ success: boolean; needsSetup?: boolean; error?: string }> {
+    try {
+      const response = await authApi.checkPlatformAdminStatus();
+      return {
+        success: true,
+        needsSetup: response.needsSetup,
+      };
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to check setup status';
+      return { success: false, error: errorMessage };
+    }
+  },
+
+  /**
+   * Setup the first platform admin
+   * Calls POST /auth/setup-platform-admin
+   */
+  async setupPlatformAdmin(setupKey: string, name: string, email: string, password: string): Promise<{
+    success: boolean;
+    error?: string;
+    errorCode?: string;
+    message?: string;
+  }> {
+    try {
+      const response = await authApi.setupPlatformAdmin(setupKey, name, email, password);
+      return {
+        success: true,
+        message: response.message,
+      };
+    } catch (error: unknown) {
+      const err = error as { code?: string; message?: string };
+      if (err.code === 'INVALID_SETUP_KEY') {
+        return { success: false, error: 'Invalid setup key', errorCode: 'INVALID_SETUP_KEY' };
+      }
+      if (err.code === 'PASSWORD_TOO_SHORT') {
+        return { success: false, error: 'Password must be at least 8 characters', errorCode: 'PASSWORD_TOO_SHORT' };
+      }
+      if (err.code === 'PLATFORM_ADMIN_ALREADY_EXISTS') {
+        return { success: false, error: 'Platform admin already exists', errorCode: 'PLATFORM_ADMIN_ALREADY_EXISTS' };
+      }
+      const errorMessage = err.message || 'Setup failed';
+      return { success: false, error: errorMessage };
+    }
+  },
+
+  /**
    * Reset password with token
    * Calls POST /auth/reset-password (token in body, not URL)
    */

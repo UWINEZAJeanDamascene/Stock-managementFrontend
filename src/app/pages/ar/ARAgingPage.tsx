@@ -29,6 +29,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { Badge } from '@/app/components/ui/badge';
 import { useTranslation } from 'react-i18next';
+import { useFormatCurrency } from '@/lib/currencyUtils';
 
 interface AgingBucket {
   client: { _id: string; name: string; code: string };
@@ -166,9 +167,7 @@ export default function ARAgingPage() {
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount || 0);
-  };
+  const formatCurrency = useFormatCurrency();
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '-';

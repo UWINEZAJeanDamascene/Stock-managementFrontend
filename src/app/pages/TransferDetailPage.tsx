@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { stockApi, journalEntriesApi } from '@/lib/api';
 import { Layout } from '../layout/Layout';
+import { useFormatCurrency } from '@/lib/currencyUtils';
 
 interface TransferItem {
   _id: string;
@@ -193,9 +194,7 @@ export default function TransferDetailPage() {
     return <Chip label={status.replace('_', ' ').toUpperCase()} color={colors[status] || 'default'} size="small" />;
   };
 
-  const formatCurrency = (value: number | string) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(toNum(value));
-  };
+  const formatCurrency = useFormatCurrency();
 
   if (loading) {
     return (

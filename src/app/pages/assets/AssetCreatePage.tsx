@@ -389,7 +389,7 @@ export default function AssetCreatePage() {
 
   const formatCurrency = (amount: any) => {
     const num = getNumericValue(amount);
-    return sharedFormatCurrency(num, 'FRW');
+    return sharedFormatCurrency(num, 'RWF');
   };
 
   if (initialLoading) {

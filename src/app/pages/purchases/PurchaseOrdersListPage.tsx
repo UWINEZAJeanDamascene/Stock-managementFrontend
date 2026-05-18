@@ -49,6 +49,7 @@ import {
 import { Badge } from '@/app/components/ui/badge';
 import { Skeleton } from '@/app/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
+import { formatDocumentCurrency } from '@/lib/currencyUtils';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -356,7 +357,7 @@ export default function PurchaseOrdersListPage() {
 
   const formatCurrency = (amount: number | string, currency: string = 'USD') => {
     const num = typeof amount === 'string' ? parseFloat(amount) : amount;
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(num || 0);
+    return formatDocumentCurrency(num || 0, currency);
   };
 
   const formatDate = (dateStr: string) => {
@@ -816,13 +817,13 @@ export default function PurchaseOrdersListPage() {
                     <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
                       <CardContent className="p-5">
                         <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Total Freight</p>
-                        <p className="mt-3 text-2xl font-bold text-slate-950 dark:text-white">{formatCurrency(freightDerived?.totalFreight || 0, 'FRW')}</p>
+                        <p className="mt-3 text-2xl font-bold text-slate-950 dark:text-white">{formatCurrency(freightDerived?.totalFreight || 0, 'RWF')}</p>
                       </CardContent>
                     </Card>
                     <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
                       <CardContent className="p-5">
                         <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Total Goods Value</p>
-                        <p className="mt-3 text-2xl font-bold text-slate-950 dark:text-white">{formatCurrency(freightDerived?.totalGoodsValue || 0, 'FRW')}</p>
+                        <p className="mt-3 text-2xl font-bold text-slate-950 dark:text-white">{formatCurrency(freightDerived?.totalGoodsValue || 0, 'RWF')}</p>
                       </CardContent>
                     </Card>
                     <Card className="overflow-hidden border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
@@ -867,7 +868,7 @@ export default function PurchaseOrdersListPage() {
                               <TableRow key={i} className="hover:bg-slate-50/60 dark:hover:bg-slate-900/40">
                                 <TableCell className="font-medium text-slate-900 dark:text-white">{s.supplierName}</TableCell>
                                 <TableCell className="text-right text-slate-600 dark:text-slate-300">{s.billCount}</TableCell>
-                                <TableCell className="text-right text-slate-600 dark:text-slate-300">{formatCurrency(s.totalFreight, 'FRW')}</TableCell>
+                                <TableCell className="text-right text-slate-600 dark:text-slate-300">{formatCurrency(s.totalFreight, 'RWF')}</TableCell>
                               </TableRow>
                             ))}
                           </TableBody>
@@ -906,8 +907,8 @@ export default function PurchaseOrdersListPage() {
                                 <TableCell className="font-medium text-slate-900 dark:text-white">{g.referenceNo}</TableCell>
                                 <TableCell className="text-slate-600 dark:text-slate-300">{g.supplierName}</TableCell>
                                 <TableCell className="text-slate-600 dark:text-slate-300">{g.poReference}</TableCell>
-                                <TableCell className="text-right text-slate-600 dark:text-slate-300">{formatCurrency(g.goodsValue, 'FRW')}</TableCell>
-                                <TableCell className="text-right text-slate-600 dark:text-slate-300">{formatCurrency(g.freightAmount, 'FRW')}</TableCell>
+                                <TableCell className="text-right text-slate-600 dark:text-slate-300">{formatCurrency(g.goodsValue, 'RWF')}</TableCell>
+                                <TableCell className="text-right text-slate-600 dark:text-slate-300">{formatCurrency(g.freightAmount, 'RWF')}</TableCell>
                                 <TableCell className="text-right text-slate-600 dark:text-slate-300">{g.freightPct.toFixed(2)}%</TableCell>
                                 <TableCell>
                                   {g.hasFreight ? (

@@ -22,7 +22,8 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
   USD: '$',
   EUR: '€',
   GBP: '£',
-  FRW: 'FRw',
+  RWF: 'RWF',
+  FRW: 'RWF',
   LBP: 'ل.ل',
   SAR: 'ر.س',
   AED: 'د.إ',
@@ -40,8 +41,8 @@ interface CurrencyProviderProps {
 }
 
 export function CurrencyProvider({ children }: CurrencyProviderProps) {
-  const [baseCurrency, setBaseCurrency] = useState<string>('FRW');
-  const [displayCurrency, setDisplayCurrency] = useState<string>('FRW');
+  const [baseCurrency, setBaseCurrency] = useState<string>('RWF');
+  const [displayCurrency, setDisplayCurrency] = useState<string>('RWF');
   const [rates, setRates] = useState<ExchangeRateData | null>(null);
   const [currencies, setCurrencies] = useState<CurrencyInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -136,7 +137,30 @@ export function CurrencyProvider({ children }: CurrencyProviderProps) {
 export function useCurrency() {
   const context = useContext(CurrencyContext);
   if (context === undefined) {
-    throw new Error('useCurrency must be used within a CurrencyProvider');
+    // Provide a safe fallback so components rendered outside a provider won't crash.
+    const fallback: CurrencyContextType = {
+      baseCurrency: 'RWF',
+      displayCurrency: 'RWF',
+      rates: null,
+      currencies: [],
+      loading: false,
+      error: null,
+      setDisplayCurrency: () => {},
+      setBaseCurrency: () => {},
+      refreshRates: async () => {},
+      convertAmount: (amount: number) => amount,
+      formatCurrency: (amount: number) => {
+        const num = typeof amount === 'number' ? amount : Number(amount) || 0;
+        const symbol = CURRENCY_SYMBOLS['RWF'] || 'RWF';
+        const formatted = num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        return `${symbol} ${formatted}`;
+      },
+      getCurrencySymbol: (currency?: string) => {
+        const curr = currency || 'RWF';
+        return CURRENCY_SYMBOLS[curr] || curr;
+      }
+    };
+    return fallback;
   }
   return context;
 }

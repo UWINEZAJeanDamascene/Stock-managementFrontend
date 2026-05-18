@@ -311,7 +311,7 @@ export default function CreditNoteCreatePage() {
   };
 
   const formatCurrency = (amount: number, currency?: string) => {
-    const curr = currency || companyCurrency || 'FRW';
+    const curr = currency || companyCurrency || 'RWF';
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: curr }).format(amount || 0);
   };
 
@@ -329,7 +329,7 @@ export default function CreditNoteCreatePage() {
         type,
         reason,
         notes,
-        currencyCode: companyCurrency || 'FRW',
+        currencyCode: companyCurrency || 'RWF',
         lines: lines.map(line => ({
           invoiceLineId: line.invoiceLineId,
           product: typeof line.product === 'string' ? line.product : line.product?._id,

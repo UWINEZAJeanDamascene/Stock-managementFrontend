@@ -30,6 +30,7 @@ import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import ResetPasswordPage from './pages/auth/ResetPasswordPage';
+import PlatformAdminSetupPage from './pages/auth/PlatformAdminSetupPage';
 import CompanySelectorPage from './pages/auth/CompanySelectorPage';
 import DashboardPage from './pages/DashboardPage';
 import InventoryDashboardPage from './pages/InventoryDashboardPage';
@@ -352,6 +353,7 @@ function AppRoutes() {
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+        <Route path="/setup-platform-admin" element={<PlatformAdminSetupPage />} />
         <Route path="/company" element={<CompanySelectorPage />} />
         <Route path="/onboarding" element={<OnboardingPage />} />
         

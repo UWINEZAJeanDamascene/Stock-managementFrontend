@@ -35,6 +35,7 @@ import { Badge } from '@/app/components/ui/badge';
 import { Skeleton } from '@/app/components/ui/skeleton';
 import { Card, CardContent } from '@/app/components/ui/card';
 import { useTranslation } from 'react-i18next';
+import { useFormatCurrency } from '@/lib/currencyUtils';
 
 interface Client {
   _id: string;
@@ -175,10 +176,7 @@ export default function ClientsListPage() {
     }
   };
 
-  const formatCurrency = (amount: number | undefined) => {
-    if (amount === undefined || amount === null) return '-';
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
-  };
+  const formatCurrency = useFormatCurrency();
 
   const getInitials = (name: string) => {
     return name

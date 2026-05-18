@@ -37,6 +37,7 @@ import {
   SelectValue,
 } from '@/app/components/ui/select';
 import { useTranslation } from 'react-i18next';
+import { useFormatCurrency } from '@/lib/currencyUtils';
 
 interface RecurringInvoice {
   _id: string;
@@ -294,9 +295,7 @@ export default function RecurringInvoicesListPage() {
     return filteredRecurringInvoices.reduce((sum, inv) => sum + (inv.totalAmount || 0), 0);
   }, [filteredRecurringInvoices]);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
-  };
+  const formatCurrency = useFormatCurrency();
 
   return (
     <Layout>

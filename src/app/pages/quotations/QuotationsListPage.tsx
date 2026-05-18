@@ -47,6 +47,7 @@ import { Skeleton } from '@/app/components/ui/skeleton';
 import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/app/components/ui/dialog';
 import { Label } from '@/app/components/ui/label';
+import { useFormatCurrency } from '@/lib/currencyUtils';
 
 interface Quotation {
   _id: string;
@@ -228,10 +229,7 @@ export default function QuotationsListPage() {
     return parseFloat(String(val)) || 0;
   };
 
-  const formatCurrency = (amount: any, currency: string = 'USD') => {
-    const value = toNumber(amount);
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(value);
-  };
+  const formatCurrency = useFormatCurrency();
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '-';
@@ -311,7 +309,7 @@ export default function QuotationsListPage() {
                 </div>
                 <div className="rounded-lg bg-white p-3 shadow-sm dark:bg-slate-900">
                   <p className="text-xs text-slate-500 dark:text-slate-400">Total Value</p>
-                  <p className="mt-1 text-lg font-bold text-slate-950 dark:text-white">{formatCurrency(totalValue, 'USD')}</p>
+                  <p className="mt-1 text-lg font-bold text-slate-950 dark:text-white">{formatCurrency(totalValue)}</p>
                 </div>
                 <div className="rounded-lg bg-white p-3 shadow-sm dark:bg-slate-900">
                   <p className="text-xs text-slate-500 dark:text-slate-400">Draft</p>
@@ -390,7 +388,7 @@ export default function QuotationsListPage() {
                     <div className="flex items-start justify-between gap-4">
                       <div className="min-w-0">
                         <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Total Value</p>
-                        <p className="mt-3 truncate text-2xl font-bold text-slate-950 dark:text-white">{formatCurrency(totalValue, 'USD')}</p>
+                        <p className="mt-3 truncate text-2xl font-bold text-slate-950 dark:text-white">{formatCurrency(totalValue)}</p>
                       </div>
                       <div className="rounded-lg bg-emerald-50 p-2.5 text-emerald-700 ring-1 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60">
                         <TrendingUp className="h-5 w-5" />

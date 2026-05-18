@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { stockApi } from '@/lib/api';
 import { Layout } from '../layout/Layout';
+import { useFormatCurrency } from '@/lib/currencyUtils';
 
 interface TransferItem {
   product: {
@@ -86,6 +87,8 @@ export default function TransfersListPage() {
     limit: 50,
     pages: 0
   });
+
+  const formatCurrency = useFormatCurrency();
   
   // Filters
   const [search, setSearch] = useState('');
@@ -521,9 +524,9 @@ export default function TransfersListPage() {
                         </div>
                         <div className="rounded-md bg-slate-50 p-3 text-right dark:bg-slate-900">
                           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Transfer Value</p>
-                          <p className="mt-1 font-mono text-sm font-bold text-slate-950 dark:text-white">
-                            {transferValue.toLocaleString(undefined, { style: 'currency', currency: 'USD' })}
-                          </p>
+                                <p className="mt-1 font-mono text-sm font-bold text-slate-950 dark:text-white">
+                                  {formatCurrency(transferValue)}
+                                </p>
                           <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{item.journalEntry || 'No journal link'}</p>
                         </div>
                         <div className="flex flex-wrap items-center justify-end gap-2">

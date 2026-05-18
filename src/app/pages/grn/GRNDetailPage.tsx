@@ -19,6 +19,7 @@ import {
   Package,
   Truck,
 } from "lucide-react";
+import { formatWithSymbol } from '@/lib/currencyUtils';
 import { Button } from "@/app/components/ui/button";
 import {
   Table,
@@ -175,8 +176,8 @@ export default function GRNDetailPage() {
     else if (typeof amount === "object") {
       num = parseFloat((amount as any).$numberDecimal || (amount as any).toString()) || 0;
     } else if (typeof amount === "string") num = parseFloat(amount) || 0;
-    else num = amount;
-    return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(num);
+    else num = amount as number;
+    return formatWithSymbol(num);
   };
 
   const formatDate = (dateStr: string) => {

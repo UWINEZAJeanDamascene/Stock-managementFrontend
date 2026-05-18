@@ -27,6 +27,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { Layout } from "@/app/layout/Layout";
+import { useFormatCurrency } from '@/lib/currencyUtils';
 
 const PROJECT_TYPES = [
   { value: "project", label: "Project" },
@@ -82,14 +83,7 @@ export default function ProjectFormPage() {
     contract_value: 0,
   });
 
-  const formatCurrency = (amount?: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 2,
-    }).format(amount || 0);
-  };
+  const formatCurrency = useFormatCurrency();
 
   useEffect(() => {
     fetchProjects();

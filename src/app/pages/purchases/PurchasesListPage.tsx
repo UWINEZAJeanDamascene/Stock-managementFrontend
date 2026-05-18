@@ -39,6 +39,7 @@ import {
 import { Badge } from '@/app/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { useTranslation } from 'react-i18next';
+import { useFormatCurrency } from '@/lib/currencyUtils';
 
 interface PurchaseItem {
   product: { _id: string; name: string; sku: string; unit?: string };
@@ -170,13 +171,7 @@ export default function PurchasesListPage() {
     );
   }
 
-  const formatCurrency = (amount: string | number) => {
-    const num = typeof amount === 'string' ? parseFloat(amount) : amount;
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(num || 0);
-  };
+  const formatCurrency = useFormatCurrency();
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '-';

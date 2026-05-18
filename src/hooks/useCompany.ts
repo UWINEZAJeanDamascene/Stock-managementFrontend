@@ -67,7 +67,7 @@ export function useCompany() {
    * Get company currency from profile settings
    */
   const currency = useMemo(() => {
-    return companyProfile?.base_currency || 'FRW';
+    return companyProfile?.base_currency || 'RWF';
   }, [companyProfile]);
 
   // Add setCompanies for backward compatibility (no-op since we use memberships)

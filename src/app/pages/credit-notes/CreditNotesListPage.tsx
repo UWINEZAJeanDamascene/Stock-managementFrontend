@@ -49,6 +49,7 @@ import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/app/components/ui/dialog';
 import { Label } from '@/app/components/ui/label';
 import { toast } from 'sonner';
+import { formatDocumentCurrency } from '@/lib/currencyUtils';
 
 interface CreditNote {
   _id: string;
@@ -242,8 +243,8 @@ export default function CreditNotesListPage() {
   };
 
   const formatCurrency = (amount: number, currency?: string) => {
-    const curr = currency || companyCurrency || 'FRW';
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: curr }).format(amount || 0);
+    const curr = currency || companyCurrency || 'RWF';
+    return formatDocumentCurrency(amount || 0, curr);
   };
 
   const formatDate = (dateStr: string) => {

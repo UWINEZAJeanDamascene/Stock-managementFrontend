@@ -32,6 +32,7 @@ import {
   FolderTree,
   RefreshCw,
 } from "lucide-react";
+import { useFormatCurrency } from '@/lib/currencyUtils';
 
 const STATUS_COLORS: Record<string, string> = {
   planning: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-800",
@@ -98,14 +99,7 @@ export default function ProjectDetailPage() {
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 2,
-    }).format(amount || 0);
-  };
+  const formatCurrency = useFormatCurrency();
 
   if (loading) {
     return (

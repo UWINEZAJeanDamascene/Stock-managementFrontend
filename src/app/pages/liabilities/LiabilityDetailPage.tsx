@@ -79,6 +79,7 @@ import {
   Timer,
   Gauge
 } from 'lucide-react';
+import { useFormatCurrency } from '@/lib/currencyUtils';
 import { toast } from 'sonner';
 
 export default function LiabilityDetailPage() {
@@ -572,13 +573,7 @@ export default function LiabilityDetailPage() {
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', { 
-      style: 'currency', 
-      currency: 'USD',
-      minimumFractionDigits: 2 
-    }).format(amount || 0);
-  };
+  const formatCurrency = useFormatCurrency();
 
   const formatDate = (date: string | undefined | null) => {
     if (!date) return '-';

@@ -63,6 +63,7 @@ import {
   TableRow,
 } from "@/app/components/ui/table";
 import { toast } from "sonner";
+import { useFormatCurrency } from '@/lib/currencyUtils';
 
 interface SummaryData {
   budgets: Array<{
@@ -415,19 +416,8 @@ export default function BudgetsListPage() {
     }
   };
 
-  const formatCurrency = (amount: number | string | null | undefined) => {
-    // Handle Decimal128 from MongoDB (which comes as string) or null/undefined
-    const numericAmount = amount == null
-      ? 0
-      : typeof amount === 'string'
-        ? parseFloat(amount)
-        : Number(amount) || 0;
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 2,
-    }).format(numericAmount);
-  };
+  // Use centralized formatter (falls back safely when provider missing)
+  const formatCurrency = useFormatCurrency();
 
   const formatDate = (date: string | Date | null | undefined) => {
     if (!date) return "-";

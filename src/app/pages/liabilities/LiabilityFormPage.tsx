@@ -33,14 +33,15 @@ import {
   Info,
   Banknote
 } from 'lucide-react';
+import { useFormatCurrency } from '@/lib/currencyUtils';
 import { toast } from 'sonner';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from '../../components/ui/table';
 
 export default function LiabilityFormPage() {
@@ -48,6 +49,7 @@ export default function LiabilityFormPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const isEditMode = Boolean(id);
+  const formatCurrency = useFormatCurrency();
 
   const [loading, setLoading] = useState(isEditMode);
   const [submitting, setSubmitting] = useState(false);
@@ -1010,8 +1012,8 @@ export default function LiabilityFormPage() {
                         Monthly Payment
                       </div>
                       <div className="mt-2 text-2xl font-bold text-indigo-600 dark:text-indigo-400">
-                        {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(paymentSchedule.monthlyPayment)}
-                      </div>
+                          {formatCurrency(paymentSchedule.monthlyPayment)}
+                        </div>
                     </div>
                     <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
                       <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
@@ -1019,7 +1021,7 @@ export default function LiabilityFormPage() {
                         Total Payment
                       </div>
                       <div className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">
-                        {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(paymentSchedule.totalPayment)}
+                        {formatCurrency(paymentSchedule.totalPayment)}
                       </div>
                     </div>
                     <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
@@ -1027,8 +1029,8 @@ export default function LiabilityFormPage() {
                         <TrendingDown className="h-3.5 w-3.5" />
                         Total Interest
                       </div>
-                      <div className="mt-2 text-2xl font-bold text-rose-600 dark:text-rose-400">
-                        {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(paymentSchedule.totalInterest)}
+                        <div className="mt-2 text-2xl font-bold text-rose-600 dark:text-rose-400">
+                        {formatCurrency(paymentSchedule.totalInterest)}
                       </div>
                     </div>
                   </div>
@@ -1073,10 +1075,10 @@ export default function LiabilityFormPage() {
                           <TableRow key={payment.paymentNumber} className="border-slate-100 dark:border-slate-800">
                             <TableCell className="text-sm text-slate-700 dark:text-slate-300">{payment.paymentNumber}</TableCell>
                             <TableCell className="text-sm text-slate-700 dark:text-slate-300">{payment.paymentDate}</TableCell>
-                            <TableCell className="text-sm text-slate-700 dark:text-slate-300">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(payment.principalPortion)}</TableCell>
-                            <TableCell className="text-sm text-slate-700 dark:text-slate-300">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(payment.interestPortion)}</TableCell>
-                            <TableCell className="text-sm font-semibold text-slate-900 dark:text-white">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(payment.totalPayment)}</TableCell>
-                            <TableCell className="text-sm text-slate-700 dark:text-slate-300">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(payment.remainingBalance)}</TableCell>
+                            <TableCell className="text-sm text-slate-700 dark:text-slate-300">{formatCurrency(payment.principalPortion)}</TableCell>
+                            <TableCell className="text-sm text-slate-700 dark:text-slate-300">{formatCurrency(payment.interestPortion)}</TableCell>
+                            <TableCell className="text-sm font-semibold text-slate-900 dark:text-white">{formatCurrency(payment.totalPayment)}</TableCell>
+                            <TableCell className="text-sm text-slate-700 dark:text-slate-300">{formatCurrency(payment.remainingBalance)}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>

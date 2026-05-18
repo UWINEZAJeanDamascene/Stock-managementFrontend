@@ -203,7 +203,7 @@ export default function CreditNoteDetailPage() {
 
   const formatCurrency = (amount: number | any, currency?: string) => {
     const num = toNumber(amount);
-    const curr = currency || companyCurrency || 'FRW';
+    const curr = currency || companyCurrency || 'RWF';
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: curr }).format(num);
   };
 

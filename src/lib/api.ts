@@ -276,6 +276,15 @@ export const authApi = {
 
   logout: () =>
     request<{ success: boolean }>("/auth/logout", { method: "POST" }),
+
+  checkPlatformAdminStatus: () =>
+    request<{ success: boolean; needsSetup: boolean }>("/auth/platform-admin-status"),
+
+  setupPlatformAdmin: (setupKey: string, name: string, email: string, password: string) =>
+    request<{ success: boolean; message: string; data?: unknown }>("/auth/setup-platform-admin", {
+      method: "POST",
+      body: { setupKey, name, email, password },
+    }),
 };
 
 // Company API (Public - for registration)

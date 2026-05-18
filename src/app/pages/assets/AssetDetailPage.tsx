@@ -260,7 +260,7 @@ export default function AssetDetailPage() {
       }
     }
     if (isNaN(numAmount)) numAmount = 0;
-    return sharedFormatCurrency(numAmount, 'FRW');
+    return sharedFormatCurrency(numAmount, 'RWF');
   };
 
   const formatDate = (date: string | undefined | null) => {

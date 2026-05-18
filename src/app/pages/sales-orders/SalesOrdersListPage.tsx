@@ -19,6 +19,7 @@ import {
   BarChart3,
   ArrowRight,
 } from 'lucide-react';
+import { useFormatCurrency } from '@/lib/currencyUtils';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { Card, CardContent } from '@/app/components/ui/card';
@@ -238,13 +239,7 @@ export default function SalesOrdersListPage() {
     return parseFloat(String(val)) || 0;
   };
 
-  const formatCurrency = (amount: any, currency: string) => {
-    const value = toNumber(amount);
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency || 'USD',
-    }).format(value);
-  };
+  const formatCurrency = useFormatCurrency();
 
   const formatDate = (date: string) => {
     if (!date) return '-';
@@ -315,7 +310,7 @@ export default function SalesOrdersListPage() {
                 </div>
                 <div className="rounded-lg bg-white p-3 shadow-sm dark:bg-slate-900">
                   <p className="text-xs text-slate-500 dark:text-slate-400">Total Value</p>
-                  <p className="mt-1 text-lg font-bold text-slate-950 dark:text-white">{formatCurrency(totalValue, 'USD')}</p>
+                  <p className="mt-1 text-lg font-bold text-slate-950 dark:text-white">{formatCurrency(totalValue)}</p>
                 </div>
                 <div className="rounded-lg bg-white p-3 shadow-sm dark:bg-slate-900">
                   <p className="text-xs text-slate-500 dark:text-slate-400">Draft</p>
@@ -396,7 +391,7 @@ export default function SalesOrdersListPage() {
                     <div className="flex items-start justify-between gap-4">
                       <div className="min-w-0">
                         <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Total Value</p>
-                        <p className="mt-3 truncate text-2xl font-bold text-slate-950 dark:text-white">{formatCurrency(totalValue, 'USD')}</p>
+                        <p className="mt-3 truncate text-2xl font-bold text-slate-950 dark:text-white">{formatCurrency(totalValue)}</p>
                       </div>
                       <div className="rounded-lg bg-emerald-50 p-2.5 text-emerald-700 ring-1 ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/60">
                         <TrendingUp className="h-5 w-5" />

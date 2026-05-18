@@ -595,7 +595,7 @@ export default function SalesLegacyPage() {
         type: 'goods_return',
         reason: 'POS refund',
         notes: 'Refund created from POS invoice actions',
-        currencyCode: invoice.currencyCode || 'FRW',
+        currencyCode: invoice.currencyCode || 'RWF',
         lines,
       });
 

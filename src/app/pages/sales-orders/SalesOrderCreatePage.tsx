@@ -29,6 +29,7 @@ import {
   SelectValue,
 } from '@/app/components/ui/select';
 import { toast } from 'sonner';
+import { formatDocumentCurrency } from '@/lib/currencyUtils';
 
 // Helper to safely convert values to numbers
 const toNumber = (value: any): number => {
@@ -348,19 +349,19 @@ export default function SalesOrderCreatePage() {
                 <div className="rounded-lg bg-white p-3 shadow-sm dark:bg-slate-900">
                   <p className="text-xs text-slate-500 dark:text-slate-400">Subtotal</p>
                   <p className="mt-1 text-lg font-bold text-slate-950 dark:text-white">
-                    {new Intl.NumberFormat('en-US', { style: 'currency', currency: formData.currencyCode || 'USD' }).format(Number(subtotal) || 0)}
+                    {formatDocumentCurrency(Number(subtotal) || 0, formData.currencyCode)}
                   </p>
                 </div>
                 <div className="rounded-lg bg-white p-3 shadow-sm dark:bg-slate-900">
                   <p className="text-xs text-slate-500 dark:text-slate-400">Tax</p>
                   <p className="mt-1 text-lg font-bold text-blue-600 dark:text-blue-400">
-                    {new Intl.NumberFormat('en-US', { style: 'currency', currency: formData.currencyCode || 'USD' }).format(Number(taxTotal) || 0)}
+                    {formatDocumentCurrency(Number(taxTotal) || 0, formData.currencyCode)}
                   </p>
                 </div>
                 <div className="rounded-lg bg-white p-3 shadow-sm dark:bg-slate-900">
                   <p className="text-xs text-slate-500 dark:text-slate-400">Grand Total</p>
                   <p className="mt-1 text-lg font-bold text-indigo-600 dark:text-indigo-400">
-                    {new Intl.NumberFormat('en-US', { style: 'currency', currency: formData.currencyCode || 'USD' }).format(Number(grandTotal) || 0)}
+                    {formatDocumentCurrency(Number(grandTotal) || 0, formData.currencyCode)}
                   </p>
                 </div>
                 <div className="rounded-lg bg-white p-3 shadow-sm dark:bg-slate-900">

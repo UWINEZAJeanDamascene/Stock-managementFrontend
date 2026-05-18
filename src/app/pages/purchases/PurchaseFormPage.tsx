@@ -118,7 +118,7 @@ interface PurchaseFormData {
   items: PurchaseLine[];
 }
 
-const CURRENCIES = ['FRW', 'USD', 'EUR', 'GBP', 'KES', 'UGX', 'TZS'];
+const CURRENCIES = ['RWF', 'USD', 'EUR', 'GBP', 'KES', 'UGX', 'TZS'];
 const PAYMENT_TERMS = [
   { value: 'cash', label: 'Cash' },
   { value: 'credit_7', label: 'Credit 7 Days' },
@@ -145,7 +145,7 @@ export default function PurchaseFormPage() {
 
   const [formData, setFormData] = useState<PurchaseFormData>({
     supplier: '',
-    currency: 'FRW',
+    currency: 'RWF',
     paymentTerms: 'cash',
     purchaseDate: new Date().toISOString().split('T')[0],
     expectedDeliveryDate: '',
@@ -229,7 +229,7 @@ export default function PurchaseFormPage() {
         const p = response.data as any;
         setFormData({
           supplier: p.supplier?._id || '',
-          currency: p.currency || 'FRW',
+          currency: p.currency || 'RWF',
           paymentTerms: p.paymentTerms || 'cash',
           purchaseDate: p.purchaseDate ? new Date(p.purchaseDate).toISOString().split('T')[0] : '',
           expectedDeliveryDate: p.expectedDeliveryDate ? new Date(p.expectedDeliveryDate).toISOString().split('T')[0] : '',

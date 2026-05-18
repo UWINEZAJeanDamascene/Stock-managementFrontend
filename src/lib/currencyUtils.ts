@@ -17,7 +17,7 @@ export function useFormatCurrency() {
 
     return (amount: number | any, overrideCurrency?: string): string => {
       const num = typeof amount === 'number' ? amount : Number(amount) || 0;
-      const currency = overrideCurrency || displayCurrency || 'FRW';
+      const currency = overrideCurrency || displayCurrency || 'RWF';
       return formatCurrency(num, currency);
     };
   } catch (err) {
@@ -25,7 +25,7 @@ export function useFormatCurrency() {
     // so pages (like POS) can still render in isolation.
     return (amount: number | any, overrideCurrency?: string): string => {
       const num = typeof amount === 'number' ? amount : Number(amount) || 0;
-      const currency = overrideCurrency || 'FRW';
+      const currency = overrideCurrency || 'RWF';
       return formatWithSymbol(num, currency);
     };
   }
@@ -37,7 +37,7 @@ export function useFormatCurrency() {
  */
 export function formatCurrency(
   amount: number | any,
-  currency: string = 'FRW'
+  currency: string = 'RWF'
 ): string {
   let num = typeof amount === 'number' ? amount : Number(amount) || 0;
   if (isNaN(num)) num = 0;
@@ -57,7 +57,7 @@ export function formatDocumentCurrency(
   overrideCurrency?: string
 ): string {
   const num = typeof amount === 'number' ? amount : Number(amount) || 0;
-  const currency = overrideCurrency || documentCurrencyCode || 'FRW';
+  const currency = overrideCurrency || documentCurrencyCode || 'RWF';
   return new Intl.NumberFormat('en-US', { 
     style: 'currency', 
     currency 
@@ -69,7 +69,7 @@ export const CURRENCY_SYMBOLS: Record<string, string> = {
   USD: '$',
   EUR: '€',
   GBP: '£',
-  FRW: 'RWF',
+  RWF: 'RWF',
   LBP: 'ل.ل',
   SAR: 'ر.س',
   AED: 'د.إ',
@@ -94,7 +94,7 @@ export function getCurrencySymbol(currency: string): string {
  */
 export function formatWithSymbol(
   amount: number | any,
-  currency: string = 'FRW'
+  currency: string = 'RWF'
 ): string {
   const num = typeof amount === 'number' ? amount : Number(amount) || 0;
   const symbol = getCurrencySymbol(currency);

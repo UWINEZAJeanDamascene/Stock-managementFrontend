@@ -49,6 +49,7 @@ import {
   TableRow,
 } from "@/app/components/ui/table";
 import { toast } from "sonner";
+import { useFormatCurrency } from '@/lib/currencyUtils';
 
 interface LineItem {
   account_id: string;
@@ -388,19 +389,8 @@ export default function BudgetFormPage() {
     }
   };
 
-  const formatCurrency = (amount: number | string | null | undefined) => {
-    // Handle Decimal128 from MongoDB (which comes as string) or null/undefined
-    const numericAmount = amount == null
-      ? 0
-      : typeof amount === 'string'
-        ? parseFloat(amount)
-        : Number(amount) || 0;
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 2,
-    }).format(numericAmount);
-  };
+  // Use centralized formatter
+  const formatCurrency = useFormatCurrency();
 
   const totalLineAmount = lines.reduce(
     (sum, l) => sum + (l.budgeted_amount || 0),

@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { serialNumberApi, productsApi, warehousesApi } from '@/lib/api';
 import { Layout } from '../layout/Layout';
+import { useFormatCurrency } from '@/lib/currencyUtils';
 
 interface SerialItem {
   _id: string;
@@ -248,6 +249,7 @@ export default function SerialNumbersPage() {
     return Number.isFinite(parsed) ? parsed : 0;
   };
   const serialValue = serials.reduce((sum, item) => sum + toNum(item.unitCost), 0);
+  const formatCurrency = useFormatCurrency();
   const inStockCount = serials.filter((item) => item.status === 'in_stock').length;
   const committedCount = serials.filter((item) => ['reserved', 'dispatched'].includes(item.status)).length;
   const exceptionCount = serials.filter((item) => ['returned', 'scrapped'].includes(item.status)).length;
@@ -303,7 +305,7 @@ export default function SerialNumbersPage() {
               ['Serialized Units', total.toLocaleString(), `${serials.length.toLocaleString()} loaded`],
               ['Available In Stock', inStockCount.toLocaleString(), 'Ready for allocation'],
               ['Committed Units', committedCount.toLocaleString(), 'Reserved or dispatched'],
-              ['Serial Asset Value', serialValue.toLocaleString(undefined, { style: 'currency', currency: 'USD' }), `${exceptionCount} exceptions`],
+              ['Serial Asset Value', formatCurrency(serialValue), `${exceptionCount} exceptions`],
             ].map(([label, value, sub]) => (
               <Paper key={label} sx={{ p: 2.75, backgroundColor: dark ? '#111827' : 'white', border: `1px solid ${dark ? '#334155' : '#e2e8f0'}`, boxShadow: 'none', borderRadius: 2 }}>
                 <Typography variant="caption" sx={{ color: dark ? '#94a3b8' : '#64748b', textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 800 }}>{label}</Typography>
@@ -417,7 +419,7 @@ export default function SerialNumbersPage() {
                       <div className="rounded-md bg-slate-50 p-3 dark:bg-slate-900">
                         <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Unit Cost</p>
                         <p className="mt-1 font-mono text-sm font-bold text-slate-950 dark:text-white">
-                          {toNum(item.unitCost).toLocaleString(undefined, { style: 'currency', currency: 'USD' })}
+                          {formatCurrency(toNum(item.unitCost))}
                         </p>
                         <Chip label={item.status.replace('_', ' ')} color={getStatusColor(item.status)} size="small" sx={{ mt: 1.25 }} />
                       </div>

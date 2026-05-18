@@ -133,6 +133,9 @@ export const APP_ROUTES = {
   
   // Platform Admin
   PLATFORM_ADMIN: '/platform-admin',
+
+  // Platform Admin Setup (one-time bootstrap)
+  SETUP_PLATFORM_ADMIN: '/setup-platform-admin',
 } as const;
 
 // Route groups

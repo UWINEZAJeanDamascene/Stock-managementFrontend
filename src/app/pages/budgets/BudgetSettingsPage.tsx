@@ -39,6 +39,7 @@ import { Switch } from '@/app/components/ui/switch';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router';
 import { budgetsApi } from '@/lib/api';
+import { useFormatCurrency } from '@/lib/currencyUtils';
 import {
   Dialog,
   DialogContent,
@@ -402,10 +403,7 @@ export default function BudgetSettingsPage() {
     }
   };
 
-  const formatCurrency = (amount: number | null) => {
-    if (amount === null || amount === undefined) return '∞';
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(amount);
-  };
+  const formatCurrency = useFormatCurrency();
 
   const getWorkflowTypeLabel = (type: string) => {
     return WORKFLOW_TYPES.find(t => t.value === type)?.label || type;
