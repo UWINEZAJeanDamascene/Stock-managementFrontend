@@ -66,6 +66,10 @@ import DepartmentsPage from './pages/DepartmentsPage';
 import BulkDataPage from './pages/BulkDataPage';
 import AuditTrailPage from './pages/AuditTrailPage';
 import PlatformAdminPage from './pages/PlatformAdminPage';
+import TenantsPage from './pages/TenantsPage';
+import CommunicationsPage from './pages/CommunicationsPage';
+import SystemHealthPage from './pages/SystemHealthPage';
+import SecurityAuditPage from './pages/SecurityAuditPage';
 import { PlatformOwnerLayout } from './layout/PlatformOwnerLayout';
 import ProductsListPage from './pages/ProductsListPage';
 import ProductFormPage from './pages/ProductFormPage';
@@ -718,7 +722,35 @@ function AppRoutes() {
             </PlatformOwnerLayout>
           </ProtectedRoute>
         } />
-        
+        <Route path="/platform-admin/tenants" element={
+          <ProtectedRoute permission="platform:admin">
+            <PlatformOwnerLayout title="Tenants">
+              <TenantsPage />
+            </PlatformOwnerLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/platform-admin/comms" element={
+          <ProtectedRoute permission="platform:admin">
+            <PlatformOwnerLayout title="Communications">
+              <CommunicationsPage />
+            </PlatformOwnerLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/platform-admin/health" element={
+          <ProtectedRoute permission="platform:admin">
+            <PlatformOwnerLayout title="System Health">
+              <SystemHealthPage />
+            </PlatformOwnerLayout>
+          </ProtectedRoute>
+        } />
+        <Route path="/platform-admin/audit" element={
+          <ProtectedRoute permission="platform:admin">
+            <PlatformOwnerLayout title="Security & Audit">
+              <SecurityAuditPage />
+            </PlatformOwnerLayout>
+          </ProtectedRoute>
+        } />
+
         {/* Employee Master routes */}
         <Route path="/employees" element={
           <ErrorBoundary>

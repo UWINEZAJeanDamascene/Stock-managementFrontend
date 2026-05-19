@@ -120,6 +120,11 @@ class CompanyService {
     return response;
   }
 
+  async getPlatformSecurityStats() {
+    const response = await companyApi.getPlatformSecurityStats();
+    return response;
+  }
+
   async getCompanyUsers(companyId: string, params?: Parameters<typeof companyApi.getCompanyUsers>[1]) {
     const response = await companyApi.getCompanyUsers(companyId, params);
     return response;
@@ -173,6 +178,92 @@ class CompanyService {
   async getCapitalBalance(): Promise<{ data: { shareCapital: number; ownerCapital: number; totalCapital: number } }> {
     const response = await companyApi.getCapitalBalance();
     return response as unknown as { data: { shareCapital: number; ownerCapital: number; totalCapital: number } };
+  }
+
+  async getSystemHealth(): Promise<{
+    status: string;
+    version: string;
+    timestamp: string;
+    uptime_seconds: number;
+    database: { status: string; ping_ms: number };
+    memory: { heap_used_mb: number; heap_total_mb: number; rss_mb: number; status: string };
+    cache: { status: string };
+    memory_trend: {
+      duration_sec: number;
+      growth_mb: number;
+      rate_mb_per_min: number;
+      readings: number;
+    } | null;
+    metrics: {
+      requests: {
+        total_requests: number;
+        avg_response_ms: number;
+        error_rate: number;
+        slow_rate: number;
+        requests_per_min: number;
+        recent_avg_ms: number;
+      };
+      database_stats: {
+        name: string;
+        total_size_mb: number;
+        collections_count: number;
+        top_collections: Array<{
+          name: string;
+          documents: number;
+          size_mb: number;
+          avg_obj_size: number;
+          indexes: number;
+        }>;
+      } | null;
+      company_stats: {
+        total_companies: number;
+        active_companies: number;
+        total_tenant_documents: number;
+        avg_documents_per_company: number;
+        collection_breakdown: Array<{ collection: string; documents: number }>;
+      } | null;
+      capacity: {
+        current_active_companies: number;
+        estimated_max_companies: number;
+        capacity_used_percent: number;
+        headroom_companies: number;
+        heap_headroom_mb: number;
+        db_headroom_mb: number;
+        node_heap_limit_mb: number;
+        derived_from: {
+          actual_db_per_company_mb: number;
+          actual_docs_per_company: number;
+          heap_per_company_mb: number;
+          bottleneck: 'memory' | 'database' | 'throughput';
+        };
+      };
+      system: {
+        cpu_count: number;
+        load_average_1m: number;
+        load_average_5m: number;
+        load_average_15m: number;
+        load_percent_1m: number;
+        total_memory_mb: number;
+        free_memory_mb: number;
+        uptime_hours: number;
+      };
+      event_loop_lag_ms: number;
+      active_connections: number;
+    } | null;
+  }> {
+    const response = await companyApi.getSystemHealth();
+    return response;
+  }
+
+  async runGC(): Promise<{
+    gc_ran: boolean;
+    message: string;
+    heap_freed_mb: number;
+    before: { heap_used_mb: number; heap_total_mb: number; rss_mb: number };
+    after: { heap_used_mb: number; heap_total_mb: number; rss_mb: number };
+  }> {
+    const response = await companyApi.runGC();
+    return response;
   }
 }
 
