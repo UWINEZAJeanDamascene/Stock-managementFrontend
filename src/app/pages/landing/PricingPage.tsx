@@ -1,18 +1,39 @@
 import { useEffect, useState } from 'react';
+import type { ComponentType } from 'react';
 import { Link } from 'react-router';
 import {
   ArrowLeft,
   ArrowRight,
+  ArrowUpRight,
+  Banknote,
   BarChart3,
   Boxes,
   Building2,
+  CalendarDays,
+  ChartColumn,
   Check,
+  ClipboardList,
+  Coins,
+  CreditCard,
+  Database,
+  FileBarChart,
+  FileClock,
+  FileText,
+  Landmark,
   Layers3,
-  LockKeyhole,
-  ShieldCheck,
-  Sparkles,
-  Zap,
   Loader2,
+  PackageCheck,
+  PackageOpen,
+  ReceiptText,
+  Repeat2,
+  ShieldCheck,
+  ShoppingCart,
+  Sparkles,
+  Tags,
+  Truck,
+  Users,
+  Warehouse,
+  Zap,
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { companyService } from '@/services';
@@ -25,12 +46,13 @@ const PLAN_ACCENTS = [
   'from-rose-300 to-orange-300',
 ];
 
-const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+const PLAN_BADGES = ['Entry tier', 'Most popular', 'Full access', 'Advanced', 'Custom'];
+
+const CARD_ICON_MAP: Record<string, ComponentType<{ className?: string }>> = {
   Boxes,
   BarChart3,
   ShieldCheck,
   Sparkles,
-  LockKeyhole,
   Zap,
   Building2,
   Check,
@@ -39,7 +61,54 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   ArrowLeft,
 };
 
-const PLAN_BADGES = ['Entry tier', 'Mid-tier', 'Full access', 'Advanced', 'Custom'];
+const FEATURE_ICON_MAP: Array<[RegExp, ComponentType<{ className?: string }>]> = [
+  [/product|categor/i, Tags],
+  [/warehouse/i, Warehouse],
+  [/stock level/i, ChartColumn],
+  [/stock movement/i, Repeat2],
+  [/pos/i, ShoppingCart],
+  [/quotation|sales order/i, FileText],
+  [/invoice|receivable|payable/i, ReceiptText],
+  [/delivery/i, Truck],
+  [/batch|serial/i, PackageCheck],
+  [/client|employee/i, Users],
+  [/pick pack/i, PackageOpen],
+  [/credit note/i, FileClock],
+  [/supplier/i, Building2],
+  [/purchase/i, ClipboardList],
+  [/bank/i, Landmark],
+  [/journal/i, FileText],
+  [/petty cash|cash flow/i, Coins],
+  [/expense|budget/i, CreditCard],
+  [/period/i, CalendarDays],
+  [/chart of accounts|balance sheet|ratio/i, Banknote],
+  [/liabilities|fixed assets/i, Database],
+  [/report|profit|loss|debt/i, FileBarChart],
+];
+
+const GROUP_LABELS: Record<string, string> = {
+  inventory: 'Inventory Core',
+  sales: 'Revenue Flow',
+  purchases: 'Supply Chain',
+  finance: 'Finance Control',
+  payroll: 'Finance Control',
+  reports: 'Intelligence',
+  projects: 'Finance Control',
+  fixed_assets: 'Finance Control',
+  ai_assistant: 'Intelligence',
+};
+
+const FEATURE_LABELS: Record<string, string> = {
+  inventory: 'Products & Categories',
+  sales: 'Quotations & Sales Orders',
+  purchases: 'Purchase Orders',
+  finance: 'Bank Accounts',
+  payroll: 'Payroll & Payroll Runs',
+  reports: 'Reports Hub',
+  projects: 'Projects',
+  fixed_assets: 'Liabilities & Fixed Assets',
+  ai_assistant: 'Stacy AI Assistant included',
+};
 
 interface PlanData {
   key: string;
@@ -57,6 +126,63 @@ interface PlanData {
   sort_order: number;
 }
 
+function titleFromKey(value: string) {
+  return value.replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function featureIcon(label: string) {
+  return FEATURE_ICON_MAP.find(([pattern]) => pattern.test(label))?.[1] || Check;
+}
+
+function formatPrice(amount: number) {
+  if (!amount) return 'Custom';
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
+
+function parseGroupedModules(plan: PlanData) {
+  const source = plan.modules?.length
+    ? plan.modules
+    : plan.features.map((feature) => `${GROUP_LABELS[feature] || 'Included Modules'}|${FEATURE_LABELS[feature] || titleFromKey(feature)}`);
+
+  const groups: Array<{ title: string; items: string[] }> = [];
+  source.forEach((rawItem) => {
+    const divider = rawItem.includes('|') ? '|' : rawItem.includes(':') ? ':' : null;
+    const [rawGroup, ...rest] = divider ? rawItem.split(divider) : ['Included Modules', rawItem];
+    const title = rawGroup.trim();
+    const label = rest.join(divider || '').trim();
+    if (!label) return;
+    const existing = groups.find((group) => group.title.toLowerCase() === title.toLowerCase());
+    if (existing) existing.items.push(label);
+    else groups.push({ title, items: [label] });
+  });
+  return groups;
+}
+
+function parseIncludedPills(outcomes: string[]) {
+  const pills = outcomes
+    .filter((item) => item.toLowerCase().startsWith('included|'))
+    .map((item) => {
+      const [, tone = 'control', label = 'Control Room included'] = item.split('|');
+      return {
+        label,
+        tone,
+        Icon: tone === 'ai' ? Sparkles : ShieldCheck,
+      };
+    });
+  return pills.length ? pills : [{ label: 'Control Room included', tone: 'control', Icon: ShieldCheck }];
+}
+
+function visiblePricingPlans(plans: PlanData[]) {
+  return plans
+    .filter((plan) => plan.key !== 'trial' && plan.default_billing_amount > 0)
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .slice(0, 3);
+}
+
 export default function PricingPage() {
   const [plans, setPlans] = useState<PlanData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,37 +191,33 @@ export default function PricingPage() {
     companyService.getPublicSubscriptionPlans()
       .then((res) => {
         if (res.success) {
-          setPlans(res.data.sort((a, b) => a.sort_order - b.sort_order));
+          setPlans(visiblePricingPlans(res.data));
         }
       })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
 
-  const uiPlans = plans.map((plan, index) => {
-    const priceAmount = plan.default_billing_amount === 0 ? 'Free' : `${Math.round(plan.default_billing_amount / 1000)}k`;
-    const pricePeriod = plan.default_billing_amount === 0 ? '' : plan.default_billing_cycle === 'annual' ? '/ year' : plan.default_billing_cycle === 'quarterly' ? '/ quarter' : '/ month';
-    return {
-      key: plan.key,
-      name: plan.name,
-      priceAmount,
-      pricePeriod,
-      accent: PLAN_ACCENTS[index % PLAN_ACCENTS.length],
-      badge: plan.badge || PLAN_BADGES[index % PLAN_BADGES.length],
-      summary: plan.description || '',
-      modules: plan.modules?.length ? plan.modules : plan.features,
-      outcomes: plan.outcomes?.length ? plan.outcomes : [],
-      icon: ICON_MAP[plan.icon] || Boxes,
-      featured: plan.featured,
-      buttonLabel: plan.button_label || `Choose ${plan.name}`,
-    };
-  });
+  const uiPlans = plans.map((plan, index) => ({
+    key: plan.key,
+    name: plan.name,
+    priceAmount: formatPrice(plan.default_billing_amount),
+    pricePeriod: '/ month',
+    accent: PLAN_ACCENTS[index % PLAN_ACCENTS.length],
+    badge: plan.badge || PLAN_BADGES[index % PLAN_BADGES.length],
+    summary: plan.description || '',
+    groups: parseGroupedModules(plan),
+    includedPills: parseIncludedPills(plan.outcomes || []),
+    icon: CARD_ICON_MAP[plan.icon] || Boxes,
+    featured: plan.featured,
+    buttonLabel: plan.button_label || (plan.featured ? 'Get started' : 'Learn more'),
+  }));
 
   const moduleMatrix = plans.length > 0
-    ? (plans[0].modules?.length ? plans[0].modules : plans[0].features).map((mod) => ({
+    ? Array.from(new Set(plans.flatMap((plan) => parseGroupedModules(plan).flatMap((group) => group.items)))).map((mod) => ({
         key: mod,
         title: mod,
-        tiers: plans.filter((p) => (p.modules?.length ? p.modules : p.features).includes(mod)).map((p) => p.key),
+        tiers: plans.filter((plan) => parseGroupedModules(plan).some((group) => group.items.includes(mod))).map((plan) => plan.key),
       }))
     : [];
   const tierKeys = uiPlans.map((p) => p.key);
@@ -126,8 +248,8 @@ export default function PricingPage() {
                 </Button>
               </Link>
               <Link to="/login">
-                <Button variant="outline" size="sm" className="bg-white/70 dark:bg-white/8 hidden sm:inline-flex">Log in</Button>
-                <Button variant="outline" size="icon" className="bg-white/70 dark:bg-white/8 sm:hidden h-9 w-9">
+                <Button variant="outline" size="sm" className="hidden bg-white/70 dark:bg-white/8 sm:inline-flex">Log in</Button>
+                <Button variant="outline" size="icon" className="h-9 w-9 bg-white/70 dark:bg-white/8 sm:hidden">
                   <span className="text-xs font-semibold">In</span>
                 </Button>
               </Link>
@@ -160,13 +282,13 @@ export default function PricingPage() {
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
               {(plans.length > 0 ? [
-                { value: String(plans.length), label: 'Tiers to grow through' },
-                { value: String(Array.from(new Set(plans.flatMap((p) => p.modules?.length ? p.modules : p.features))).length), label: 'Modules available' },
-                { value: '0%', label: 'Hidden fees — ever' }
+                { value: String(plans.length), label: 'Plans available' },
+                { value: String(moduleMatrix.length), label: 'Modules available' },
+                { value: '0%', label: 'Hidden fees ever' }
               ] : [
-                { value: '3+', label: 'Tiers to grow through' },
+                { value: '3', label: 'Plans available' },
                 { value: '12+', label: 'Modules available' },
-                { value: '0%', label: 'Hidden fees — ever' }
+                { value: '0%', label: 'Hidden fees ever' }
               ]).map((metric) => (
                 <div key={metric.label} className="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
                   <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-cyan-400 to-emerald-400" />
@@ -183,7 +305,9 @@ export default function PricingPage() {
         {loading ? (
           <div className="mx-auto grid max-w-7xl gap-5 lg:grid-cols-3">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="h-96 animate-pulse rounded-lg bg-slate-200 dark:bg-slate-800" />
+              <div key={i} className="flex h-[640px] items-center justify-center rounded-lg bg-slate-200 dark:bg-slate-800">
+                <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
+              </div>
             ))}
           </div>
         ) : (
@@ -191,7 +315,7 @@ export default function PricingPage() {
             {uiPlans.map((plan) => (
               <article
                 key={plan.key}
-                className={`relative overflow-hidden rounded-lg border bg-white p-6 shadow-sm dark:bg-white/[0.04] ${
+                className={`relative flex min-h-[640px] flex-col overflow-hidden rounded-lg border bg-white p-6 shadow-sm dark:bg-white/[0.04] ${
                   plan.featured
                     ? 'border-slate-950 shadow-2xl shadow-cyan-900/10 dark:border-cyan-300/60'
                     : 'border-slate-200 dark:border-white/10'
@@ -200,7 +324,7 @@ export default function PricingPage() {
                 <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${plan.accent}`} />
                 {plan.featured && (
                   <div className="absolute right-4 top-4 rounded-full bg-slate-950 px-3 py-1 text-xs font-semibold text-white dark:bg-cyan-300 dark:text-slate-950">
-                    Recommended
+                    Most popular
                   </div>
                 )}
                 <div className="grid h-12 w-12 place-items-center rounded-lg bg-slate-950 text-white dark:bg-white dark:text-slate-950">
@@ -209,38 +333,53 @@ export default function PricingPage() {
                 <p className="mt-5 text-sm font-semibold uppercase tracking-[0.18em] text-cyan-700 dark:text-cyan-300">{plan.badge}</p>
                 <h2 className="mt-2 text-2xl font-semibold">{plan.name}</h2>
                 <div className="mt-5 flex items-baseline gap-2">
-                  <span className="text-6xl font-semibold tracking-tight">{plan.priceAmount}</span>
-                  {plan.pricePeriod && (
-                    <span className="text-lg font-medium text-slate-500 dark:text-slate-400">{plan.pricePeriod}</span>
-                  )}
+                  <span className="text-5xl font-semibold tracking-tight">{plan.priceAmount}</span>
+                  <span className="text-lg font-medium text-slate-500 dark:text-slate-400">{plan.pricePeriod}</span>
                 </div>
-                <p className="mt-5 min-h-[72px] text-sm leading-6 text-slate-600 dark:text-slate-300">{plan.summary}</p>
-                <Link to="/register">
-                  <Button className={`mt-6 h-11 w-full ${plan.featured ? 'bg-slate-950 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-950' : 'bg-slate-900 text-white hover:bg-slate-800'}`}>
-                    {plan.buttonLabel}
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </Link>
+                <p className="mt-5 min-h-[48px] text-sm leading-6 text-slate-600 dark:text-slate-300">{plan.summary}</p>
 
-                <div className="mt-7">
-                  <h3 className="text-sm font-semibold">Included modules</h3>
-                  <div className="mt-3 grid gap-2">
-                    {plan.modules.map((module) => (
-                      <div key={module} className="flex gap-2 text-sm text-slate-600 dark:text-slate-300">
-                        <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-500" />
-                        <span>{module}</span>
+                <div className="mt-6 space-y-5 border-t border-slate-200 pt-5 dark:border-white/10">
+                  {plan.groups.map((group) => (
+                    <section key={group.title}>
+                      <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">{group.title}</h3>
+                      <div className="mt-3 grid gap-2">
+                        {group.items.map((item) => {
+                          const Icon = featureIcon(item);
+                          return (
+                            <div key={`${group.title}-${item}`} className="flex gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
+                              <Icon className="mt-0.5 h-4 w-4 flex-shrink-0 text-slate-500 dark:text-slate-400" />
+                              <span>{item}</span>
+                            </div>
+                          );
+                        })}
                       </div>
-                    ))}
-                  </div>
+                    </section>
+                  ))}
                 </div>
 
-                <div className="mt-7 rounded-lg bg-slate-50 p-4 dark:bg-white/[0.05]">
-                  <h3 className="text-sm font-semibold">Best outcome</h3>
-                  <div className="mt-3 space-y-2">
-                    {plan.outcomes.map((outcome) => (
-                      <p key={outcome} className="text-sm leading-6 text-slate-600 dark:text-slate-300">{outcome}</p>
-                    ))}
-                  </div>
+                <div className="mt-6 space-y-2 border-t border-slate-200 pt-4 dark:border-white/10">
+                  {plan.includedPills.map(({ label, tone, Icon }) => (
+                    <div
+                      key={label}
+                      className={`flex items-center gap-2 rounded-md px-3 py-2 text-xs font-bold ${
+                        tone === 'ai'
+                          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300'
+                          : 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300'
+                      }`}
+                    >
+                      <Icon className="h-4 w-4" />
+                      {label}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-auto pt-6">
+                  <Link to="/register">
+                    <Button className={`h-11 w-full ${plan.featured ? 'bg-slate-950 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-950' : 'bg-slate-900 text-white hover:bg-slate-800'}`}>
+                      {plan.buttonLabel}
+                      <ArrowUpRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </Link>
                 </div>
               </article>
             ))}

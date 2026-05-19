@@ -10,6 +10,7 @@ import {
   type PlatformPlan,
   type PlatformSubscriptionStatus,
 } from "@/lib/api";
+import { useCompanyStore } from "@/store/companyStore";
 import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/app/components/ui/card";
@@ -104,7 +105,6 @@ const featureKeys = Object.keys(featureLabels) as PlatformFeatureKey[];
 
 function planStyles(plan: string): string {
   const known: Record<string, string> = {
-    trial: "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-900 dark:text-slate-200 dark:border-slate-700",
     starter: "bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-950/40 dark:text-cyan-200 dark:border-cyan-800",
     professional: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-200 dark:border-emerald-800",
     enterprise: "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-200 dark:border-amber-800",
@@ -197,6 +197,13 @@ function titleCase(value: string) {
   return value.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
+function splitPlanList(value: string) {
+  return value
+    .split(/\r?\n|,/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 function percent(value: number, total: number) {
   if (!total) return 0;
   return Math.min(100, Math.round((value / total) * 100));
@@ -212,20 +219,33 @@ function daysUntil(value?: string | null) {
 }
 
 function normalizeCompany(company: PlatformCompany): PlatformCompany {
-  const featureAccess = { ...emptyFeatureAccess(), ...company.feature_access };
+  const rawFeatureAccess = company.feature_access || {};
   const subscriptionModules = company.subscription_modules || [];
   return {
     ...company,
     approvalStatus: company.approvalStatus || company.status || "pending",
-    subscription_plan: company.subscription_plan || "trial",
-    subscription_status: company.subscription_status || "trialing",
+    subscription_plan: company.subscription_plan || "starter",
+    subscription_status: company.subscription_status || "active",
     billing_cycle: company.billing_cycle || "monthly",
     billing_amount: company.billing_amount || 0,
-    feature_access: featureAccess,
-    enabledModules: featureKeys.filter((key) => featureAccess[key]),
-    enabledModuleCount: featureKeys.filter((key) => featureAccess[key]).length,
+    feature_access: rawFeatureAccess,
+    enabledModules: featureKeys.filter((key) => rawFeatureAccess[key]),
+    enabledModuleCount: featureKeys.filter((key) => rawFeatureAccess[key]).length,
     subscription_modules: subscriptionModules,
   };
+}
+
+function accentFromTone(tone: string): string {
+  if (tone.includes("cyan")) return "bg-cyan-500";
+  if (tone.includes("emerald")) return "bg-emerald-500";
+  if (tone.includes("amber")) return "bg-amber-500";
+  if (tone.includes("rose")) return "bg-rose-500";
+  if (tone.includes("red")) return "bg-red-500";
+  if (tone.includes("sky")) return "bg-sky-500";
+  if (tone.includes("violet")) return "bg-violet-500";
+  if (tone.includes("indigo")) return "bg-indigo-500";
+  if (tone.includes("teal")) return "bg-teal-500";
+  return "bg-slate-500";
 }
 
 function StatTile({
@@ -244,17 +264,22 @@ function StatTile({
   barValue?: number;
 }) {
   return (
-    <Card className="overflow-hidden border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+    <Card className="group overflow-hidden border-0 bg-white shadow-sm transition-all hover:shadow-md dark:bg-slate-900/70">
+      <div className={`h-1 w-full ${accentFromTone(tone)}`} />
       <CardContent className="p-5">
         <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">{title}</p>
-            <p className="mt-2 text-3xl font-semibold text-slate-950 dark:text-white">{value}</p>
+          <div className="flex-1">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{title}</p>
+            <p className="mt-2 text-3xl font-bold tracking-tight text-slate-950 tabular-nums dark:text-white">{value}</p>
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{detail}</p>
           </div>
-          <div className={`rounded-lg p-2.5 shadow-sm ${tone}`}>{icon}</div>
+          <div className={`rounded-xl p-2.5 shadow-sm ring-1 ring-black/5 transition-transform group-hover:scale-105 ${tone}`}>{icon}</div>
         </div>
-        {typeof barValue === "number" && <Progress value={barValue} className="mt-4 h-1.5" />}
+        {typeof barValue === "number" && (
+          <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+            <div className={`h-full rounded-full ${accentFromTone(tone)}`} style={{ width: `${barValue}%` }} />
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -272,25 +297,28 @@ function OpsMetric({
   icon: ReactNode;
 }) {
   return (
-    <div className="rounded-lg border border-white/10 bg-white/10 p-4 text-white shadow-sm backdrop-blur">
+    <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-white shadow-sm backdrop-blur-sm transition-all hover:bg-white/10">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-xs font-medium uppercase tracking-[0.14em] text-white/60">{label}</p>
-        <span className="rounded-md bg-white/10 p-2 text-cyan-100">{icon}</span>
+        <p className="text-xs font-medium uppercase tracking-wider text-white/60">{label}</p>
+        <span className="rounded-lg bg-white/10 p-2 text-cyan-100 ring-1 ring-white/10">{icon}</span>
       </div>
-      <p className="mt-3 text-2xl font-semibold">{value}</p>
-      <p className="mt-1 text-xs text-white/60">{detail}</p>
+      <p className="mt-3 text-2xl font-bold tracking-tight tabular-nums">{value}</p>
+      <p className="mt-1 text-xs text-white/50">{detail}</p>
     </div>
   );
 }
 
 function SignalBar({ label, value, tone }: { label: string; value: number; tone: string }) {
   return (
-    <div>
-      <div className="mb-1.5 flex items-center justify-between text-xs">
-        <span className="font-medium text-slate-600 dark:text-slate-300">{label}</span>
-        <span className="text-slate-500 dark:text-slate-400">{value}%</span>
+    <div className="space-y-2">
+      <div className="flex items-center justify-between text-xs">
+        <div className="flex items-center gap-2">
+          <div className={`h-2 w-2 rounded-full ${tone}`} />
+          <span className="font-medium text-slate-700 dark:text-slate-300">{label}</span>
+        </div>
+        <span className="font-semibold text-slate-900 dark:text-white">{value}%</span>
       </div>
-      <div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+      <div className="h-2.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
         <div className={`h-full rounded-full ${tone}`} style={{ width: `${value}%` }} />
       </div>
     </div>
@@ -311,12 +339,14 @@ function WorkstreamCard({
   tone: string;
 }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-      <div className="flex items-start gap-3">
-        <div className={`rounded-lg p-2.5 ${tone}`}>{icon}</div>
-        <div>
-          <p className="text-sm font-semibold text-slate-950 dark:text-white">{title}</p>
-          <p className="mt-1 text-2xl font-semibold text-slate-950 dark:text-white">{value}</p>
+    <div className="group rounded-xl border border-slate-200/60 bg-white p-4 shadow-sm transition-all hover:shadow-md hover:border-slate-300 dark:border-slate-800 dark:bg-slate-950 dark:hover:border-slate-700">
+      <div className="flex items-start gap-4">
+        <div className={`rounded-xl p-2.5 shadow-sm ring-1 ring-black/5 transition-transform group-hover:scale-105 ${tone}`}>
+          {icon}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{title}</p>
+          <p className="mt-1 text-2xl font-bold tracking-tight text-slate-950 tabular-nums dark:text-white">{value}</p>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{detail}</p>
         </div>
       </div>
@@ -326,9 +356,11 @@ function WorkstreamCard({
 
 function EmptyPanel({ title, text }: { title: string; text: string }) {
   return (
-    <div className="flex min-h-[220px] flex-col items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50/70 p-8 text-center dark:border-slate-800 dark:bg-slate-900/40">
-      <Building2 className="h-10 w-10 text-slate-400" />
-      <p className="mt-3 text-sm font-semibold text-slate-800 dark:text-slate-100">{title}</p>
+    <div className="flex min-h-[220px] flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50/50 p-8 text-center dark:border-slate-800 dark:bg-slate-900/30">
+      <div className="rounded-2xl bg-slate-100 p-4 dark:bg-slate-800">
+        <Building2 className="h-8 w-8 text-slate-400" />
+      </div>
+      <p className="mt-4 text-sm font-semibold text-slate-800 dark:text-slate-100">{title}</p>
       <p className="mt-1 max-w-md text-sm text-slate-500 dark:text-slate-400">{text}</p>
     </div>
   );
@@ -346,32 +378,46 @@ function CompanySummary({ company }: { company: PlatformCompany }) {
 
   return (
     <div className="min-w-0 flex-1">
-      <div className="flex flex-wrap items-center gap-2.5">
-        <h3 className="truncate text-lg font-semibold text-slate-950 dark:text-white">{company.name}</h3>
-        <Badge variant="outline" className={lifecycleTone}>
-          {titleCase(company.approvalStatus)}
-        </Badge>
-        <Badge variant="outline" className={planStyles(company.subscription_plan)}>
-          {titleCase(company.subscription_plan)}
-        </Badge>
-        <Badge variant="outline" className={statusStyles[company.subscription_status]}>
-          {titleCase(company.subscription_status)}
-        </Badge>
+      <div className="flex flex-wrap items-center gap-2">
+        <h3 className="truncate text-base font-semibold text-slate-950 dark:text-white">{company.name}</h3>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Badge variant="outline" className={`rounded-md text-xs font-medium ${lifecycleTone}`}>
+            {titleCase(company.approvalStatus)}
+          </Badge>
+          <Badge variant="outline" className={`rounded-md text-xs font-medium ${planStyles(company.subscription_plan)}`}>
+            {titleCase(company.subscription_plan)}
+          </Badge>
+          <Badge variant="outline" className={`rounded-md text-xs font-medium ${statusStyles[company.subscription_status]}`}>
+            {titleCase(company.subscription_status)}
+          </Badge>
+        </div>
       </div>
-      <div className="mt-3 grid gap-3 text-xs text-slate-500 dark:text-slate-400 sm:grid-cols-2 xl:grid-cols-4">
-        <span className="flex min-w-0 items-center gap-1.5"><Mail className="h-3.5 w-3.5 shrink-0" /><span className="truncate">{company.email}</span></span>
-        <span className="flex items-center gap-1.5"><Users className="h-3.5 w-3.5" />{company.activeUsers || 0}/{company.users || 0} active users</span>
-        <span className="flex items-center gap-1.5"><CalendarClock className="h-3.5 w-3.5" />{billingDelta === null ? "Billing not scheduled" : billingDelta < 0 ? `${Math.abs(billingDelta)} days overdue` : `Bills in ${billingDelta} days`}</span>
-        <span className="flex items-center gap-1.5"><KeyRound className="h-3.5 w-3.5" />{accessDepth}% module coverage</span>
+      <div className="mt-3 grid gap-2 text-xs text-slate-500 dark:text-slate-400 sm:grid-cols-2 xl:grid-cols-4">
+        <span className="flex min-w-0 items-center gap-1.5">
+          <Mail className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+          <span className="truncate">{company.email}</span>
+        </span>
+        <span className="flex items-center gap-1.5">
+          <Users className="h-3.5 w-3.5 text-slate-400" />
+          {company.activeUsers || 0}/{company.users || 0} active
+        </span>
+        <span className="flex items-center gap-1.5">
+          <CalendarClock className="h-3.5 w-3.5 text-slate-400" />
+          {billingDelta === null ? "Not scheduled" : billingDelta < 0 ? `${Math.abs(billingDelta)} days overdue` : `Bills in ${billingDelta} days`}
+        </span>
+        <span className="flex items-center gap-1.5">
+          <KeyRound className="h-3.5 w-3.5 text-slate-400" />
+          {accessDepth}% module coverage
+        </span>
       </div>
-      <div className="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_180px] md:items-center">
-        <div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+      <div className="mt-4 flex items-center gap-4">
+        <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
           <div
             className={`h-full rounded-full ${needsAttention ? "bg-gradient-to-r from-red-500 to-amber-400" : "bg-gradient-to-r from-cyan-500 via-emerald-500 to-lime-400"}`}
             style={{ width: `${accessDepth}%` }}
           />
         </div>
-        <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+        <p className="shrink-0 text-xs font-semibold text-slate-600 dark:text-slate-300">
           {formatMoney(company.billing_amount)} / {titleCase(company.billing_cycle)}
         </p>
       </div>
@@ -410,18 +456,27 @@ function AccessModal({
     next_billing_date: string;
     platform_notes: string;
     feature_access: PlatformFeatureAccess;
+    subscription_modules: string[];
   }>({
-    subscription_plan: "trial",
-    subscription_status: "trialing",
+    subscription_plan: "starter",
+    subscription_status: "active",
     billing_cycle: "monthly",
     billing_amount: 0,
     next_billing_date: "",
     platform_notes: "",
     feature_access: emptyFeatureAccess(),
+    subscription_modules: [],
   });
 
   useEffect(() => {
     if (!company) return;
+    const planDefaultModules = packageMatrix.find((pm) => pm.plan === company.subscription_plan)?.modules || [];
+    const companyModules = company.subscription_modules || [];
+    // Clean stale modules: keep only modules that belong to the current plan's defaults.
+    // This removes legacy umbrellas (e.g. 'Financial reports') left over from plan downgrades or old data.
+    const cleaned = companyModules.filter((m) => planDefaultModules.includes(m));
+    const initialModules = cleaned.length > 0 ? cleaned : planDefaultModules;
+
     setForm({
       subscription_plan: company.subscription_plan,
       subscription_status: company.subscription_status,
@@ -429,9 +484,10 @@ function AccessModal({
       billing_amount: company.billing_amount,
       next_billing_date: company.next_billing_date ? company.next_billing_date.slice(0, 10) : "",
       platform_notes: company.platform_notes || "",
-      feature_access: { ...emptyFeatureAccess(), ...company.feature_access },
+      feature_access: { ...accessFromMatrix(company.subscription_plan), ...(company.feature_access || {}) },
+      subscription_modules: initialModules,
     });
-  }, [company]);
+  }, [company, packageMatrix]);
 
   const visibleFeatureKeys = useMemo(() => {
     const keys = new Set<PlatformFeatureKey>();
@@ -450,6 +506,14 @@ function AccessModal({
   const selectedPackageModules = useMemo(() => {
     return packageMatrix.find((pm) => pm.plan === form.subscription_plan)?.modules || [];
   }, [packageMatrix, form.subscription_plan]);
+
+  const availableModules = useMemo(() => {
+    const all = new Set<string>();
+    packageMatrix.forEach((pm) => {
+      (pm.modules || []).forEach((m) => all.add(m));
+    });
+    return Array.from(all);
+  }, [packageMatrix]);
 
   const handleSave = async () => {
     if (!company) return;
@@ -472,7 +536,15 @@ function AccessModal({
         <div className="grid gap-4 md:grid-cols-3">
           <div className="space-y-2">
             <Label>Package</Label>
-            <Select value={form.subscription_plan} onValueChange={(value: PlatformPlan) => setForm((prev) => ({ ...prev, subscription_plan: value, feature_access: accessFromMatrix(value) }))}>
+            <Select value={form.subscription_plan} onValueChange={(value: PlatformPlan) => setForm((prev) => {
+              const newPlanTemplate = packageMatrix.find((pm) => pm.plan === value);
+              return {
+                ...prev,
+                subscription_plan: value,
+                feature_access: accessFromMatrix(value),
+                subscription_modules: newPlanTemplate?.modules || prev.subscription_modules,
+              };
+            })}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 {availablePlans.map((p) => (
@@ -486,7 +558,6 @@ function AccessModal({
             <Select value={form.subscription_status} onValueChange={(value: PlatformSubscriptionStatus) => setForm((prev) => ({ ...prev, subscription_status: value }))}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="trialing">Trialing</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="past_due">Past due</SelectItem>
                 <SelectItem value="suspended">Suspended</SelectItem>
@@ -521,19 +592,32 @@ function AccessModal({
               <Layers3 className="h-4 w-4 text-cyan-600" />
               <p className="text-sm font-semibold text-slate-900 dark:text-white">Included Package Modules</p>
             </div>
-            <Badge variant="outline" className="rounded-md">{selectedPackageModules.length} modules</Badge>
+            <div className="flex gap-2">
+              <Badge variant="outline" className="rounded-md">{selectedPackageModules.length} modules</Badge>
+            </div>
           </div>
-          {selectedPackageModules.length > 0 ? (
+
+          {availableModules.length > 0 ? (
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-              {selectedPackageModules.map((module) => (
+              {availableModules.map((module) => (
                 <div key={module} className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 dark:border-slate-800 dark:text-slate-200">
-                  <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
+                  <Checkbox
+                    checked={form.subscription_modules.includes(module)}
+                    onCheckedChange={(checked) => {
+                      setForm((prev) => {
+                        const set = new Set(prev.subscription_modules || []);
+                        if (checked) set.add(module);
+                        else set.delete(module);
+                        return { ...prev, subscription_modules: Array.from(set) };
+                      });
+                    }}
+                  />
                   <span>{module}</span>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-sm text-slate-500 dark:text-slate-400">No display modules are configured for this package.</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">No display modules are configured for any package.</p>
           )}
         </div>
 
@@ -545,6 +629,7 @@ function AccessModal({
             </div>
             <div className="flex flex-wrap gap-2">
               <Button type="button" variant="outline" size="sm" onClick={() => setForm((prev) => ({ ...prev, feature_access: accessFromMatrix(prev.subscription_plan) }))}>Apply package template</Button>
+              <Button type="button" variant="outline" size="sm" onClick={() => setForm((prev) => ({ ...prev, subscription_modules: selectedPackageModules }))}>Apply package modules</Button>
               <Button type="button" variant="outline" size="sm" onClick={() => setForm((prev) => ({ ...prev, feature_access: featureKeys.reduce((acc, key) => ({ ...acc, [key]: true }), {} as PlatformFeatureAccess) }))}>Enable all</Button>
             </div>
           </div>
@@ -752,9 +837,9 @@ export default function PlatformAdminPage() {
         key: planForm.key,
         name: planForm.name,
         description: planForm.description,
-        features: planForm.features.split(",").map((f) => f.trim()).filter(Boolean),
-        modules: planForm.modules.split(",").map((f) => f.trim()).filter(Boolean),
-        outcomes: planForm.outcomes.split(",").map((f) => f.trim()).filter(Boolean),
+        features: splitPlanList(planForm.features),
+        modules: splitPlanList(planForm.modules),
+        outcomes: splitPlanList(planForm.outcomes),
         badge: planForm.badge,
         icon: planForm.icon,
         featured: planForm.featured,
@@ -806,9 +891,9 @@ export default function PlatformAdminPage() {
         key: plan.key,
         name: plan.name,
         description: plan.description,
-        features: plan.features.join(", "),
-        modules: (plan.modules || []).join(", "),
-        outcomes: (plan.outcomes || []).join(", "),
+        features: plan.features.join("\n"),
+        modules: (plan.modules || []).join("\n"),
+        outcomes: (plan.outcomes || []).join("\n"),
         badge: plan.badge || '',
         icon: plan.icon || '',
         featured: plan.featured || false,
@@ -869,7 +954,7 @@ export default function PlatformAdminPage() {
   const pendingCompanies = companies.filter((company) => company.approvalStatus === "pending");
   const approvedCompanies = companies.filter((company) => company.approvalStatus === "approved");
   const attentionCompanies = companies.filter((company) => company.subscription_status === "past_due" || company.subscription_status === "suspended");
-  const trialCompanies = companies.filter((company) => company.subscription_status === "trialing");
+  const starterCompanies = companies.filter((company) => company.subscription_plan === "starter");
   const enterpriseCompanies = companies.filter((company) => company.subscription_plan === "enterprise");
   const totalUsers = companies.reduce((sum, company) => sum + (company.users || 0), 0);
   const activeUsers = companies.reduce((sum, company) => sum + (company.activeUsers || 0), 0);
@@ -897,6 +982,16 @@ export default function PlatformAdminPage() {
       ...prev,
       companies: prev.companies.map((company) => company._id === updated._id ? normalizeCompany(updated) : company),
     }));
+    // If the updated company matches the currently-loaded tenant company in the global store,
+    // update it so UI (sidebar, etc.) reflects changes immediately.
+    try {
+      const current = useCompanyStore.getState().company;
+      if (current && current._id === updated._id) {
+        useCompanyStore.getState().setCompany(normalizeCompany(updated));
+      }
+    } catch (e) {
+      // noop - defensive in case store not initialized in this view
+    }
   };
 
   const removeCompanyFromQueue = (companyId: string, status: "approved" | "rejected") => {
@@ -1036,9 +1131,9 @@ export default function PlatformAdminPage() {
   };
 
   const renderCompanyRow = (company: PlatformCompany, showApproval = false) => (
-    <div key={company._id} className="border-b border-slate-200 p-5 last:border-0 dark:border-slate-800">
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
-        <div className="flex gap-3">
+    <div key={company._id} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:shadow-md dark:border-slate-800 dark:bg-slate-950">
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+        <div className="flex gap-3 min-w-0">
           <Checkbox
             checked={selectedCompanyIds.includes(company._id)}
             onCheckedChange={(checked) => toggleCompanySelection(company._id, checked === true)}
@@ -1048,11 +1143,11 @@ export default function PlatformAdminPage() {
           <CompanySummary company={company} />
         </div>
         <div className="flex flex-wrap items-center gap-2 xl:justify-end">
-          <Button variant="outline" size="sm" className="border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-950" onClick={() => { setUserDrawerCompany(company); loadCompanyUsers(company._id); setUserDrawerOpen(true); }}>
+          <Button variant="outline" size="sm" className="border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200" onClick={() => { setUserDrawerCompany(company); loadCompanyUsers(company._id); setUserDrawerOpen(true); }}>
             <Eye className="h-4 w-4" />
             Users
           </Button>
-          <Button variant="outline" size="sm" className="border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-950" onClick={() => setSelectedCompany(company)}>
+          <Button variant="outline" size="sm" className="border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200" onClick={() => setSelectedCompany(company)}>
             <SlidersHorizontal className="h-4 w-4" />
             Controls
           </Button>
@@ -1092,25 +1187,27 @@ export default function PlatformAdminPage() {
           )}
         </div>
       </div>
-      <div className="mt-5 grid gap-3 lg:grid-cols-[minmax(0,1fr)_260px]">
+      <div className="mt-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-wrap gap-2">
           {company.enabledModules.slice(0, 8).map((feature) => (
-            <Badge key={feature} variant="secondary" className="rounded-md border border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200">
+            <Badge key={feature} variant="secondary" className="rounded-md border border-slate-200 bg-slate-50 text-slate-700 text-xs dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200">
               {featureLabels[feature]}
             </Badge>
           ))}
-          {company.enabledModuleCount > 8 && <Badge variant="secondary" className="rounded-md">+{company.enabledModuleCount - 8} more</Badge>}
+          {company.enabledModuleCount > 8 && (
+            <Badge variant="secondary" className="rounded-md text-xs">+{company.enabledModuleCount - 8} more</Badge>
+          )}
         </div>
-        <div className="grid grid-cols-3 gap-2 text-center text-xs">
-          <div className="rounded-md bg-slate-50 px-2 py-2 dark:bg-slate-900">
+        <div className="flex gap-3 text-center text-xs shrink-0">
+          <div className="rounded-lg bg-slate-50 px-3 py-2 dark:bg-slate-900">
             <p className="font-semibold text-slate-950 dark:text-white">{company.code || "N/A"}</p>
             <p className="text-slate-500 dark:text-slate-400">Code</p>
           </div>
-          <div className="rounded-md bg-slate-50 px-2 py-2 dark:bg-slate-900">
+          <div className="rounded-lg bg-slate-50 px-3 py-2 dark:bg-slate-900">
             <p className="font-semibold text-slate-950 dark:text-white">{company.tin || "N/A"}</p>
             <p className="text-slate-500 dark:text-slate-400">TIN</p>
           </div>
-          <div className="rounded-md bg-slate-50 px-2 py-2 dark:bg-slate-900">
+          <div className="rounded-lg bg-slate-50 px-3 py-2 dark:bg-slate-900">
             <p className="font-semibold text-slate-950 dark:text-white">{formatDate(company.createdAt)}</p>
             <p className="text-slate-500 dark:text-slate-400">Joined</p>
           </div>
@@ -1122,26 +1219,26 @@ export default function PlatformAdminPage() {
   return (
     <div className="min-h-screen bg-[#f6f8f7] text-slate-950 dark:bg-[#07100f] dark:text-white">
       <div className="mx-auto max-w-[1500px] px-4 py-5 sm:px-6 lg:px-8">
-        <div className="mb-6 overflow-hidden rounded-lg border border-slate-200 bg-[#101c1b] shadow-sm dark:border-white/10">
-          <div className="relative grid gap-6 p-5 sm:p-6 lg:grid-cols-[minmax(0,1fr)_440px] lg:p-8">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(45,212,191,0.22),transparent_32%),radial-gradient(circle_at_80%_0%,rgba(250,204,21,0.16),transparent_28%),linear-gradient(135deg,rgba(16,28,27,1),rgba(11,18,32,0.96)_62%,rgba(26,28,20,0.96))]" />
+        <div className="mb-6 overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-lg dark:border-slate-800">
+          <div className="relative grid gap-6 p-6 sm:p-8 lg:grid-cols-[minmax(0,1fr)_440px]">
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_rgba(45,212,191,0.18),_transparent_50%),radial-gradient(ellipse_at_top_right,_rgba(250,204,21,0.12),_transparent_50%),radial-gradient(ellipse_at_bottom_right,_rgba(16,185,129,0.15),_transparent_50%)]" />
             <div className="relative">
-              <div className="mb-4 inline-flex items-center gap-2 rounded-md border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-cyan-100">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-cyan-200 backdrop-blur-sm">
                 <Crown className="h-3.5 w-3.5" />
-                Home control room
+                Platform Command Center
               </div>
-              <h1 className="max-w-4xl text-3xl font-semibold leading-tight text-white sm:text-4xl">
+              <h1 className="max-w-4xl text-3xl font-bold tracking-tight text-white sm:text-4xl">
                 Platform Administration
               </h1>
-              <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-200">
+              <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-300">
                 Run the tenant estate like a real operations desk: onboard companies, govern modules, watch subscription risk, coordinate payments, and broadcast platform changes from one decisive workspace.
               </p>
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                <Button className="bg-cyan-400 text-slate-950 hover:bg-cyan-300" onClick={() => setBroadcastOpen(true)}>
+                <Button className="bg-cyan-400 text-slate-950 hover:bg-cyan-300 font-semibold gap-2" onClick={() => setBroadcastOpen(true)}>
                   <Megaphone className="h-4 w-4" />
                   Broadcast update
                 </Button>
-                <Button variant="outline" className="border-white/20 bg-white/10 text-white hover:bg-white/15 hover:text-white" onClick={loadDashboard} disabled={isLoading}>
+                <Button variant="outline" className="border-white/20 bg-white/5 text-white hover:bg-white/10 hover:text-white gap-2 backdrop-blur-sm" onClick={loadDashboard} disabled={isLoading}>
                   <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
                   Refresh intelligence
                 </Button>
@@ -1157,18 +1254,20 @@ export default function PlatformAdminPage() {
         </div>
 
         {successMessage && (
-          <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">
+          <div className="mb-4 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">
+            <CheckCircle2 className="h-4 w-4 shrink-0" />
             {successMessage}
           </div>
         )}
         {error && (
-          <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+          <div className="mb-4 flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+            <AlertTriangle className="h-4 w-4 shrink-0" />
             {error}
           </div>
         )}
 
         <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {isLoading ? Array.from({ length: 4 }).map((_, index) => <Skeleton key={index} className="h-32 rounded-lg" />) : (
+          {isLoading ? Array.from({ length: 4 }).map((_, index) => <Skeleton key={index} className="h-32 rounded-xl" />) : (
             <>
               <StatTile title="Companies" value={dashboard.stats.total} detail={`${dashboard.stats.pending} awaiting registration review`} icon={<Building2 className="h-5 w-5" />} tone="bg-cyan-50 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-200" barValue={approvalRate} />
               <StatTile title="MRR" value={formatMoney(dashboard.stats.monthlyRecurringRevenue)} detail="Normalized across billing cycles" icon={<CreditCard className="h-5 w-5" />} tone="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-200" barValue={Math.min(100, dashboard.stats.monthlyRecurringRevenue ? 76 : 0)} />
@@ -1179,25 +1278,27 @@ export default function PlatformAdminPage() {
         </div>
 
         <div className="mb-6 grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold text-slate-950 dark:text-white">Operational Signals</p>
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">A quick read on platform workload, adoption, and access quality.</p>
+          <Card className="overflow-hidden border-0 bg-white shadow-sm dark:bg-slate-900/70">
+            <CardHeader className="pb-2">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <CardTitle className="text-base font-semibold text-slate-950 dark:text-white">Operational Signals</CardTitle>
+                  <CardDescription className="mt-1 text-xs text-slate-500 dark:text-slate-400">A quick read on platform workload, adoption, and access quality.</CardDescription>
+                </div>
+                <Badge variant="outline" className="border-cyan-200/60 bg-cyan-50 text-cyan-700 dark:border-cyan-900 dark:bg-cyan-950/40 dark:text-cyan-200">
+                  <RadioTower className="mr-1 h-3.5 w-3.5" />
+                  Live controls
+                </Badge>
               </div>
-              <Badge variant="outline" className="border-cyan-200 bg-cyan-50 text-cyan-700 dark:border-cyan-900 dark:bg-cyan-950/40 dark:text-cyan-200">
-                <RadioTower className="mr-1 h-3.5 w-3.5" />
-                Live controls
-              </Badge>
-            </div>
-            <div className="mt-5 grid gap-5 md:grid-cols-3">
+            </CardHeader>
+            <CardContent className="space-y-6">
               <SignalBar label="Approval throughput" value={approvalRate} tone="bg-cyan-500" />
               <SignalBar label="Seat activation" value={userActivityRate} tone="bg-emerald-500" />
               <SignalBar label="Module coverage" value={moduleCoverage} tone="bg-amber-500" />
-            </div>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-3 xl:grid-cols-3">
-            <WorkstreamCard title="Trial Desk" value={trialCompanies.length} detail="Tenants still proving value" icon={<Sparkles className="h-5 w-5" />} tone="bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-200" />
+            </CardContent>
+          </Card>
+          <div className="grid gap-4 sm:grid-cols-3 xl:grid-cols-1">
+            <WorkstreamCard title="Core Operations" value={starterCompanies.length} detail="Starter plan accounts" icon={<Sparkles className="h-5 w-5" />} tone="bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-200" />
             <WorkstreamCard title="Enterprise" value={enterpriseCompanies.length} detail="High-touch accounts" icon={<Globe2 className="h-5 w-5" />} tone="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-200" />
             <WorkstreamCard title="Risk Queue" value={attentionCompanies.length} detail="Billing or access intervention" icon={<AlertTriangle className="h-5 w-5" />} tone="bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-200" />
           </div>
@@ -1206,28 +1307,40 @@ export default function PlatformAdminPage() {
         <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="relative w-full md:max-w-md">
             <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-            <Input value={search} onChange={(event) => setSearch(event.target.value)} className="border-slate-200 bg-white pl-9 shadow-sm dark:border-slate-800 dark:bg-slate-950" placeholder="Search company, email, code, or TIN" />
+            <Input value={search} onChange={(event) => setSearch(event.target.value)} className="rounded-lg border-slate-200 bg-white pl-9 shadow-sm dark:border-slate-800 dark:bg-slate-950" placeholder="Search company, email, code, or TIN" />
           </div>
           <div className="flex flex-wrap gap-2 text-xs text-slate-500 dark:text-slate-400">
-            <span className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1 dark:border-slate-800 dark:bg-slate-950"><Activity className="h-3.5 w-3.5" />{approvedCompanies.length} active portfolio</span>
-            <span className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1 dark:border-slate-800 dark:bg-slate-950"><ReceiptText className="h-3.5 w-3.5" />{upcomingRenewals.length} renewals in 14 days</span>
-            <span className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1 dark:border-slate-800 dark:bg-slate-950"><ServerCog className="h-3.5 w-3.5" />{dashboard.packageMatrix.length || 4} packages</span>
+            <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-medium dark:border-slate-800 dark:bg-slate-950">
+              <Activity className="h-3.5 w-3.5 text-emerald-500" />
+              {approvedCompanies.length} active portfolio
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-medium dark:border-slate-800 dark:bg-slate-950">
+              <ReceiptText className="h-3.5 w-3.5 text-amber-500" />
+              {upcomingRenewals.length} renewals in 14 days
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-medium dark:border-slate-800 dark:bg-slate-950">
+              <ServerCog className="h-3.5 w-3.5 text-sky-500" />
+              {dashboard.packageMatrix.length || 4} packages
+            </span>
           </div>
         </div>
 
-        <div className="mb-4 flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950 lg:flex-row lg:items-center lg:justify-between">
+        <div className="mb-4 flex flex-col gap-3 rounded-xl border border-slate-200 bg-gradient-to-r from-slate-50 to-white p-4 shadow-sm dark:from-slate-900 dark:to-slate-950 dark:border-slate-800 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <p className="text-sm font-semibold text-slate-950 dark:text-white">Selected Communication Desk</p>
+            <p className="flex items-center gap-2 text-sm font-semibold text-slate-950 dark:text-white">
+              <Megaphone className="h-4 w-4 text-cyan-600" />
+              Selected Communication Desk
+            </p>
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
               {selectedCompanyIds.length ? `${selectedCompanyIds.length} companies selected: ${selectedCompanies.slice(0, 3).map((company) => company.name).join(", ")}${selectedCompanies.length > 3 ? "..." : ""}` : "Select companies from any list, then send a targeted platform message."}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" onClick={() => setSelectedCompanyIds(selectableCompanies.map((company) => company._id))}>
+            <Button variant="outline" size="sm" className="bg-white dark:bg-slate-950" onClick={() => setSelectedCompanyIds(selectableCompanies.map((company) => company._id))}>
               <CheckCircle2 className="h-4 w-4" />
               Select approved
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setSelectedCompanyIds([])} disabled={!selectedCompanyIds.length}>
+            <Button variant="outline" size="sm" className="bg-white dark:bg-slate-950" onClick={() => setSelectedCompanyIds([])} disabled={!selectedCompanyIds.length}>
               <XCircle className="h-4 w-4" />
               Clear
             </Button>
@@ -1239,25 +1352,25 @@ export default function PlatformAdminPage() {
         </div>
 
         <Tabs defaultValue="overview" className="gap-4">
-          <TabsList className="h-auto flex-wrap justify-start rounded-lg border border-slate-200 bg-white p-1 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="requests">Requests</TabsTrigger>
-            <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
-            <TabsTrigger value="billing">Billing Watch</TabsTrigger>
-            <TabsTrigger value="packages">Packages</TabsTrigger>
-            <TabsTrigger value="activity">Activity</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            <TabsTrigger value="plans">Plans</TabsTrigger>
+          <TabsList className="h-auto flex-wrap justify-start gap-1 rounded-xl border border-slate-200/60 bg-white p-1.5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <TabsTrigger value="overview" className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 transition-all hover:text-slate-900 data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-sm dark:text-slate-400 dark:hover:text-slate-200 dark:data-[state=active]:bg-white dark:data-[state=active]:text-slate-900">Overview</TabsTrigger>
+            <TabsTrigger value="requests" className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 transition-all hover:text-slate-900 data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-sm dark:text-slate-400 dark:hover:text-slate-200 dark:data-[state=active]:bg-white dark:data-[state=active]:text-slate-900">Requests</TabsTrigger>
+            <TabsTrigger value="portfolio" className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 transition-all hover:text-slate-900 data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-sm dark:text-slate-400 dark:hover:text-slate-200 dark:data-[state=active]:bg-white dark:data-[state=active]:text-slate-900">Portfolio</TabsTrigger>
+            <TabsTrigger value="billing" className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 transition-all hover:text-slate-900 data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-sm dark:text-slate-400 dark:hover:text-slate-200 dark:data-[state=active]:bg-white dark:data-[state=active]:text-slate-900">Billing Watch</TabsTrigger>
+            <TabsTrigger value="packages" className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 transition-all hover:text-slate-900 data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-sm dark:text-slate-400 dark:hover:text-slate-200 dark:data-[state=active]:bg-white dark:data-[state=active]:text-slate-900">Packages</TabsTrigger>
+            <TabsTrigger value="activity" className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 transition-all hover:text-slate-900 data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-sm dark:text-slate-400 dark:hover:text-slate-200 dark:data-[state=active]:bg-white dark:data-[state=active]:text-slate-900">Activity</TabsTrigger>
+            <TabsTrigger value="analytics" className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 transition-all hover:text-slate-900 data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-sm dark:text-slate-400 dark:hover:text-slate-200 dark:data-[state=active]:bg-white dark:data-[state=active]:text-slate-900">Analytics</TabsTrigger>
+            <TabsTrigger value="plans" className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 transition-all hover:text-slate-900 data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-sm dark:text-slate-400 dark:hover:text-slate-200 dark:data-[state=active]:bg-white dark:data-[state=active]:text-slate-900">Plans</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview">
             <div className="grid gap-4 xl:grid-cols-[1fr_420px]">
-              <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base"><RadioTower className="h-5 w-5 text-cyan-600" />Control Room Workboard</CardTitle>
+              <Card className="overflow-hidden border-0 bg-white shadow-sm dark:bg-slate-900/70">
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-950 dark:text-white"><RadioTower className="h-5 w-5 text-cyan-600" />Control Room Workboard</CardTitle>
                 </CardHeader>
                 <CardContent className="grid gap-4 md:grid-cols-2">
-                  {isLoading ? Array.from({ length: 4 }).map((_, index) => <Skeleton key={index} className="h-28 rounded-lg" />) : (
+                  {isLoading ? Array.from({ length: 4 }).map((_, index) => <Skeleton key={index} className="h-28 rounded-xl" />) : (
                     <>
                       <WorkstreamCard title="Registration Intake" value={pendingCompanies.length} detail="Companies waiting for decision" icon={<ShieldCheck className="h-5 w-5" />} tone="bg-cyan-50 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-200" />
                       <WorkstreamCard title="Billing Escalation" value={attentionCompanies.length} detail={`${formatMoney(revenueAtRisk)} in watched subscriptions`} icon={<AlertTriangle className="h-5 w-5" />} tone="bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-200" />
@@ -1269,13 +1382,13 @@ export default function PlatformAdminPage() {
               </Card>
 
               <div className="grid gap-4">
-                <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-base"><CalendarClock className="h-5 w-5 text-amber-600" />Renewals Next 14 Days</CardTitle>
+                <Card className="overflow-hidden border-0 bg-white shadow-sm dark:bg-slate-900/70">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-950 dark:text-white"><CalendarClock className="h-5 w-5 text-amber-600" />Renewals Next 14 Days</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    {isLoading ? <Skeleton className="h-32 rounded-lg" /> : upcomingRenewals.length ? upcomingRenewals.map((company) => (
-                      <div key={company._id} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 p-3 dark:border-slate-800">
+                    {isLoading ? <Skeleton className="h-32 rounded-xl" /> : upcomingRenewals.length ? upcomingRenewals.map((company) => (
+                      <div key={company._id} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/50 p-3 dark:border-slate-800 dark:bg-slate-900/30">
                         <div className="min-w-0">
                           <p className="truncate text-sm font-semibold text-slate-950 dark:text-white">{company.name}</p>
                           <p className="text-xs text-slate-500 dark:text-slate-400">{formatDate(company.next_billing_date)}</p>
@@ -1286,13 +1399,13 @@ export default function PlatformAdminPage() {
                   </CardContent>
                 </Card>
 
-                <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-base"><Building2 className="h-5 w-5 text-emerald-600" />Latest Companies</CardTitle>
+                <Card className="overflow-hidden border-0 bg-white shadow-sm dark:bg-slate-900/70">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-950 dark:text-white"><Building2 className="h-5 w-5 text-emerald-600" />Latest Companies</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    {isLoading ? <Skeleton className="h-32 rounded-lg" /> : newestCompanies.length ? newestCompanies.map((company) => (
-                      <div key={company._id} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 p-3 dark:border-slate-800">
+                    {isLoading ? <Skeleton className="h-32 rounded-xl" /> : newestCompanies.length ? newestCompanies.map((company) => (
+                      <div key={company._id} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/50 p-3 dark:border-slate-800 dark:bg-slate-900/30">
                         <div className="min-w-0">
                           <p className="truncate text-sm font-semibold text-slate-950 dark:text-white">{company.name}</p>
                           <p className="text-xs text-slate-500 dark:text-slate-400">{company.email}</p>
@@ -1307,46 +1420,43 @@ export default function PlatformAdminPage() {
           </TabsContent>
 
           <TabsContent value="requests">
-            <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base"><ShieldCheck className="h-5 w-5 text-cyan-600" />Company Registration Queue</CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                {isLoading ? <Skeleton className="m-5 h-64 rounded-lg" /> : pendingCompanies.length ? pendingCompanies.map((company) => renderCompanyRow(company, true)) : (
-                  <div className="p-5"><EmptyPanel title="No pending registrations" text="New public company registrations will appear here for approval, package assignment, and onboarding review." /></div>
-                )}
-              </CardContent>
-            </Card>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="h-5 w-5 text-cyan-600" />
+                <h3 className="text-base font-semibold text-slate-950 dark:text-white">Company Registration Queue</h3>
+              </div>
+              {isLoading ? <Skeleton className="h-64 rounded-xl" /> : pendingCompanies.length ? pendingCompanies.map((company) => renderCompanyRow(company, true)) : (
+                <EmptyPanel title="No pending registrations" text="New public company registrations will appear here for approval, package assignment, and onboarding review." />
+              )}
+            </div>
           </TabsContent>
 
           <TabsContent value="portfolio">
-            <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base"><Building2 className="h-5 w-5 text-emerald-600" />Company Portfolio</CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                {isLoading ? <Skeleton className="m-5 h-64 rounded-lg" /> : companies.length ? companies.map((company) => renderCompanyRow(company)) : (
-                  <div className="p-5"><EmptyPanel title="No companies found" text="Adjust the search term or refresh the dashboard to load the company portfolio." /></div>
-                )}
-              </CardContent>
-            </Card>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Building2 className="h-5 w-5 text-emerald-600" />
+                <h3 className="text-base font-semibold text-slate-950 dark:text-white">Company Portfolio</h3>
+              </div>
+              {isLoading ? <Skeleton className="h-64 rounded-xl" /> : companies.length ? companies.map((company) => renderCompanyRow(company)) : (
+                <EmptyPanel title="No companies found" text="Adjust the search term or refresh the dashboard to load the company portfolio." />
+              )}
+            </div>
           </TabsContent>
 
           <TabsContent value="billing">
-            <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base"><CreditCard className="h-5 w-5 text-amber-600" />Billing and Renewal Watch</CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                {isLoading ? <Skeleton className="m-5 h-64 rounded-lg" /> : attentionCompanies.length ? attentionCompanies.map((company) => renderCompanyRow(company)) : (
-                  <div className="p-5"><EmptyPanel title="No billing issues" text="Past due and suspended accounts will appear here so the platform team can intervene quickly." /></div>
-                )}
-              </CardContent>
-            </Card>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5 text-amber-600" />
+                <h3 className="text-base font-semibold text-slate-950 dark:text-white">Billing and Renewal Watch</h3>
+              </div>
+              {isLoading ? <Skeleton className="h-64 rounded-xl" /> : attentionCompanies.length ? attentionCompanies.map((company) => renderCompanyRow(company)) : (
+                <EmptyPanel title="No billing issues" text="Past due and suspended accounts will appear here so the platform team can intervene quickly." />
+              )}
+            </div>
           </TabsContent>
 
           <TabsContent value="packages">
-            <div className="mb-4 rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <div className="mb-4 rounded-xl border border-slate-200 bg-gradient-to-r from-slate-50 to-white p-5 shadow-sm dark:from-slate-900 dark:to-slate-950 dark:border-slate-800">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                   <p className="text-sm font-semibold text-slate-950 dark:text-white">Company Package Builder</p>
@@ -1354,19 +1464,19 @@ export default function PlatformAdminPage() {
                     Packages are templates; the real contract is configured per company with plan, billing, renewal date, notes, and exact module grants.
                   </p>
                 </div>
-                <Badge variant="outline" className="w-fit border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">
+                <Badge variant="outline" className="w-fit border-emerald-200/60 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">
                   {featureKeys.length} platform modules available
                 </Badge>
               </div>
               <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                 {companies.slice(0, 6).map((company) => (
-                  <div key={company._id} className="rounded-lg border border-slate-200 p-3 dark:border-slate-800">
+                  <div key={company._id} className="group rounded-xl border border-slate-200/60 bg-white p-4 shadow-sm transition-all hover:shadow-md dark:border-slate-800 dark:bg-slate-950">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-slate-950 dark:text-white">{company.name}</p>
                         <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{company.enabledModuleCount}/{featureKeys.length} modules, {formatMoney(company.billing_amount)}</p>
                       </div>
-                      <Button size="sm" variant="outline" onClick={() => setSelectedCompany(company)}>
+                      <Button size="sm" variant="outline" className="shrink-0" onClick={() => setSelectedCompany(company)}>
                         <SlidersHorizontal className="h-4 w-4" />
                         Configure
                       </Button>
@@ -1380,11 +1490,12 @@ export default function PlatformAdminPage() {
               {subscriptionPlans.length > 0 ? subscriptionPlans.map((plan) => {
                 const planCompanies = dashboard.companies.filter((company) => company.subscription_plan === plan.key);
                 return (
-                  <Card key={plan.key} className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <Card key={plan.key} className="overflow-hidden border-0 bg-white shadow-sm transition-all hover:shadow-md dark:bg-slate-900/70">
+                    <div className="h-1 bg-emerald-500" />
                     <CardHeader>
-                      <CardTitle className="flex items-center justify-between gap-2 text-base">
+                      <CardTitle className="flex items-center justify-between gap-2 text-base font-semibold text-slate-950 dark:text-white">
                         {plan.name}
-                        <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-900 dark:text-slate-200 dark:border-slate-700">{planCompanies.length}</Badge>
+                        <Badge variant="outline" className="rounded-md border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200">{planCompanies.length}</Badge>
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
@@ -1396,8 +1507,8 @@ export default function PlatformAdminPage() {
                           </div>
                         ))}
                         {plan.outcomes && plan.outcomes.length > 0 && (
-                          <div className="mt-4 rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
-                            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Best outcome</p>
+                          <div className="mt-4 rounded-xl bg-slate-50 p-3 dark:bg-slate-900">
+                            <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Best outcome</p>
                             {plan.outcomes.map((outcome) => (
                               <p key={outcome} className="text-sm text-slate-700 dark:text-slate-300">{outcome}</p>
                             ))}
@@ -1408,7 +1519,7 @@ export default function PlatformAdminPage() {
                   </Card>
                 );
               }) : (
-                <div className="col-span-full text-center py-10 text-sm text-slate-500 dark:text-slate-400">
+                <div className="col-span-full py-10 text-center text-sm text-slate-500 dark:text-slate-400">
                   No subscription plans found. Create plans in the Plans tab.
                 </div>
               )}
@@ -1416,9 +1527,9 @@ export default function PlatformAdminPage() {
           </TabsContent>
 
           <TabsContent value="activity">
-            <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
+            <Card className="overflow-hidden border-0 bg-white shadow-sm dark:bg-slate-900/70">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-950 dark:text-white">
                   <ScrollText className="h-5 w-5 text-cyan-600" />
                   Platform Activity & Audit Trail
                 </CardTitle>
@@ -1426,21 +1537,21 @@ export default function PlatformAdminPage() {
               <CardContent>
                 {auditLogsLoading ? (
                   <div className="space-y-3">
-                    {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12 rounded-lg" />)}
+                    {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12 rounded-xl" />)}
                   </div>
                 ) : auditLogs.length === 0 ? (
                   <EmptyPanel title="No activity recorded" text="Platform audit logs will appear here once actions are taken." />
                 ) : (
                   <div className="space-y-3">
-                    <div className="rounded-lg border border-slate-200 dark:border-slate-800">
-                      <div className="grid grid-cols-[1fr_120px_100px_140px] gap-2 border-b border-slate-200 bg-slate-50 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
+                    <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
+                      <div className="grid grid-cols-[1fr_120px_100px_140px] gap-2 border-b border-slate-200 bg-slate-50 px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
                         <span>Action</span>
                         <span>Entity</span>
                         <span>Status</span>
                         <span className="text-right">Time</span>
                       </div>
                       {auditLogs.map((log) => (
-                        <div key={log._id} className="grid grid-cols-[1fr_120px_100px_140px] gap-2 border-b border-slate-200 px-4 py-3 text-sm last:border-0 dark:border-slate-800">
+                        <div key={log._id} className="grid grid-cols-[1fr_120px_100px_140px] gap-2 border-b border-slate-100 px-4 py-3 text-sm last:border-0 dark:border-slate-800/60">
                           <div className="min-w-0">
                             <p className="truncate font-medium text-slate-900 dark:text-white">{log.action}</p>
                             <p className="truncate text-xs text-slate-500 dark:text-slate-400">
@@ -1449,12 +1560,12 @@ export default function PlatformAdminPage() {
                             </p>
                           </div>
                           <div className="flex items-center">
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="outline" className="rounded-md text-xs">
                               {log.entity_type}
                             </Badge>
                           </div>
                           <div className="flex items-center">
-                            <Badge variant={log.status === "success" ? "default" : "destructive"} className="text-xs">
+                            <Badge variant={log.status === "success" ? "default" : "destructive"} className="rounded-md text-xs">
                               {log.status}
                             </Badge>
                           </div>
@@ -1486,33 +1597,37 @@ export default function PlatformAdminPage() {
           <TabsContent value="analytics">
             {analyticsLoading || !analytics ? (
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-72 rounded-lg" />)}
+                {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-72 rounded-xl" />)}
               </div>
             ) : (
               <div className="space-y-6">
                 <div className="grid gap-4 md:grid-cols-4">
-                  <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <Card className="overflow-hidden border-0 bg-white shadow-sm dark:bg-slate-900/70">
+                    <div className="h-1 bg-cyan-500" />
                     <CardContent className="p-5">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">MRR</p>
-                      <p className="mt-2 text-3xl font-semibold text-slate-950 dark:text-white">{formatMoney(analytics.mrr)}</p>
+                      <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">MRR</p>
+                      <p className="mt-2 text-3xl font-bold tracking-tight text-slate-950 tabular-nums dark:text-white">{formatMoney(analytics.mrr)}</p>
                     </CardContent>
                   </Card>
-                  <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <Card className="overflow-hidden border-0 bg-white shadow-sm dark:bg-slate-900/70">
+                    <div className="h-1 bg-emerald-500" />
                     <CardContent className="p-5">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Total Tenants</p>
-                      <p className="mt-2 text-3xl font-semibold text-slate-950 dark:text-white">{analytics.totalTenants}</p>
+                      <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total Tenants</p>
+                      <p className="mt-2 text-3xl font-bold tracking-tight text-slate-950 tabular-nums dark:text-white">{analytics.totalTenants}</p>
                     </CardContent>
                   </Card>
-                  <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <Card className="overflow-hidden border-0 bg-white shadow-sm dark:bg-slate-900/70">
+                    <div className="h-1 bg-amber-500" />
                     <CardContent className="p-5">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Active Tenants</p>
-                      <p className="mt-2 text-3xl font-semibold text-slate-950 dark:text-white">{analytics.activeTenants}</p>
+                      <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Active Tenants</p>
+                      <p className="mt-2 text-3xl font-bold tracking-tight text-slate-950 tabular-nums dark:text-white">{analytics.activeTenants}</p>
                     </CardContent>
                   </Card>
-                  <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <Card className="overflow-hidden border-0 bg-white shadow-sm dark:bg-slate-900/70">
+                    <div className="h-1 bg-rose-500" />
                     <CardContent className="p-5">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Churn Rate</p>
-                      <p className="mt-2 text-3xl font-semibold text-slate-950 dark:text-white">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Churn Rate</p>
+                      <p className="mt-2 text-3xl font-bold tracking-tight text-slate-950 tabular-nums dark:text-white">
                         {analytics.totalTenants ? Math.round((analytics.churnTrend.reduce((s, d) => s + d.count, 0) / analytics.totalTenants) * 100) : 0}%
                       </p>
                     </CardContent>
@@ -1520,9 +1635,10 @@ export default function PlatformAdminPage() {
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2">
-                  <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <Card className="overflow-hidden border-0 bg-white shadow-sm dark:bg-slate-900/70">
+                    <div className="h-1 bg-sky-500" />
                     <CardHeader>
-                      <CardTitle className="text-base">Growth Trend (New Signups)</CardTitle>
+                      <CardTitle className="text-base font-semibold text-slate-950 dark:text-white">Growth Trend (New Signups)</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <ResponsiveContainer width="100%" height={250}>
@@ -1537,9 +1653,10 @@ export default function PlatformAdminPage() {
                     </CardContent>
                   </Card>
 
-                  <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <Card className="overflow-hidden border-0 bg-white shadow-sm dark:bg-slate-900/70">
+                    <div className="h-1 bg-red-500" />
                     <CardHeader>
-                      <CardTitle className="text-base">Churn Trend</CardTitle>
+                      <CardTitle className="text-base font-semibold text-slate-950 dark:text-white">Churn Trend</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <ResponsiveContainer width="100%" height={250}>
@@ -1554,9 +1671,10 @@ export default function PlatformAdminPage() {
                     </CardContent>
                   </Card>
 
-                  <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <Card className="overflow-hidden border-0 bg-white shadow-sm dark:bg-slate-900/70">
+                    <div className="h-1 bg-emerald-500" />
                     <CardHeader>
-                      <CardTitle className="text-base">Active Tenant Trend</CardTitle>
+                      <CardTitle className="text-base font-semibold text-slate-950 dark:text-white">Active Tenant Trend</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <ResponsiveContainer width="100%" height={250}>
@@ -1571,9 +1689,10 @@ export default function PlatformAdminPage() {
                     </CardContent>
                   </Card>
 
-                  <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <Card className="overflow-hidden border-0 bg-white shadow-sm dark:bg-slate-900/70">
+                    <div className="h-1 bg-violet-500" />
                     <CardHeader>
-                      <CardTitle className="text-base">Plan Distribution</CardTitle>
+                      <CardTitle className="text-base font-semibold text-slate-950 dark:text-white">Plan Distribution</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <ResponsiveContainer width="100%" height={250}>
@@ -1598,9 +1717,10 @@ export default function PlatformAdminPage() {
                     </CardContent>
                   </Card>
 
-                  <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <Card className="overflow-hidden border-0 bg-white shadow-sm dark:bg-slate-900/70">
+                    <div className="h-1 bg-indigo-500" />
                     <CardHeader>
-                      <CardTitle className="text-base">MRR by Plan</CardTitle>
+                      <CardTitle className="text-base font-semibold text-slate-950 dark:text-white">MRR by Plan</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <ResponsiveContainer width="100%" height={250}>
@@ -1615,9 +1735,10 @@ export default function PlatformAdminPage() {
                     </CardContent>
                   </Card>
 
-                  <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <Card className="overflow-hidden border-0 bg-white shadow-sm dark:bg-slate-900/70">
+                    <div className="h-1 bg-teal-500" />
                     <CardHeader>
-                      <CardTitle className="text-base">Status Distribution</CardTitle>
+                      <CardTitle className="text-base font-semibold text-slate-950 dark:text-white">Status Distribution</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <ResponsiveContainer width="100%" height={250}>
@@ -1647,43 +1768,43 @@ export default function PlatformAdminPage() {
           </TabsContent>
 
           <TabsContent value="plans">
-            <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-              <CardHeader className="flex flex-row items-center justify-between">
+            <Card className="overflow-hidden border-0 bg-white shadow-sm dark:bg-slate-900/70">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <div>
-                  <CardTitle className="text-base">Subscription Plans</CardTitle>
+                  <CardTitle className="text-base font-semibold text-slate-950 dark:text-white">Subscription Plans</CardTitle>
                   <CardDescription>Create and manage platform subscription tiers and their feature sets.</CardDescription>
                 </div>
-                <Button size="sm" onClick={() => openPlanDialog()}>
+                <Button size="sm" className="rounded-lg" onClick={() => openPlanDialog()}>
                   <Plus className="mr-1 h-4 w-4" /> Add plan
                 </Button>
               </CardHeader>
               <CardContent>
                 {plansLoading ? (
                   <div className="space-y-3">
-                    {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-16 rounded-lg" />)}
+                    {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-16 rounded-xl" />)}
                   </div>
                 ) : subscriptionPlans.length === 0 ? (
                   <EmptyPanel title="No plans configured" text="Create your first subscription plan to define platform tiers." />
                 ) : (
                   <div className="space-y-3">
                     {subscriptionPlans.map((plan) => (
-                      <div key={plan.key} className="flex items-center justify-between rounded-lg border border-slate-200 p-4 dark:border-slate-800">
+                      <div key={plan.key} className="flex items-center justify-between rounded-xl border border-slate-200/60 bg-slate-50/40 p-4 transition-all hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950 dark:hover:bg-slate-900">
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
                             <p className="font-semibold text-slate-900 dark:text-white">{plan.name}</p>
-                            <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300">{plan.key}</code>
-                            {!plan.is_active && <Badge variant="secondary" className="text-xs">Inactive</Badge>}
+                            <code className="rounded-md bg-slate-100 px-1.5 py-0.5 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300">{plan.key}</code>
+                            {!plan.is_active && <Badge variant="secondary" className="rounded-md text-xs">Inactive</Badge>}
                           </div>
                           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{plan.description || "No description"}</p>
                           <div className="mt-2 flex flex-wrap gap-1">
                             {plan.features.map((f) => (
-                              <Badge key={f} variant="outline" className="text-[10px]">{f}</Badge>
+                              <Badge key={f} variant="outline" className="rounded-md text-[10px]">{f}</Badge>
                             ))}
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Button variant="ghost" size="sm" onClick={() => openPlanDialog(plan)}>Edit</Button>
-                          <Button variant="ghost" size="sm" className="text-red-600" disabled={actionLoading === plan.key} onClick={() => handleDeletePlan(plan.key)}>
+                          <Button variant="ghost" size="sm" className="rounded-lg" onClick={() => openPlanDialog(plan)}>Edit</Button>
+                          <Button variant="ghost" size="sm" className="rounded-lg text-red-600" disabled={actionLoading === plan.key} onClick={() => handleDeletePlan(plan.key)}>
                             {actionLoading === plan.key ? <Loader2 className="h-3 w-3 animate-spin" /> : "Delete"}
                           </Button>
                         </div>
@@ -1936,16 +2057,18 @@ export default function PlatformAdminPage() {
               <Input value={planForm.description} onChange={(e) => setPlanForm({ ...planForm, description: e.target.value })} placeholder="Short description" />
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-medium">Features (comma-separated system keys)</label>
-              <Input value={planForm.features} onChange={(e) => setPlanForm({ ...planForm, features: e.target.value })} placeholder="inventory, sales, reports" />
+              <label className="text-xs font-medium">Features (system keys, one per line)</label>
+              <Textarea value={planForm.features} onChange={(e) => setPlanForm({ ...planForm, features: e.target.value })} rows={3} placeholder={"inventory\nsales\nreports"} />
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-medium">Modules (comma-separated display names)</label>
-              <Input value={planForm.modules} onChange={(e) => setPlanForm({ ...planForm, modules: e.target.value })} placeholder="Dashboards, Products, Warehouses, Invoices" />
+              <label className="text-xs font-medium">Pricing card sections (one per line)</label>
+              <Textarea value={planForm.modules} onChange={(e) => setPlanForm({ ...planForm, modules: e.target.value })} rows={7} placeholder={"Inventory Core|Products & Categories\nRevenue Flow|POS\nFinance Control|Bank Accounts"} />
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">Use Section|Feature to keep the public pricing card grouped like the design.</p>
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-medium">Outcomes (comma-separated)</label>
-              <Input value={planForm.outcomes} onChange={(e) => setPlanForm({ ...planForm, outcomes: e.target.value })} placeholder="Track stock, Manage suppliers, Create quotes" />
+              <label className="text-xs font-medium">Included pills / outcomes (one per line)</label>
+              <Textarea value={planForm.outcomes} onChange={(e) => setPlanForm({ ...planForm, outcomes: e.target.value })} rows={3} placeholder={"included|control|Control Room included\nincluded|ai|Stacy AI Assistant included"} />
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">Use included|control|Label or included|ai|Label for the colored pills on the pricing page.</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">

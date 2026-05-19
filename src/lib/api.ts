@@ -357,6 +357,7 @@ export interface PlatformAccessUpdate {
   billing_amount?: number;
   next_billing_date?: string | null;
   feature_access?: Partial<PlatformFeatureAccess>;
+  subscription_modules?: string[];
   platform_notes?: string;
 }
 

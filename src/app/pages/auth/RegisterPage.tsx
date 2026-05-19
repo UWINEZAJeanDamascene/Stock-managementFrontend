@@ -36,7 +36,7 @@ export default function RegisterPage() {
   const [emailError, setEmailError] = useState<string | null>(null);
   const [plans, setPlans] = useState<{ key: string; name: string; description: string; features: string[]; modules: string[]; badge: string; default_billing_amount: number; default_billing_cycle: string; featured: boolean }[]>([]);
   const [plansLoading, setPlansLoading] = useState(true);
-  const [selectedPlan, setSelectedPlan] = useState<string>('trial');
+  const [selectedPlan, setSelectedPlan] = useState<string>('starter');
 
   useEffect(() => {
     companyApi.getPublicSubscriptionPlans()
@@ -65,7 +65,7 @@ export default function RegisterPage() {
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
     mode: 'onChange',
-    defaultValues: { subscriptionPlan: 'trial' },
+    defaultValues: { subscriptionPlan: 'starter' },
   });
 
   const handleContinue = async () => {
@@ -237,7 +237,7 @@ export default function RegisterPage() {
                   <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
                 </div>
               ) : plans.length === 0 ? (
-                <p className="text-sm text-slate-500 dark:text-slate-400">No plans available. You will be assigned the default trial plan.</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">No plans available. You will be assigned the default starter plan.</p>
               ) : (
                 <div className="grid gap-3 sm:grid-cols-2">
                   {plans.map((plan) => (

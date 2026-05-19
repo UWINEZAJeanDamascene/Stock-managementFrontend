@@ -117,8 +117,98 @@ const BUSINESS_MODULES = [
   "Reports hub",
 ];
 
+const MODULE_ALIASES: Record<string, string[]> = {
+  "products & categories": ["Products and categories"],
+  "products and categories": ["Products and categories"],
+  "stock levels": ["Stock levels and movements"],
+  "stock movements": ["Stock levels and movements"],
+  "stock levels and movements": ["Stock levels and movements"],
+  "quotations & sales orders": ["Quotations", "Sales orders"],
+  "quotations and sales orders": ["Quotations", "Sales orders"],
+  "batches & serial numbers": ["Batches", "Serial numbers"],
+  "batches and serial numbers": ["Batches", "Serial numbers"],
+  "accounts receivable & payable": ["AR and AP"],
+  "accounts receivable and payable": ["AR and AP"],
+  "goods received": ["GRN"],
+  "purchase returns & purchases": ["Purchase orders"],
+  "purchase returns and purchases": ["Purchase orders"],
+  "chart of accounts": ["Chart of accounts"],
+  "liabilities & fixed assets": ["Liabilities", "Fixed assets"],
+  "liabilities and fixed assets": ["Liabilities", "Fixed assets"],
+  "budgets & budget settings": ["Budgets"],
+  "budgets and budget settings": ["Budgets"],
+  "reports hub": ["Reports hub"],
+  "profit & loss": ["Profit and loss"],
+  "profit and loss": ["Profit and loss"],
+  "cash flow": ["Cash flow"],
+  "balance sheet": ["Balance sheet"],
+  "financial ratios": ["Financial ratios"],
+  "debt maturity schedule": ["Debt maturity"],
+  "financial reports": ["Financial reports"],
+  "employees & departments": ["Employees"],
+  "employees and departments": ["Employees"],
+  "payroll & payroll runs": ["Payroll runs"],
+  "payroll and payroll runs": ["Payroll runs"],
+  "accounting periods": ["Financial reports"],
+  "finance control (full)": ["Chart of accounts", "Journal entries", "Fixed assets", "Liabilities", "Budgets", "Projects", "Employees", "Payroll runs", "Financial reports"],
+  "inventory core (full)": ["Batches", "Serial numbers"],
+  "revenue flow (full)": ["Clients", "Pick and pack", "Credit notes", "Recurring invoices", "AR and AP"],
+  "intelligence (full)": ["Reports hub", "Profit and loss", "Balance sheet", "Cash flow", "Financial ratios", "Debt maturity"],
+};
+
+function normalizePlanModule(value: string) {
+  return value.replace(/\s+/g, " ").trim();
+}
+
+function addPlanModule(target: Set<string>, moduleName: string) {
+  const clean = normalizePlanModule(moduleName);
+  if (!clean) return;
+  const aliases = MODULE_ALIASES[clean.toLowerCase()] || [clean];
+  aliases.forEach((alias) => target.add(alias.toLowerCase()));
+}
+
+function splitPlanModule(rawModule: string) {
+  const clean = normalizePlanModule(rawModule);
+  if (!clean) return [];
+  if (clean.includes("|")) {
+    const [group, ...rest] = clean.split("|");
+    return [group, rest.join("|")].map(normalizePlanModule).filter(Boolean);
+  }
+  if (clean.includes(":")) {
+    const [group, ...rest] = clean.split(":");
+    return [group, rest.join(":")].map(normalizePlanModule).filter(Boolean);
+  }
+  return [clean];
+}
+
 function expandPlanModules(modules?: string[]) {
-  const normalized = new Set((modules || []).map((module) => module.toLowerCase()));
+  const normalized = new Set<string>();
+  addPlanModule(normalized, "Dashboards");
+
+  (modules || []).forEach((module) => {
+    const tokens = splitPlanModule(module);
+    const joined = module.toLowerCase();
+
+    if (
+      joined.includes("everything in starter") ||
+      joined.includes("everything in core") ||
+      tokens.some((token) => ["everything in starter", "everything in core"].some((match) => token.toLowerCase().includes(match)))
+    ) {
+      CORE_MODULES.forEach((coreModule) => addPlanModule(normalized, coreModule));
+    }
+
+    if (
+      joined.includes("everything in growth") ||
+      joined.includes("everything in professional") ||
+      joined.includes("everything in business") ||
+      tokens.some((token) => ["everything in growth", "everything in professional", "everything in business"].some((match) => token.toLowerCase().includes(match)))
+    ) {
+      BUSINESS_MODULES.forEach((businessModule) => addPlanModule(normalized, businessModule));
+    }
+
+    tokens.forEach((token) => addPlanModule(normalized, token));
+  });
+
   if (normalized.has("everything in core")) {
     CORE_MODULES.forEach((module) => normalized.add(module.toLowerCase()));
   }
@@ -447,7 +537,7 @@ const financeNav: NavSection = {
       href: "/assets",
       icon: HardDrive,
       permission: "fixed_assets:read",
-      featureKey: "fixed_assets",
+      featureKey: "finance",
       moduleNames: ["Fixed assets"],
     },
     {
@@ -538,7 +628,7 @@ const reportsNav: NavSection = {
       icon: FileText,
       permission: "reports:read",
       featureKey: "reports",
-      moduleNames: ["Reports hub", "Financial reports"],
+      moduleNames: ["Reports hub"],
     },
     {
       nameKey: "nav.profitLoss",
@@ -546,7 +636,7 @@ const reportsNav: NavSection = {
       icon: TrendingUp,
       permission: "reports:read",
       featureKey: "reports",
-      moduleNames: ["Reports hub", "Financial reports"],
+      moduleNames: ["Profit and loss"],
     },
     {
       nameKey: "nav.balanceSheet",
@@ -554,7 +644,7 @@ const reportsNav: NavSection = {
       icon: Scale,
       permission: "reports:read",
       featureKey: "reports",
-      moduleNames: ["Reports hub", "Financial reports"],
+      moduleNames: ["Balance sheet"],
     },
     {
       nameKey: "nav.cashFlow",
@@ -562,7 +652,7 @@ const reportsNav: NavSection = {
       icon: Waves,
       permission: "reports:read",
       featureKey: "reports",
-      moduleNames: ["Reports hub", "Financial reports"],
+      moduleNames: ["Cash flow"],
     },
     {
       nameKey: "nav.financialRatios",
@@ -570,7 +660,7 @@ const reportsNav: NavSection = {
       icon: Gauge,
       permission: "reports:read",
       featureKey: "reports",
-      moduleNames: ["Reports hub", "Financial reports"],
+      moduleNames: ["Financial ratios"],
     },
     {
       nameKey: "nav.debtMaturity",
@@ -578,7 +668,7 @@ const reportsNav: NavSection = {
       icon: Clock,
       permission: "reports:read",
       featureKey: "reports",
-      moduleNames: ["Reports hub", "Financial reports"],
+      moduleNames: ["Debt maturity"],
     },
   ],
 };
@@ -759,12 +849,18 @@ export function Sidebar({
   const planModules = expandPlanModules(company?.subscription_modules);
 
   const hasModuleAccess = (item: NavItem) => {
-    if (item.moduleNames && item.moduleNames.length > 0 && planModules.size > 0) {
+    // If the item has no module constraints, always allow
+    if (!item.moduleNames || item.moduleNames.length === 0) return true;
+
+    // While company data is not yet loaded, allow rendering to avoid blocking the UI
+    if (!company) return true;
+
+    // If the company has explicit subscription modules, derive access from the planModules set
+    if (company.subscription_modules && Array.isArray(company.subscription_modules)) {
       return item.moduleNames.some((moduleName) => planModules.has(moduleName.toLowerCase()));
     }
-    if (item.moduleNames && item.moduleNames.length > 0 && company?.subscription_modules) {
-      return false;
-    }
+
+    // Fallback: if no subscription modules configured, allow access (treat as permissive)
     return true;
   };
 
@@ -772,7 +868,18 @@ export function Sidebar({
     if (!featureKey) return true; // system items without featureKey are always visible
     const fa = company?.feature_access;
     if (!fa || typeof fa !== 'object') return !company; // allow while loading, lock down once loaded
-    return Boolean(fa[featureKey]);
+
+    const keys = Object.keys(fa);
+    // If feature_access is completely empty, be permissive and let subscription_modules gate access
+    if (keys.length === 0) return true;
+
+    // If the specific key exists in feature_access, honor it
+    if (Object.prototype.hasOwnProperty.call(fa, featureKey)) {
+      return Boolean(fa[featureKey]);
+    }
+
+    // Key doesn't exist in feature_access — be permissive and let module-level check handle it
+    return true;
   };
 
   const filterVisible = (items: NavItem[]) =>
