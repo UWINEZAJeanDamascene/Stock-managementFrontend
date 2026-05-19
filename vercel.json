@@ -5,5 +5,8 @@
   "framework": "vite",
   "env": {
     "VITE_API_URL": "https://stock-tenancy-system.onrender.com/api"
-  }
+  },
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
