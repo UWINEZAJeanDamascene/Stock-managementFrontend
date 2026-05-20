@@ -39,15 +39,10 @@ import {
   BadgeCheck,
   Sparkles,
 } from "lucide-react";
+
 import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/app/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/app/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -56,24 +51,11 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/app/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/app/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
 import { Checkbox } from "@/app/components/ui/checkbox";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/app/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/app/components/ui/table";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -1657,6 +1639,54 @@ export default function PayrollRunDetailPage() {
               </Badge>
             </CardHeader>
             <CardContent className="p-0">
+              {preview?.workflow?.length ? (
+                <div className="space-y-4">
+                  {(preview?.workflow || []).map((entry) => {
+                    const totalDebit = entry.lines.reduce((s, l) => s + l.debit, 0);
+                    const totalCredit = entry.lines.reduce((s, l) => s + l.credit, 0);
+                    return (
+                      <div key={entry.step} className="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700">
+                        <div className="flex items-center justify-between gap-3 bg-slate-50 px-3 py-2 dark:bg-slate-800">
+                          <p className="text-sm font-semibold text-slate-950 dark:text-white">{entry.title}</p>
+                          <Badge
+                            variant={Math.abs(totalDebit - totalCredit) < 0.01 ? "default" : "destructive"}
+                            className={Math.abs(totalDebit - totalCredit) < 0.01 ? "bg-green-600 dark:bg-green-500" : ""}
+                          >
+                            {Math.abs(totalDebit - totalCredit) < 0.01 ? "Balanced" : "Not balanced"}
+                          </Badge>
+                        </div>
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="dark:border-slate-700">
+                              <TableHead className="dark:text-slate-200">{t("payroll.run.accountCode")}</TableHead>
+                              <TableHead className="dark:text-slate-200">{t("payroll.run.accountName")}</TableHead>
+                              <TableHead className="dark:text-slate-200">{t("payroll.run.description")}</TableHead>
+                              <TableHead className="text-right dark:text-slate-200">{t("payroll.run.debit")}</TableHead>
+                              <TableHead className="text-right dark:text-slate-200">{t("payroll.run.credit")}</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {entry.lines.map((line, i) => (
+                              <TableRow key={`${entry.step}-${i}`} className="dark:border-slate-700">
+                                <TableCell className="font-mono dark:text-slate-200">{line.accountCode}</TableCell>
+                                <TableCell className="dark:text-slate-300">{line.accountName}</TableCell>
+                                <TableCell className="text-sm text-slate-500 dark:text-slate-400">{line.description}</TableCell>
+                                <TableCell className="text-right dark:text-slate-200">{line.debit > 0 ? formatCurrency(line.debit) : "-"}</TableCell>
+                                <TableCell className="text-right dark:text-slate-200">{line.credit > 0 ? formatCurrency(line.credit) : "-"}</TableCell>
+                              </TableRow>
+                            ))}
+                            <TableRow className="bg-slate-50 font-bold dark:bg-slate-800">
+                              <TableCell colSpan={3} className="dark:text-white">TOTAL</TableCell>
+                              <TableCell className="text-right dark:text-white">{formatCurrency(totalDebit)}</TableCell>
+                              <TableCell className="text-right dark:text-white">{formatCurrency(totalCredit)}</TableCell>
+                            </TableRow>
+                          </TableBody>
+                        </Table>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
               <Table>
                 <TableHeader>
                   <TableRow className="bg-slate-50 hover:bg-slate-50 dark:bg-slate-900/70 dark:hover:bg-slate-900/70">
@@ -1738,6 +1768,7 @@ export default function PayrollRunDetailPage() {
                   </TableRow>
                 </TableBody>
               </Table>
+              )}
             </CardContent>
           </Card>
         </div>

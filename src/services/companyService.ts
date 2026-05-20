@@ -186,7 +186,7 @@ class CompanyService {
     timestamp: string;
     uptime_seconds: number;
     database: { status: string; ping_ms: number };
-    memory: { heap_used_mb: number; heap_total_mb: number; rss_mb: number; status: string };
+    memory: { heap_used_mb: number; heap_total_mb: number; heap_limit_mb?: number; heap_used_percent?: number; rss_mb: number; status: string };
     cache: { status: string };
     memory_trend: {
       duration_sec: number;
@@ -259,8 +259,8 @@ class CompanyService {
     gc_ran: boolean;
     message: string;
     heap_freed_mb: number;
-    before: { heap_used_mb: number; heap_total_mb: number; rss_mb: number };
-    after: { heap_used_mb: number; heap_total_mb: number; rss_mb: number };
+    before: { heap_used_mb: number; heap_total_mb: number; heap_limit_mb?: number; rss_mb: number };
+    after: { heap_used_mb: number; heap_total_mb: number; heap_limit_mb?: number; rss_mb: number };
   }> {
     const response = await companyApi.runGC();
     return response;

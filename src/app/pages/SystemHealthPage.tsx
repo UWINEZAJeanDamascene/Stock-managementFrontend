@@ -32,7 +32,14 @@ interface HealthSnapshot {
   timestamp: string;
   uptime_seconds: number;
   database: { status: string; ping_ms: number };
-  memory: { heap_used_mb: number; heap_total_mb: number; rss_mb: number; status: string };
+  memory: {
+    heap_used_mb: number;
+    heap_total_mb: number;
+    heap_limit_mb?: number;
+    heap_used_percent?: number;
+    rss_mb: number;
+    status: string;
+  };
   cache: { status: string };
   memory_trend: {
     duration_sec: number;
@@ -167,6 +174,14 @@ const statusConfig: Record<string, { icon: React.ElementType; label: string; col
 
 function getStatusConfig(key: string) {
   return statusConfig[key] || statusConfig.ok;
+}
+
+function statusFromRatio(used: number, total: number) {
+  if (total <= 0) return 'ok';
+  const ratio = used / total;
+  if (ratio >= 0.95) return 'critical';
+  if (ratio >= 0.85) return 'warning';
+  return 'ok';
 }
 
 // ── Status Card ──
@@ -324,6 +339,9 @@ export default function SystemHealthPage() {
 
   const overallCfg = getStatusConfig(health?.status || 'ok');
   const OverallIcon = overallCfg.icon;
+  const heapLimitMb = health?.memory.heap_limit_mb || health?.metrics?.capacity.node_heap_limit_mb || health?.memory.heap_total_mb || 0;
+  const rssLimitMb = health?.metrics?.system.total_memory_mb || Math.max(heapLimitMb, health?.memory.rss_mb || 0);
+  const rssStatus = health ? statusFromRatio(health.memory.rss_mb, rssLimitMb) : 'ok';
 
   return (
     <div className="space-y-8">
@@ -440,7 +458,7 @@ export default function SystemHealthPage() {
               status={health.memory.status}
               detail={`RSS ${health.memory.rss_mb.toFixed(1)} MB`}
               icon={MemoryStick}
-              metric={`Heap ${health.memory.heap_used_mb.toFixed(1)} / ${health.memory.heap_total_mb.toFixed(1)} MB`}
+              metric={`Heap ${health.memory.heap_used_mb.toFixed(1)} / ${heapLimitMb.toFixed(1)} MB`}
             />
             <StatusCard
               title="API Server"
@@ -495,16 +513,16 @@ export default function SystemHealthPage() {
                 <MemoryBar
                   label="Heap Used"
                   used={health.memory.heap_used_mb}
-                  total={health.memory.heap_total_mb}
+                  total={heapLimitMb}
                   unit="MB"
                   status={health.memory.status}
                 />
                 <MemoryBar
                   label="RSS (Resident Set)"
                   used={health.memory.rss_mb}
-                  total={health.memory.heap_total_mb * 1.5}
+                  total={rssLimitMb}
                   unit="MB"
-                  status={health.memory.status}
+                  status={rssStatus}
                 />
                 {health.memory_trend && (
                   <div className="rounded-lg border border-slate-100 bg-slate-50/50 p-3 dark:border-white/5 dark:bg-white/5">
@@ -523,13 +541,13 @@ export default function SystemHealthPage() {
                   <p className="font-medium">Status interpretation:</p>
                   <ul className="mt-1 space-y-0.5 pl-4 list-disc">
                     <li>
-                      <span className="text-emerald-600 dark:text-emerald-400 font-medium">OK</span> — Heap usage below 85%
+                      <span className="text-emerald-600 dark:text-emerald-400 font-medium">OK</span> — Heap usage below 85% of Node heap limit
                     </li>
                     <li>
-                      <span className="text-amber-600 dark:text-amber-400 font-medium">Warning</span> — Heap usage 85–95%
+                      <span className="text-amber-600 dark:text-amber-400 font-medium">Warning</span> — Heap usage 85–95% of Node heap limit
                     </li>
                     <li>
-                      <span className="text-rose-600 dark:text-rose-400 font-medium">Critical</span> — Heap usage above 95%
+                      <span className="text-rose-600 dark:text-rose-400 font-medium">Critical</span> — Heap usage above 95% of Node heap limit
                     </li>
                   </ul>
                 </div>
