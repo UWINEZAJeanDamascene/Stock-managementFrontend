@@ -131,6 +131,83 @@ const MODULE_BAR_COLORS: Record<string, string> = {
   company: '#64748b',
 };
 
+const SENSITIVE_KEY_PATTERN = /(password|passcode|pin|secret|token|refresh_token|access_token|authorization|api_?key|private_?key|credential|otp|mfa)/i;
+
+function redactSensitive(value: unknown): unknown {
+  if (value == null || typeof value !== 'object') return value;
+  if (Array.isArray(value)) return value.map(redactSensitive);
+
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>).map(([key, nestedValue]) => [
+      key,
+      SENSITIVE_KEY_PATTERN.test(key) ? '[REDACTED]' : redactSensitive(nestedValue),
+    ]),
+  );
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value != null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function humanizeKey(key: string): string {
+  return key
+    .replace(/[_-]+/g, ' ')
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/\b\w/g, char => char.toUpperCase());
+}
+
+function formatDetailValue(value: unknown): string {
+  if (value == null || value === '') return '-';
+  if (typeof value === 'boolean') return value ? 'Enabled' : 'Disabled';
+  if (typeof value === 'number') return value.toLocaleString();
+  if (typeof value === 'string') {
+    if (/^\d{4}-\d{2}-\d{2}/.test(value)) {
+      const date = new Date(value);
+      if (!Number.isNaN(date.getTime())) return formatDate(value);
+    }
+    return value.replace(/_/g, ' ');
+  }
+  return JSON.stringify(value);
+}
+
+function getAuditDetailGroups(details: unknown): { title: string; items: { label: string; value: string }[] }[] {
+  const sanitized = redactSensitive(details);
+  if (!isRecord(sanitized)) return [];
+
+  const payload = isRecord(sanitized.changes)
+    ? sanitized.changes
+    : isRecord(sanitized.body)
+      ? sanitized.body
+      : sanitized;
+
+  const groups: { title: string; items: { label: string; value: string }[] }[] = [];
+  const mainItems: { label: string; value: string }[] = [];
+
+  for (const [key, value] of Object.entries(payload)) {
+    if (key === 'feature_access' && isRecord(value)) {
+      const featureItems = Object.entries(value).map(([featureKey, featureValue]) => ({
+        label: humanizeKey(featureKey),
+        value: formatDetailValue(featureValue),
+      }));
+      if (featureItems.length) groups.push({ title: 'Feature Access', items: featureItems });
+    } else if (isRecord(value) || Array.isArray(value)) {
+      mainItems.push({ label: humanizeKey(key), value: formatDetailValue(value) });
+    } else {
+      mainItems.push({ label: humanizeKey(key), value: formatDetailValue(value) });
+    }
+  }
+
+  if (mainItems.length) groups.unshift({ title: 'Changed Settings', items: mainItems });
+
+  const requestItems = ['method', 'url'].flatMap((key) => {
+    const value = sanitized[key];
+    return value ? [{ label: humanizeKey(key), value: formatDetailValue(value) }] : [];
+  });
+  if (requestItems.length) groups.push({ title: 'Request', items: requestItems });
+
+  return groups;
+}
+
 function getInitials(name?: string): string {
   if (!name) return '?';
   const parts = name.split(' ').filter(Boolean);
@@ -291,6 +368,40 @@ function DetailRow({ icon, label, value, mono, truncate }: {
           {value}
         </p>
       </div>
+    </div>
+  );
+}
+
+function AuditDetailGroups({ details }: { details: unknown }) {
+  const groups = getAuditDetailGroups(details);
+
+  if (groups.length === 0) {
+    return (
+      <p className="rounded-lg bg-slate-50 p-3 text-sm text-slate-500 dark:bg-slate-900/50 dark:text-slate-400">
+        No extra details were recorded for this action.
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {groups.map((group) => (
+        <div key={group.title} className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900/50">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            {group.title}
+          </p>
+          <div className="space-y-2">
+            {group.items.map((item) => (
+              <div key={`${group.title}-${item.label}`} className="flex items-start justify-between gap-4 text-sm">
+                <span className="text-slate-500 dark:text-slate-400">{item.label}</span>
+                <span className="max-w-[60%] text-right font-medium capitalize text-slate-900 dark:text-white">
+                  {item.value}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -1002,11 +1113,7 @@ export default function AuditTrailPage() {
                   <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                     {t('auditTrail.requestDetails', 'Request Details')}
                   </h3>
-                  <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-3 text-xs font-mono text-slate-600 dark:text-slate-400 overflow-x-auto max-h-48 overflow-y-auto">
-                    <pre className="whitespace-pre-wrap break-words">
-                      {JSON.stringify(selectedLog.details, null, 2)}
-                    </pre>
-                  </div>
+                  <AuditDetailGroups details={selectedLog.details} />
                 </div>
               )}
             </div>

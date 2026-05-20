@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, type ReactNode } from "react";
 import { Layout } from "../layout/Layout";
 import { dashboardApi, type SalesDashboardData } from "@/lib/api";
+import { useLiveRefresh } from "@/lib/hooks/useLiveRefresh";
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
 import { Skeleton } from "@/app/components/ui/skeleton";
@@ -42,6 +43,13 @@ import { formatCurrency } from '@/lib/currencyUtils';
 
 function formatNumber(value: number): string {
   return new Intl.NumberFormat("en-US").format(value);
+}
+
+function formatCompact(value: number): string {
+  return new Intl.NumberFormat("en-US", {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(value);
 }
 
 function formatDateTime(value?: string): string {
@@ -202,6 +210,10 @@ const statusChartConfig = {
   count: { label: "Invoices", color: "#2563eb" },
 } satisfies ChartConfig;
 
+const conversionChartConfig = {
+  value: { label: "Amount", color: "#2563eb" },
+} satisfies ChartConfig;
+
 export default function SalesDashboardPage() {
   const [data, setData] = useState<SalesDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -224,14 +236,10 @@ export default function SalesDashboardPage() {
   useEffect(() => {
     fetchDashboard();
   }, [fetchDashboard]);
+  useLiveRefresh(fetchDashboard);
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    try {
-      await dashboardApi.clearCache();
-    } catch {
-      // Cache clear may fail due to permissions; still refetch.
-    }
     await fetchDashboard();
   };
 
@@ -284,6 +292,34 @@ export default function SalesDashboardPage() {
       amount: status.total_amount,
     }));
 
+  const conversionData = [
+    { label: "Billed", value: totalInvoiced, fill: "#2563eb" },
+    { label: "Collected", value: totalCollected, fill: "#16a34a" },
+    { label: "Outstanding", value: totalOutstanding, fill: "#f59e0b" },
+    { label: "Overdue", value: overdueAmount, fill: "#dc2626" },
+  ].filter((item) => item.value > 0);
+
+  const conversionSummary = [
+    {
+      label: "Cash conversion",
+      value: `${collectionRate.toFixed(1)}%`,
+      width: Math.min(collectionRate, 100),
+      tone: "bg-emerald-500",
+    },
+    {
+      label: "AR overdue exposure",
+      value: `${overdueRate}%`,
+      width: Math.min(overdueRate, 100),
+      tone: overdueRate > 25 ? "bg-red-500" : "bg-amber-500",
+    },
+    {
+      label: "Credit note ratio",
+      value: `${creditNoteRate.toFixed(1)}%`,
+      width: Math.min(creditNoteRate, 100),
+      tone: "bg-violet-500",
+    },
+  ];
+
   return (
     <Layout>
       <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
@@ -295,6 +331,9 @@ export default function SalesDashboardPage() {
                   <h1 className="text-2xl font-bold tracking-tight text-slate-950 dark:text-white sm:text-3xl">
                     Sales Dashboard
                   </h1>
+                  <Badge className="h-6 bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/15 dark:text-emerald-200">
+                    Live data
+                  </Badge>
                   {!loading && (
                     <Badge
                       variant={collectionRate >= 65 ? "secondary" : "destructive"}
@@ -398,6 +437,107 @@ export default function SalesDashboardPage() {
               loading={loading}
             />
           </div>
+
+          <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <PanelTitle
+              icon={<Banknote className="h-4 w-4 text-emerald-500" />}
+              title="Billing to Cash Command View"
+              subtitle="Billed revenue, collected cash, open receivables, and overdue exposure"
+              action={
+                !loading && (
+                  <Badge variant={collectionRate >= 65 ? "secondary" : "destructive"}>
+                    {collectionBadge}
+                  </Badge>
+                )
+              }
+            />
+            <CardContent>
+              {loading ? (
+                <Skeleton className="h-[220px] w-full" />
+              ) : conversionData.length === 0 ? (
+                <EmptyState
+                  icon={<ReceiptText className="h-8 w-8" />}
+                  message="No sales conversion data for this period"
+                />
+              ) : (
+                <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-center">
+                  <ChartContainer
+                    config={conversionChartConfig}
+                    className="h-[220px] w-full"
+                  >
+                    <BarChart
+                      accessibilityLayer
+                      data={conversionData}
+                      margin={{ left: 0, right: 12, top: 12, bottom: 8 }}
+                    >
+                      <XAxis
+                        dataKey="label"
+                        axisLine={false}
+                        tickLine={false}
+                        tickMargin={10}
+                      />
+                      <YAxis
+                        axisLine={false}
+                        tickLine={false}
+                        width={56}
+                        tickFormatter={(value) => formatCompact(Number(value))}
+                      />
+                      <ChartTooltip
+                        content={
+                          <ChartTooltipContent
+                            formatter={(value) => formatCurrency(Number(value))}
+                          />
+                        }
+                      />
+                      <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+                        {conversionData.map((entry) => (
+                          <Cell key={entry.label} fill={entry.fill} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ChartContainer>
+                  <div className="space-y-4">
+                    {conversionSummary.map((item) => (
+                      <div key={item.label} className="space-y-2">
+                        <div className="flex items-center justify-between gap-3 text-sm">
+                          <span className="font-medium text-slate-700 dark:text-slate-200">
+                            {item.label}
+                          </span>
+                          <span className="font-semibold text-slate-950 dark:text-white">
+                            {item.value}
+                          </span>
+                        </div>
+                        <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800">
+                          <div
+                            className={`h-2 rounded-full ${item.tone}`}
+                            style={{ width: `${item.width}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                    <div className="grid grid-cols-2 gap-3 pt-2">
+                      <div className="rounded-lg border border-slate-200 p-3 dark:border-slate-800">
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          Open AR
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-slate-950 dark:text-white">
+                          {formatCurrency(totalOutstanding)}
+                        </p>
+                      </div>
+                      <div className="rounded-lg border border-slate-200 p-3 dark:border-slate-800">
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          Overdue
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-red-600 dark:text-red-400">
+                          {formatCurrency(overdueAmount)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950 lg:col-span-2">

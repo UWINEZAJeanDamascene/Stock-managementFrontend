@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, type ReactNode } from "react";
 import { useNavigate } from "react-router";
 import { Layout } from "../layout/Layout";
 import { dashboardApi, type InventoryDashboardData } from "@/lib/api";
+import { useLiveRefresh } from "@/lib/hooks/useLiveRefresh";
 import {
   Card,
   CardContent,
@@ -203,6 +204,12 @@ const warehouseChartConfig = {
   },
 } satisfies ChartConfig;
 
+const stockCompositionChartConfig = {
+  value: {
+    label: "Units",
+  },
+} satisfies ChartConfig;
+
 export default function InventoryDashboardPage() {
   const [data, setData] = useState<InventoryDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -226,14 +233,10 @@ export default function InventoryDashboardPage() {
   useEffect(() => {
     fetchDashboard();
   }, [fetchDashboard]);
+  useLiveRefresh(fetchDashboard);
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    try {
-      await dashboardApi.clearCache();
-    } catch {
-      // Cache clear may fail due to permissions; still refetch the dashboard.
-    }
     await fetchDashboard();
   };
 
@@ -282,6 +285,32 @@ export default function InventoryDashboardPage() {
     0,
   );
 
+  const stockCompositionData = [
+    { name: "Available", value: Math.max(available, 0), fill: "#16a34a" },
+    { name: "Reserved", value: Math.max(reserved, 0), fill: "#2563eb" },
+  ].filter((item) => item.value > 0);
+
+  const stockRiskSignals = [
+    {
+      label: "Available stock",
+      value: `${availableRate}%`,
+      width: Math.min(availableRate, 100),
+      tone: "bg-emerald-500",
+    },
+    {
+      label: "Reserved stock",
+      value: `${reservedRate}%`,
+      width: Math.min(reservedRate, 100),
+      tone: "bg-blue-500",
+    },
+    {
+      label: "SKU risk",
+      value: `${atRiskRate}%`,
+      width: Math.min(atRiskRate, 100),
+      tone: atRiskRate > 20 ? "bg-red-500" : "bg-amber-500",
+    },
+  ];
+
   return (
     <Layout>
       <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
@@ -293,6 +322,9 @@ export default function InventoryDashboardPage() {
                   <h1 className="text-2xl font-bold tracking-tight text-slate-950 dark:text-white sm:text-3xl">
                     Inventory Dashboard
                   </h1>
+                  <Badge className="h-6 bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/15 dark:text-emerald-200">
+                    Live data
+                  </Badge>
                   {!loading && (
                     <Badge
                       variant={atRiskCount > 0 ? "destructive" : "secondary"}
@@ -396,6 +428,98 @@ export default function InventoryDashboardPage() {
               loading={loading}
             />
           </div>
+
+          <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <PanelTitle
+              icon={<Layers className="h-4 w-4 text-emerald-500" />}
+              title="Stock Command View"
+              subtitle="Available units, reserved units, and SKU risk in one operational view"
+              action={
+                !loading && (
+                  <Badge variant={atRiskCount > 0 ? "destructive" : "secondary"}>
+                    {atRiskCount > 0 ? `${formatNumber(atRiskCount)} at risk` : "Healthy"}
+                  </Badge>
+                )
+              }
+            />
+            <CardContent>
+              {loading ? (
+                <Skeleton className="h-[220px] w-full" />
+              ) : stockCompositionData.length === 0 ? (
+                <EmptyState
+                  icon={<Package className="h-8 w-8" />}
+                  message="No stock quantity available"
+                />
+              ) : (
+                <div className="grid gap-6 xl:grid-cols-[260px_minmax(0,1fr)_260px] xl:items-center">
+                  <ChartContainer
+                    config={stockCompositionChartConfig}
+                    className="mx-auto h-[220px] w-full max-w-[260px]"
+                  >
+                    <PieChart>
+                      <ChartTooltip
+                        content={
+                          <ChartTooltipContent
+                            formatter={(value) => formatNumber(Number(value))}
+                          />
+                        }
+                      />
+                      <Pie
+                        data={stockCompositionData}
+                        dataKey="value"
+                        nameKey="name"
+                        innerRadius={62}
+                        outerRadius={94}
+                        paddingAngle={2}
+                      >
+                        {stockCompositionData.map((entry) => (
+                          <Cell key={entry.name} fill={entry.fill} />
+                        ))}
+                      </Pie>
+                    </PieChart>
+                  </ChartContainer>
+                  <div className="space-y-4">
+                    {stockRiskSignals.map((item) => (
+                      <div key={item.label} className="space-y-2">
+                        <div className="flex items-center justify-between gap-3 text-sm">
+                          <span className="font-medium text-slate-700 dark:text-slate-200">
+                            {item.label}
+                          </span>
+                          <span className="font-semibold text-slate-950 dark:text-white">
+                            {item.value}
+                          </span>
+                        </div>
+                        <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800">
+                          <div
+                            className={`h-2 rounded-full ${item.tone}`}
+                            style={{ width: `${item.width}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 xl:grid-cols-1">
+                    <div className="rounded-lg border border-slate-200 p-3 dark:border-slate-800">
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        Low-stock alerts
+                      </p>
+                      <p className="mt-1 text-lg font-semibold text-amber-600 dark:text-amber-400">
+                        {formatNumber(alertCount)}
+                      </p>
+                    </div>
+                    <div className="rounded-lg border border-slate-200 p-3 dark:border-slate-800">
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        Dead stock value
+                      </p>
+                      <p className="mt-1 text-lg font-semibold text-slate-950 dark:text-white">
+                        ${formatCurrency(deadStockValue)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950 lg:col-span-2">

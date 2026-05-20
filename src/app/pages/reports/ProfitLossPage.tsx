@@ -265,6 +265,7 @@ function ExpandableSection({
   showComparative: _showComparative,
   defaultExpanded = false,
   accent = "blue",
+  showNegativeLinesAsDeductions = false,
 }: {
   title: string;
   current: PLSection;
@@ -272,6 +273,7 @@ function ExpandableSection({
   showComparative: boolean;
   defaultExpanded?: boolean;
   accent?: "blue" | "emerald" | "amber" | "red";
+  showNegativeLinesAsDeductions?: boolean;
 }) {
   const [expanded, setExpanded] = useState(defaultExpanded);
   if (current.lines.length === 0) return null;
@@ -311,10 +313,14 @@ function ExpandableSection({
               <SectionRow
                 key={line.account_code}
                 label={`${line.account_code} ${line.account_name}`}
-                current={line.amount}
-                comparative={compLine?.amount}
+                current={showNegativeLinesAsDeductions && line.amount < 0 ? Math.abs(line.amount) : line.amount}
+                comparative={
+                  showNegativeLinesAsDeductions && compLine && compLine.amount < 0
+                    ? Math.abs(compLine.amount)
+                    : compLine?.amount
+                }
                 indent={1}
-                isNegative={line.amount < 0}
+                isNegative={!showNegativeLinesAsDeductions && line.amount < 0}
               />
             );
           })}
@@ -747,6 +753,7 @@ export default function ProfitLossPage() {
                     showComparative={showComparative}
                     defaultExpanded={false}
                     accent="red"
+                    showNegativeLinesAsDeductions
                   />
                   <SectionRow
                     label="Total Cost of Sales"

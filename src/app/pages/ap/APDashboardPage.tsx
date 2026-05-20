@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { apReconciliationApi, apPaymentsApi, suppliersApi } from '@/lib/api';
+import { useLiveRefresh } from '@/lib/hooks/useLiveRefresh';
 import { Layout } from '../../layout/Layout';
 import {
   FileText,
@@ -204,6 +205,15 @@ export default function APDashboardPage() {
     }
   };
 
+  const refreshDashboard = useCallback(async () => {
+    await Promise.all([
+      loadSuppliers(),
+      loadAging(),
+      loadOutstandingPayables(payablePage),
+      loadTransactions(transPage),
+    ]);
+  }, [loadSuppliers, loadAging, loadOutstandingPayables, loadTransactions, payablePage, transPage]);
+
   useEffect(() => {
     loadSuppliers();
     loadAging();
@@ -215,6 +225,8 @@ export default function APDashboardPage() {
   useEffect(() => {
     loadAging();
   }, [agingSupplierFilter, agingAsOfDate]);
+
+  useLiveRefresh(refreshDashboard);
 
   const formatMoney = useFormatCurrency();
 
@@ -266,6 +278,9 @@ export default function APDashboardPage() {
                   </div>
                   <div>
                     <h1 className="text-xl font-bold tracking-tight text-slate-950 dark:text-white sm:text-2xl">Accounts Payable</h1>
+                    <Badge className="mt-2 w-fit bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/15 dark:text-emerald-200">
+                      Live data
+                    </Badge>
                     <p className="text-sm text-slate-500 dark:text-slate-400">Read-only ledger showing what you owe suppliers</p>
                   </div>
                 </div>

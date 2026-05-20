@@ -1778,7 +1778,7 @@ export default function PayrollRunDetailPage() {
 
       {/* Journal Preview Dialog */}
       <Dialog open={showPreview} onOpenChange={setShowPreview}>
-        <DialogContent className="max-w-2xl bg-white dark:bg-slate-900 dark:border-slate-800">
+        <DialogContent className="max-h-[90vh] w-[calc(100vw-2rem)] max-w-5xl overflow-hidden bg-white dark:bg-slate-900 dark:border-slate-800">
           <DialogHeader>
             <DialogTitle className="dark:text-white">{t("payroll.run.journalPreview")}</DialogTitle>
             <DialogDescription className="dark:text-slate-400">
@@ -1786,8 +1786,8 @@ export default function PayrollRunDetailPage() {
             </DialogDescription>
           </DialogHeader>
           {preview && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-3 gap-4 text-sm">
+            <div className="max-h-[calc(90vh-9rem)] space-y-4 overflow-y-auto pr-1">
+              <div className="grid gap-4 text-sm sm:grid-cols-3">
                 <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-800">
                   <p className="text-slate-500 dark:text-slate-400">Employees</p>
                   <p className="font-bold dark:text-white">{preview.employeeCount}</p>
@@ -1815,49 +1815,51 @@ export default function PayrollRunDetailPage() {
                     : t("payroll.run.notBalanced")}
                 </Badge>
               </div>
-              <Table>
-                <TableHeader>
-                  <TableRow className="dark:border-slate-700">
-                    <TableHead className="dark:text-slate-200">{t("payroll.run.accountCode")}</TableHead>
-                    <TableHead className="dark:text-slate-200">{t("payroll.run.accountName")}</TableHead>
-                    <TableHead className="dark:text-slate-200">{t("payroll.run.description")}</TableHead>
-                    <TableHead className="text-right dark:text-slate-200">
-                      {t("payroll.run.debit")}
-                    </TableHead>
-                    <TableHead className="text-right dark:text-slate-200">
-                      {t("payroll.run.credit")}
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {preview.lines.map((line, i) => (
-                    <TableRow key={i} className="dark:border-slate-700">
-                      <TableCell className="font-mono dark:text-slate-200">
-                        {line.accountCode}
+              <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-800">
+                <Table className="min-w-[920px]">
+                  <TableHeader>
+                    <TableRow className="dark:border-slate-700">
+                      <TableHead className="w-28 dark:text-slate-200">{t("payroll.run.accountCode")}</TableHead>
+                      <TableHead className="w-64 dark:text-slate-200">{t("payroll.run.accountName")}</TableHead>
+                      <TableHead className="min-w-[320px] dark:text-slate-200">{t("payroll.run.description")}</TableHead>
+                      <TableHead className="w-36 text-right dark:text-slate-200">
+                        {t("payroll.run.debit")}
+                      </TableHead>
+                      <TableHead className="w-36 text-right dark:text-slate-200">
+                        {t("payroll.run.credit")}
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {preview.lines.map((line, i) => (
+                      <TableRow key={i} className="dark:border-slate-700">
+                        <TableCell className="font-mono dark:text-slate-200">
+                          {line.accountCode}
+                        </TableCell>
+                        <TableCell className="dark:text-slate-300">{line.accountName}</TableCell>
+                        <TableCell className="whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
+                          {line.description}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap text-right dark:text-slate-200">
+                          {line.debit > 0 ? formatCurrency(line.debit) : "-"}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap text-right dark:text-slate-200">
+                          {line.credit > 0 ? formatCurrency(line.credit) : "-"}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    <TableRow className="font-bold bg-slate-50 dark:bg-slate-800">
+                      <TableCell colSpan={3} className="dark:text-white">TOTAL</TableCell>
+                      <TableCell className="whitespace-nowrap text-right dark:text-white">
+                        {formatCurrency(preview.lines.reduce((s, l) => s + l.debit, 0))}
                       </TableCell>
-                      <TableCell className="dark:text-slate-300">{line.accountName}</TableCell>
-                      <TableCell className="text-sm text-slate-500 dark:text-slate-400">
-                        {line.description}
-                      </TableCell>
-                      <TableCell className="text-right dark:text-slate-200">
-                        {line.debit > 0 ? formatCurrency(line.debit) : "-"}
-                      </TableCell>
-                      <TableCell className="text-right dark:text-slate-200">
-                        {line.credit > 0 ? formatCurrency(line.credit) : "-"}
+                      <TableCell className="whitespace-nowrap text-right dark:text-white">
+                        {formatCurrency(preview.lines.reduce((s, l) => s + l.credit, 0))}
                       </TableCell>
                     </TableRow>
-                  ))}
-                  <TableRow className="font-bold bg-slate-50 dark:bg-slate-800">
-                    <TableCell colSpan={3} className="dark:text-white">TOTAL</TableCell>
-                    <TableCell className="text-right dark:text-white">
-                      {formatCurrency(preview.lines.reduce((s, l) => s + l.debit, 0))}
-                    </TableCell>
-                    <TableCell className="text-right dark:text-white">
-                      {formatCurrency(preview.lines.reduce((s, l) => s + l.credit, 0))}
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           )}
           <DialogFooter>

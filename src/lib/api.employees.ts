@@ -88,7 +88,7 @@ export interface SalaryHistoryRecord {
 }
 
 export interface CreateEmployeePayload {
-  employeeId: string;
+  employeeId?: string;
   firstName: string;
   lastName: string;
   email?: string;
@@ -189,6 +189,12 @@ export const employeeApi = {
         pages: number;
       };
     }>(`/employees${params ? buildQuery(params as Record<string, any>) : ""}`),
+
+  /** Get next generated employee ID */
+  getNextId: () =>
+    request<{ success: boolean; data: { employeeId: string } }>(
+      "/employees/next-id"
+    ),
 
   /** Get single employee with payroll history */
   getById: (id: string) =>

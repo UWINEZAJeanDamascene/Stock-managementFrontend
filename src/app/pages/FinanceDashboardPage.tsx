@@ -6,6 +6,7 @@ import {
   taxDashboardApi,
   type TaxDashboardData,
 } from "@/lib/api";
+import { useLiveRefresh } from "@/lib/hooks/useLiveRefresh";
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
 import { Skeleton } from "@/app/components/ui/skeleton";
@@ -236,6 +237,10 @@ const budgetChartConfig = {
   actual: { label: "Actual", color: "#f59e0b" },
 } satisfies ChartConfig;
 
+const taxMixChartConfig = {
+  value: { label: "VAT value", color: "#7c3aed" },
+} satisfies ChartConfig;
+
 export default function FinanceDashboardPage() {
   const [data, setData] = useState<FinanceDashboardData | null>(null);
   const [taxData, setTaxData] = useState<TaxDashboardData | null>(null);
@@ -265,14 +270,10 @@ export default function FinanceDashboardPage() {
   useEffect(() => {
     fetchDashboard();
   }, [fetchDashboard]);
+  useLiveRefresh(fetchDashboard);
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    try {
-      await dashboardApi.clearCache();
-    } catch {
-      // Cache clear may fail due to permissions; still refetch.
-    }
     await fetchDashboard();
   };
 
@@ -364,6 +365,33 @@ export default function FinanceDashboardPage() {
       ]
     : [];
 
+  const taxMixData = [
+    { name: "Output VAT", value: Math.max(outputVat, 0), fill: "#2563eb" },
+    { name: "Input VAT", value: Math.max(inputVat, 0), fill: "#16a34a" },
+    { name: "Net Payable", value: Math.max(netVat, 0), fill: "#f59e0b" },
+  ].filter((item) => item.value > 0);
+
+  const liquiditySignals = [
+    {
+      label: "AP coverage",
+      value: `${apCoverage}%`,
+      width: Math.min(apCoverage, 100),
+      tone: apCoverage >= 100 ? "bg-emerald-500" : "bg-red-500",
+    },
+    {
+      label: "Cash flow coverage",
+      value: `${cashFlowCoverage}%`,
+      width: Math.min(cashFlowCoverage, 100),
+      tone: cashFlowCoverage >= 100 ? "bg-emerald-500" : "bg-amber-500",
+    },
+    {
+      label: "Budget used",
+      value: `${budgetUtilization}%`,
+      width: Math.min(budgetUtilization, 100),
+      tone: budgetUtilization > 100 ? "bg-red-500" : "bg-blue-500",
+    },
+  ];
+
   return (
     <Layout>
       <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
@@ -375,6 +403,9 @@ export default function FinanceDashboardPage() {
                   <h1 className="text-2xl font-bold tracking-tight text-slate-950 dark:text-white sm:text-3xl">
                     Finance Dashboard
                   </h1>
+                  <Badge className="h-6 bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/15 dark:text-emerald-200">
+                    Live data
+                  </Badge>
                   {!loading && (
                     <Badge
                       variant={financeHealth === "Watch" ? "destructive" : "secondary"}
@@ -478,6 +509,144 @@ export default function FinanceDashboardPage() {
               tone="violet"
               loading={loading}
             />
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-[0.95fr_1.05fr]">
+            <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <PanelTitle
+                icon={<Receipt className="h-4 w-4 text-violet-500" />}
+                title="VAT Exposure Mix"
+                subtitle="Output VAT, input VAT credits, and net payable position"
+                action={
+                  !loading && (
+                    <Badge variant={netVat > 0 ? "secondary" : "outline"}>
+                      ${formatCurrency(netVat)}
+                    </Badge>
+                  )
+                }
+              />
+              <CardContent>
+                {loading ? (
+                  <Skeleton className="h-[220px] w-full" />
+                ) : taxMixData.length === 0 ? (
+                  <EmptyState
+                    icon={<Receipt className="h-8 w-8" />}
+                    message="No VAT exposure for the selected year"
+                  />
+                ) : (
+                  <div className="grid gap-5 sm:grid-cols-[190px_1fr] sm:items-center">
+                    <ChartContainer
+                      config={taxMixChartConfig}
+                      className="mx-auto h-[190px] w-full max-w-[220px]"
+                    >
+                      <PieChart>
+                        <ChartTooltip
+                          content={
+                            <ChartTooltipContent
+                              formatter={(value) => `$${formatCurrency(Number(value))}`}
+                            />
+                          }
+                        />
+                        <Pie
+                          data={taxMixData}
+                          dataKey="value"
+                          nameKey="name"
+                          innerRadius={54}
+                          outerRadius={82}
+                          paddingAngle={2}
+                        >
+                          {taxMixData.map((entry) => (
+                            <Cell key={entry.name} fill={entry.fill} />
+                          ))}
+                        </Pie>
+                      </PieChart>
+                    </ChartContainer>
+                    <div className="space-y-3">
+                      {taxMixData.map((item) => (
+                        <div
+                          key={item.name}
+                          className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 px-3 py-2 dark:border-slate-800"
+                        >
+                          <div className="flex min-w-0 items-center gap-2">
+                            <span
+                              className="h-2.5 w-2.5 rounded-full"
+                              style={{ backgroundColor: item.fill }}
+                            />
+                            <span className="truncate text-sm text-slate-600 dark:text-slate-300">
+                              {item.name}
+                            </span>
+                          </div>
+                          <span className="text-sm font-semibold text-slate-950 dark:text-white">
+                            ${formatCurrency(item.value)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <PanelTitle
+                icon={<Gauge className="h-4 w-4 text-blue-500" />}
+                title="Liquidity Control Panel"
+                subtitle="Immediate cash capacity against payments, spending, and budget pressure"
+                action={
+                  !loading && (
+                    <Badge variant={financeHealth === "Watch" ? "destructive" : "secondary"}>
+                      {financeHealth}
+                    </Badge>
+                  )
+                }
+              />
+              <CardContent>
+                {loading ? (
+                  <Skeleton className="h-[220px] w-full" />
+                ) : (
+                  <div className="grid gap-5 lg:grid-cols-[1fr_220px] lg:items-center">
+                    <div className="space-y-4">
+                      {liquiditySignals.map((item) => (
+                        <div key={item.label} className="space-y-2">
+                          <div className="flex items-center justify-between gap-3 text-sm">
+                            <span className="font-medium text-slate-700 dark:text-slate-200">
+                              {item.label}
+                            </span>
+                            <span className="font-semibold text-slate-950 dark:text-white">
+                              {item.value}
+                            </span>
+                          </div>
+                          <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800">
+                            <div
+                              className={`h-2 rounded-full ${item.tone}`}
+                              style={{ width: `${item.width}%` }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 lg:grid-cols-1">
+                      <div className="rounded-lg border border-slate-200 p-3 dark:border-slate-800">
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          Bank concentration
+                        </p>
+                        <p className="mt-1 text-lg font-semibold text-slate-950 dark:text-white">
+                          {bankConcentration}%
+                        </p>
+                      </div>
+                      <div className="rounded-lg border border-slate-200 p-3 dark:border-slate-800">
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          Burn multiple
+                        </p>
+                        <p className="mt-1 text-lg font-semibold text-slate-950 dark:text-white">
+                          {burnMultiple}%
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">

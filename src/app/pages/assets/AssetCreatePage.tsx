@@ -137,14 +137,17 @@ export default function AssetCreatePage() {
 
   const fetchCategories = useCallback(async () => {
     try {
-      const response: any = await assetCategoriesApi.getAll();
+      const response: any = await assetCategoriesApi.getAll({ isActive: true });
       console.debug("[AssetCreatePage] fetchCategories response:", response);
-      let categoryData = response.data;
-      if (categoryData && categoryData.data && Array.isArray(categoryData.data)) {
-        categoryData = categoryData.data;
-      }
+      const categoryData = Array.isArray(response.data)
+        ? response.data
+        : Array.isArray(response.data?.data)
+          ? response.data.data
+          : Array.isArray(response.data?.categories)
+            ? response.data.categories
+            : [];
       if (response.success && Array.isArray(categoryData)) {
-        setCategories(categoryData.filter((c: any) => c._id));
+        setCategories(categoryData.filter((c: any) => c._id && c.isDeleted !== true));
       }
     } catch (error) {
       console.error("[AssetCreatePage] Failed to fetch categories:", error);
@@ -508,7 +511,7 @@ export default function AssetCreatePage() {
                         <option value="">None</option>
                         {categories.map((cat) => (
                           <option key={String(cat._id)} value={String(cat._id)}>
-                            {cat.name || cat.title || cat.displayName || 'Unnamed category'}
+                            {cat.name || "Unnamed category"}
                           </option>
                         ))}
                       </select>

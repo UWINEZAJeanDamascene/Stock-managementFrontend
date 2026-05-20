@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, type ReactNode } from "react";
 import { Layout } from "../layout/Layout";
 import { dashboardApi, type PurchaseDashboardData } from "@/lib/api";
+import { useLiveRefresh } from "@/lib/hooks/useLiveRefresh";
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
 import { Skeleton } from "@/app/components/ui/skeleton";
@@ -49,6 +50,13 @@ function formatCurrency(value: number): string {
 
 function formatNumber(value: number): string {
   return new Intl.NumberFormat("en-US").format(value);
+}
+
+function formatCompact(value: number): string {
+  return new Intl.NumberFormat("en-US", {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(value);
 }
 
 function formatDateTime(value?: string): string {
@@ -212,6 +220,10 @@ const statusChartConfig = {
   count: { label: "Purchase orders", color: "#2563eb" },
 } satisfies ChartConfig;
 
+const procurementFunnelChartConfig = {
+  value: { label: "Value", color: "#2563eb" },
+} satisfies ChartConfig;
+
 export default function PurchaseDashboardPage() {
   const [data, setData] = useState<PurchaseDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -234,14 +246,10 @@ export default function PurchaseDashboardPage() {
   useEffect(() => {
     fetchDashboard();
   }, [fetchDashboard]);
+  useLiveRefresh(fetchDashboard);
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    try {
-      await dashboardApi.clearCache();
-    } catch {
-      // Cache clear may fail due to permissions; still refetch.
-    }
     await fetchDashboard();
   };
 
@@ -313,6 +321,35 @@ export default function PurchaseDashboardPage() {
     grn_count: supplier.grn_count,
   }));
 
+  const procurementFunnelData = [
+    { label: "PO Value", value: poTotalValue, fill: "#2563eb" },
+    { label: "Open PO", value: openPoValue, fill: "#7c3aed" },
+    { label: "GRN Pending", value: grnPendingValue, fill: "#f59e0b" },
+    { label: "AP Outstanding", value: apOutstanding, fill: "#0891b2" },
+    { label: "AP Overdue", value: apOverdue, fill: "#dc2626" },
+  ].filter((item) => item.value > 0);
+
+  const procurementSignals = [
+    {
+      label: "Open PO rate",
+      value: `${openPoRate}%`,
+      width: Math.min(openPoRate, 100),
+      tone: "bg-violet-500",
+    },
+    {
+      label: "Receiving backlog",
+      value: `${receivingBacklogRate}%`,
+      width: Math.min(receivingBacklogRate, 100),
+      tone: receivingBacklogRate > 50 ? "bg-red-500" : "bg-amber-500",
+    },
+    {
+      label: "Supplier concentration",
+      value: `${supplierConcentration}%`,
+      width: Math.min(supplierConcentration, 100),
+      tone: supplierConcentration > 40 ? "bg-amber-500" : "bg-emerald-500",
+    },
+  ];
+
   return (
     <Layout>
       <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
@@ -324,6 +361,9 @@ export default function PurchaseDashboardPage() {
                   <h1 className="text-2xl font-bold tracking-tight text-slate-950 dark:text-white sm:text-3xl">
                     Purchase Dashboard
                   </h1>
+                  <Badge className="h-6 bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/15 dark:text-emerald-200">
+                    Live data
+                  </Badge>
                   {!loading && (
                     <Badge
                       variant={healthBadge === "At risk" ? "destructive" : "secondary"}
@@ -427,6 +467,107 @@ export default function PurchaseDashboardPage() {
               loading={loading}
             />
           </div>
+
+          <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <PanelTitle
+              icon={<ClipboardCheck className="h-4 w-4 text-blue-500" />}
+              title="Procurement Command View"
+              subtitle="Purchase value moving through orders, receiving, payables, and overdue exposure"
+              action={
+                !loading && (
+                  <Badge variant={healthBadge === "At risk" ? "destructive" : "secondary"}>
+                    {healthBadge}
+                  </Badge>
+                )
+              }
+            />
+            <CardContent>
+              {loading ? (
+                <Skeleton className="h-[220px] w-full" />
+              ) : procurementFunnelData.length === 0 ? (
+                <EmptyState
+                  icon={<PackageCheck className="h-8 w-8" />}
+                  message="No procurement movement for this period"
+                />
+              ) : (
+                <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-center">
+                  <ChartContainer
+                    config={procurementFunnelChartConfig}
+                    className="h-[220px] w-full"
+                  >
+                    <BarChart
+                      accessibilityLayer
+                      data={procurementFunnelData}
+                      margin={{ left: 0, right: 12, top: 12, bottom: 8 }}
+                    >
+                      <XAxis
+                        dataKey="label"
+                        axisLine={false}
+                        tickLine={false}
+                        tickMargin={10}
+                      />
+                      <YAxis
+                        axisLine={false}
+                        tickLine={false}
+                        width={56}
+                        tickFormatter={(value) => formatCompact(Number(value))}
+                      />
+                      <ChartTooltip
+                        content={
+                          <ChartTooltipContent
+                            formatter={(value) => `$${formatCurrency(Number(value))}`}
+                          />
+                        }
+                      />
+                      <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+                        {procurementFunnelData.map((entry) => (
+                          <Cell key={entry.label} fill={entry.fill} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ChartContainer>
+                  <div className="space-y-4">
+                    {procurementSignals.map((item) => (
+                      <div key={item.label} className="space-y-2">
+                        <div className="flex items-center justify-between gap-3 text-sm">
+                          <span className="font-medium text-slate-700 dark:text-slate-200">
+                            {item.label}
+                          </span>
+                          <span className="font-semibold text-slate-950 dark:text-white">
+                            {item.value}
+                          </span>
+                        </div>
+                        <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800">
+                          <div
+                            className={`h-2 rounded-full ${item.tone}`}
+                            style={{ width: `${item.width}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                    <div className="grid grid-cols-2 gap-3 pt-2">
+                      <div className="rounded-lg border border-slate-200 p-3 dark:border-slate-800">
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          Return ratio
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-slate-950 dark:text-white">
+                          {returnRate.toFixed(1)}%
+                        </p>
+                      </div>
+                      <div className="rounded-lg border border-slate-200 p-3 dark:border-slate-800">
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          AP overdue
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-red-600 dark:text-red-400">
+                          ${formatCurrency(apOverdue)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950 lg:col-span-2">

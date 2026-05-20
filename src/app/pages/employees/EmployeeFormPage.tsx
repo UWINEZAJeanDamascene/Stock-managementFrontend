@@ -3,7 +3,8 @@ import { useParams, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Layout } from "../../layout/Layout";
 import { useEmployee, useCreateEmployee, useUpdateEmployee } from "@/lib/hooks/useEmployees";
-import { payrollApi } from "@/lib/api";
+import { departmentsApi, payrollApi, type Department } from "@/lib/api";
+import { employeeApi } from "@/lib/api.employees";
 import {
   ArrowLeft,
   Save,
@@ -189,6 +190,8 @@ export default function EmployeeFormPage() {
   const updateMutation = useUpdateEmployee();
 
   const [form, setForm] = useState<FormData>(emptyForm());
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [employeeIdLoading, setEmployeeIdLoading] = useState(false);
   const [calcPreview, setCalcPreview] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("personal");
 
@@ -197,6 +200,32 @@ export default function EmployeeFormPage() {
       setForm(populateFromEmployee(existingEmployee));
     }
   }, [existingEmployee]);
+
+  useEffect(() => {
+    departmentsApi
+      .getAll({ isActive: true })
+      .then((res) => {
+        if (res.success) setDepartments(res.data || []);
+      })
+      .catch(() => setDepartments([]));
+  }, []);
+
+  useEffect(() => {
+    if (isEdit) return;
+
+    setEmployeeIdLoading(true);
+    employeeApi
+      .getNextId()
+      .then((res) => {
+        if (res.success && res.data?.employeeId) {
+          updateField("employeeId", res.data.employeeId);
+        }
+      })
+      .catch(() => {
+        toast.error("Could not generate employee ID");
+      })
+      .finally(() => setEmployeeIdLoading(false));
+  }, [isEdit]);
 
   // Live calculation preview
   useEffect(() => {
@@ -229,15 +258,30 @@ export default function EmployeeFormPage() {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
+  const handleDepartmentChange = (departmentId: string) => {
+    const department = departments.find((d) => d._id === departmentId);
+    setForm((prev) => ({
+      ...prev,
+      departmentRef: departmentId,
+      department: department?.name || "",
+      laborType:
+        department?.defaultLaborAccount === "5300"
+          ? "direct"
+          : department?.defaultLaborAccount === "5400"
+            ? "indirect"
+            : prev.laborType,
+    }));
+  };
+
   const handleSubmit = () => {
-    if (!form.employeeId.trim() || !form.firstName.trim() || !form.lastName.trim()) {
-      toast.error("Employee ID, First Name, and Last Name are required");
+    if (!form.firstName.trim() || !form.lastName.trim()) {
+      toast.error("First Name and Last Name are required");
       setActiveTab("personal");
       return;
     }
 
     const payload = {
-      employeeId: form.employeeId.trim().toUpperCase(),
+      employeeId: form.employeeId.trim().toUpperCase() || undefined,
       firstName: form.firstName.trim(),
       lastName: form.lastName.trim(),
       email: form.email.trim() || undefined,
@@ -359,8 +403,8 @@ export default function EmployeeFormPage() {
                   <Input
                     value={form.employeeId}
                     onChange={(e) => updateField("employeeId", e.target.value)}
-                    placeholder="e.g. EMP001"
-                    disabled={isEdit}
+                    placeholder={employeeIdLoading ? "Generating..." : "Auto-generated"}
+                    disabled={isEdit || employeeIdLoading}
                   />
                 </Field>
                 <Field label="First Name" required>
@@ -461,11 +505,22 @@ export default function EmployeeFormPage() {
                   </Select>
                 </Field>
                 <Field label="Department">
-                  <Input
-                    value={form.department}
-                    onChange={(e) => updateField("department", e.target.value)}
-                    placeholder="e.g. Engineering"
-                  />
+                  <Select
+                    value={form.departmentRef}
+                    onValueChange={handleDepartmentChange}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {departments.map((department) => (
+                        <SelectItem key={department._id} value={department._id}>
+                          {department.name}
+                          {department.code ? ` (${department.code})` : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </Field>
                 <Field label="Position">
                   <Input

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { arReconciliationApi, arReceiptsApi, clientsApi } from '@/lib/api';
+import { useLiveRefresh } from '@/lib/hooks/useLiveRefresh';
 import { Layout } from '../../layout/Layout';
 import {
   FileText,
@@ -228,6 +229,15 @@ export default function ARDashboardPage() {
     }
   };
 
+  const refreshDashboard = useCallback(async () => {
+    await Promise.all([
+      loadClients(),
+      loadAging(),
+      loadOutstandingInvoices(invoicePage),
+      loadTransactions(transPage),
+    ]);
+  }, [loadClients, loadAging, loadOutstandingInvoices, loadTransactions, invoicePage, transPage]);
+
   useEffect(() => {
     loadClients();
     loadAging();
@@ -239,6 +249,8 @@ export default function ARDashboardPage() {
   useEffect(() => {
     loadAging();
   }, [agingClientFilter, agingAsOfDate]);
+
+  useLiveRefresh(refreshDashboard);
 
   const formatMoney = useFormatCurrency();
 
@@ -290,6 +302,9 @@ export default function ARDashboardPage() {
                   </div>
                   <div>
                     <h1 className="text-xl font-bold tracking-tight text-slate-950 dark:text-white sm:text-2xl">Accounts Receivable</h1>
+                    <Badge className="mt-2 w-fit bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/15 dark:text-emerald-200">
+                      Live data
+                    </Badge>
                     <p className="text-sm text-slate-500 dark:text-slate-400">Read-only ledger showing what customers owe you</p>
                   </div>
                 </div>

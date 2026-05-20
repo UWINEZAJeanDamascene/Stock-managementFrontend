@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, type ReactNode } from "react";
 import { Layout } from "../layout/Layout";
 import { dashboardApi, type ExecutiveDashboardData } from "@/lib/api";
+import { useLiveRefresh } from "@/lib/hooks/useLiveRefresh";
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
 import { Skeleton } from "@/app/components/ui/skeleton";
@@ -235,6 +236,10 @@ const arChartConfig = {
   value: { label: "Receivables", color: "#2563eb" },
 } satisfies ChartConfig;
 
+const executiveKpiChartConfig = {
+  score: { label: "Score", color: "#2563eb" },
+} satisfies ChartConfig;
+
 export default function DashboardPage() {
   const [data, setData] = useState<ExecutiveDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -259,14 +264,10 @@ export default function DashboardPage() {
   useEffect(() => {
     fetchDashboard();
   }, [fetchDashboard]);
+  useLiveRefresh(fetchDashboard);
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    try {
-      await dashboardApi.clearCache();
-    } catch {
-      // Cache clear may fail due to permissions; still refetch.
-    }
     await fetchDashboard();
   };
 
@@ -336,6 +337,35 @@ export default function DashboardPage() {
     { name: "Overdue", value: arOverdue, fill: "#dc2626" },
   ].filter((slice) => slice.value > 0);
 
+  const executiveKpiData = [
+    { name: "Executive Score", score, fill: "#2563eb" },
+    { name: "Profit Margin", score: clampPct(margin), fill: "#16a34a" },
+    { name: "AR Current", score: clampPct(arCurrentPct), fill: "#0891b2" },
+    { name: "Debt Coverage", score: clampPct(debtCoverage), fill: "#f59e0b" },
+    { name: "Cash/Revenue", score: clampPct(cashToRevenue), fill: "#7c3aed" },
+  ];
+
+  const boardSignals = [
+    {
+      label: "Profitability",
+      value: `${margin.toFixed(1)}%`,
+      width: clampPct(margin),
+      tone: profit >= 0 ? "bg-emerald-500" : "bg-red-500",
+    },
+    {
+      label: "Collection quality",
+      value: `${arCurrentPct.toFixed(0)}% current`,
+      width: clampPct(arCurrentPct),
+      tone: arOverdue > 0 ? "bg-amber-500" : "bg-emerald-500",
+    },
+    {
+      label: "Debt coverage",
+      value: `${debtCoverage.toFixed(0)}%`,
+      width: clampPct(debtCoverage),
+      tone: debtCoverage >= 100 ? "bg-emerald-500" : "bg-red-500",
+    },
+  ];
+
   return (
     <Layout>
       <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
@@ -349,6 +379,10 @@ export default function DashboardPage() {
                       <Badge className="bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-white/10 dark:text-white dark:hover:bg-white/10">
                         <Sparkles className="mr-1 h-3.5 w-3.5" />
                         Executive Command Center
+                      </Badge>
+                      <Badge className="bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/15 dark:text-emerald-200">
+                        <Zap className="mr-1 h-3.5 w-3.5" />
+                        Live data
                       </Badge>
                       {!loading && (
                         <Badge
@@ -457,12 +491,12 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <div className="border-t border-white/10 bg-white/[0.03] p-5 lg:border-l lg:border-t-0">
+              <div className="border-t border-slate-200 bg-slate-50 p-5 dark:border-white/10 dark:bg-white/[0.03] lg:border-l lg:border-t-0">
                 <div className="mb-3 flex items-center justify-between">
-                  <p className="text-sm font-semibold text-slate-200">
+                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
                     Momentum Curve
                   </p>
-                  <Badge className="bg-blue-500/20 text-blue-200 hover:bg-blue-500/20">
+                  <Badge className="bg-blue-500/15 text-blue-700 hover:bg-blue-500/15 dark:text-blue-200">
                     This month
                   </Badge>
                 </div>
@@ -478,17 +512,17 @@ export default function DashboardPage() {
                       data={pulseData}
                       margin={{ left: 8, right: 12, top: 16, bottom: 8 }}
                     >
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                       <XAxis
                         dataKey="period"
                         tickLine={false}
                         axisLine={false}
-                        tick={{ fill: "#cbd5e1", fontSize: 12 }}
+                        tick={{ fill: "#64748b", fontSize: 12 }}
                       />
                       <YAxis
                         tickLine={false}
                         axisLine={false}
-                        tick={{ fill: "#cbd5e1", fontSize: 12 }}
+                        tick={{ fill: "#64748b", fontSize: 12 }}
                         tickFormatter={(value) => formatCompactCurrency(Number(value))}
                       />
                       <ChartTooltip content={<ChartTooltipContent />} />
@@ -613,6 +647,106 @@ export default function DashboardPage() {
               alert
             />
           </div>
+
+          <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <PanelTitle
+              icon={<Target className="h-4 w-4 text-blue-500" />}
+              title="Board KPI Matrix"
+              subtitle="Executive-grade health indicators normalized into one comparable view"
+              action={
+                !loading && (
+                  <Badge variant={scoreLabel === "Critical" ? "destructive" : "secondary"}>
+                    {scoreLabel}
+                  </Badge>
+                )
+              }
+            />
+            <CardContent>
+              {loading ? (
+                <Skeleton className="h-[220px] w-full" />
+              ) : (
+                <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-center">
+                  <ChartContainer
+                    config={executiveKpiChartConfig}
+                    className="h-[240px] w-full"
+                  >
+                    <BarChart
+                      accessibilityLayer
+                      data={executiveKpiData}
+                      layout="vertical"
+                      margin={{ left: 8, right: 20, top: 8, bottom: 8 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                      <XAxis
+                        type="number"
+                        domain={[0, 100]}
+                        axisLine={false}
+                        tickLine={false}
+                        tickFormatter={(value) => `${value}%`}
+                      />
+                      <YAxis
+                        type="category"
+                        dataKey="name"
+                        width={130}
+                        axisLine={false}
+                        tickLine={false}
+                      />
+                      <ChartTooltip
+                        content={
+                          <ChartTooltipContent
+                            formatter={(value) => `${Number(value).toFixed(1)}%`}
+                          />
+                        }
+                      />
+                      <Bar dataKey="score" radius={[0, 6, 6, 0]}>
+                        {executiveKpiData.map((entry) => (
+                          <Cell key={entry.name} fill={entry.fill} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ChartContainer>
+                  <div className="space-y-4">
+                    {boardSignals.map((item) => (
+                      <div key={item.label} className="space-y-2">
+                        <div className="flex items-center justify-between gap-3 text-sm">
+                          <span className="font-medium text-slate-700 dark:text-slate-200">
+                            {item.label}
+                          </span>
+                          <span className="font-semibold text-slate-950 dark:text-white">
+                            {item.value}
+                          </span>
+                        </div>
+                        <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800">
+                          <div
+                            className={`h-2 rounded-full ${item.tone}`}
+                            style={{ width: `${item.width}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                    <div className="grid grid-cols-2 gap-3 pt-2">
+                      <div className="rounded-lg border border-slate-200 p-3 dark:border-slate-800">
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          Gross activity
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-slate-950 dark:text-white">
+                          {formatCurrency(grossActivity)}
+                        </p>
+                      </div>
+                      <div className="rounded-lg border border-slate-200 p-3 dark:border-slate-800">
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          Events
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-slate-950 dark:text-white">
+                          {journalEntries.length}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_0.9fr] 2xl:grid-cols-[1fr_0.8fr]">
             <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
