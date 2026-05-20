@@ -230,18 +230,16 @@ export default function TenantsPage() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="w-full space-y-5">
       {/* ── Hero Header ── */}
-      <div className="relative overflow-hidden rounded-2xl border border-slate-200/60 bg-gradient-to-br from-indigo-50 via-violet-50 to-cyan-50 p-8 dark:from-indigo-950/40 dark:via-violet-950/30 dark:to-cyan-950/20 dark:border-white/10">
-        <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-indigo-300/30 blur-3xl dark:bg-indigo-500/15" />
-        <div className="absolute -bottom-10 -left-10 h-40 w-40 rounded-full bg-cyan-300/30 blur-3xl dark:bg-cyan-500/15" />
+      <div className="relative overflow-hidden rounded-xl border border-slate-200/60 bg-gradient-to-br from-indigo-50 via-violet-50 to-cyan-50 p-4 dark:from-indigo-950/40 dark:via-violet-950/30 dark:to-cyan-950/20 dark:border-white/10 sm:p-5 lg:p-6">
         <div className="relative flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-indigo-700 dark:border-indigo-800 dark:bg-indigo-500/15 dark:text-indigo-300">
               <Globe className="h-3.5 w-3.5" />
               Tenant Directory
             </div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-4xl">
+            <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-3xl">
               Platform Tenants
             </h1>
             <p className="mt-2 max-w-xl text-sm text-slate-600 dark:text-slate-300">
@@ -265,7 +263,7 @@ export default function TenantsPage() {
       </div>
 
       {/* ── Stats ── */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
         <StatCard label="Total Tenants" value={stats.total} icon={Building2} accent="bg-indigo-500" />
         <StatCard label="Active" value={stats.active} icon={CheckCircle2} accent="bg-emerald-500" />
         <StatCard label="Trialing" value={stats.trialing} icon={Activity} accent="bg-sky-500" />
@@ -277,7 +275,7 @@ export default function TenantsPage() {
       {/* ── Filters & Search ── */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <Tabs value={filter} onValueChange={(v) => setFilter(v as FilterTab)}>
-          <TabsList className="h-9 bg-white/70 backdrop-blur dark:bg-white/5">
+          <TabsList className="h-auto w-full max-w-full justify-start gap-1 overflow-x-auto bg-white/70 p-1 backdrop-blur dark:bg-white/5 lg:w-fit">
             {[
               { value: 'all', label: 'All' },
               { value: 'active', label: 'Active' },
@@ -289,7 +287,7 @@ export default function TenantsPage() {
               <TabsTrigger
                 key={t.value}
                 value={t.value}
-                className="text-xs data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 dark:data-[state=active]:bg-indigo-500/15 dark:data-[state=active]:text-indigo-300"
+                className="shrink-0 text-xs data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 dark:data-[state=active]:bg-indigo-500/15 dark:data-[state=active]:text-indigo-300"
               >
                 {t.label}
                 <span className="ml-1.5 rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
@@ -317,7 +315,7 @@ export default function TenantsPage() {
 
       {/* ── Grid ── */}
       {isLoading ? (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
             <Skeleton key={i} className="h-48 rounded-2xl" />
           ))}
@@ -329,7 +327,7 @@ export default function TenantsPage() {
           <p className="text-sm text-slate-500 dark:text-slate-400">Try adjusting your filters or search query.</p>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
           {filtered.map((company) => (
             <Card
               key={company._id}

@@ -237,18 +237,16 @@ export default function CommunicationsPage() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="w-full space-y-5">
       {/* ── Hero Header ── */}
-      <div className="relative overflow-hidden rounded-2xl border border-slate-200/60 bg-gradient-to-br from-violet-50 via-indigo-50 to-cyan-50 p-8 dark:from-violet-950/40 dark:via-indigo-950/30 dark:to-cyan-950/20 dark:border-white/10">
-        <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-violet-300/30 blur-3xl dark:bg-violet-500/15" />
-        <div className="absolute -bottom-10 -left-10 h-40 w-40 rounded-full bg-cyan-300/30 blur-3xl dark:bg-cyan-500/15" />
+      <div className="relative overflow-hidden rounded-xl border border-slate-200/60 bg-gradient-to-br from-violet-50 via-indigo-50 to-cyan-50 p-4 dark:from-violet-950/40 dark:via-indigo-950/30 dark:to-cyan-950/20 dark:border-white/10 sm:p-5 lg:p-6">
         <div className="relative flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-violet-700 dark:border-violet-800 dark:bg-violet-500/15 dark:text-violet-300">
               <MessageSquare className="h-3.5 w-3.5" />
               Broadcast Center
             </div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-4xl">
+            <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-3xl">
               Communications
             </h1>
             <p className="mt-2 max-w-xl text-sm text-slate-600 dark:text-slate-300">
@@ -273,17 +271,17 @@ export default function CommunicationsPage() {
 
       {/* ── Tabs ── */}
       <Tabs value={tab} onValueChange={(v) => setTab(v as 'compose' | 'history')}>
-        <TabsList className="h-9 bg-white/70 backdrop-blur dark:bg-white/5">
+        <TabsList className="h-auto w-full justify-start gap-1 overflow-x-auto bg-white/70 p-1 backdrop-blur dark:bg-white/5 sm:w-fit">
           <TabsTrigger
             value="compose"
-            className="text-xs data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 dark:data-[state=active]:bg-indigo-500/15 dark:data-[state=active]:text-indigo-300"
+            className="shrink-0 text-xs data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 dark:data-[state=active]:bg-indigo-500/15 dark:data-[state=active]:text-indigo-300"
           >
             <Send className="mr-1.5 h-3.5 w-3.5" />
             Compose
           </TabsTrigger>
           <TabsTrigger
             value="history"
-            className="text-xs data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 dark:data-[state=active]:bg-indigo-500/15 dark:data-[state=active]:text-indigo-300"
+            className="shrink-0 text-xs data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 dark:data-[state=active]:bg-indigo-500/15 dark:data-[state=active]:text-indigo-300"
           >
             <History className="mr-1.5 h-3.5 w-3.5" />
             History
@@ -297,7 +295,7 @@ export default function CommunicationsPage() {
       </Tabs>
 
       {tab === 'compose' && (
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-5 2xl:grid-cols-[minmax(0,1fr)_minmax(380px,0.9fr)]">
           {/* ── Left: Composer ── */}
           <div className="space-y-6">
             {/* Templates */}

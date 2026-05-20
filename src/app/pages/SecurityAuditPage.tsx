@@ -273,11 +273,11 @@ export default function SecurityAuditPage() {
   }, [stats]);
 
   return (
-    <div className="min-h-screen bg-slate-50 px-4 py-5 dark:bg-slate-950 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-[1700px] 2xl:max-w-[2200px] w-full space-y-6">
+    <div className="w-full space-y-5">
+      <div className="w-full space-y-5">
         {/* Header */}
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-950 shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:text-white">
-          <div className="p-6 lg:p-7">
+        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white text-slate-950 shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:text-white">
+          <div className="p-4 sm:p-5 lg:p-6">
             <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
               <div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -300,7 +300,7 @@ export default function SecurityAuditPage() {
                     </Badge>
                   )}
                 </div>
-                <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">Security & Audit</h1>
+                <h1 className="mt-4 text-2xl font-bold tracking-tight sm:text-3xl">Security & Audit</h1>
                 <p className="mt-2 max-w-2xl text-sm text-slate-500 dark:text-slate-300 sm:text-base">
                   Monitor platform security posture, login activity, and audit trails across all tenants.
                 </p>
@@ -330,7 +330,7 @@ export default function SecurityAuditPage() {
         )}
 
         {/* Metrics */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-4">
           <MetricCard
             title="Total Users"
             value={stats?.users.total ?? 0}
@@ -367,15 +367,15 @@ export default function SecurityAuditPage() {
 
         {/* Charts & Tables */}
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="events">Security Events</TabsTrigger>
-            <TabsTrigger value="failed">Failed Logins</TabsTrigger>
-            <TabsTrigger value="audit">Audit Logs</TabsTrigger>
+          <TabsList className="h-auto w-full justify-start gap-1 overflow-x-auto border border-slate-200 bg-white p-1 dark:border-slate-800 dark:bg-slate-950 lg:w-fit">
+            <TabsTrigger value="overview" className="shrink-0">Overview</TabsTrigger>
+            <TabsTrigger value="events" className="shrink-0">Security Events</TabsTrigger>
+            <TabsTrigger value="failed" className="shrink-0">Failed Logins</TabsTrigger>
+            <TabsTrigger value="audit" className="shrink-0">Audit Logs</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4 mt-4">
-            <div className="grid gap-4 lg:grid-cols-2">
+            <div className="grid gap-4 2xl:grid-cols-2">
               {/* Activity Trend */}
               <Card className="border-slate-200/80 dark:border-slate-800">
                 <CardHeader className="pb-2">
@@ -506,7 +506,7 @@ export default function SecurityAuditPage() {
                   </div>
                 ) : stats?.recentEvents && stats.recentEvents.length > 0 ? (
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
+                    <table className="min-w-[900px] w-full text-sm">
                       <thead>
                         <tr className="border-b border-slate-200 dark:border-slate-800 text-left text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
                           <th className="pb-3 pr-4">Action</th>
@@ -568,7 +568,7 @@ export default function SecurityAuditPage() {
                   </div>
                 ) : stats?.recentFailedLogins && stats.recentFailedLogins.length > 0 ? (
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
+                    <table className="min-w-[760px] w-full text-sm">
                       <thead>
                         <tr className="border-b border-slate-200 dark:border-slate-800 text-left text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
                           <th className="pb-3 pr-4">User</th>
@@ -631,7 +631,7 @@ export default function SecurityAuditPage() {
                   </div>
                 ) : auditLogs.length > 0 ? (
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
+                    <table className="min-w-[860px] w-full text-sm">
                       <thead className="bg-slate-50 dark:bg-slate-900/50">
                         <tr className="border-b border-slate-200 dark:border-slate-800 text-left text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
                           <th className="py-3 px-6">Action</th>

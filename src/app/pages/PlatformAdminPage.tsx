@@ -1131,9 +1131,9 @@ export default function PlatformAdminPage() {
   };
 
   const renderCompanyRow = (company: PlatformCompany, showApproval = false) => (
-    <div key={company._id} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:shadow-md dark:border-slate-800 dark:bg-slate-950">
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-        <div className="flex gap-3 min-w-0">
+    <div key={company._id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:shadow-md dark:border-slate-800 dark:bg-slate-950 sm:p-5">
+      <div className="flex flex-col gap-4 2xl:flex-row 2xl:items-start 2xl:justify-between">
+        <div className="flex min-w-0 gap-3">
           <Checkbox
             checked={selectedCompanyIds.includes(company._id)}
             onCheckedChange={(checked) => toggleCompanySelection(company._id, checked === true)}
@@ -1142,7 +1142,7 @@ export default function PlatformAdminPage() {
           />
           <CompanySummary company={company} />
         </div>
-        <div className="flex flex-wrap items-center gap-2 xl:justify-end">
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center 2xl:justify-end">
           <Button variant="outline" size="sm" className="border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200" onClick={() => { setUserDrawerCompany(company); loadCompanyUsers(company._id); setUserDrawerOpen(true); }}>
             <Eye className="h-4 w-4" />
             Users
@@ -1198,7 +1198,7 @@ export default function PlatformAdminPage() {
             <Badge variant="secondary" className="rounded-md text-xs">+{company.enabledModuleCount - 8} more</Badge>
           )}
         </div>
-        <div className="flex gap-3 text-center text-xs shrink-0">
+        <div className="grid grid-cols-3 gap-2 text-center text-xs lg:shrink-0">
           <div className="rounded-lg bg-slate-50 px-3 py-2 dark:bg-slate-900">
             <p className="font-semibold text-slate-950 dark:text-white">{company.code || "N/A"}</p>
             <p className="text-slate-500 dark:text-slate-400">Code</p>
@@ -1217,23 +1217,23 @@ export default function PlatformAdminPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#f6f8f7] text-slate-950 dark:bg-[#07100f] dark:text-white">
-      <div className="mx-auto max-w-[1500px] px-4 py-5 sm:px-6 lg:px-8">
-        <div className="mb-6 overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-lg dark:border-slate-800">
-          <div className="relative grid gap-6 p-6 sm:p-8 lg:grid-cols-[minmax(0,1fr)_440px]">
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_rgba(45,212,191,0.18),_transparent_50%),radial-gradient(ellipse_at_top_right,_rgba(250,204,21,0.12),_transparent_50%),radial-gradient(ellipse_at_bottom_right,_rgba(16,185,129,0.15),_transparent_50%)]" />
+    <div className="min-h-full text-slate-950 dark:text-white">
+      <div className="w-full space-y-5">
+        <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-950 shadow-lg dark:border-slate-800">
+          <div className="relative grid gap-5 p-4 sm:p-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(360px,0.8fr)] lg:p-6">
+            <div className="absolute inset-0 bg-[linear-gradient(135deg,_rgba(45,212,191,0.18),_transparent_42%),linear-gradient(315deg,_rgba(16,185,129,0.16),_transparent_46%)]" />
             <div className="relative">
               <div className="mb-4 inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-cyan-200 backdrop-blur-sm">
                 <Crown className="h-3.5 w-3.5" />
                 Platform Command Center
               </div>
-              <h1 className="max-w-4xl text-3xl font-bold tracking-tight text-white sm:text-4xl">
+              <h1 className="max-w-4xl text-2xl font-bold tracking-tight text-white sm:text-3xl">
                 Platform Administration
               </h1>
               <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-300">
                 Run the tenant estate like a real operations desk: onboard companies, govern modules, watch subscription risk, coordinate payments, and broadcast platform changes from one decisive workspace.
               </p>
-              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <div className="mt-5 flex flex-col gap-3 sm:flex-row">
                 <Button className="bg-cyan-400 text-slate-950 hover:bg-cyan-300 font-semibold gap-2" onClick={() => setBroadcastOpen(true)}>
                   <Megaphone className="h-4 w-4" />
                   Broadcast update
@@ -1266,7 +1266,7 @@ export default function PlatformAdminPage() {
           </div>
         )}
 
-        <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-4">
           {isLoading ? Array.from({ length: 4 }).map((_, index) => <Skeleton key={index} className="h-32 rounded-xl" />) : (
             <>
               <StatTile title="Companies" value={dashboard.stats.total} detail={`${dashboard.stats.pending} awaiting registration review`} icon={<Building2 className="h-5 w-5" />} tone="bg-cyan-50 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-200" barValue={approvalRate} />
@@ -1277,7 +1277,7 @@ export default function PlatformAdminPage() {
           )}
         </div>
 
-        <div className="mb-6 grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+        <div className="grid gap-4 2xl:grid-cols-[1.25fr_0.75fr]">
           <Card className="overflow-hidden border-0 bg-white shadow-sm dark:bg-slate-900/70">
             <CardHeader className="pb-2">
               <div className="flex flex-wrap items-center justify-between gap-3">
@@ -1297,14 +1297,14 @@ export default function PlatformAdminPage() {
               <SignalBar label="Module coverage" value={moduleCoverage} tone="bg-amber-500" />
             </CardContent>
           </Card>
-          <div className="grid gap-4 sm:grid-cols-3 xl:grid-cols-1">
+          <div className="grid gap-4 sm:grid-cols-3 2xl:grid-cols-1">
             <WorkstreamCard title="Core Operations" value={starterCompanies.length} detail="Starter plan accounts" icon={<Sparkles className="h-5 w-5" />} tone="bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-200" />
             <WorkstreamCard title="Enterprise" value={enterpriseCompanies.length} detail="High-touch accounts" icon={<Globe2 className="h-5 w-5" />} tone="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-200" />
             <WorkstreamCard title="Risk Queue" value={attentionCompanies.length} detail="Billing or access intervention" icon={<AlertTriangle className="h-5 w-5" />} tone="bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-200" />
           </div>
         </div>
 
-        <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="relative w-full md:max-w-md">
             <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
             <Input value={search} onChange={(event) => setSearch(event.target.value)} className="rounded-lg border-slate-200 bg-white pl-9 shadow-sm dark:border-slate-800 dark:bg-slate-950" placeholder="Search company, email, code, or TIN" />
@@ -1325,7 +1325,7 @@ export default function PlatformAdminPage() {
           </div>
         </div>
 
-        <div className="mb-4 flex flex-col gap-3 rounded-xl border border-slate-200 bg-gradient-to-r from-slate-50 to-white p-4 shadow-sm dark:from-slate-900 dark:to-slate-950 dark:border-slate-800 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-gradient-to-r from-slate-50 to-white p-4 shadow-sm dark:from-slate-900 dark:to-slate-950 dark:border-slate-800 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="flex items-center gap-2 text-sm font-semibold text-slate-950 dark:text-white">
               <Megaphone className="h-4 w-4 text-cyan-600" />
@@ -1352,19 +1352,19 @@ export default function PlatformAdminPage() {
         </div>
 
         <Tabs defaultValue="overview" className="gap-4">
-          <TabsList className="h-auto flex-wrap justify-start gap-1 rounded-xl border border-slate-200/60 bg-white p-1.5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-            <TabsTrigger value="overview" className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 transition-all hover:text-slate-900 data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-sm dark:text-slate-400 dark:hover:text-slate-200 dark:data-[state=active]:bg-white dark:data-[state=active]:text-slate-900">Overview</TabsTrigger>
-            <TabsTrigger value="requests" className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 transition-all hover:text-slate-900 data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-sm dark:text-slate-400 dark:hover:text-slate-200 dark:data-[state=active]:bg-white dark:data-[state=active]:text-slate-900">Requests</TabsTrigger>
-            <TabsTrigger value="portfolio" className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 transition-all hover:text-slate-900 data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-sm dark:text-slate-400 dark:hover:text-slate-200 dark:data-[state=active]:bg-white dark:data-[state=active]:text-slate-900">Portfolio</TabsTrigger>
-            <TabsTrigger value="billing" className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 transition-all hover:text-slate-900 data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-sm dark:text-slate-400 dark:hover:text-slate-200 dark:data-[state=active]:bg-white dark:data-[state=active]:text-slate-900">Billing Watch</TabsTrigger>
-            <TabsTrigger value="packages" className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 transition-all hover:text-slate-900 data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-sm dark:text-slate-400 dark:hover:text-slate-200 dark:data-[state=active]:bg-white dark:data-[state=active]:text-slate-900">Packages</TabsTrigger>
-            <TabsTrigger value="activity" className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 transition-all hover:text-slate-900 data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-sm dark:text-slate-400 dark:hover:text-slate-200 dark:data-[state=active]:bg-white dark:data-[state=active]:text-slate-900">Activity</TabsTrigger>
-            <TabsTrigger value="analytics" className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 transition-all hover:text-slate-900 data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-sm dark:text-slate-400 dark:hover:text-slate-200 dark:data-[state=active]:bg-white dark:data-[state=active]:text-slate-900">Analytics</TabsTrigger>
-            <TabsTrigger value="plans" className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 transition-all hover:text-slate-900 data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-sm dark:text-slate-400 dark:hover:text-slate-200 dark:data-[state=active]:bg-white dark:data-[state=active]:text-slate-900">Plans</TabsTrigger>
+          <TabsList className="h-auto w-full max-w-full justify-start gap-1 overflow-x-auto rounded-xl border border-slate-200/60 bg-white p-1.5 shadow-sm dark:border-slate-800 dark:bg-slate-950 lg:flex-wrap">
+            <TabsTrigger value="overview" className="shrink-0 rounded-lg px-4 py-2 text-sm font-medium text-slate-600 transition-all hover:text-slate-900 data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-sm dark:text-slate-400 dark:hover:text-slate-200 dark:data-[state=active]:bg-white dark:data-[state=active]:text-slate-900">Overview</TabsTrigger>
+            <TabsTrigger value="requests" className="shrink-0 rounded-lg px-4 py-2 text-sm font-medium text-slate-600 transition-all hover:text-slate-900 data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-sm dark:text-slate-400 dark:hover:text-slate-200 dark:data-[state=active]:bg-white dark:data-[state=active]:text-slate-900">Requests</TabsTrigger>
+            <TabsTrigger value="portfolio" className="shrink-0 rounded-lg px-4 py-2 text-sm font-medium text-slate-600 transition-all hover:text-slate-900 data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-sm dark:text-slate-400 dark:hover:text-slate-200 dark:data-[state=active]:bg-white dark:data-[state=active]:text-slate-900">Portfolio</TabsTrigger>
+            <TabsTrigger value="billing" className="shrink-0 rounded-lg px-4 py-2 text-sm font-medium text-slate-600 transition-all hover:text-slate-900 data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-sm dark:text-slate-400 dark:hover:text-slate-200 dark:data-[state=active]:bg-white dark:data-[state=active]:text-slate-900">Billing Watch</TabsTrigger>
+            <TabsTrigger value="packages" className="shrink-0 rounded-lg px-4 py-2 text-sm font-medium text-slate-600 transition-all hover:text-slate-900 data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-sm dark:text-slate-400 dark:hover:text-slate-200 dark:data-[state=active]:bg-white dark:data-[state=active]:text-slate-900">Packages</TabsTrigger>
+            <TabsTrigger value="activity" className="shrink-0 rounded-lg px-4 py-2 text-sm font-medium text-slate-600 transition-all hover:text-slate-900 data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-sm dark:text-slate-400 dark:hover:text-slate-200 dark:data-[state=active]:bg-white dark:data-[state=active]:text-slate-900">Activity</TabsTrigger>
+            <TabsTrigger value="analytics" className="shrink-0 rounded-lg px-4 py-2 text-sm font-medium text-slate-600 transition-all hover:text-slate-900 data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-sm dark:text-slate-400 dark:hover:text-slate-200 dark:data-[state=active]:bg-white dark:data-[state=active]:text-slate-900">Analytics</TabsTrigger>
+            <TabsTrigger value="plans" className="shrink-0 rounded-lg px-4 py-2 text-sm font-medium text-slate-600 transition-all hover:text-slate-900 data-[state=active]:bg-slate-900 data-[state=active]:text-white data-[state=active]:shadow-sm dark:text-slate-400 dark:hover:text-slate-200 dark:data-[state=active]:bg-white dark:data-[state=active]:text-slate-900">Plans</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview">
-            <div className="grid gap-4 xl:grid-cols-[1fr_420px]">
+            <div className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_380px]">
               <Card className="overflow-hidden border-0 bg-white shadow-sm dark:bg-slate-900/70">
                 <CardHeader className="pb-2">
                   <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-950 dark:text-white"><RadioTower className="h-5 w-5 text-cyan-600" />Control Room Workboard</CardTitle>
@@ -1381,7 +1381,7 @@ export default function PlatformAdminPage() {
                 </CardContent>
               </Card>
 
-              <div className="grid gap-4">
+              <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-1">
                 <Card className="overflow-hidden border-0 bg-white shadow-sm dark:bg-slate-900/70">
                   <CardHeader className="pb-2">
                     <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-950 dark:text-white"><CalendarClock className="h-5 w-5 text-amber-600" />Renewals Next 14 Days</CardTitle>
@@ -1468,7 +1468,7 @@ export default function PlatformAdminPage() {
                   {featureKeys.length} platform modules available
                 </Badge>
               </div>
-              <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
                 {companies.slice(0, 6).map((company) => (
                   <div key={company._id} className="group rounded-xl border border-slate-200/60 bg-white p-4 shadow-sm transition-all hover:shadow-md dark:border-slate-800 dark:bg-slate-950">
                     <div className="flex items-start justify-between gap-3">
@@ -1486,7 +1486,7 @@ export default function PlatformAdminPage() {
               </div>
             </div>
 
-            <div className="grid gap-4 lg:grid-cols-4">
+            <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-4">
               {subscriptionPlans.length > 0 ? subscriptionPlans.map((plan) => {
                 const planCompanies = dashboard.companies.filter((company) => company.subscription_plan === plan.key);
                 return (
@@ -1543,15 +1543,15 @@ export default function PlatformAdminPage() {
                   <EmptyPanel title="No activity recorded" text="Platform audit logs will appear here once actions are taken." />
                 ) : (
                   <div className="space-y-3">
-                    <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
-                      <div className="grid grid-cols-[1fr_120px_100px_140px] gap-2 border-b border-slate-200 bg-slate-50 px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
+                    <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+                      <div className="grid min-w-[680px] grid-cols-[minmax(260px,1fr)_120px_100px_140px] gap-2 border-b border-slate-200 bg-slate-50 px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
                         <span>Action</span>
                         <span>Entity</span>
                         <span>Status</span>
                         <span className="text-right">Time</span>
                       </div>
                       {auditLogs.map((log) => (
-                        <div key={log._id} className="grid grid-cols-[1fr_120px_100px_140px] gap-2 border-b border-slate-100 px-4 py-3 text-sm last:border-0 dark:border-slate-800/60">
+                        <div key={log._id} className="grid min-w-[680px] grid-cols-[minmax(260px,1fr)_120px_100px_140px] gap-2 border-b border-slate-100 px-4 py-3 text-sm last:border-0 dark:border-slate-800/60">
                           <div className="min-w-0">
                             <p className="truncate font-medium text-slate-900 dark:text-white">{log.action}</p>
                             <p className="truncate text-xs text-slate-500 dark:text-slate-400">
@@ -1601,7 +1601,7 @@ export default function PlatformAdminPage() {
               </div>
             ) : (
               <div className="space-y-6">
-                <div className="grid gap-4 md:grid-cols-4">
+                <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-4">
                   <Card className="overflow-hidden border-0 bg-white shadow-sm dark:bg-slate-900/70">
                     <div className="h-1 bg-cyan-500" />
                     <CardContent className="p-5">
@@ -1634,7 +1634,7 @@ export default function PlatformAdminPage() {
                   </Card>
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-4 xl:grid-cols-2">
                   <Card className="overflow-hidden border-0 bg-white shadow-sm dark:bg-slate-900/70">
                     <div className="h-1 bg-sky-500" />
                     <CardHeader>

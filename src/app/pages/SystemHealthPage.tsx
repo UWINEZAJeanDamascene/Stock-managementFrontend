@@ -344,18 +344,16 @@ export default function SystemHealthPage() {
   const rssStatus = health ? statusFromRatio(health.memory.rss_mb, rssLimitMb) : 'ok';
 
   return (
-    <div className="space-y-8">
+    <div className="w-full space-y-5">
       {/* ── Hero Header ── */}
-      <div className="relative overflow-hidden rounded-2xl border border-slate-200/60 bg-gradient-to-br from-emerald-50 via-cyan-50 to-indigo-50 p-8 dark:from-emerald-950/40 dark:via-cyan-950/30 dark:to-indigo-950/20 dark:border-white/10">
-        <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-emerald-300/30 blur-3xl dark:bg-emerald-500/15" />
-        <div className="absolute -bottom-10 -left-10 h-40 w-40 rounded-full bg-indigo-300/30 blur-3xl dark:bg-indigo-500/15" />
+      <div className="relative overflow-hidden rounded-xl border border-slate-200/60 bg-gradient-to-br from-emerald-50 via-cyan-50 to-indigo-50 p-4 dark:from-emerald-950/40 dark:via-cyan-950/30 dark:to-indigo-950/20 dark:border-white/10 sm:p-5 lg:p-6">
         <div className="relative flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-emerald-700 dark:border-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300">
               <Activity className="h-3.5 w-3.5" />
               Live Monitoring
             </div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-4xl">
+            <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-3xl">
               System Health
             </h1>
             <p className="mt-2 max-w-xl text-sm text-slate-600 dark:text-slate-300">
@@ -433,13 +431,13 @@ export default function SystemHealthPage() {
           Service Status
         </h2>
         {isLoading ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-4">
             {Array.from({ length: 4 }).map((_, i) => (
               <Skeleton key={i} className="h-24 rounded-xl" />
             ))}
           </div>
         ) : health ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-4">
             <StatusCard
               title="Database"
               status={health.database.status}
@@ -493,7 +491,7 @@ export default function SystemHealthPage() {
       </div>
 
       {/* ── Memory & Resources ── */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-5 2xl:grid-cols-2">
         <Card className="border-slate-200/60 bg-white/80 backdrop-blur-xl dark:border-white/10 dark:bg-[#0f172a]/60">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
@@ -599,7 +597,7 @@ export default function SystemHealthPage() {
       </div>
 
       {/* ── Request Performance & System Load ── */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-5 2xl:grid-cols-2">
         <Card className="border-slate-200/60 bg-white/80 backdrop-blur-xl dark:border-white/10 dark:bg-[#0f172a]/60">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
@@ -616,7 +614,7 @@ export default function SystemHealthPage() {
               </div>
             ) : (
               <>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-3 sm:grid-cols-2">
                   <div className="rounded-xl border border-slate-100 bg-slate-50/50 p-3 dark:border-white/5 dark:bg-white/5">
                     <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Avg Response</p>
                     <p className="mt-1 text-lg font-bold text-slate-900 dark:text-white">{health.metrics.requests.avg_response_ms.toFixed(1)}ms</p>
@@ -672,7 +670,7 @@ export default function SystemHealthPage() {
               </div>
             ) : (
               <>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-3 sm:grid-cols-2">
                   <div className="rounded-xl border border-slate-100 bg-slate-50/50 p-3 dark:border-white/5 dark:bg-white/5">
                     <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">CPU Cores</p>
                     <p className="mt-1 text-lg font-bold text-slate-900 dark:text-white">{health.metrics.system.cpu_count}</p>
@@ -722,7 +720,7 @@ export default function SystemHealthPage() {
             </div>
           ) : (
             <>
-              <div className="mb-4 grid grid-cols-3 gap-3">
+              <div className="mb-4 grid gap-3 sm:grid-cols-3">
                 <div className="rounded-xl border border-slate-100 bg-slate-50/50 p-3 dark:border-white/5 dark:bg-white/5">
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Database</p>
                   <p className="mt-1 text-sm font-bold text-slate-900 dark:text-white">{health.metrics.database_stats.name}</p>
@@ -766,7 +764,7 @@ export default function SystemHealthPage() {
       </Card>
 
       {/* ── Company Dataset & Capacity ── */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-5 2xl:grid-cols-2">
         <Card className="border-slate-200/60 bg-white/80 backdrop-blur-xl dark:border-white/10 dark:bg-[#0f172a]/60">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
@@ -782,7 +780,7 @@ export default function SystemHealthPage() {
               </div>
             ) : (
               <>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-3 sm:grid-cols-2">
                   <div className="rounded-xl border border-slate-100 bg-slate-50/50 p-3 dark:border-white/5 dark:bg-white/5">
                     <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total Companies</p>
                     <p className="mt-1 text-lg font-bold text-slate-900 dark:text-white">{health.metrics.company_stats.total_companies}</p>
@@ -856,7 +854,7 @@ export default function SystemHealthPage() {
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-3 sm:grid-cols-2">
                   <div className="rounded-xl border border-slate-100 bg-slate-50/50 p-3 dark:border-white/5 dark:bg-white/5">
                     <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Headroom (Companies)</p>
                     <p className="mt-1 text-lg font-bold text-slate-900 dark:text-white">{health.metrics.capacity.headroom_companies}</p>
@@ -876,7 +874,7 @@ export default function SystemHealthPage() {
                 </div>
                 <div className="rounded-lg border border-slate-100 bg-slate-50/50 p-3 dark:border-white/5 dark:bg-white/5">
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">How this is calculated</p>
-                  <div className="grid grid-cols-2 gap-2 text-xs text-slate-600 dark:text-slate-300">
+                  <div className="grid gap-2 text-xs text-slate-600 dark:text-slate-300 sm:grid-cols-2">
                     <div className="flex justify-between">
                       <span>Avg DB / company:</span>
                       <span className="font-medium text-slate-900 dark:text-white">{health.metrics.capacity.derived_from.actual_db_per_company_mb.toFixed(1)} MB</span>
@@ -917,7 +915,7 @@ export default function SystemHealthPage() {
           {isLoading || !health ? (
             <Skeleton className="h-16 rounded-lg" />
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-4">
               <div className="space-y-1">
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">API Version</p>
                 <p className="text-sm font-bold text-slate-900 dark:text-white">{health.version}</p>
